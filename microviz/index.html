@@ -31,87 +31,49 @@
     <div class="container">
         <input type="file" id="audio-upload" accept="audio/*">
         <button id="play-toggle">▶ Play</button>
-        <select id="visualizer-select">
-            <option value="bars">Frequency Bars</option>
-            <option value="waveform">Waveform</option>
-            <option value="circular">Circular Spectrum</option>
-            <option value="particles">Audio Particles</option>
-        </select>
-        
+        <select id="visualizer-select"></select>
         <canvas id="visualizer-container"></canvas>
-        
         <div class="controls" id="controls-container"></div>
     </div>
 
     <script>
-        // Configuration (auto-saved to localStorage)
-        const CONFIG = JSON.parse(localStorage.getItem('audioVisConfig')) || {
-            visualizer: 'bars',
-            barCount: 128,
-            fftSize: 2048,
-            color: '#00ff9d',
-            sensitivity: 1,
-            particleCount: 100,
-            lineWidth: 2
-        };
-
-        // Core elements
-        const canvas = document.getElementById('visualizer-container');
-        const ctx = canvas.getContext('2d');
-        const audioUpload = document.getElementById('audio-upload');
-        const playToggle = document.getElementById('play-toggle');
-        const visualizerSelect = document.getElementById('visualizer-select');
-        const controlsContainer = document.getElementById('controls-container');
-        let audioContextInitialized = false;
-        let audioElement = null;
-        let audioContext, analyser, source, isPlaying = false;
-        let audioData = new Uint8Array();
-
-        // Init Web Audio
-        async function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
-                
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = CONFIG.fftSize;
-                audioData = new Uint8Array(analyser.frequencyBinCount);
-            }
-        }
-
-        // Visualizers
+        // Visualizers - DEFINITION FIRST for reference in initializeConfig
         const visualizers = {
             bars: {
+                displayName: "Bars",
                 settings: [
-                    { id: 'barCount', type: 'range', label: 'Bar Count', min: 16, max: 256, step: 1 },
-                    { id: 'color', type: 'color', label: 'Color' }
+                    { id: 'barCount', type: 'range', label: 'Bar Count', min: 16, max: 256, step: 1, default: 128  },
+                    { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' }
                 ],
                 draw: () => {
-                    const barWidth = canvas.width / CONFIG.barCount;
-                    ctx.fillStyle = CONFIG.color;
+                  return () => {
+                    const thisConfig = CONFIG.settings.bars;
+                    const barWidth = canvas.width / thisConfig.barCount;
+                    ctx.fillStyle = thisConfig.color;
                     
-                    for (let i = 0; i < CONFIG.barCount; i++) {
+                    for (let i = 0; i < thisConfig.barCount; i++) {
                         const value = audioData[i];
-                        const barHeight = (value / 255) * canvas.height * CONFIG.sensitivity;
+                        const barHeight = (value / 255) * canvas.height * CONFIG.master.sensitivity;
                         const x = i * barWidth;
                         const y = canvas.height - barHeight;
                         
                         ctx.fillRect(x, y, barWidth - 2, barHeight);
                     }
+                  }
                 }
             },
 
             waveform: {
+                displayName: "Waveform",
                 settings: [
-                    { id: 'lineWidth', type: 'range', label: 'Line Width', min: 1, max: 10 },
-                    { id: 'color', type: 'color', label: 'Color' }
+                    { id: 'lineWidth', type: 'range', label: 'Line Width', min: 1, max: 10, default: 2 },
+                    { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' }
                 ],
                 draw: () => {
-                    ctx.lineWidth = CONFIG.lineWidth;
-                    ctx.strokeStyle = CONFIG.color;
+                  return () => {
+                    const thisConfig = CONFIG.settings.waveform;
+                    ctx.lineWidth = thisConfig.lineWidth;
+                    ctx.strokeStyle = thisConfig.color;
                     ctx.beginPath();
                     
                     const sliceWidth = canvas.width / audioData.length;
@@ -132,26 +94,30 @@
                     
                     ctx.lineTo(canvas.width, canvas.height / 2);
                     ctx.stroke();
+                  }
                 }
             },
 
             circular: {
+                displayName: "Circle",
                 settings: [
-                    { id: 'barCount', type: 'range', label: 'Bar Count', min: 16, max: 256, step: 1 },
-                    { id: 'color', type: 'color', label: 'Color' }
+                    { id: 'ringBarCount', type: 'range', label: 'Bar Count', min: 16, max: 256, step: 1, default: 128 },
+                    { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' }
                 ],
                 draw: () => {
+                  return () => {
                     const centerX = canvas.width / 2;
                     const centerY = canvas.height / 2;
                     const radius = Math.min(canvas.width, canvas.height) * 0.25;
+                    const thisConfig = CONFIG.settings.circular;
                     
-                    ctx.strokeStyle = CONFIG.color;
+                    ctx.strokeStyle = thisConfig.color;
                     ctx.lineWidth = 3;
                     
-                    for (let i = 0; i < CONFIG.barCount; i++) {
+                    for (let i = 0; i < thisConfig.ringBarCount; i++) {
                         const value = audioData[i];
-                        const length = (value / 255) * radius * CONFIG.sensitivity;
-                        const angle = (i * 2 * Math.PI) / CONFIG.barCount;
+                        const length = (value / 255) * radius * CONFIG.master.sensitivity;
+                        const angle = (i * 2 * Math.PI) / thisConfig.ringBarCount;
                         
                         const x1 = centerX + Math.cos(angle) * radius;
                         const y1 = centerY + Math.sin(angle) * radius;
@@ -163,68 +129,274 @@
                         ctx.lineTo(x2, y2);
                         ctx.stroke();
                     }
+                  }
+                }
+            },
+            
+            liquid: {
+                displayName: "Liquid",
+                settings: [
+                    { id: 'smoothness', type: 'range', label: 'Smoothness', min: 0.1, max: 1.0, step: 0.1, default: 0.5 },
+                    { id: 'elasticity', type: 'range', label: 'Elasticity', min: 0.5, max: 2.0, step: 0.1, default: 1.2 },
+                    { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' }
+                ],
+                draw: () => {
+                    
+                    
+                    
+                  return () => {
+                  const points = Array(20).fill().map(() => ({
+                        angle: 0,
+                        radius: 0,
+                        targetRadius: 0
+                    }));
+                        const centerX = canvas.width / 2;
+                        const centerY = canvas.height / 2;
+                        const baseRadius = Math.min(canvas.width, canvas.height) * 0.2;
+                        const thisConfig = CONFIG.settings.liquid;
+                        
+                        // Audio reactivity
+                        const frequencyData = new Float32Array(analyser.frequencyBinCount);
+                        analyser.getFloatFrequencyData(frequencyData);
+                        
+                        ctx.fillStyle = thisConfig.color;
+                        ctx.beginPath();
+                        
+                        points.forEach((point, i) => {
+                            const audioValue = Math.max(0, frequencyData[Math.floor(i * 4)] + 100) / 100;
+                            point.targetRadius = baseRadius * (1 + audioValue * thisConfig.elasticity);
+                            
+                            // Smooth transition
+                            point.radius += (point.targetRadius - point.radius) * thisConfig.smoothness;
+                            point.angle = (i / points.length) * Math.PI * 2;
+                            
+                            const x = centerX + Math.cos(point.angle) * point.radius;
+                            const y = centerY + Math.sin(point.angle) * point.radius;
+                            
+                            if (i === 0) {
+                                ctx.moveTo(x, y);
+                            } else {
+                                ctx.quadraticCurveTo(
+                                    centerX + Math.cos(point.angle - 0.1) * point.radius * 0.9,
+                                    centerY + Math.sin(point.angle - 0.1) * point.radius * 0.9,
+                                    x,
+                                    y
+                                );
+                            }
+                        });
+                        
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                  }
+                    
+                }
+            },
+            
+            gradientBars: {
+                displayName: "Gradient Bars",
+                settings: [
+                    { id: 'barCount', type: 'range', label: 'Bar Count', min: 16, max: 256, step: 1, default: 128 },
+                    { id: 'gradStart', type: 'color', label: 'Gradient Start', default: '#00ff9d' },
+                    { id: 'gradEnd', type: 'color', label: 'Gradient End', default: '#ff00ff' },
+                    { id: 'gradDirection', type: 'select', label: 'Direction', options: ['vertical', 'horizontal'], default: 'vertical' }
+                ],
+                draw: () => {
+                  return () => {
+                const thisConfig = CONFIG.settings.gradientBars;
+                    const barWidth = canvas.width / thisConfig.barCount;
+                    const gradient = thisConfig.gradDirection === 'vertical' 
+                        ? ctx.createLinearGradient(0, 0, 0, canvas.height)
+                        : ctx.createLinearGradient(0, 0, canvas.width, 0);
+                        
+                    gradient.addColorStop(0, thisConfig.gradStart);
+                    gradient.addColorStop(1, thisConfig.gradEnd);
+                    
+                    ctx.fillStyle = gradient;
+                    
+                    for (let i = 0; i < thisConfig.barCount; i++) {
+                        const value = audioData[i];
+                        const barHeight = (value / 255) * canvas.height * CONFIG.master.sensitivity;
+                        const x = i * barWidth;
+                        const y = canvas.height - barHeight;
+                        
+                        ctx.fillRect(x, y, barWidth - 2, barHeight);
+                    }
+                  }
                 }
             },
 
-            particles: {
+            waveRings: {
+                displayName: "Wave Rings",
                 settings: [
-                    { id: 'particleCount', type: 'range', label: 'Particles', min: 10, max: 500, step: 1 },
-                    { id: 'color', type: 'color', label: 'Color' }
+                    { id: 'ringCount', type: 'range', label: 'Ring Count', min: 3, max: 20, step: 1, default: 8 },
+                    { id: 'ringThickness', type: 'range', label: 'Thickness', min: 1, max: 20, default: 3 },
+                    { id: 'color', type: 'color', label: 'Color', default: "#00ff9d" }
                 ],
                 draw: () => {
-                    const particles = Array(CONFIG.particleCount).fill().map((_, i) => ({
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * canvas.height,
-                        speed: 0.5 + Math.random() * 2,
-                        angle: Math.random() * Math.PI * 2
-                    }));
+                  return () => {
+                    const thisConfig = CONFIG.settings.waveRings;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
                     
-                    ctx.fillStyle = CONFIG.color;
+                    ctx.strokeStyle = thisConfig.color;
+                    ctx.lineWidth = thisConfig.ringThickness;
                     
-                    analyser.getByteTimeDomainData(audioData);
-                    const average = audioData.reduce((a, b) => a + b, 0) / audioData.length;
-                    const intensity = (average - 128) / 128 * CONFIG.sensitivity;
-                    
-                    particles.forEach(p => {
-                        p.x += Math.cos(p.angle) * p.speed * (intensity + 1);
-                        p.y += Math.sin(p.angle) * p.speed * (intensity + 1);
-                        
-                        if (p.x < 0 || p.x > canvas.width) p.angle = Math.PI - p.angle;
-                        if (p.y < 0 || p.y > canvas.height) p.angle = -p.angle;
+                    for (let i = 0; i < thisConfig.ringCount; i++) {
+                        const audioValue = audioData[Math.floor(i * (audioData.length / thisConfig.ringCount))];
+                        const amplitude = audioValue / 255;
+                        const ringRadius = maxRadius * (i / thisConfig.ringCount) * (1 + amplitude * CONFIG.master.sensitivity);
                         
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, 2 * (intensity + 1), 0, Math.PI * 2);
-                        ctx.fill();
-                    });
+                        ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                  }
+                }
+            },
+
+            sphere: {
+                displayName: "Sphere",
+                settings: [
+                    { id: 'sphereSize', type: 'range', label: 'Size', min: 50, max: 300, default: 150 },
+                    { id: 'rotSpeed', type: 'range', label: 'Rotation', min: 0, max: 2, step: 0.1, default: 0.5 },
+                    { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' }
+                ],
+                draw: () => {                    
+                    return () => {
+                        const thisConfig = CONFIG.settings.sphere;
+                        let rotation = 0;
+                        const centerX = canvas.width / 2;
+                        const centerY = canvas.height / 2;
+                        const radius = thisConfig.sphereSize;
+                        
+                        rotation += thisConfig.rotSpeed;
+                        
+                        ctx.strokeStyle = thisConfig.color;
+                        ctx.beginPath();
+                        
+                        for (let i = 0; i < 32; i++) {
+                            const audioValue = audioData[Math.floor(i * (audioData.length / 32))];
+                            const depth = 1 + (audioValue / 255) * CONFIG.master.sensitivity;
+                            
+                            // Horizontal bands
+                            const latAngle = i * (Math.PI / 16) - Math.PI/2;
+                            const y = centerY + radius * Math.sin(latAngle);
+                            const bandRadius = Math.cos(latAngle) * radius * depth;
+                            
+                            // Vertical bands
+                            const lonAngle = i * (Math.PI / 16) + rotation;
+                            const x = centerX + bandRadius * Math.cos(lonAngle);
+                            const y2 = centerY + bandRadius * Math.sin(lonAngle);
+                            
+                            ctx.lineTo(x, y);
+                            ctx.lineTo(x, y2);
+                        }
+                        
+                        ctx.closePath();
+                        ctx.stroke();
+                    };
+                    
                 }
             }
         };
 
-        // UI & Control Handling
+        // Configuration
+        function initializeConfig() {
+            const DEFAULT_CONFIG = {
+                activeVisualizer: 'bars',
+                master: { 
+                    sensitivity: 1,
+                    fftSize: 2048
+                },
+                settings: {}
+            };
+
+            // Load saved config
+            const savedConfig = JSON.parse(localStorage.getItem('audioVisConfig')) || {};
+            const config = Object.assign({}, DEFAULT_CONFIG, savedConfig);
+            
+            // Initialize per-visualizer settings
+            Object.keys(visualizers).forEach(visKey => {
+                config.settings[visKey] = config.settings[visKey] || {};
+                
+                visualizers[visKey].settings.forEach(setting => {
+                    if (!config.settings[visKey].hasOwnProperty(setting.id)) {
+                        config.settings[visKey][setting.id] = setting.default;
+                    }
+                });
+            });
+
+            // Save updated config if new settings were added
+            if (JSON.stringify(savedConfig) !== JSON.stringify(config)) {
+                localStorage.setItem('audioVisConfig', JSON.stringify(config));
+            }
+
+            return config;
+        }
+
+        // MAIN CODE
+        const CONFIG = initializeConfig();
+        const canvas = document.getElementById('visualizer-container');
+        const ctx = canvas.getContext('2d');
+        const audioUpload = document.getElementById('audio-upload');
+        const playToggle = document.getElementById('play-toggle');
+        const visualizerSelect = document.getElementById('visualizer-select');
+        const controlsContainer = document.getElementById('controls-container');
+        let audioElement = null;
+        let audioContext, analyser, source, isPlaying = false;
+        let audioData = new Uint8Array();
+
+        // Web Audio Setup
+        async function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioContext.state === 'suspended') await audioContext.resume();
+                
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = CONFIG.master.fftSize;
+                audioData = new Uint8Array(analyser.frequencyBinCount);
+            }
+        }
+
+        // UI Functions
         function renderControls() {
             controlsContainer.innerHTML = '';
-            const currentVis = visualizers[CONFIG.visualizer];
+            const currentVis = visualizers[CONFIG.activeVisualizer];
+            const visSettings = CONFIG.settings[CONFIG.activeVisualizer];
             
             currentVis.settings.forEach(setting => {
                 const wrapper = document.createElement('div');
-                wrapper.innerHTML = `
-                    <label>${setting.label}</label>
-                    <input type="${setting.type}" id="${setting.id}" 
-                           ${setting.min ? `min="${setting.min}"` : ''}
-                           ${setting.max ? `max="${setting.max}"` : ''}
-                           ${setting.step ? `step="${setting.step}"` : ''}>
-                `;
-                const input = wrapper.querySelector('input');
+                let inputHTML = '';
                 
-                if (setting.type === 'color') {
-                    input.value = CONFIG[setting.id];
+                if (setting.type === 'select') {
+                    inputHTML = `
+                        <select id="${setting.id}">
+                            ${setting.options.map(o => `<option value="${o}">${o}</option>`).join('')}
+                        </select>
+                    `;
                 } else {
-                    input.value = CONFIG[setting.id];
+                    inputHTML = `
+                        <input type="${setting.type}" id="${setting.id}" 
+                            ${setting.min ? `min="${setting.min}"` : ''}
+                            ${setting.max ? `max="${setting.max}"` : ''}
+                            ${setting.step ? `step="${setting.step}"` : ''}
+                        >
+                    `;
                 }
                 
+                wrapper.innerHTML = `
+                    <label>${setting.label}</label>
+                    ${inputHTML}
+                `;
+                
+                const input = wrapper.querySelector('input, select');
+                input.value = visSettings[setting.id];
+                
                 input.addEventListener('input', e => {
-                    CONFIG[setting.id] = setting.type === 'range' ? 
-                        parseFloat(e.target.value) : e.target.value;
+                    CONFIG.settings[CONFIG.activeVisualizer][setting.id] = 
+                        setting.type === 'range' ? parseFloat(e.target.value) : e.target.value;
                     saveConfig();
                 });
                 
@@ -232,89 +404,83 @@
             });
         }
 
+        function populateVisualizerSelect() {
+            visualizerSelect.innerHTML = '';
+            Object.keys(visualizers).forEach(visKey => { // FIXED ITERATION
+                const option = document.createElement('option');
+                option.value = visKey;
+                option.textContent = visualizers[visKey].displayName;
+                visualizerSelect.appendChild(option);
+            });
+        }
+
+
         function saveConfig() {
             localStorage.setItem('audioVisConfig', JSON.stringify(CONFIG));
         }
 
-        // Audio Processing Loop
+        // Drawing System
         function draw() {
             if (!isPlaying) return;
             
             analyser.getByteFrequencyData(audioData);
-            
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            visualizers[CONFIG.visualizer].draw();
-            
+            visualizers[CONFIG.activeVisualizer].draw()();
             requestAnimationFrame(draw);
         }
 
         // Event Handlers
         audioUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
             
-              const file = e.target.files[0];
-              if (!file) return;
-              
-              await initAudio();
-              
-              if (source) source.disconnect();
-              
-              const url = URL.createObjectURL(file);
-              audioElement = new Audio(url);
-              source = audioContext.createMediaElementSource(audioElement);
-              
-              source.connect(analyser);
-              analyser.connect(audioContext.destination);
-              
-              try {
-                  await audioElement.play();
-                  isPlaying = true;
-                  playToggle.textContent = '⏸ Pause';
-                  draw();
-              } catch (err) {
-                  console.error('Playback failed:', err);
-              }
+            await initAudio();
+            if (source) source.disconnect();
             
+            const url = URL.createObjectURL(file);
+            audioElement = new Audio(url);
+            source = audioContext.createMediaElementSource(audioElement);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            
+            try {
+                await audioElement.play();
+                isPlaying = true;
+                playToggle.textContent = '⏸ Pause';
+                draw();
+            } catch (err) {
+                console.error('Playback failed:', err);
+            }
         });
 
         playToggle.addEventListener('click', async () => {
             if (!audioElement) return;
+            if (audioContext.state !== 'running') await audioContext.resume();
             
-            if (audioContext.state !== 'running') {
-                await audioContext.resume();
-            }
-            
-            if (isPlaying) {
-                audioElement.pause();
-            } else {
-                await audioElement.play();
-            }
-            
+            isPlaying ? audioElement.pause() : await audioElement.play();
             isPlaying = !isPlaying;
             playToggle.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
-            
             if (isPlaying) draw();
         });
 
         visualizerSelect.addEventListener('change', e => {
-            CONFIG.visualizer = e.target.value;
+            CONFIG.activeVisualizer = e.target.value;
             saveConfig();
             renderControls();
         });
 
-        // Resize Handling
+        // Initialization
         window.addEventListener('resize', () => {
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
         });
 
-        // Init
         function init() {
-            visualizerSelect.value = CONFIG.visualizer;
+            populateVisualizerSelect();
+            visualizerSelect.value = CONFIG.activeVisualizer;
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
-            
             renderControls();
         }
 
