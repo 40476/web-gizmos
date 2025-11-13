@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Frequency Sweep Generator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        button { margin: 10px 0; padding: 10px; }
+        #status { margin-top: 10px; color: green; }
+    </style>
+</head>
+<body>
+    <h1>Sine Wave Frequency Sweep (2000 Hz to 30 Hz)</h1>
+    <p>Duration: 20 seconds</p>
+    <button onclick="playSweep()">Play Sweep</button>
+    <button onclick="generateWavAndDownload()">Generate WAV & Download</button>
+    <div id="status"></div>
+
+    <script>
+        const startFreq = 2000;
+        const endFreq = 30;
+        const duration = 20; // seconds
+        let audioContext;
+        const statusDiv = document.getElementById('status');
+
+        function getAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // Resume context if it starts in a suspended state (common in browsers)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
+            return audioContext;
+        }
+
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+        }
+
+        // Function to play the sweep using Web Audio API scheduling
+        function playSweep() {
+            const ctx = getAudioContext();
+            const oscillator = ctx.createOscillator();
+            oscillator.type = 'sine';
+
+            // Use the Web Audio API's built-in automation for a smooth linear sweep
+            oscillator.frequency.setValueAtTime(startFreq, ctx.currentTime);
+            oscillator.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime + duration);
+
+            oscillator.connect(ctx.destination);
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + duration + 0.1); // Add a small buffer
+
+            updateStatus('Playing sweep...');
+            setTimeout(() => {
+                updateStatus('Playback finished.');
+            }, duration * 1000 + 100);
+        }
+
+        // Function to generate raw audio data into an AudioBuffer
+        function generateSweepBuffer(context) {
+            const sampleRate = context.sampleRate;
+            const numSamples = sampleRate * duration;
+            const audioBuffer = context.createBuffer(1, numSamples, sampleRate);
+            const channelData = audioBuffer.getChannelData(0);
+
+            let phase = 0;
+            // Frequency change per second
+            const frequencyStepPerSecond = (endFreq - startFreq) / duration;
+
+            for (let i = 0; i < numSamples; i++) {
+                const time = i / sampleRate;
+                // Calculate instantaneous frequency (linear sweep)
+                const currentFreq = startFreq + frequencyStepPerSecond * time;
+                // Accumulate phase based on current frequency
+                phase += 2 * Math.PI * currentFreq / sampleRate;
+                if (phase >= 2 * Math.PI) phase -= 2 * Math.PI;
+
+                channelData[i] = Math.sin(phase);
+            }
+            return audioBuffer;
+        }
+
+        // Function to convert AudioBuffer to WAV blob and download
+        function generateWavAndDownload() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)(); // Use a fresh context for generation
+            updateStatus('Generating WAV file...');
+            const audioBuffer = generateSweepBuffer(ctx);
+            
+            // Simple WAV encoder (requires a small helper function)
+            const wavBlob = bufferToWav(audioBuffer);
+            
+            const url = URL.createObjectURL(wavBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'frequency_sweep_2000hz_to_30hz.wav';
+            a.click();
+            URL.revokeObjectURL(url);
+            updateStatus('WAV file generated and download started.');
+        }
+
+        // --- WAV Encoding Helper Function (minimal implementation) ---
+        function bufferToWav(ab) {
+            const numChannels = ab.numberOfChannels;
+            const sampleRate = ab.sampleRate;
+            const format = 1; // PCM (uncompressed)
+            const bitDepth = 16;
+            const numSamples = ab.length;
+            let wavData = new Uint8Array(44 + numSamples * numChannels * bitDepth / 8);
+            let view = new DataView(wavData.buffer);
+
+            // RIFF chunk descriptor
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + wavData.byteLength - 8, true);
+            writeString(view, 8, 'WAVE');
+            // FMT sub-chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * bitDepth / 8, true);
+            view.setUint16(32, numChannels * bitDepth / 8, true);
+            view.setUint16(34, bitDepth, true);
+            // DATA sub-chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, numSamples * numChannels * bitDepth / 8, true);
+
+            // Write the samples
+            let offset = 44;
+            for (let i = 0; i < numSamples; i++) {
+                let sample = ab.getChannelData(0)[i] * 32767; // Convert to 16-bit PCM
+                sample = Math.max(-32768, Math.min(32767, sample)); // Clamp
+                view.setInt16(offset, sample, true);
+                offset += 2;
+            }
+
+            return new Blob([wavData], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+    </script>
+</body>
+</html>
