@@ -12,12 +12,12 @@ const presets = {
                     ctx.strokeStyle = thisConfig.color;
                     ctx.beginPath();
                     
-                    const sliceWidth = canvas.width / audioData.length;
+                    const sliceWidth = canvas2D.width / audioData.length;
                     let x = 0;
                     
                     for (let i = 0; i < audioData.length; i++) {
                         const v = audioData[i] / 128.0;
-                        const y = v * canvas.height / 2;
+                        const y = v * canvas2D.height / 2;
                         
                         if (i === 0) {
                             ctx.moveTo(x, y);
@@ -28,7 +28,7 @@ const presets = {
                         x += sliceWidth;
                     }
                     
-                    ctx.lineTo(canvas.width, canvas.height / 2);
+                    ctx.lineTo(canvas2D.width, canvas2D.height / 2);
                     ctx.stroke();
                   }
                 }
@@ -42,9 +42,9 @@ const presets = {
                 ],
                 draw: () => {
                   return () => {
-                    const centerX = canvas.width / 2;
-                    const centerY = canvas.height / 2;
-                    const radius = Math.min(canvas.width, canvas.height) * 0.25;
+                    const centerX = canvas2D.width / 2;
+                    const centerY = canvas2D.height / 2;
+                    const radius = Math.min(canvas2D.width, canvas2D.height) * 0.25;
                     const thisConfig = CONFIG.settings.circular;
                     
                     ctx.strokeStyle = thisConfig.color;
@@ -86,9 +86,9 @@ const presets = {
                         radius: 0,
                         targetRadius: 0
                     }));
-                        const centerX = canvas.width / 2;
-                        const centerY = canvas.height / 2;
-                        const baseRadius = Math.min(canvas.width, canvas.height) * 0.2;
+                        const centerX = canvas2D.width / 2;
+                        const centerY = canvas2D.height / 2;
+                        const baseRadius = Math.min(canvas2D.width, canvas2D.height) * 0.2;
                         const thisConfig = CONFIG.settings.liquid;
                         
                         // Audio reactivity
@@ -140,10 +140,10 @@ const presets = {
                 draw: () => {
                   return () => {
                 const thisConfig = CONFIG.settings.gradientBars;
-                    const barWidth = canvas.width / thisConfig.barCount;
+                    const barWidth = canvas2D.width / thisConfig.barCount;
                     const gradient = thisConfig.gradDirection === 'vertical' 
-                        ? ctx.createLinearGradient(0, 0, 0, canvas.height)
-                        : ctx.createLinearGradient(0, 0, canvas.width, 0);
+                        ? ctx.createLinearGradient(0, 0, 0, canvas2D.height)
+                        : ctx.createLinearGradient(0, 0, canvas2D.width, 0);
                         
                     gradient.addColorStop(0, thisConfig.gradStart);
                     gradient.addColorStop(1, thisConfig.gradEnd);
@@ -152,9 +152,9 @@ const presets = {
                     
                     for (let i = 0; i < thisConfig.barCount; i++) {
                         const value = audioData[i];
-                        const barHeight = (value / 255) * canvas.height * CONFIG.master.sensitivity;
+                        const barHeight = (value / 255) * canvas2D.height * CONFIG.master.sensitivity;
                         const x = i * barWidth;
-                        const y = canvas.height - barHeight;
+                        const y = canvas2D.height - barHeight;
                         
                         ctx.fillRect(x, y, barWidth - 2, barHeight);
                     }
@@ -172,9 +172,9 @@ const presets = {
                 draw: () => {
                   return () => {
                     const thisConfig = CONFIG.settings.waveRings;
-                    const centerX = canvas.width / 2;
-                    const centerY = canvas.height / 2;
-                    const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
+                    const centerX = canvas2D.width / 2;
+                    const centerY = canvas2D.height / 2;
+                    const maxRadius = Math.min(canvas2D.width, canvas2D.height) * 0.4;
                     
                     ctx.strokeStyle = thisConfig.color;
                     ctx.lineWidth = thisConfig.ringThickness;
@@ -203,8 +203,8 @@ const presets = {
                     return () => {
                         const thisConfig = CONFIG.settings.sphere;
                         let rotation = 0;
-                        const centerX = canvas.width / 2;
-                        const centerY = canvas.height / 2;
+                        const centerX = canvas2D.width / 2;
+                        const centerY = canvas2D.height / 2;
                         const radius = thisConfig.sphereSize;
                         
                         rotation += thisConfig.rotSpeed;
@@ -247,8 +247,8 @@ const presets = {
     draw: () => {
         return () => {
             const thisConfig = CONFIG.settings.starburst;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+            const centerX = canvas2D.width / 2;
+            const centerY = canvas2D.height / 2;
             
             ctx.strokeStyle = thisConfig.baseColor;
             
@@ -280,7 +280,7 @@ fireMatrix: {
     draw: () => {
         return () => {
             const thisConfig = CONFIG.settings.fireMatrix;
-            const cols = Math.ceil(canvas.width / thisConfig.cellSize);
+            const cols = Math.ceil(canvas2D.width / thisConfig.cellSize);
             const rows = Math.ceil(thisConfig.fireHeight);
             
             const gradient = ctx.createLinearGradient(0, 0, 0, thisConfig.fireHeight * thisConfig.cellSize);
@@ -298,7 +298,7 @@ fireMatrix: {
                     if (y < flameHeight) {
                         ctx.fillRect(
                             x * thisConfig.cellSize,
-                            canvas.height - y * thisConfig.cellSize,
+                            canvas2D.height - y * thisConfig.cellSize,
                             thisConfig.cellSize - 1,
                             thisConfig.cellSize - 1
                         );
@@ -321,9 +321,9 @@ gravityVortex: {
         
         return () => {
             const thisConfig = CONFIG.settings.gravityVortex;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const baseRadius = Math.min(canvas.width, canvas.height) * 0.3;
+            const centerX = canvas2D.width / 2;
+            const centerY = canvas2D.height / 2;
+            const baseRadius = Math.min(canvas2D.width, canvas2D.height) * 0.3;
             
             // Initialize particles
             if (particles.length === 0) {
@@ -367,8 +367,8 @@ harmonicRings: {
     draw: () => {
         return () => {
             const thisConfig = CONFIG.settings.harmonicRings;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+            const centerX = canvas2D.width / 2;
+            const centerY = canvas2D.height / 2;
             
             ctx.strokeStyle = thisConfig.color;
             
@@ -401,9 +401,9 @@ spectralFlower: {
     draw: () => {
         return () => {
             const thisConfig = CONFIG.settings.spectralFlower;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
+            const centerX = canvas2D.width / 2;
+            const centerY = canvas2D.height / 2;
+            const maxRadius = Math.min(canvas2D.width, canvas2D.height) * 0.4;
 
             const gradient = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, maxRadius);
             gradient.addColorStop(0, thisConfig.innerColor);
@@ -456,7 +456,7 @@ vectorField: {
     draw: () => {
         return () => {
             const thisConfig = CONFIG.settings.vectorField;
-            const cellSize = canvas.width / thisConfig.gridSize;
+            const cellSize = canvas2D.width / thisConfig.gridSize;
             const time = Date.now() * 0.001;
             
             ctx.strokeStyle = thisConfig.color;
@@ -506,9 +506,9 @@ neonTrails: {
         
         return () => {
             const thisConfig = CONFIG.settings.neonTrails;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const baseRadius = Math.min(canvas.width, canvas.height) * 0.4;
+            const centerX = canvas2D.width / 2;
+            const centerY = canvas2D.height / 2;
+            const baseRadius = Math.min(canvas2D.width, canvas2D.height) * 0.4;
             const time = Date.now() * 0.001;
             
             ctx.globalCompositeOperation = 'lighten';
@@ -560,9 +560,9 @@ geometryPulse: {
         
         return () => {
             const thisConfig = CONFIG.settings.geometryPulse;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxSize = Math.min(canvas.width, canvas.height) * 0.4;
+            const centerX = canvas2D.width / 2;
+            const centerY = canvas2D.height / 2;
+            const maxSize = Math.min(canvas2D.width, canvas2D.height) * 0.4;
             const time = Date.now() * 0.001;
             
             hue = (hue + thisConfig.hueShift) % 360;
@@ -603,134 +603,471 @@ geometryPulse: {
     }
 },
   vaporwaveDrive : {
-  displayName: "Vaporwave Drive",
+      displayName: "Vaporwave Drive",
+      settings: [
+        { id: 'gridColor', type: 'color', label: 'Grid Color', default: '#a600ff' },
+        { id: 'sunColorTop', type: 'color', label: 'Sun Gradient Top', default: '#ffff00' },
+        { id: 'sunColorBottom', type: 'color', label: 'Sun Gradient Bottom', default: '#ff6600' },
+        { id: 'barColor', type: 'color', label: 'Bar Color', default: '#6400c8' },
+        { id: 'bgTop', type: 'color', label: 'BG Gradient Top', default: '#000000' },
+        { id: 'bgBottom', type: 'color', label: 'BG Gradient Bottom', default: '#00007a' }, // im a bottom >w<
+        { id: 'horizontalLines', type: 'range', label: 'Horizontal Bars', min: 0, max: 60, default: 2 },
+        { id: 'columns', type: 'range', label: 'Columns', min: 1, max: 30, default: 9 },
+        { id: 'lineSpeed', type: 'range', label: 'Horizontal Bar Speed', min: 0.1, max: 5, step: 0.1, default: 1.7 },
+        { id: 'realisticDepth', type: 'select', label: 'Realistic Depth', options: ['on', 'off'], default: 'on' },
+        { id: 'speedMultiplier', type: 'range', label: 'Realistic Depth Multiplier', min: 1, max: 6, step: 0.05, default: 3 },
+        { id: 'RoadWidth', type: 'range', label: 'Road Width', min: 0.01, max: 1, step: 0.01, default: 1 },
+        { id: 'sunStripes', type: 'range', label: 'Sun Stripes', min: 1, max: 50, default: 9 },
+        { id: 'sunStripeThickness', type: 'range', label: 'Max Stripe Thickness', min: 1, max: 20, default: 8 },
+
+
+      ],
+      draw: () => {
+        return () => {
+          const cfg = CONFIG.settings.vaporwaveDrive;
+          const w = canvas2D.width;
+          const h = canvas2D.height;
+          const roadHalfWidth = (w/2) * cfg.RoadWidth;
+          const gradient = ctx.createLinearGradient(0, 0, 0, h);
+          
+          gradient.addColorStop(0, cfg.bgTop); // top color
+          gradient.addColorStop(1, cfg.bgBottom); // bottom color
+          
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, w, h);
+
+          const horizonY = h/2;
+          const columns = cfg.columns;
+          // Bars inside road lanes
+          analyser.getByteFrequencyData(audioData);
+          ctx.fillStyle = cfg.barColor;
+
+          for (let i = 0; i < columns; i++) {
+            const value = audioData[i % audioData.length];
+            const barHeight = (value / 255) * (h - horizonY) * CONFIG.master.sensitivity;
+
+            // Road lane trapezoid boundaries
+            const xBottomLeft  = w/2 - roadHalfWidth + (i/columns) * (roadHalfWidth * 2);
+            const xBottomRight = w/2 - roadHalfWidth + ((i+1)/columns) * (roadHalfWidth * 2);
+            const xTop = w/2; // all converge at horizon center
+
+            // Interpolate lane edges at bar top
+            const yTop = h - barHeight;
+            const t = (h - yTop) / (h - horizonY); // 0 at bottom, 1 at horizon
+            const xLeft = xBottomLeft + t * (xTop - xBottomLeft);
+            const xRight = xBottomRight + t * (xTop - xBottomRight);
+
+            // Draw bar polygon inside trapezoid
+            ctx.beginPath();
+            ctx.moveTo(xBottomLeft, h);
+            ctx.lineTo(xBottomRight, h);
+            ctx.lineTo(xRight, yTop);
+            ctx.lineTo(xLeft, yTop);
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // Draw grid lines first
+          ctx.strokeStyle = cfg.gridColor;
+          ctx.lineWidth = 2;
+          
+          // Vertical perspective lines
+          ctx.beginPath();
+          for (let i = 0; i <= columns; i++) {
+            const x = w/2 - roadHalfWidth + (i/columns) * (roadHalfWidth * 2);
+            ctx.moveTo(x, h);
+            ctx.lineTo(w/2, horizonY);
+          }
+          ctx.stroke();
+
+          // Horizontal lines
+          ctx.beginPath();
+          for (let i = 0; i < cfg.horizontalLines; i++) {
+            // what the heck
+            let norm = ((i + (Date.now()/1000) * cfg.lineSpeed) % cfg.horizontalLines) / cfg.horizontalLines;
+            let y = mapRange(norm, 0, 1, horizonY, h);
+
+            if (cfg.realisticDepth === 'on') {
+              // this is wack. so wack.
+              y = horizonY + (h - horizonY) *  Math.pow(norm, cfg.speedMultiplier);
+              // use this for dumping to a csv
+              // norm,horizonY,h,y
+              // console.log(`${norm}, ${horizonY}, ${h}, ${y}`);
+            }
+
+            // road edges at this y
+            const t = (y - horizonY) / (h - horizonY);
+            const xLeft  = (1 - t) * (w/2) + t * (w/2 - roadHalfWidth);
+            const xRight = (1 - t) * (w/2) + t * (w/2 + roadHalfWidth);
+            ctx.moveTo(xLeft, y);
+            ctx.lineTo(xRight, y);
+          }
+          ctx.stroke();
+          
+          const sunGradient = ctx.createLinearGradient(0, h/3 - h/6, 0, h/3 + h/6);
+          sunGradient.addColorStop(0, cfg.sunColorTop);
+          sunGradient.addColorStop(1, cfg.sunColorBottom);
+
+          // Draw the sun gradient first
+          ctx.fillStyle = sunGradient;
+          ctx.beginPath();
+          ctx.arc(w/2, h/3, h/6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Now clip to the sun’s circle
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(w/2, h/3, h/6, 0, Math.PI * 2);
+          ctx.clip();
+
+          // Clear out stripes so background shows through
+          for (let i = 0; i < cfg.sunStripes; i++) {
+            const stripeHeight = cfg.sunStripeThickness; // or from config
+            const y = h/3 + h/6 - i * (stripeHeight * 2);
+            ctx.clearRect(w/2 - h/6, y, h/3, stripeHeight-(i));
+          }
+
+          ctx.restore();
+
+        };
+      }
+    },
+    fire : {
+      displayName: "I broke copilot and it made this smh",
+      settings: [
+        { id: 'flameCount', type: 'range', label: 'Count', min: 16, max: 128, step: 1, default: 64 },
+        { id: 'baseColor', type: 'color', label: 'Base Color', default: '#ff3300' },
+        { id: 'tipColor', type: 'color', label: 'Tip Color', default: '#ffff99' },
+        { id: 'noiseScale', type: 'range', label: 'Noise Scale', min: 0.1, max: 2, step: 0.1, default: 1 },
+        { id: 'intensity', type: 'range', label: 'Intensity', min: 0.5, max: 3, step: 0.1, default: 1.5 }
+      ],
+      draw: () => {
+        let frame = 0;
+        return () => {
+          const thisConfig = CONFIG.settings.fire;
+          const flameWidth = canvas2D.width / thisConfig.flameCount;
+          frame++;
+
+          for (let i = 0; i < thisConfig.flameCount; i++) {
+            const value = audioData[i % audioData.length];
+            const audioFactor = (value / 255) * thisConfig.intensity;
+
+            // Sequential seed: combine frame + index
+            const seed = (Date.now() / 1000 + i + frame * 0.01) * thisConfig.noiseScale;
+
+            // Fake noise: use Math.sin for demo (replace with real noise lib for smoother flames)
+            const flicker = (Math.sin(seed) + 1) / 2; // 0–1
+            const flameHeight = (flicker * canvas2D.height * 0.4) * audioFactor;
+
+            const x = i * flameWidth;
+            const y = canvas2D.height - flameHeight;
+
+            const grad = ctx.createLinearGradient(x, y, x, canvas2D.height);
+            grad.addColorStop(0, thisConfig.tipColor);
+            grad.addColorStop(1, thisConfig.baseColor);
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(x, y, flameWidth, flameHeight);
+          }
+        };
+      }
+    },
+    textReactive: {
+      displayName: "Reactive Text",
+      settings: [
+        { id: 'text', type: 'text', label: 'Text', default: 'EMPLOYMENT' },
+        { id: 'font', type: 'text', label: 'Font or URL', default: 'Impact' },
+        { id: 'color', type: 'color', label: 'Color', default: '#00ff00' },
+        { id: 'shakeIntensity', type: 'range', label: 'Shake Intensity', min: 0, max: 20, step: 1, default: 9 },
+        { id: 'warpAmount', type: 'range', label: 'Warp Amount', min: 0, max: 1, step: 0.000001, default: 0.0507 },
+        { id: 'scaleMultiplier', type: 'range', label: 'Scale Multiplier', min: 0, max: 1, step: 0.05, default: 0.8 }
+      ],
+      modules: [
+          // { id: 'three', url: 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js', type: 'script' },
+      ],
+      draw: () => {
+        let angle = 0;
+        let shakeMomentum = 0;
+        let bassBaseline = 0;
+        // Call once at init
+        let loadedFont = CONFIG.settings.textReactive.font || "impact";
+
+        return () => {
+          const thisConfig = CONFIG.settings.textReactive;
+
+          const bass = audioData.slice(0, 32).reduce((a,b)=>a+b,0) / 32;
+          const mids = audioData.slice(32, 128).reduce((a,b)=>a+b,0) / 96;
+          const highs = audioData.slice(128).reduce((a,b)=>a+b,0) / (audioData.length-128);
+          
+          
+          // why? BECAUSE FIREFOX THATS WHY
+          bassBaseline = (bassBaseline * 0.98 + bass * 0.02) * (bass !== 0 ? 1 : 0);
+          const bassNorm = Math.pow((bass - bassBaseline) / 80,5);
+          shakeMomentum = shakeMomentum * 0.85 + bassNorm * 0.15;
+          
+          const shakeX = (Math.random() - 0.5) * thisConfig.shakeIntensity * shakeMomentum * 4;
+          const shakeY = (Math.random() - 0.5) * thisConfig.shakeIntensity * shakeMomentum * 4;
+          
+          angle += (highs/255);
+          const warp = Math.pow(mids/255, 1.5) * thisConfig.warpAmount * 3;
+
+          ctx.save();
+          ctx.translate(canvas2D.width/2 + shakeX, canvas2D.height/2 + shakeY);
+          ctx.rotate(angle);
+
+          const scale = 1 + bassNorm * scaleMultiplier;
+          ctx.scale(scale, scale);
+
+          ctx.font = `${canvas2D.height * (0.1 + warp)}px ${loadedFont}`;
+          ctx.fillStyle = thisConfig.color;
+          ctx.textAlign = 'center';
+          ctx.fillText(thisConfig.text, 0, 0);
+
+          ctx.restore();
+        };
+      }
+    },
+/*blank: {
+  displayName: "blank",
   settings: [
-    { id: 'gridColor', type: 'color', label: 'Grid Color', default: '#a600ff' },
-    { id: 'sunColorTop', type: 'color', label: 'Sun Gradient Top', default: '#ffff00' },
-    { id: 'sunColorBottom', type: 'color', label: 'Sun Gradient Bottom', default: '#ff6600' },
-    { id: 'barColor', type: 'color', label: 'Bar Color', default: '#6400c8' },
-    { id: 'bgTop', type: 'color', label: 'BG Gradient Top', default: '#000000' },
-    { id: 'bgBottom', type: 'color', label: 'BG Gradient Bottom', default: '#00007a' }, // im a bottom >w<
-    { id: 'horizontalLines', type: 'range', label: 'Horizontal Bars', min: 0, max: 60, default: 2 },
-    { id: 'columns', type: 'range', label: 'Columns', min: 1, max: 30, default: 9 },
-    { id: 'lineSpeed', type: 'range', label: 'Horizontal Bar Speed', min: 0.1, max: 5, step: 0.1, default: 1.7 },
-    { id: 'realisticDepth', type: 'select', label: 'Realistic Depth', options: ['on', 'off'], default: 'on' },
-    { id: 'speedMultiplier', type: 'range', label: 'Realistic Depth Multiplier', min: 1, max: 6, step: 0.05, default: 3 },
-    { id: 'RoadWidth', type: 'range', label: 'Road Width', min: 0.01, max: 1, step: 0.01, default: 1 },
-    { id: 'sunStripes', type: 'range', label: 'Sun Stripes', min: 1, max: 50, default: 9 },
-    { id: 'sunStripeThickness', type: 'range', label: 'Max Stripe Thickness', min: 1, max: 20, default: 8 },
-
-
+      //duh
   ],
-  draw: () => {
-    return () => {
-      const cfg = CONFIG.settings.vaporwaveDrive;
-      const w = canvas.width;
-      const h = canvas.height;
-      const roadHalfWidth = (w/2) * cfg.RoadWidth;
 
-      ctx.clearRect(0, 0, w, h);
-      const gradient = ctx.createLinearGradient(0, 0, 0, h);
-      gradient.addColorStop(0, cfg.bgTop); // top color
-      gradient.addColorStop(1, cfg.bgBottom); // bottom color
-      
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, w, h);
+  modules: [
+      //duh
+  ],
+  
 
-      const horizonY = h/2;
-      const columns = cfg.columns;
-      // Bars inside road lanes
-      analyser.getByteFrequencyData(audioData);
-      ctx.fillStyle = cfg.barColor;
-
-      for (let i = 0; i < columns; i++) {
-        const value = audioData[i % audioData.length];
-        const barHeight = (value / 255) * (h - horizonY) * CONFIG.master.sensitivity;
-
-        // Road lane trapezoid boundaries
-        const xBottomLeft  = w/2 - roadHalfWidth + (i/columns) * (roadHalfWidth * 2);
-        const xBottomRight = w/2 - roadHalfWidth + ((i+1)/columns) * (roadHalfWidth * 2);
-        const xTop = w/2; // all converge at horizon center
-
-        // Interpolate lane edges at bar top
-        const yTop = h - barHeight;
-        const t = (h - yTop) / (h - horizonY); // 0 at bottom, 1 at horizon
-        const xLeft = xBottomLeft + t * (xTop - xBottomLeft);
-        const xRight = xBottomRight + t * (xTop - xBottomRight);
-
-        // Draw bar polygon inside trapezoid
-        ctx.beginPath();
-        ctx.moveTo(xBottomLeft, h);
-        ctx.lineTo(xBottomRight, h);
-        ctx.lineTo(xRight, yTop);
-        ctx.lineTo(xLeft, yTop);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // Draw grid lines first
-      ctx.strokeStyle = cfg.gridColor;
-      ctx.lineWidth = 2;
-      
-      // Vertical perspective lines
-      ctx.beginPath();
-      for (let i = 0; i <= columns; i++) {
-        const x = w/2 - roadHalfWidth + (i/columns) * (roadHalfWidth * 2);
-        ctx.moveTo(x, h);
-        ctx.lineTo(w/2, horizonY);
-      }
-      ctx.stroke();
-
-      // Horizontal lines
-      ctx.beginPath();
-      for (let i = 0; i < cfg.horizontalLines; i++) {
-        // what the heck
-        let norm = ((i + (Date.now()/1000) * cfg.lineSpeed) % cfg.horizontalLines) / cfg.horizontalLines;
-        let y = mapRange(norm, 0, 1, horizonY, h);
-
-        if (cfg.realisticDepth === 'on') {
-          // this is wack. so wack.
-          y = horizonY + (h - horizonY) *  Math.pow(norm, cfg.speedMultiplier);
-          // use this for dumping to a csv
-          // norm,horizonY,h,y
-          // console.log(`${norm}, ${horizonY}, ${h}, ${y}`);
-        }
-
-        // road edges at this y
-        const t = (y - horizonY) / (h - horizonY);
-        const xLeft  = (1 - t) * (w/2) + t * (w/2 - roadHalfWidth);
-        const xRight = (1 - t) * (w/2) + t * (w/2 + roadHalfWidth);
-        ctx.moveTo(xLeft, y);
-        ctx.lineTo(xRight, y);
-      }
-      ctx.stroke();
-      
-      const sunGradient = ctx.createLinearGradient(0, h/3 - h/6, 0, h/3 + h/6);
-      sunGradient.addColorStop(0, cfg.sunColorTop);
-      sunGradient.addColorStop(1, cfg.sunColorBottom);
-
-      // Draw the sun gradient first
-      ctx.fillStyle = sunGradient;
-      ctx.beginPath();
-      ctx.arc(w/2, h/3, h/6, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Now clip to the sun’s circle
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(w/2, h/3, h/6, 0, Math.PI * 2);
-      ctx.clip();
-
-      // Clear out stripes so background shows through
-      for (let i = 0; i < cfg.sunStripes; i++) {
-        const stripeHeight = cfg.sunStripeThickness; // or from config
-        const y = h/3 + h/6 - i * (stripeHeight * 2);
-        ctx.clearRect(w/2 - h/6, y, h/3, stripeHeight-(i));
-      }
-
-      ctx.restore();
-
-    };
-  }
+  draw: (modules, store) => {
+  
+  //init here
+  return () => {
+      //per draw call here
+  };
 }
+
+},*/
+
+
+//SPECIAL THANKS TO GITHUB COPILOT FOR GIVING ME THE ABILITY TO MAKE EVEN DUMBER STUFF WHEN I SHOULD BE SLEEPING    
+babylonReactiveText3D: {
+    displayName: "I honestly dont know what copilot was trying to do with this one",
+    settings: [
+        { id: 'text', type: 'text', label: 'Text', default: 'EMPLOYMENT' },
+        { id: 'color', type: 'color', label: 'Base Color', default: '#00ff00' },
+        { id: 'shakeIntensity', type: 'range', label: 'Shake Intensity', min: 0, max: 20, step: 1, default: 9 },
+        { id: 'warpAmount', type: 'range', label: 'Warp Amount', min: 0, max: 1, step: 0.000001, default: 0.0507 },
+        { id: 'scaleMultiplier', type: 'range', label: 'Scale Multiplier', min: 0, max: 1, step: 0.05, default: 0.8 },
+        { id: 'speed', type: 'range', label: 'Travel Speed', min: 0, max: 2, step: 0.01, default: 0.6 },
+        { id: 'boxSize', type: 'range', label: 'Bounds Size', min: 50, max: 400, step: 10, default: 200 }
+    ],
+    modules: [
+        { id: 'babylon', url: 'https://cdn.babylonjs.com/babylon.js', type: 'script' }
+    ],
+    draw: (modules, store) => {
+        const BABYLON = window.BABYLON;
+        
+        if (!store.initialized) {
+            // Engine/scene/camera
+            const engine = new BABYLON.Engine(canvas3D, true);
+            const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color4(0, 0, 0, 0); // transparent over your 2D overlay
+            
+            const camera = new BABYLON.ArcRotateCamera("cam",
+                                                       Math.PI / 2, Math.PI / 3, 120,
+                                                       new BABYLON.Vector3(0, 0, 0),
+                                                       scene
+            );
+            camera.attachControl(canvas3D, true);
+            
+            // Lights: ambient + directional for shiny “screensaver” look
+            const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
+            hemi.intensity = 0.5;
+            
+            const dir = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-0.5, -1, -0.3), scene);
+            dir.intensity = 1.0;
+            dir.position = new BABYLON.Vector3(50, 80, 60);
+            
+            // Text as dynamic texture on a plane
+            const plane = BABYLON.MeshBuilder.CreatePlane("textPlane", { width: 60, height: 30 }, scene);
+            plane.position = new BABYLON.Vector3(0, 0, 0);
+            
+            const dynTex = new BABYLON.DynamicTexture("dynTex", { width: 1024, height: 512 }, scene, true);
+            dynTex.hasAlpha = true;
+            
+            const mat = new BABYLON.StandardMaterial("textMat", scene);
+            mat.diffuseTexture = dynTex;
+            mat.emissiveColor = new BABYLON.Color3(0, 0, 0); // keep glow subtle; we’ll drive emissive with highs
+            mat.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
+            mat.specularPower = 64;
+            mat.backFaceCulling = false;
+            plane.material = mat;
+            
+            // Initial text draw
+            const drawText = () => {
+                dynTex.clear();
+                const color = CONFIG.settings.babylonReactiveText3D.color;
+                dynTex.drawText(
+                    CONFIG.settings.babylonReactiveText3D.text,
+                    null, // center X
+                    360,  // baseline Y
+                    "bold 220px Impact, Arial, sans-serif",
+                    color,
+                    "transparent",
+                    true // invertY (Babylon's canvas coordinates)
+                );
+            };
+            drawText();
+            
+            // Bounds box (invisible) for bounce
+            const boxSize = CONFIG.settings.babylonReactiveText3D.boxSize;
+            const boundsMin = new BABYLON.Vector3(-boxSize, -boxSize * 0.6, -boxSize);
+            const boundsMax = new BABYLON.Vector3(boxSize, boxSize * 0.6, boxSize);
+            
+            // Motion state
+            store.velocity = new BABYLON.Vector3(
+                (Math.random() * 2 - 1) * 30,
+                                                 (Math.random() * 2 - 1) * 20,
+                                                 (Math.random() * 2 - 1) * 30
+            );
+            store.angle = 0;
+            store.shakeMomentum = 0;
+            store.bassBaseline = 0;
+            
+            // Save to store
+            store.engine = engine;
+            store.scene = scene;
+            store.camera = camera;
+            store.plane = plane;
+            store.dynTex = dynTex;
+            store.drawText = drawText;
+            store.boundsMin = boundsMin;
+            store.boundsMax = boundsMax;
+            store.initialized = true;
+            
+            // Resize handler
+            const onResize = () => engine.resize();
+            store.onResize = onResize;
+            window.addEventListener('resize', onResize);
+            
+            // Run loop separate from your 2D RAF if needed
+            engine.runRenderLoop(() => scene.render());
+        }
+        
+        return () => {
+            const cfg = CONFIG.settings.babylonReactiveText3D;
+            
+            // Audio metrics (mirroring your 2D reactive logic)
+            const bass = audioData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+            const mids = audioData.slice(32, 128).reduce((a, b) => a + b, 0) / 96;
+            const highs = audioData.slice(128).reduce((a, b) => a + b, 0) / (audioData.length - 128);
+            
+            // Baseline + normalization (with floor to avoid collapse)
+            store.bassBaseline = (store.bassBaseline * 0.98 + bass * 0.02) * (bass !== 0 ? 1 : 0);
+            const bassNormRaw = (bass - store.bassBaseline) / 80;
+            const bassNorm = Math.max(0, Math.pow(bassNormRaw, 5));
+            
+            // Shake momentum
+            store.shakeMomentum = store.shakeMomentum * 0.85 + bassNorm * 0.15;
+            
+            // Shake offset
+            const shakeX = (Math.random() - 0.5) * cfg.shakeIntensity * store.shakeMomentum * 4;
+            const shakeY = (Math.random() - 0.5) * cfg.shakeIntensity * store.shakeMomentum * 4;
+            
+            // Angle and warp
+            store.angle += (highs / 255) * 0.04; // slower spin than 2D
+            const warp = Math.pow(mids / 255, 1.5) * cfg.warpAmount * 3;
+            
+            // Scale react
+            const scale = 1 + bassNorm * cfg.scaleMultiplier;
+            
+            // Apply transform
+            store.plane.rotation.y = store.angle;
+            store.plane.rotation.x = warp * 0.3;
+            store.plane.scaling.set(scale, 1 + warp, 1);
+            
+            // Slight emissive “glow” on highs
+            const glow = Math.min(1, highs / 255);
+            store.plane.material.emissiveColor.set(glow * 0.25, glow * 0.25, glow * 0.25);
+            
+            // Travel + bounce in a box
+            const dt = store.engine.getDeltaTime() / 1000; // seconds
+            const speed = cfg.speed;
+            store.plane.position.addInPlace(store.velocity.scale(dt * speed));
+            
+            // Add shake offsets in screen space by nudging position
+            store.plane.position.x += shakeX * 0.02;
+            store.plane.position.y += shakeY * 0.02;
+            
+            const p = store.plane.position, v = store.velocity;
+            const min = store.boundsMin, max = store.boundsMax;
+            
+            if (p.x < min.x || p.x > max.x) { v.x *= -1; p.x = BABYLON.Scalar.Clamp(p.x, min.x, max.x); }
+            if (p.y < min.y || p.y > max.y) { v.y *= -1; p.y = BABYLON.Scalar.Clamp(p.y, min.y, max.y); }
+            if (p.z < min.z || p.z > max.z) { v.z *= -1; p.z = BABYLON.Scalar.Clamp(p.z, min.z, max.z); }
+            
+            // If text or color changed, refresh the dynamic texture
+            // (optional: detect changes to avoid per-frame draw)
+            if (store.lastText !== cfg.text || store.lastColor !== cfg.color) {
+                store.drawText();
+                store.lastText = cfg.text;
+                store.lastColor = cfg.color;
+            }
+        };
+    }
+},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ testVisualizer: {
+    displayName: "Test Visualizer",
+    settings: [
+      { id: 'text', type: 'text', label: 'Text', default: 'TEST' },
+      { id: 'color', type: 'color', label: 'Color', default: '#00ff00' },
+      { id: 'size', type: 'range', label: 'Size', min: 20, max: 200, step: 10, default: 60 }
+    ],
+    modules: [
+      { id: 'orbitron', url: 'https://fonts.gstatic.com/s/orbitron/v35/yMJRMIlzdpvBhQQL_Qq7dy0.woff2', type: 'font' }
+    ],
+    draw: (modules, store) => {
+      if (!store.angle) store.angle = 0;
+
+      return () => {
+        const thisConfig = CONFIG.settings.testVisualizer;
+
+        // Simple audio split
+        const bass = audioData.slice(0, 32).reduce((a,b)=>a+b,0) / 32;
+
+        // Update angle based on bass
+        store.angle += (bass/255) * 0.001;
+
+        ctx.save();
+        ctx.translate(canvas2D.width/2, canvas2D.height/2);
+        ctx.rotate(store.angle);
+
+        // Use loaded font if available
+        const fontName = modules.orbitron || 'Impact';
+        ctx.font = `${thisConfig.size}px ${fontName}`;
+        ctx.fillStyle = thisConfig.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(thisConfig.text, 0, 0);
+
+        ctx.restore();
+      };
+    }
+  }
 };

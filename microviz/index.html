@@ -4,45 +4,111 @@
     <meta charset="UTF-8">
     <title>microViz</title>
     <style>
-        :root { --bg: #1a1a1a; --accent: #00ff9d; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: white; font-family: monospace; }
-        .container { max-width: 100vw; margin: 0 auto }
-        #visualizer-container { 
-            height: calc( 100vh - 1px ); /*bing bong*/
-            width:100%;
-            background: #000;
+        :root {
+          --bg: #1a1a1a;
+          --accent: #00ff9d;
         }
-        .controls { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            padding: 1rem 0;
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
         }
+
+        body {
+          background: var(--bg);
+          color: white;
+          font-family: monospace;
+        }
+
+        .container {
+          max-width: 100vw;
+          margin: 0 auto;
+        }
+
+        #visualizer-wrapper {
+          position: relative;
+          height: calc(100vh - 1px);
+          width: 100%;
+          background: #000;
+          overflow: hidden; /* keep canvases contained */
+        }
+
+        #visualizer-3d {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 0; /* background layer */
+        }
+
+        #visualizer-2d {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 1; /* overlay layer */
+          pointer-events: none; /* let clicks pass through to UI */
+        }
+
+        .controls {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 1rem;
+          padding: 1rem 0;
+          position: relative;
+          z-index: 10; /* always above canvases */
+        }
+
         html {
-            overflow: scroll;
-            overflow-x: hidden;
+          overflow: scroll;
+          overflow-x: hidden;
         }
+
         ::-webkit-scrollbar {
-            width: 0;  /* Remove scrollbar space */
-            background: transparent;  /* Optional: just make scrollbar invisible */
+          width: 0;
+          background: transparent;
         }
-        /* Optional: show position indicator in red */
+
         ::-webkit-scrollbar-thumb {
-            background: #FF0000;
+          background: #FF0000;
         }
-        input[type="range"], input[type="color"] { width: 100%; }
-        button, input[type="file"] { padding: 0.5rem; background: #333; color: white; border: 1px solid #555; }
+
+        input[type="range"],
+        input[type="color"] {
+          width: 100%;
+        }
+
+        button,
+        input[type="file"] {
+          padding: 0.5rem;
+          background: #333;
+          color: white;
+          border: 1px solid #555;
+        }
     </style>
 </head>
 <body onclick="var interacted=true">
     <div class="container">
-        <canvas id="visualizer-container"></canvas>
+        <div id="visualizer-wrapper" style="position:relative;">
+          <!-- 3D background -->
+          <canvas id="visualizer-3d" style="position:absolute; top:0; left:0; z-index:0;"></canvas>
+          <!-- 2D overlay -->
+          <canvas id="visualizer-2d" style="position:absolute; top:0; left:0; z-index:1;"></canvas>
+        </div>
         <h1>Global Controls</h1>
         <div class="controls" id="global-controls-container">
           <input type="file" id="audio-upload" accept="audio/*">
           <button id="play-toggle">▶ Play</button>
           <select id="visualizer-select"></select>
+          <select id="audio-mode">
+            <option value="local">🎤 Local Mic</option>
+            <option value="ws">🌐 WebSocket Stream</option>
+            <option value="file" selected>📁 Audio File</option>
+          </select>
+
           <label><input type="checkbox" id="toggle-idle"> Show Idle Screen</label>
           <label><input type="checkbox" id="toggle-nowplaying"> Show Now Playing Overlay</label>
         </div>
@@ -62,13 +128,13 @@
                 draw: () => {
                   return () => {
                     const thisConfig = CONFIG.settings.bars;
-                    const barWidth = canvas.width / thisConfig.barCount;
+                    const barWidth = canvas2D.width / thisConfig.barCount;
                     ctx.fillStyle = thisConfig.color;
                     for (let i = 0; i < thisConfig.barCount; i++) {
                         const value = audioData[i];
-                        const barHeight = (value / 255) * canvas.height * CONFIG.master.sensitivity;
+                        const barHeight = (value / 255) * canvas2D.height * CONFIG.master.sensitivity;
                         const x = i * barWidth;
-                        const y = canvas.height - barHeight;
+                        const y = canvas2D.height - barHeight;
                         
                         ctx.fillRect(x, y, barWidth - 2, barHeight);
                     }
@@ -116,32 +182,94 @@
         }
 
         // MAIN CODE
+        const canvas2D = document.getElementById('visualizer-2d');
+        const ctx = canvas2D.getContext('2d');
+        const canvas3D = document.getElementById('visualizer-3d');
+        let renderer3D, scene3D, camera3D;
         const CONFIG = initializeConfig();
-        const canvas = document.getElementById('visualizer-container');
-        const ctx = canvas.getContext('2d');
         const audioUpload = document.getElementById('audio-upload');
         const playToggle = document.getElementById('play-toggle');
         const visualizerSelect = document.getElementById('visualizer-select');
         const controlsContainer = document.getElementById('controls-container');
         const showMediaPlayingInactive = document.getElementById('toggle-idle');
         const showMediaPlayingActive = document.getElementById('toggle-nowplaying');
-        
+        const visStores = {};
         let audioElement = null;
         let audioContext, analyser, source, isPlaying = false;
         let audioData = new Uint8Array();
+        let ws, wsData = new Uint8Array();
+        let micStream = null;
         const mapRange = (value, inMin, inMax, outMin, outMax) => {return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;};
         // Web Audio Setup
         async function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioContext.state === 'suspended') await audioContext.resume();
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = CONFIG.master.fftSize;
-                audioData = new Uint8Array(analyser.frequencyBinCount);
+          if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') await audioContext.resume();
+          }
+
+          if (!analyser) {
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = CONFIG.master.fftSize;
+            //analyser.smoothingTimeConstant = 0.8
+            audioData = new Uint8Array(analyser.frequencyBinCount);
+          }
+        }
+        
+        async function initWebSocketStream() {
+          if (ws) ws.close();
+          ws = new WebSocket("ws://localhost:43374");
+          ws.binaryType = "arraybuffer";
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              const fft = data.fft || [];
+              const scaled = fft.map(v => Math.min(255, Math.max(0, v * 2.55)));
+              wsData = new Uint8Array(scaled);
+              trackMeta.title = data.title || 'Unknown';
+              trackMeta.artist = data.artist || 'Unknown';
+            } catch (err) {
+              console.error("WebSocket parse error:", err);
             }
+          };
+          ws.onclose = () => console.warn("WebSocket closed");
+          ws.onerror = (e) => console.error("WebSocket error:", e);
+        }
+        
+        function stopWebSocket() {
+          if (ws) {
+            ws.close();
+            ws = null;
+            wsData = new Uint8Array(); // clear data
+          }
         }
 
+        function stopMic() {
+          if (micStream) {
+            micStream.getTracks().forEach(track => track.stop());
+            micStream = null;
+          }
+        }
+
+        async function startMic() {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const micSource = audioContext.createMediaStreamSource(micStream);
+          micSource.connect(analyser);
+        }
+        
         // UI Functions
+        
+        // Resize both canvases together
+        function resizeCanvases() {
+          const w = canvas2D.clientWidth * 1.5;
+          const h = canvas2D.clientHeight * 1.5;
+          canvas2D.width = w;
+          canvas2D.height = h;
+          canvas3D.width = w;
+          canvas3D.height = h;
+          if (renderer3D) renderer3D.setSize(w, h);
+        }
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
         
         function formatTime(seconds) {
           const m = Math.floor(seconds / 60);
@@ -152,17 +280,17 @@
         function drawIdleScreen() {
         // Announcer: And the award for jankiest metadata readout ever goes to...
           ctx.fillStyle = '#000';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillRect(0, 0, canvas2D.width, canvas2D.height);
 
           ctx.fillStyle = '#fff';
-          ctx.font = `${canvas.height * 0.05}px monospace`;
+          ctx.font = `${canvas2D.height * 0.05}px monospace`;
           ctx.textAlign = 'center';
-          ctx.fillText('No audio playing', canvas.width / 2, canvas.height * 0.1);
+          ctx.fillText('No audio playing', canvas2D.width / 2, canvas2D.height * 0.1);
 
-          const artSize = canvas.height * 0.4;
+          const artSize = canvas2D.height * 0.4;
           if (trackMeta.picture) {
             const img = trackMeta.picture; // cached Image object
-            const artMaxSize = canvas.height * 0.4;
+            const artMaxSize = canvas2D.height * 0.4;
 
             // preserve aspect ratio
             const aspect = img.width / img.height;
@@ -178,41 +306,41 @@
               drawWidth = artMaxSize * aspect;
             }
 
-            const x = (canvas.width/2)-drawWidth;
-            const y = (canvas.height/2)-(drawHeight/2);
+            const x = (canvas2D.width/2)-drawWidth;
+            const y = (canvas2D.height/2)-(drawHeight/2);
 
             ctx.drawImage(img, x, y, drawWidth, drawHeight);
           } else {
             ctx.fillStyle = '#333';
-            ctx.fillRect(canvas.width * 0.2, canvas.height * 0.3, artSize, artSize);
+            ctx.fillRect(canvas2D.width * 0.2, canvas2D.height * 0.3, artSize, artSize);
             ctx.fillStyle = '#fff';
-            ctx.fillText('Album Art', canvas.width * 0.2 + artSize/4, canvas.height * 0.3 + artSize/2);
+            ctx.fillText('Album Art', canvas2D.width * 0.2 + artSize/4, canvas2D.height * 0.3 + artSize/2);
           }
 
           ctx.textAlign = 'left';
-          ctx.font = `${canvas.height * 0.03}px monospace`;
+          ctx.font = `${canvas2D.height * 0.03}px monospace`;
           ctx.fillStyle = '#fff';
-          ctx.fillText(`Artist: ${trackMeta.artist}`, canvas.width * 0.55, canvas.height * 0.45);
-          ctx.fillText(`Title: ${trackMeta.title}`, canvas.width * 0.55, canvas.height * 0.5);
-          ctx.fillText(`Album: ${trackMeta.album}`, canvas.width * 0.55, canvas.height * 0.55);
+          ctx.fillText(`Artist: ${trackMeta.artist}`, canvas2D.width * 0.55, canvas2D.height * 0.45);
+          ctx.fillText(`Title: ${trackMeta.title}`, canvas2D.width * 0.55, canvas2D.height * 0.5);
+          ctx.fillText(`Album: ${trackMeta.album}`, canvas2D.width * 0.55, canvas2D.height * 0.55);
         }
 
          
         function drawNowPlayingOverlay() {
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.fillRect(20, 20, 300, 120);
-
-          ctx.fillStyle = '#fff';
-          ctx.font = '14px monospace';
-          ctx.textAlign = 'left';
-
-          ctx.fillText(`Title: ${trackMeta.title}`, 30, 50);
-          ctx.fillText(`Artist: ${trackMeta.artist}`, 30, 70);
-          ctx.fillText(`Album: ${trackMeta.album}`, 30, 90);
-
+          const fontMultiplier = 0.020;
+          const linePos=[];
           const elapsed = formatTime(audioElement?.currentTime || 0);
           const total = formatTime(audioElement?.duration || 0);
-          ctx.fillText(`${elapsed} / ${total}`, 30, 110);
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.fillRect(20, 20, 300, 120);
+          ctx.fillStyle = '#fff';
+          ctx.font = `${canvas2D.height * fontMultiplier}px monospace`;
+          ctx.textAlign = 'left';
+          for(var i=0;i<4;i++){linePos[i]=50+(canvas2D.height * fontMultiplier*(i+1))}
+          ctx.fillText(`Title: ${trackMeta.title}`, 30, linePos[0]);
+          ctx.fillText(`Artist: ${trackMeta.artist}`, 30, linePos[1]);
+          ctx.fillText(`Album: ${trackMeta.album}`, 30, linePos[2]);
+          ctx.fillText(`${elapsed} / ${total}`, 30, linePos[3]);
         }
 
         function renderControls() {
@@ -240,7 +368,7 @@
                 }
                 
                 wrapper.innerHTML = `
-                    <label>${setting.label}</label>
+                    <label for="${setting.id}">${setting.label}</label>
                     ${inputHTML}
                 `;
                 
@@ -267,33 +395,63 @@
             });
         }
 
+        // Data
+        function getVisStore(visKey) {
+          if (!visStores[visKey]) visStores[visKey] = {};
+          return visStores[visKey];
+        }
         function saveConfig() {
             localStorage.setItem('audioVisConfig', JSON.stringify(CONFIG));
         }
 
         // Drawing System
-        function draw() {
-          const elapsed = formatTime(audioElement?.currentTime || 0);
-          const total = formatTime(audioElement?.duration || 0);
+        async function draw() {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          // clear 2D overlay if needed
+          if (isPlaying || CONFIG.ui.showIdleScreen) {
+            ctx.clearRect(0, 0, canvas2D.width, canvas2D.height);
+          }
+
           if (!isPlaying) {
             if (CONFIG.ui.showIdleScreen) {
-              drawIdleScreen();
+              drawIdleScreen(); // fills 2D canvas with solid bg + metadata
             }
             requestAnimationFrame(draw);
             return;
           }
-          
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          analyser.getByteFrequencyData(audioData);
-          visualizers[CONFIG.activeVisualizer].draw()();
 
-          if (CONFIG.ui.showNowPlaying && isPlaying) {
+          // update audio data
+          if (CONFIG.vizMode === 'ws' && wsData.length) {
+            audioData = wsData;
+          } else {
+            analyser.getByteFrequencyData(audioData);
+          }
+
+          // fade background on 2D overlay
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+          ctx.fillRect(0, 0, canvas2D.width, canvas2D.height);
+
+          // get visualizer + persistent store
+          const visKey = CONFIG.activeVisualizer;
+          const vis = visualizers[visKey];
+          const store = getVisStore(visKey);
+
+          // load modules once
+          if (!store.modules) {
+            store.modules = await loadModules(vis);
+          }
+
+          // let the visualizer handle its own rendering
+          try{vis.draw(store.modules, store)();}catch(e){console.error(e)}
+
+          // overlay metadata
+          if (CONFIG.ui.showNowPlaying) {
             drawNowPlayingOverlay();
           }
 
           requestAnimationFrame(draw);
         }
-        
+
         let trackMeta = {
           title: 'Unknown',
           artist: 'Unknown',
@@ -301,8 +459,7 @@
           picture: null,       // cached Image object
           pictureUrl: null     // blob/data URL for cleanup
         };
-
-
+        
         audioUpload.addEventListener('change', async (e) => {
           const file = e.target.files[0];
           if (!file) return;
@@ -368,6 +525,38 @@
             console.error('Playback failed:', err);
           }
         });
+        
+        document.getElementById('audio-mode').addEventListener('change', async (e) => {
+          const mode = e.target.value;
+          CONFIG.vizMode = mode;
+          saveConfig();
+          renderControls();
+
+          // stop any active streams
+          stopMic();
+          stopWebSocket();
+
+          if (mode === 'local') {
+            if (audioElement) audioElement.pause();
+            await initAudio();
+            await startMic();
+            isPlaying = true;
+            draw();
+          } else if (mode === 'ws') {
+            if (audioElement) audioElement.pause();
+            await initWebSocketStream();
+            isPlaying = true;
+            draw();
+          } else if (mode === 'file') {
+            if (audioElement) {
+              if (audioElement.paused) {
+                await audioElement.play();
+              }
+              isPlaying = true;
+              draw();
+            }
+          }
+        });
 
         playToggle.addEventListener('click', async () => {
             if (!audioElement) return;
@@ -396,22 +585,42 @@
             saveConfig();
             renderControls();
         });
-        
+        // other random janky stuff
+        async function loadModules(vis) {
+          const resolved = {};
+          if (!vis.modules) return resolved;
+
+          for (const mod of vis.modules) {
+            if (mod.type === 'font') {
+              const font = new FontFace(mod.id, `url(${mod.url})`);
+              await font.load();
+              document.fonts.add(font);
+              resolved[mod.id] = mod.id; // use family name
+            } else if (mod.type === 'script') {
+              // dynamic import from full URL
+              const module = await import(/* @vite-ignore */ mod.url);
+              resolved[mod.id] = module;
+            } else if (mod.type === 'image') {
+              const img = new Image();
+              img.src = mod.url;
+              await new Promise(res => img.onload = res);
+              resolved[mod.id] = img;
+            }
+          }
+          return resolved;
+        }
+
 
         // Initialization
-        window.addEventListener('resize', () => {
-            canvas.width = canvas.clientWidth*1.5;
-            canvas.height = canvas.clientHeight*1.5;
-        });
-
+        window.addEventListener('resize', resizeCanvases);
+        
         function init() {
-            populateVisualizerSelect();
-            visualizerSelect.value = CONFIG.activeVisualizer;
-            showMediaPlayingInactive.checked = CONFIG.ui.showIdleScreen;
-            showMediaPlayingActive.checked = CONFIG.ui.showNowPlaying;
-            canvas.width = canvas.clientWidth*1.5;
-            canvas.height = canvas.clientHeight*1.5;
-            renderControls();   
+          populateVisualizerSelect();
+          visualizerSelect.value = CONFIG.activeVisualizer;
+          showMediaPlayingInactive.checked = CONFIG.ui.showIdleScreen;
+          showMediaPlayingActive.checked = CONFIG.ui.showNowPlaying;
+          resizeCanvases(); // handles both canvases
+          renderControls();
         }
         init();
     </script>
