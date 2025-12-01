@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Font Tester</title>
+    
+    <style>
+        /* 1. Base & Body Styling */
+        :root {
+            --color-bg: #f8fafc;
+            --color-card-bg: #ffffff;
+            --color-text: #111827;
+            --color-text-light: #374151;
+            --color-text-lighter: #6b7280;
+            --color-text-placeholder: #9ca3af;
+            --color-border: #e5e7eb;
+            --color-border-input: #d1d5db;
+            --color-primary: #2563eb;
+            --color-primary-hover: #1d4ed8;
+            --color-destructive: #dc2626;
+            --color-destructive-hover: #b91c1c;
+            --color-pre-bg: #1f2937;
+            --color-pre-text: #f9fafb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            margin: 0;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 2. Header & Controls Styling */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            width: 100%;
+            border-bottom: 1px solid var(--color-border);
+            background-color: var(--color-card-bg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .controls-container {
+            max-width: 64rem; /* 1024px */
+            margin: 0 auto;
+            padding: 0.75rem 1rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .file-upload-label {
+            display: inline-flex;
+            height: 2.5rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-border-input);
+            background-color: var(--color-card-bg);
+            padding: 0 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-text-light);
+            box-shadow: var(--shadow-sm);
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        
+        .file-upload-label:hover {
+            background-color: #f9fafb;
+        }
+        
+        .file-upload-label svg {
+            margin-right: 0.5rem;
+            height: 1.25rem;
+            width: 1.25rem;
+            color: var(--color-text-light);
+        }
+
+        #font-file-input {
+            display: none;
+        }
+
+        #file-name-display {
+            font-size: 0.875rem;
+            color: var(--color-text-lighter);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .control-group label {
+            flex-shrink: 0;
+            
+            font-weight: 500;
+            color: var(--color-text-light);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            flex-grow: 1;
+            accent-color: var(--color-primary);
+        }
+        
+        #font-size-value {
+            width: 2.5rem;
+            flex-shrink: 0;
+            text-align: right;
+            
+            font-weight: 500;
+        }
+
+        input[type="text"]#custom-text-input {
+            width: 100%;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-border-input);
+            box-shadow: var(--shadow-sm);
+            padding: 0.5rem 0.75rem;
+            
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
+        }
+        
+        /* 3. Main Test Area Styling */
+        #font-test-area {
+            max-width: 48rem; /* 768px */
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            /* Default fallback font */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* Transition for font size changes */
+            transition: font-size 0.1s ease-in-out;
+        }
+
+        .test-area-inner {
+            background-color: var(--color-card-bg);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-lg);
+            padding: 1.5rem;
+        }
+        
+        section {
+            margin-bottom: 3rem;
+        }
+        section:last-child {
+            margin-bottom: 0;
+        }
+
+        section > h2 {
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 0.5rem;
+            
+            font-weight: 600;
+            color: var(--color-text);
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* 4. Typographic Element Styling */
+        #custom-text-display {
+            margin-top: 0;
+            
+            color: var(--color-text-placeholder);
+            word-wrap: break-word;
+        }
+
+        h1 {font-weight: 800; margin: 0 0 0.5rem; }
+        h2 { font-weight: 700; margin: 0 0 0.5rem; }
+        h3 {font-weight: 700; margin: 0 0 0.5rem; }
+        h4 { font-weight: 700; margin: 0 0 0.5rem; }
+        h5 { font-weight: 700; margin: 0 0 0.5rem; }
+        h6 { font-weight: 700; margin: 0 0 0.5rem; }
+        
+        
+        
+        
+        .h6fixed { font-size: 1rem; font-weight: 700; margin: 0 0 0.5rem; }
+        .h5fixed { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.5rem; }
+        .h3fixed { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; }
+        .h4fixed { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem; }
+        .h2fixed { font-size: 1.875rem; font-weight: 700; margin: 0 0 0.5rem; }
+        .h1fixed { font-size: 2.25rem; font-weight: 800; margin: 0 0 0.5rem; }
+        
+        
+        
+        p { margin-top: 0; margin-bottom: 1rem; line-height: 1.625; }
+        p:last-child { margin-bottom: 0; }
+        
+        mark { background-color: #fef08a; padding: 0.1em 0.2em; }
+        code { font-family: monospace; background-color: #f3f4f6; padding: 0.1em 0.3em; border-radius: 0.25rem; }
+        pre { overflow-x: auto; border-radius: 0.375rem; background-color: var(--color-pre-bg); padding: 1rem; color: var(--color-pre-text); font-family: monospace; }
+        
+        ul, ol { padding-left: 1.25rem; margin-top: 0.5rem; }
+        li { margin-bottom: 0.25rem; }
+        ul ul, ol ol { margin-top: 0.25rem; }
+
+        blockquote {
+            border-left: 4px solid var(--color-border-input);
+            padding-left: 1rem;
+            font-style: italic;
+            margin: 1.5rem 0;
+            color: var(--color-text-lighter);
+        }
+        blockquote p { margin-bottom: 0.5rem; }
+        blockquote cite {
+            display: block;
+            font-style: normal;
+            font-weight: 500;
+            color: var(--color-text-light);
+        }
+
+        .glyph-group { margin-bottom: 1rem; }
+        .glyph-group h3 { font-weight: 500; color: var(--color-text-light); margin: 0 0 0.25rem; }
+        .glyph-group p { margin: 0; }
+        
+        /* 5. Form & UI Element Styling */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        #font-test-area label {
+            display: block;
+            font-weight: 500;
+            color: var(--color-text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        #font-test-area input[type="text"],
+        #font-test-area input[type="password"],
+        #font-test-area input[type="email"],
+        #font-test-area input[type="number"],
+        #font-test-area select,
+        #font-test-area textarea {
+            width: 100%;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-border-input);
+            box-shadow: var(--shadow-sm);
+            padding: 0.5rem 0.75rem;
+            font-size: inherit;
+            font-family: inherit; /* Inherit the custom font */
+            color: inherit; /* Inherit the custom font color */
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
+        }
+        
+        #font-test-area input[type="text"]::placeholder,
+        #font-test-area textarea::placeholder {
+            color: var(--color-text-placeholder);
+            opacity: 1; /* Firefox fix */
+        }
+        
+        #font-test-area input[type="text"]:focus,
+        #font-test-area input[type="password"]:focus,
+        #font-test-area input[type="email"]:focus,
+        #font-test-area input[type="number"]:focus,
+        #font-test-area select:focus,
+        #font-test-area textarea:focus {
+             border-color: var(--color-primary);
+             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+             outline: none;
+        }
+
+        fieldset { border: none; padding: 0; margin: 0; }
+        legend {font-weight: 500; margin-bottom: 0.5rem; padding: 0; }
+        
+        .form-group {
+            display: flex;
+            align-items: center;
+        }
+        .form-group label {
+            margin-left: 0.5rem;
+            margin-bottom: 0;
+            font-weight: 400;
+        }
+        
+        #font-test-area input[type="checkbox"],
+        #font-test-area input[type="radio"] {
+            height: 1rem;
+            width: 1rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--color-border-input);
+            accent-color: var(--color-primary);
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        
+        #font-test-area button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            font-family: inherit; /* Inherit the custom font */
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        
+        button.primary {
+            background-color: var(--color-primary);
+            color: #ffffff;
+        }
+        button.primary:hover {
+            background-color: var(--color-primary-hover);
+        }
+        
+        button.secondary {
+            background-color: var(--color-card-bg);
+            color: var(--color-text-light);
+            border-color: var(--color-border-input);
+        }
+        button.secondary:hover {
+            background-color: #f9fafb;
+        }
+
+        button.destructive {
+            background-color: var(--color-destructive);
+            color: #ffffff;
+        }
+        button.destructive:hover {
+            background-color: var(--color-destructive-hover);
+        }
+        
+        button.disabled {
+            background-color: #f3f4f6;
+            color: var(--color-text-placeholder);
+            border-color: var(--color-border);
+            cursor: not-allowed;
+        }
+        
+        /* 6. Responsive Media Queries */
+        @media (min-width: 640px) { /* sm */
+             .test-area-inner {
+                padding: 2.5rem;
+             }
+        }
+        
+        @media (min-width: 768px) { /* md */
+            .controls-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. CONTROLS HEADER -->
+    <header>
+        <div class="controls-container">
+            
+            <!-- File Upload -->
+            <div class="control-group">
+                <label for="font-file-input" class="file-upload-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload Font
+                </label>
+                <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2">
+                <span id="file-name-display" title="No file selected">No file selected</span>
+            </div>
+
+            <!-- Font Size Slider -->
+            <div class="control-group">
+                <label for="font-size-slider">Size:</label>
+                <input id="font-size-slider" type="range" min="8" max="72" value="16">
+                <span id="font-size-value">16px</span>
+            </div>
+            
+            <!-- Custom Text Input -->
+            <div class="control-group">
+                <input type="text" id="custom-text-input" placeholder="Type custom test text here...">
+            </div>
+
+        </div>
+    </header>
+
+    <!-- 2. FONT TEST AREA -->
+    <!-- This main container will have the custom font applied to it -->
+    <main id="font-test-area">
+        <div class="test-area-inner">
+            
+            <!-- Custom Text Section -->
+            <section>
+                <h2 class="h2fixed">Custom Text</h2>
+                <p id="custom-text-display">Your custom text will appear here...</p>
+            </section>
+            
+            <!-- Headings Section -->
+            <section>
+                <h2 class="h2fixed">Headings</h2>
+                <div class="headings-container">
+                    <h1>h1: The quick brown fox jumps over the lazy dog</h1>
+                    <h2>h2: The quick brown fox jumps over the lazy dog</h2>
+                    <h3>h3: The quick brown fox jumps over the lazy dog</h3>
+                    <h4>h4: The quick brown fox jumps over the lazy dog</h4>
+                    <h5>h5: The quick brown fox jumps over the lazy dog</h5>
+                    <h6>h6: The quick brown fox jumps over the lazy dog</h6>
+                </div>
+            </section>
+            
+            <!-- Paragraph & Inline Styles Section -->
+            <section>
+                <h2 class="h2fixed">Paragraphs & Inline Styles</h2>
+                <div>
+                    <p>
+                        This is a standard paragraph. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    </p>
+                    <p>
+                        This paragraph tests <strong>strong (bold) text</strong>, <b>b (bold) text</b>, <em>emphasized (italic) text</em>, <i>i (italic) text</i>, <mark>marked text</mark>, <u>underlined text</u>, <s>strikethrough text</s>, <code>inline code</code>, <small>small text</small>, subscript <sub>text</sub>, and superscript <sup>text</sup>.
+                    </p>
+                </div>
+            </section>
+            
+            <!-- Lists Section -->
+            <section>
+                <h2 class="h2fixed">Lists</h2>
+                <div class="form-grid"> <!-- Re-using form-grid for 2-col layout -->
+                    <div>
+                        <h3 class="h3fixed">Unordered List</h3>
+                        <ul>
+                            <li>List item one</li>
+                            <li>List item two</li>
+                            <li>
+                                List item three
+                                <ul>
+                                    <li>Nested item A</li>
+                                    <li>Nested item B</li>
+                                </ul>
+                            </li>
+                            <li>List item four</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="h3fixed">Ordered List</h3>
+                        <ol>
+                            <li>First item</li>
+                            <li>Second item</li>
+                            <li>
+                                Third item
+                                <ol>
+                                    <li>Nested item 3.1</li>
+                                    <li>Nested item 3.2</li>
+                                </ol>
+                            </li>
+                            <li>Fourth item</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Block & Preformatted Section -->
+            <section>
+                <h2 class="h2fixed">Block Elements</h2>
+                <div>
+                    <blockquote>
+                        <p>"This is a blockquote. It's often used for pulling out quotes. The font style here is particularly important."</p>
+                        <cite>- A Tester</cite>
+                    </blockquote>
+                    
+                    <pre>/* This is &lt;pre&gt; text */
+body {
+  font-family: 'MyCustomFont', monospace;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.selector[data-test="true"] {
+  color: #3498db;
+}</pre>
+                </div>
+            </section>
+            
+            <!-- UI Elements & Forms Section -->
+            <section>
+                <h2 class="h2fixed">UI Elements & Forms</h2>
+                <div class="form-grid">
+                    <!-- Column 1 -->
+                    <div class="form-column">
+                        <div>
+                            <label for="test-text">Text Input</label>
+                            <input type="text" id="test-text" placeholder="Placeholder text...">
+                        </div>
+                        
+                        <div>
+                            <label for="test-select">Select Menu</label>
+                            <select id="test-select">
+                                <option>Option 1</option>
+                                <option>Option 2</option>
+                                <option>Option 3</option>
+                            </select>
+                        </div>
+                        
+                        <fieldset>
+                            <legend>Checkboxes</legend>
+                            <div class="form-group">
+                                <input id="check1" type="checkbox">
+                                <label for="check1">Checkbox 1</label>
+                            </div>
+                            <div class="form-group">
+                                <input id="check2" type="checkbox" checked>
+                                <label for="check2">Checkbox 2 (Checked)</label>
+                            </div>
+                        </fieldset>
+                        
+                        <fieldset>
+                            <legend>Radio Buttons</legend>
+                            <div class="form-group">
+                                <input id="radio1" name="radio-group" type="radio">
+                                <label for="radio1">Radio 1</label>
+                            </div>
+                            <div class="form-group">
+                                <input id="radio2" name="radio-group" type="radio" checked>
+                                <label for="radio2">Radio 2 (Checked)</label>
+                            </div>
+                        </fieldset>
+                    </div>
+                    
+                    <!-- Column 2 -->
+                    <div class="form-column">
+                        <div>
+                            <label for="test-textarea">Text Area</label>
+                            <textarea id="test-textarea" rows="4" placeholder="Type multiple lines here..."></textarea>
+                        </div>
+                        
+                        <div>
+                            <label>Buttons</label>
+                            <div class="button-group">
+                                <button type="button" class="primary">
+                                  Primary
+                                </button>
+                                <button type="button" class="secondary">
+                                  Secondary
+                                </button>
+                                <button type="button" class="destructive">
+                                  Destructive
+                                </button>
+                                <button type="button" class="disabled" disabled>
+                                  Disabled
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Glyphs & Characters Section -->
+            <section>
+                <h2 class="h2fixed">Glyphs & Characters</h2>
+                <div>
+                    <div class="glyph-group">
+                        <h3 class="h3fixed">Numbers</h3>
+                        <p>0 1 2 3 4 5 6 7 8 9</p>
+                    </div>
+                    <div class="glyph-group">
+                        <h3 class="h3fixed">Punctuation</h3>
+                        <p>. , : ; ! ? ( ) [ ] { } " ' ` ... – —</p>
+                    </div>
+                    <div class="glyph-group">
+                        <h3 class="h3fixed">Symbols & Currency</h3>
+                        <p>@ # $ % ^ & * - _ + = | \ / &lt; &gt; ~ $ € £ ¥ © ® ™</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get all the DOM elements
+            const fontFileInput = document.getElementById('font-file-input');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            
+            const fontSizeSlider = document.getElementById('font-size-slider');
+            const fontSizeValue = document.getElementById('font-size-value');
+            
+            const customTextInput = document.getElementById('custom-text-input');
+            const customTextDisplay = document.getElementById('custom-text-display');
+            
+            const fontTestArea = document.getElementById('font-test-area');
+            
+            const FONT_STYLE_ID = 'custom-font-style';
+            const FONT_FAMILY_NAME = 'MyCustomFont'; // Internal name we'll use in CSS
+            
+            // 1. Handle Font File Upload
+            fontFileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    fileNameDisplay.textContent = 'No file selected';
+                    fileNameDisplay.title = 'No file selected';
+                    return;
+                }
+                
+                // Display the file name
+                fileNameDisplay.textContent = file.name;
+                fileNameDisplay.title = file.name;
+                
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    const fontDataUrl = e.target.result;
+                    
+                    // Remove old custom font style if it exists
+                    const oldStyle = document.getElementById(FONT_STYLE_ID);
+                    if (oldStyle) {
+                        oldStyle.remove();
+                    }
+                    
+                    // Create a new <style> tag with the @font-face rule
+                    const newStyle = document.createElement('style');
+                    newStyle.id = FONT_STYLE_ID;
+                    newStyle.textContent = `
+                        @font-face {
+                            font-family: '${FONT_FAMILY_NAME}';
+                            src: url(${fontDataUrl});
+                        }
+                    `;
+                    
+                    // Add the new style to the document's <head>
+                    document.head.appendChild(newStyle);
+                    
+                    // Apply the newly loaded font to the test area
+                    // We include fallbacks just in case
+                    fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                };
+                
+                // Read the font file as a Data URL (Base64)
+                reader.readAsDataURL(file);
+            });
+            
+            // 2. Handle Font Size Slider
+            fontSizeSlider.addEventListener('input', (event) => {
+                const newSize = event.target.value;
+                
+                // Update the '16px' text
+                fontSizeValue.textContent = `${newSize}px`;
+                
+                // Apply the new font size to the test area
+                fontTestArea.style.fontSize = `${newSize}px`;
+            });
+            
+            // 3. Handle Custom Text Input
+            customTextInput.addEventListener('input', (event) => {
+                const text = event.target.value;
+                
+                if (text) {
+                    customTextDisplay.textContent = text;
+                    // Change text color from placeholder-gray to normal
+                    customTextDisplay.style.color = 'var(--color-text)';
+                } else {
+                    // Reset to placeholder
+                    customTextDisplay.textContent = 'Your custom text will appear here...';
+                    customTextDisplay.style.color = 'var(--color-text-placeholder)';
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
