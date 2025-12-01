@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Seeded SVG Pattern Generator</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #151821;
+    --text: #e6e6e6;
+    --muted: #9aa0a6;
+    --accent: #67d5b5;
+    --accent2: #e26d5c;
+  }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+  .layout { display: grid; grid-template-columns: 320px 1fr; height: 100%; }
+  .panel {
+    background: linear-gradient(180deg, #12151c 0%, #0e1016 100%), var(--panel);
+    border-right: 1px solid #1f2430; padding: 16px 14px; overflow-y: auto;
+  }
+  .panel h1 { font-size: 1.2rem; margin: 0 0 10px; letter-spacing: 0.2px; }
+  .control { margin: 10px 0 14px; }
+  .control label { display: block; font-size: 0.87rem; color: var(--muted); margin-bottom: 6px; }
+  .control input[type="text"], .control select, .control input[type="number"], .control input[type="color"] {
+    width: 100%; background: #10131a; border: 1px solid #232838; color: var(--text);
+    border-radius: 8px; padding: 8px 10px; outline: none;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  button {
+    background: #1a2131; color: var(--text); border: 1px solid #243048; border-radius: 10px;
+    padding: 10px 12px; cursor: pointer; font-weight: 600;
+  }
+  button:hover { background: #20283a; }
+  .export { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .canvas-wrap { position: relative; background: #0a0c11; }
+  #svgRoot { width: 100%; height: 100%; }
+  .footer { font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+  .palette-preview { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+  .swatch { height: 20px; border-radius: 6px; border: 1px solid #1f2430; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="panel">
+    <h1>Seeded SVG Pattern Generator</h1>
+
+    <div class="control">
+      <label for="seed">Seed</label>
+      <input id="seed" type="text" placeholder="e.g. memphis-42" />
+    </div>
+
+    <div class="control row">
+      <div>
+        <label for="width">Width (px)</label>
+        <input id="width" type="number" min="128" max="4096" value="1280" />
+      </div>
+      <div>
+        <label for="height">Height (px)</label>
+        <input id="height" type="number" min="128" max="4096" value="800" />
+      </div>
+    </div>
+
+    <div class="control">
+      <label for="style">Pattern style</label>
+      <select id="style">
+        <option value="memphis">Memphis playful</option>
+        <option value="bauhaus">Bauhaus geometry</option>
+        <option value="isometric">Isometric cubes</option>
+        <option value="voronoi">Cellular / Voronoi-like</option>
+        <option value="waves">Wavy minimalism</option>
+        <option value="opart">Op-art stripes</option>
+      </select>
+    </div>
+
+    <div class="control">
+      <label for="density">Complexity / density</label>
+      <input id="density" type="range" min="0" max="100" value="60" />
+    </div>
+
+    <div class="control">
+      <label>Palette</label>
+      <select id="palette">
+        <option value="solar">Solar pop</option>
+        <option value="nocturne">Nocturne</option>
+        <option value="retro">Retro warm</option>
+        <option value="pastel">Soft pastel</option>
+        <option value="marine">Marine</option>
+        <option value="mono">Monochrome</option>
+      </select>
+      <div id="palettePreview" class="palette-preview"></div>
+    </div>
+
+    <div class="control row">
+      <div>
+        <label for="bgColor">Background</label>
+        <input id="bgColor" type="color" value="#0a0c11" />
+      </div>
+      <div>
+        <label for="strokeWidth">Stroke width</label>
+        <input id="strokeWidth" type="number" min="0" max="12" step="0.5" value="2" />
+      </div>
+    </div>
+
+    <div class="control">
+      <label for="noise">Subtle texture noise</label>
+      <select id="noise">
+        <option value="none">None</option>
+        <option value="grain">Grain</option>
+        <option value="marble">Marble</option>
+      </select>
+    </div>
+
+    <div class="buttons">
+      <button id="randomize">Randomize seed</button>
+      <button id="generate">Generate</button>
+    </div>
+
+    <div class="export">
+      <button id="downloadSVG">Download SVG</button>
+      <button id="downloadPNG">Download PNG</button>
+    </div>
+
+    <div class="footer">
+      Tip: Patterns are fully deterministic per seed, style, size, and settings. Change any knob and re-generate.
+    </div>
+  </aside>
+
+  <main class="canvas-wrap">
+    <svg id="svgRoot" xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" preserveAspectRatio="xMidYMid slice"></svg>
+  </main>
+</div>
+
+<script>
+/* ---------- Seeded PRNG ---------- */
+function xmur3(str) {
+  // Hash string to 32-bit seed
+  for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function() {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return h >>> 0;
+  };
+}
+function mulberry32(a) {
+  return function() {
+    var t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function PRNG(seedStr) {
+  const seedFn = xmur3(seedStr);
+  const s = seedFn();
+  return mulberry32(s);
+}
+function randRange(rng, min, max) { return min + (max - min) * rng(); }
+function randInt(rng, min, max) { return Math.floor(randRange(rng, min, max + 1)); }
+function choice(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
+function shuffle(rng, arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ---------- Palettes ---------- */
+const PALETTES = {
+  solar: ["#ff6b6b","#feca57","#ff9f43","#48dbfb","#1dd1a1","#5f27cd"],
+  nocturne: ["#0f172a","#1e293b","#334155","#475569","#94a3b8","#e2e8f0"],
+  retro: ["#e26d5c","#f0a202","#f4d35e","#ee964b","#c8553d","#3a5a40"],
+  pastel: ["#ffd6e0","#e7f2f8","#d7fbe8","#fff5ba","#e3d0ff","#c3f0ca"],
+  marine: ["#001f3f","#003566","#0a9396","#94d2bd","#e9d8a6","#ee9b00"],
+  mono: ["#111","#2c2c2c","#555","#888","#bbb","#eee"]
+};
+function updatePalettePreview() {
+  const sel = document.getElementById('palette').value;
+  const preview = document.getElementById('palettePreview');
+  preview.innerHTML = '';
+  PALETTES[sel].forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'swatch';
+    d.style.background = c;
+    preview.appendChild(d);
+  });
+}
+
+/* ---------- SVG Helpers ---------- */
+function createSVG(width, height) {
+  const svg = document.getElementById('svgRoot');
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.innerHTML = '';
+  return svg;
+}
+function rect(svg, x, y, w, h, fill, stroke, sw) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  el.setAttribute('x', x); el.setAttribute('y', y); el.setAttribute('width', w); el.setAttribute('height', h);
+  if (fill) el.setAttribute('fill', fill);
+  if (stroke) el.setAttribute('stroke', stroke);
+  if (sw != null) el.setAttribute('stroke-width', sw);
+  svg.appendChild(el);
+  return el;
+}
+function circle(svg, cx, cy, r, fill, stroke, sw) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  el.setAttribute('cx', cx); el.setAttribute('cy', cy); el.setAttribute('r', r);
+  if (fill) el.setAttribute('fill', fill);
+  if (stroke) el.setAttribute('stroke', stroke);
+  if (sw != null) el.setAttribute('stroke-width', sw);
+  svg.appendChild(el);
+  return el;
+}
+function line(svg, x1, y1, x2, y2, stroke, sw) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  el.setAttribute('x1', x1); el.setAttribute('y1', y1); el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+  if (stroke) el.setAttribute('stroke', stroke);
+  if (sw != null) el.setAttribute('stroke-width', sw);
+  svg.appendChild(el);
+  return el;
+}
+function poly(svg, points, fill, stroke, sw) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  el.setAttribute('points', points.map(p => p.join(',')).join(' '));
+  if (fill) el.setAttribute('fill', fill);
+  if (stroke) el.setAttribute('stroke', stroke);
+  if (sw != null) el.setAttribute('stroke-width', sw);
+  svg.appendChild(el);
+  return el;
+}
+function path(svg, d, fill, stroke, sw) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  el.setAttribute('d', d);
+  if (fill) el.setAttribute('fill', fill);
+  if (stroke) el.setAttribute('stroke', stroke);
+  if (sw != null) el.setAttribute('stroke-width', sw);
+  svg.appendChild(el);
+  return el;
+}
+
+/* ---------- Filters / Textures ---------- */
+function addFilters(svg) {
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  svg.appendChild(defs);
+
+  const noise = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+  noise.id = 'grain';
+  noise.setAttribute('x','0'); noise.setAttribute('y','0'); noise.setAttribute('width','100%'); noise.setAttribute('height','100%');
+  let feT = document.createElementNS('http://www.w3.org/2000/svg','feTurbulence');
+  feT.setAttribute('type','fractalNoise'); feT.setAttribute('baseFrequency','0.9'); feT.setAttribute('numOctaves','1'); feT.setAttribute('seed','2');
+  noise.appendChild(feT);
+  let feC = document.createElementNS('http://www.w3.org/2000/svg','feColorMatrix');
+  feC.setAttribute('type','saturate'); feC.setAttribute('values','0');
+  noise.appendChild(feC);
+  let feB = document.createElementNS('http://www.w3.org/2000/svg','feBlend');
+  feB.setAttribute('mode','multiply');
+  noise.appendChild(feB);
+  defs.appendChild(noise);
+
+  const marble = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+  marble.id = 'marble';
+  marble.setAttribute('x','0'); marble.setAttribute('y','0'); marble.setAttribute('width','100%'); marble.setAttribute('height','100%');
+  let feT2 = document.createElementNS('http://www.w3.org/2000/svg','feTurbulence');
+  feT2.setAttribute('type','turbulence'); feT2.setAttribute('baseFrequency','0.02'); feT2.setAttribute('numOctaves','3'); feT2.setAttribute('seed','5');
+  marble.appendChild(feT2);
+  let feD = document.createElementNS('http://www.w3.org/2000/svg','feDisplacementMap');
+  feD.setAttribute('in','SourceGraphic'); feD.setAttribute('scale','12'); feD.setAttribute('xChannelSelector','R'); feD.setAttribute('yChannelSelector','G');
+  marble.appendChild(feD);
+  defs.appendChild(marble);
+}
+
+/* ---------- Style Generators ---------- */
+function genMemphis(svg, rng, W, H, palette, bg, strokeWidth) {
+  rect(svg, 0, 0, W, H, bg);
+  const colors = shuffle(rng, palette);
+  const n = randInt(rng, 24, 80);
+  for (let i = 0; i < n; i++) {
+    const x = randRange(rng, 0, W), y = randRange(rng, 0, H);
+    const t = randInt(rng, 0, 4);
+    const sw = strokeWidth * randRange(rng, 0.6, 1.4);
+    const c = choice(rng, colors);
+    switch (t) {
+      case 0: // circles
+        circle(svg, x, y, randRange(rng, 10, Math.min(W, H) * 0.08), 'none', c, sw);
+        break;
+      case 1: // rectangles
+        rect(svg, x, y, randRange(rng, 20, W * 0.15), randRange(rng, 20, H * 0.15), rng() < 0.5 ? c : 'none', rng() < 0.5 ? choice(rng, colors) : null, sw);
+        break;
+      case 2: // squiggles
+        const len = randInt(rng, 4, 8), amp = randRange(rng, 8, 32), step = randRange(rng, 18, 48);
+        let d = `M ${x} ${y}`;
+        for (let k = 1; k <= len; k++) {
+          const nx = x + k * step;
+          const ny = y + Math.sin(k + rng()*2*Math.PI) * amp;
+          d += ` Q ${x + (k-0.5)*step} ${y + Math.sin(k-0.5 + rng()*2*Math.PI)*amp}, ${nx} ${ny}`;
+        }
+        path(svg, d, 'none', c, sw);
+        break;
+      case 3: // patterns of dots
+        const cols = randInt(rng, 3, 8), rows = randInt(rng, 3, 8), s = randRange(rng, 8, 22);
+        for (let cx = 0; cx < cols; cx++) {
+          for (let cy = 0; cy < rows; cy++) {
+            circle(svg, x + cx*s, y + cy*s, s * randRange(rng, 0.15, 0.4), choice(rng, colors), 'none');
+          }
+        }
+        break;
+    }
+  }
+}
+
+function genBauhaus(svg, rng, W, H, palette, bg, strokeWidth) {
+  rect(svg, 0, 0, W, H, bg);
+  const colors = shuffle(rng, palette);
+  const grid = randInt(rng, 6, 16);
+  const cellW = W / grid, cellH = H / grid;
+  for (let gy = 0; gy < grid; gy++) {
+    for (let gx = 0; gx < grid; gx++) {
+      const x = gx * cellW, y = gy * cellH;
+      const c = choice(rng, colors);
+      if (rng() < 0.6) rect(svg, x, y, cellW, cellH, c);
+      if (rng() < 0.5) circle(svg, x + cellW/2, y + cellH/2, Math.min(cellW, cellH)*randRange(rng, 0.2, 0.5), rng() < 0.5 ? 'none' : choice(rng, colors), choice(rng, colors), strokeWidth*randRange(rng,0.7,1.4));
+      if (rng() < 0.4) {
+        const pts = [
+          [x, y + cellH], [x + cellW, y + cellH], [x + cellW, y]
+        ];
+        poly(svg, pts, rng()<0.5?c:'none', choice(rng, colors), strokeWidth*randRange(rng,0.7,1.4));
+      }
+      if (rng() < 0.3) {
+        const stripes = randInt(rng, 3, 7);
+        for (let s = 0; s < stripes; s++) {
+          line(svg, x, y + (s+1)*(cellH/(stripes+1)), x + cellW, y + (s+1)*(cellH/(stripes+1)), choice(rng, colors), strokeWidth*randRange(rng,0.5,1.2));
+        }
+      }
+    }
+  }
+}
+
+function genIsometric(svg, rng, W, H, palette, bg, strokeWidth) {
+  rect(svg, 0, 0, W, H, bg);
+  const colors = shuffle(rng, palette);
+  const size = randInt(rng, 30, 70);
+  const cols = Math.ceil(W / size);
+  const rows = Math.ceil(H / (size * 0.9));
+  const angle = Math.PI / 6;
+  const dx = size * Math.cos(angle);
+  const dy = size * Math.sin(angle);
+  function cube(x, y, s, baseColor) {
+    const c1 = baseColor, c2 = baseColor + 'cc'; // opacity variant
+    const c3 = baseColor;
+    const top = [
+      [x, y], [x + dx, y - dy], [x + dx + s, y - dy], [x + s, y]
+    ];
+    const left = [
+      [x, y], [x, y + s], [x + dx, y + s - dy], [x + dx, y - dy]
+    ];
+    const right = [
+      [x + s, y], [x + s, y + s], [x + dx + s, y + s - dy], [x + dx + s, y - dy]
+    ];
+    poly(svg, top, c1, 'none');
+    poly(svg, left, c2, 'none');
+    poly(svg, right, c3, choice(rng, colors), strokeWidth*randRange(rng,0.3,0.9));
+  }
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = c * (size + dx) + (r%2 ? dx/2 : 0);
+      const y = r * (size - dy) + 60;
+      cube(x, y, size, choice(rng, colors));
+    }
+  }
+}
+
+function genVoronoi(svg, rng, W, H, palette, bg, strokeWidth) {
+  rect(svg, 0, 0, W, H, bg);
+  const colors = shuffle(rng, palette);
+  const points = [];
+  const n = randInt(rng, 35, 120);
+  for (let i = 0; i < n; i++) points.push([randRange(rng, 0, W), randRange(rng, 0, H)]);
+  const cellSize = randRange(rng, 40, 120);
+  // Simple cellular-style polygons by jittered grid (Voronoi-like effect)
+  for (let y = 0; y < H; y += cellSize) {
+    for (let x = 0; x < W; x += cellSize) {
+      const cx = x + randRange(rng, -cellSize*0.4, cellSize*0.4);
+      const cy = y + randRange(rng, -cellSize*0.4, cellSize*0.4);
+      const sides = randInt(rng, 5, 9);
+      const radius = randRange(rng, cellSize*0.3, cellSize*0.65);
+      const pts = [];
+      for (let s = 0; s < sides; s++) {
+        const a = (Math.PI*2 * s / sides) + randRange(rng, -0.3, 0.3);
+        pts.push([cx + Math.cos(a) * radius, cy + Math.sin(a) * radius]);
+      }
+      poly(svg, pts, choice(rng, colors), choice(rng, colors), strokeWidth*randRange(rng,0.6,1.2));
+    }
+  }
+}
+
+function genWaves(svg, rng, W, H, palette, bg, strokeWidth) {
+  rect(svg, 0, 0, W, H, bg);
+  const colors = shuffle(rng, palette);
+  const bands = randInt(rng, 12, 36);
+  const amp = randRange(rng, 12, 48);
+  const freq = randRange(rng, 0.006, 0.02);
+  const yStep = H / bands;
+  for (let i = 0; i < bands; i++) {
+    const y0 = i * yStep;
+    let d = `M 0 ${y0}`;
+    for (let x = 0; x <= W; x += 6) {
+      const y = y0 + Math.sin(x * freq + i * 0.7) * amp * randRange(rng, 0.6, 1.2);
+      d += ` L ${x} ${y}`;
+    }
+    d += ` L ${W} ${H} L 0 ${H} Z`;
+    path(svg, d, colors[i % colors.length], 'none');
+    if (rng() < 0.4) {
+      path(svg, `M 0 ${y0} ` + Array.from({length: Math.floor(W/8)}, (_,k)=>{
+        const x = k*8; const y = y0 + Math.cos(x*freq + i)*amp*0.2; return `L ${x} ${y}`;
+      }).join(' '), 'none', choice(rng, colors), strokeWidth*randRange(rng,0.4,1.2));
+    }
+  }
+}
+
+function genOpArt(svg, rng, W, H, palette, bg, strokeWidth) {
+  rect(svg, 0, 0, W, H, bg);
+  const base = palette[0];
+  const alt = palette[palette.length-1];
+  const stripes = randInt(rng, 40, 140);
+  const ang = randRange(rng, -Math.PI/4, Math.PI/4);
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  for (let i = 0; i < stripes; i++) {
+    const t = i / stripes;
+    const col = i % 2 ? base : alt;
+    const w = Math.max(1.5, strokeWidth * randRange(rng, 1.2, 3.4));
+    const x1 = W * t * dx, y1 = H * t * dy;
+    line(svg, x1, 0, x1 + dx * H, H, col, w);
+  }
+  // Radial distortion overlay
+  const rings = randInt(rng, 6, 16);
+  for (let r = 0; r < rings; r++) {
+    const rad = (Math.min(W,H)/2) * (r+1)/(rings+2);
+    const segs = randInt(rng, 80, 160);
+    let d = `M ${W/2 + rad} ${H/2}`;
+    for (let k = 1; k <= segs; k++) {
+      const a = 2*Math.PI * k / segs;
+      const rr = rad + Math.sin(a*randRange(rng,1.5,3.5)) * randRange(rng, -6, 6);
+      d += ` L ${W/2 + Math.cos(a)*rr} ${H/2 + Math.sin(a)*rr}`;
+    }
+    path(svg, d + ' Z', 'none', choice(rng, palette), strokeWidth*randRange(rng,0.5,1.2));
+  }
+}
+
+/* ---------- Main orchestrator ---------- */
+function generate() {
+  const seed = document.getElementById('seed').value || `seed-${Math.floor(Math.random()*1e9)}`;
+  const W = parseInt(document.getElementById('width').value, 10);
+  const H = parseInt(document.getElementById('height').value, 10);
+  const style = document.getElementById('style').value;
+  const density = parseInt(document.getElementById('density').value, 10);
+  const paletteKey = document.getElementById('palette').value;
+  const palette = PALETTES[paletteKey];
+  const bg = document.getElementById('bgColor').value;
+  const strokeWidth = parseFloat(document.getElementById('strokeWidth').value);
+  const noiseMode = document.getElementById('noise').value;
+
+  const rng = PRNG(`${seed}|${style}|${W}x${H}|${density}|${paletteKey}|${bg}|${strokeWidth}|${noiseMode}`);
+  const svg = createSVG(W, H);
+  addFilters(svg);
+
+  // Optional texture overlay group
+  const rootGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+  svg.appendChild(rootGroup);
+
+  // Style switch with density mapped to parameters
+  switch (style) {
+    case 'memphis':
+      genMemphis(rootGroup, rng, W, H, palette, bg, strokeWidth * (0.6 + density/100));
+      break;
+    case 'bauhaus':
+      genBauhaus(rootGroup, rng, W, H, palette, bg, strokeWidth * (0.6 + density/130));
+      break;
+    case 'isometric':
+      genIsometric(rootGroup, rng, W, H, palette, bg, strokeWidth * (0.5 + density/160));
+      break;
+    case 'voronoi':
+      genVoronoi(rootGroup, rng, W, H, palette, bg, strokeWidth * (0.7 + density/120));
+      break;
+    case 'waves':
+      genWaves(rootGroup, rng, W, H, palette, bg, strokeWidth * (0.5 + density/180));
+      break;
+    case 'opart':
+      genOpArt(rootGroup, rng, W, H, palette, bg, strokeWidth * (0.7 + density/140));
+      break;
+  }
+
+  // Texture application
+  if (noiseMode !== 'none') {
+    const overlay = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    overlay.setAttribute('x',0); overlay.setAttribute('y',0); overlay.setAttribute('width',W); overlay.setAttribute('height',H);
+    overlay.setAttribute('fill', noiseMode === 'grain' ? '#00000006' : '#ffffff04');
+    overlay.setAttribute('filter', `url(#${noiseMode})`);
+    svg.appendChild(overlay);
+  }
+}
+
+function randomizeSeed() {
+  document.getElementById('seed').value = Math.random().toString(36).slice(2) + '-' + Math.random().toString(36).slice(2);
+  generate();
+}
+
+/* ---------- Export ---------- */
+function downloadSVG() {
+  const svg = document.getElementById('svgRoot');
+  const serializer = new XMLSerializer();
+  let source = serializer.serializeToString(svg);
+  // Ensure xmlns present
+  if(!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+  const blob = new Blob([source], {type: 'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pattern_${Date.now()}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadPNG() {
+  const svg = document.getElementById('svgRoot');
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+  const canvas = document.createElement('canvas');
+  canvas.width = svg.viewBox.baseVal.width || svg.width.baseVal.value;
+  canvas.height = svg.viewBox.baseVal.height || svg.height.baseVal.value;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(svgBlob);
+  img.onload = function() {
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function(blob) {
+      const pngUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = pngUrl;
+      a.download = `pattern_${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(pngUrl);
+    }, 'image/png');
+  };
+  img.src = url;
+}
+
+/* ---------- UI wiring ---------- */
+document.getElementById('generate').addEventListener('click', generate);
+document.getElementById('randomize').addEventListener('click', randomizeSeed);
+document.getElementById('palette').addEventListener('change', updatePalettePreview);
+document.getElementById('downloadSVG').addEventListener('click', downloadSVG);
+document.getElementById('downloadPNG').addEventListener('click', downloadPNG);
+
+// Initial
+updatePalettePreview();
+randomizeSeed();
+</script>
+</body>
+</html>
