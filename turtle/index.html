@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Turtles (inspired by the kronos game)</title>
+    <style>
+      .turtle {
+        width: 500px;
+        height: 500px;
+        position: absolute;
+        transform: scale(0.2);
+        transform-origin: center center;
+        z-index: 10;
+      }
+      .turtle__head {
+        width: 75px;
+        height: 85px;
+        border-radius: 50%;
+        background-color: #82C49F;
+        position: relative;
+        top: 22%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+        transition: top 0.3s ease-in-out;
+        z-index: 4;
+      }
+      .turtle__head::before, .turtle__head::after {
+        top: 20px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #6A757A;
+        content: "";
+        position: absolute;
+      }
+      .turtle__head::before {
+        left: 13px;
+      }
+      .turtle__head::after {
+        right: 13px;
+      }
+      .turtle__shell {
+        --shell-base: #6A757A;
+        --shell-inner: #5D666B;
+        --shell-plate: #636E72;
+        width: 220px;
+        height: 250px;
+        background-color:  var(--shell-base);
+        border-radius: 50%;
+        overflow: hidden;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 5;
+        cursor: grab;
+      }
+
+      .turtle__shell::before, .turtle__shell::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+      }
+      .turtle__shell::before {
+        width: 200px;
+        height: 235px;
+        background-color: var(--shell-inner);
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+      }
+      .turtle__shell::after {
+        width: 50%;
+        height: 100%;
+        background-color: white;
+        opacity: 0.1;
+        top: 0;
+      }
+      .turtle__shell div {
+        width: 120px;
+        height: 80px;
+        background: var(--shell-plate);
+        position: relative;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .turtle__shell div::before, .turtle__shell div::after {
+        content: "";
+        position: absolute;
+        left: 0;
+      }
+      .turtle__shell div::before {
+        top: -30px;
+        border-left: 60px solid transparent;
+        border-right: 60px solid transparent;
+        border-bottom: 30px solid var(--shell-plate);
+      }
+      .turtle__shell div::after {
+        bottom: -30px;
+        left: 0;
+        border-left: 60px solid transparent;
+        border-right: 60px solid transparent;
+        border-top: 30px solid var(--shell-plate);
+      }
+      
+      @keyframes rainbowCycle {
+        0%   { filter: hue-rotate(0deg) saturate(2) contrast(1.5); }
+        100% { filter: hue-rotate(360deg) saturate(2) contrast(1.5); }
+      }
+
+      .rainbow {
+        animation: rainbowCycle 8s linear infinite;
+      }
+
+      .turtle__tail {
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 35px solid #84C3A0;
+        position: absolute;
+        bottom: 18%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+      }
+      .turtle__legs {
+        width: 30px;
+        height: 300px;
+        border-radius: 20%;
+        background-color: #82C49F;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 3;
+      }
+      .turtle__legs.-left {
+        transform: translate(-50%, -50%) rotate(-45deg);
+      }
+      .turtle__legs.-right {
+        transform: translate(-50%, -50%) rotate(45deg);
+      }
+      .turtle.is-moving .turtle__legs.-left {
+        animation: walking-turtle-01 1.5s ease-in-out infinite alternate;
+      }
+      .turtle.is-moving .turtle__legs.-right {
+        animation: walking-turtle-02 1.5s ease-in-out infinite alternate;
+      }
+      .turtle.is-retracted .turtle__head {
+        top: 28%;
+      }
+      .turtle.neck-extend .turtle__head {
+        top: 18%; /* pushes head outward */
+      }
+
+      .turtle.is-dragging {
+        z-index: 100;
+      }
+      .turtle.is-dragging .turtle__shell {
+        cursor: grabbing;
+      }
+
+      .turtle-name {
+        position: absolute;
+        font-size: 14px;
+        font-family: Arial, sans-serif;
+        color: #333;
+        background: rgba(255,255,255,0.7);
+        padding: 2px 6px;
+        border-radius: 6px;
+        transform: translate(-50%, -100%); /* center horizontally, float above */
+        pointer-events: none; /* don’t block clicks on turtle */
+        white-space: nowrap;
+      }
+
+
+      body {
+        width: 100vw;
+        height: 100vh;
+        background-color: #ADD8E6;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        cursor: crosshair;
+        font-family: 'Inter', sans-serif;
+      }
+
+      .obstacle-line {
+        position: absolute;
+        height: 4px;
+        background: #444;
+        border-radius: 2px;
+        z-index: 2;
+      }
+      
+      .food-pellet {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #c27a3a;
+        border: 2px solid #8f592a;
+        border-radius: 50%;
+        z-index: 1;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+
+      @keyframes walking-turtle-01 {
+        0% {
+          transform: translate(-50%, -50%) rotate(-40deg);
+        }
+        25% {
+          transform: translate(-50%, -50%) rotate(-45deg);
+        }
+        50% {
+          transform: translate(-50%, -50%) rotate(-30deg);
+        }
+        75% {
+          transform: translate(-50%, -50%) rotate(-45deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(-40deg);
+        }
+      }
+      @keyframes walking-turtle-02 {
+        0% {
+          transform: translate(-50%, -50%) rotate(40deg);
+        }
+        25% {
+          transform: translate(-50%, -50%) rotate(45deg);
+        }
+        50% {
+          transform: translate(-50%, -50%) rotate(35deg);
+        }
+        75% {
+          transform: translate(-50%, -50%) rotate(45deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(30deg);
+        }
+      }
+      #game {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Final obstacle lines */
+      .obstacle-line {
+        position: absolute;
+        height: 4px;
+        background: #444;
+        border-radius: 2px;
+        z-index: 2;
+        transform-origin: 0 50%;
+      }
+
+      /* Preview line (while drawing) */
+      .obstacle-preview {
+        position: absolute;
+        height: 4px;
+        background: transparent;
+        border-top: 4px dashed #666;
+        border-radius: 2px;
+        z-index: 3;
+        pointer-events: none;
+        transform-origin: 0 50%;
+      }
+
+      /* NEW: Debug style for A* grid */
+      .grid-node {
+        position: absolute;
+        width: 38px; /* Slightly smaller than grid size */
+        height: 38px;
+        border: 1px solid rgba(0,0,0,0.1);
+        z-index: -1;
+      }
+      .grid-node.is-blocked {
+        background-color: rgba(255, 0, 0, 0.2);
+      }
+
+    </style>
+</head>
+<body>
+    
+    <script>
+        // --- Global Setup ---
+        let foodItems = [];
+        let turtles = [];
+        const obstacles = [];
+        let obstacleStart = null;
+        let previewLine = null;
+        const margin = 25
+        
+        // --- NEW: A* Grid ---
+        let grid = [];
+        const GRID_SIZE = 40; // Size of each grid square in pixels
+        const TURTLE_BODY_RADIUS = 30; // NEW: Turtle's physical collision radius
+        let numGridX, numGridY;
+        let debugGrid = false; // Set to true to see the grid
+
+        function getSettings() {
+          const params = new URLSearchParams(window.location.search);
+          debugGrid = params.get('debuggrid') === 'true'; // Hidden debug flag
+          return {
+            rainbowChance: parseFloat(params.get('rainbowChance')) || 0,
+            numTurtles: parseInt(params.get('count')  || 5),
+            sizeVariation: parseFloat(params.get('sizeVariation')),
+            namesEnabled: params.get('namesEnabled') === 'true',
+            turtleColors: (params.get('colors') || 'green,brown').split(','),
+            useAStar: params.get('astar') === 'true' // NEW: A* setting
+          };
+        }
+        const settings = getSettings();
+
+        // --- NEW: Personalities ---
+        const PERSONALITIES = {
+            default: {
+                idleChance: 0.0002, idleDuration: 300, minSpeed: 0.2, maxSpeed: 1.0, maxSeekSpeed: 3.0, visionDistance: 300, whiskerLength: 40
+            },
+            shy: {
+                idleChance: 0.0005, idleDuration: 600, minSpeed: 0.1, maxSpeed: 0.8, maxSeekSpeed: 2.0, visionDistance: 200, whiskerLength: 50
+            },
+            aggressive: {
+                idleChance: 0.0001, idleDuration: 100, minSpeed: 0.3, maxSpeed: 1.5, maxSeekSpeed: 4.0, visionDistance: 400, whiskerLength: 30
+            },
+            lazy: {
+                idleChance: 0.001, idleDuration: 1000, minSpeed: 0.1, maxSpeed: 0.5, maxSeekSpeed: 1.0, visionDistance: 150, whiskerLength: 40
+            }
+        };
+
+        // --- Utility Functions ---
+
+        // Helper function to find distance from a point to a line segment
+        // Moved to global scope to be accessible by Turtle class
+        function distToSegment(px, py, x1, y1, x2, y2) {
+          const dx = x2 - x1, dy = y2 - y1;
+          const l2 = dx*dx + dy*dy;
+          if (l2 === 0) return Math.hypot(px - x1, py - y1);
+          let t = ((px - x1) * dx + (py - y1) * dy) / l2;
+          t = Math.max(0, Math.min(1, t));
+          const cx = x1 + t * dx, cy = y1 + t * dy;
+          return Math.hypot(px - cx, py - cy);
+        }
+
+        function loadNames() {
+          return JSON.parse(localStorage.getItem('turtleNames') || '[]');
+        }
+        function saveNames(names) {
+          localStorage.setItem('turtleNames', JSON.stringify(names));
+        }
+        function loadPersonalities() {
+          return JSON.parse(localStorage.getItem('turtlePersonalities') || '{}');
+        }
+        function savePersonalities(personalities) {
+          localStorage.setItem('turtlePersonalities', JSON.stringify(personalities));
+        }
+        function clamp(num, min, max) {
+          return Math.min(Math.max(num, min), max);
+        }
+        // --- Food Class ---
+        class Food {
+          constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.element = document.createElement('div');
+            this.element.className = 'food-pellet';
+            this.element.style.left = `${x}px`;
+            this.element.style.top = `${y}px`;
+            document.body.appendChild(this.element);
+            
+            // Add to global list
+            foodItems.push(this);
+          }
+          
+          remove() {
+            if (this.element.parentNode) {
+                this.element.remove();
+            }
+            // Filter this food item out of the global list
+            foodItems = foodItems.filter(f => f !== this);
+          }
+        }
+
+        // --- Turtle Class ---
+        class Turtle {
+          constructor(index) {
+            // 1. Create Element
+            this.element = document.createElement('main');
+            this.scale = (0.2 * (0.8 + Math.random() * settings.sizeVariation)) || 0.2;
+            this.element.className = 'turtle';
+            this.element.innerHTML = `
+              <div class="turtle__head"></div>
+              <div class="turtle__legs -left"></div>
+              <div class="turtle__legs -right"></div>
+              <div class="turtle__tail"></div>
+              <section class="turtle__shell">
+                <div></div>
+              </section>
+            `;
+            // 2. Get References
+            this.headElement = this.element.querySelector('.turtle__head');
+            this.shellElement = this.element.querySelector('.turtle__shell');
+            if (Math.random() < settings.rainbowChance) {
+              this.shellElement.classList.add('rainbow');
+            }
+
+            // 3. NEW: Assign Personality
+            const types = Object.keys(PERSONALITIES);
+            if (settings.namesEnabled) {
+              const names = loadNames();
+              this.name = names[index] || `Turtle ${index+1}`;
+              
+              const allPersonalities = loadPersonalities();
+              this.personalityType = allPersonalities[this.name] || null;
+
+              if (!this.personalityType) {
+                this.personalityType = types[Math.floor(Math.random() * types.length)];
+                allPersonalities[this.name] = this.personalityType;
+                savePersonalities(allPersonalities);
+              }
+            } else {
+              // No names, just assign a random personality
+              this.personalityType = types[Math.floor(Math.random() * types.length)];
+            }
+            
+            this.personality = PERSONALITIES[this.personalityType];
+
+            // 4. Assign Name (if enabled)
+            if (settings.namesEnabled){
+              this.nameElement = document.createElement('div');
+              this.nameElement.className = 'turtle-name';
+              // Display name and personality
+              this.nameElement.textContent = `${this.name} (${this.personalityType})`;
+
+              document.body.appendChild(this.nameElement);
+
+              // Allow renaming on double-click
+              this.shellElement.addEventListener('dblclick', () => {
+                const oldName = this.name;
+                const newName = prompt('Enter turtle name:', this.name);
+                
+                if (newName && newName !== oldName) {
+                  // Save new name
+                  const names = loadNames();
+                  names[index] = newName;
+                  saveNames(names);
+
+                  // Transfer personality
+                  const allPersonalities = loadPersonalities();
+                  const personality = allPersonalities[oldName];
+                  if (personality) {
+                    delete allPersonalities[oldName];
+                    allPersonalities[newName] = personality;
+                    savePersonalities(allPersonalities);
+                  }
+
+                  this.name = newName;
+                  this.nameElement.textContent = `${this.name} (${this.personalityType})`;
+                }
+              });
+            }
+            
+            // 5. Movement Properties (based on personality)
+            this.x = Math.random() * window.innerWidth;
+            this.y = Math.random() * window.innerHeight;
+            this.rotation = Math.random() * 360; 
+            
+            this.minSpeed = this.personality.minSpeed;
+            this.maxSpeed = this.personality.maxSpeed;
+            this.speed = this.minSpeed;
+            this.rotationSpeed = (Math.random() - 0.5) * 1.0; // Wander turn speed
+
+            // 6. State Properties (based on personality)
+            this.idleTimer = 0; 
+            this.idleChance = this.personality.idleChance;
+            this.idleDuration = this.personality.idleDuration;
+            this.isBeingDragged = false;
+            this.offsetX = 0;
+            this.offsetY = 0;
+            this.targetFood = null;
+            this.path = null; // NEW: For A* path
+            
+            // 7. Add to page
+            document.body.appendChild(this.element);
+            
+            // 8. Add Listeners
+            this.addListeners();
+          }
+
+          addListeners() {
+            // Click head to retract
+            this.headElement.addEventListener('click', (e) => {
+              e.stopPropagation(); 
+              this.retractHead();
+            });
+            
+            // Drag shell
+            this.shellElement.addEventListener('mousedown', (e) => {
+              e.stopPropagation();
+              this.isBeingDragged = true;
+              this.element.classList.add('is-dragging');
+              // Calculate offset from turtle's *center* (x, y)
+              this.offsetX = e.clientX - this.x;
+              this.offsetY = e.clientY - this.y;
+            });
+          }
+
+          // --- State Methods ---
+          
+          retractHead() {
+            if (this.element.classList.contains('is-retracted')) return;
+            this.element.classList.add('is-retracted');
+            setTimeout(() => {
+              this.element.classList.remove('is-retracted');
+            }, 2000);
+          }
+          
+          drag(e) {
+            if (!this.isBeingDragged) return;
+            this.x = e.clientX - this.offsetX;
+            this.y = e.clientY - this.offsetY;
+          }
+          
+          stopDrag() {
+            this.isBeingDragged = false;
+            this.element.classList.remove('is-dragging');
+          }
+
+          // --- Movement & AI Methods ---
+          
+          // Helper to get X component of velocity
+          getDX() {
+            return Math.sin(this.rotation * Math.PI / 180) * this.speed;
+          }
+          
+          // Helper to get Y component of velocity
+          getDY() {
+            return -Math.cos(this.rotation * Math.PI / 180) * this.speed;
+          }
+          
+          findFood() {
+            // Don't look for new food if we already have a target
+            if (this.targetFood) return;
+
+            const visionDistance = this.personality.visionDistance; // Use personality
+            const visionAngle = 90; // 90-degree vision cone
+            
+            let closestFood = null;
+            let minDistance = visionDistance;
+
+            for (const food of foodItems) {
+              const dx = food.x - this.x;
+              const dy = food.y - this.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance < minDistance) {
+                // Convert math angle (0=right) to CSS angle (0=up)
+                let angleToFood = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+                
+                // Find the difference between turtle's rotation and food angle
+                let angleDifference = Math.abs(this.rotation - angleToFood);
+                if (angleDifference > 180) {
+                  angleDifference = 360 - angleDifference; // Handle wrap-around
+                }
+                
+                if (angleDifference < visionAngle / 2) {
+                    // Check if path is clear
+                    if (this.isPathClear(food.x, food.y, distance)) {
+                        minDistance = distance;
+                        closestFood = food;
+                    }
+                }
+              }
+            }
+
+            if (closestFood) {
+                this.targetFood = closestFood;
+                this.path = null; // Clear any old path
+            }
+          }
+
+          // NEW: Check if a direct line to target is blocked
+          isPathClear(targetX, targetY, distance) {
+            const steps = Math.ceil(distance / 20); // Check every 20 pixels
+            const dx = (targetX - this.x) / steps;
+            const dy = (targetY - this.y) / steps;
+
+            for (let i = 1; i < steps; i++) {
+                const checkX = this.x + dx * i;
+                const checkY = this.y + dy * i;
+                for (const obs of obstacles) {
+                    if (distToSegment(checkX, checkY, obs.x1, obs.y1, obs.x2, obs.y2) < TURTLE_BODY_RADIUS + 5) { // 20px buffer -> Use new margin
+                        return false; // Path is blocked
+                    }
+                }
+            }
+            return true; // Path is clear
+          }
+          
+          wander() {
+            // If currently idle, just decrement timer and stop
+            if (this.idleTimer > 0) {
+              this.idleTimer--;
+              this.speed = 0;
+              return;
+            }
+            
+            // Random chance to enter idle (uses personality)
+            if (Math.random() < this.idleChance) {
+              this.idleTimer = Math.random() * this.idleDuration;
+              this.speed = 0;
+              return;
+            }
+
+            // Otherwise normal wandering movement (uses personality)
+            this.speed += (Math.random() - 0.45) * 0.1;
+            this.speed = Math.max(this.minSpeed, Math.min(this.maxSpeed, this.speed));
+
+            this.rotationSpeed += (Math.random() - 0.5) * 0.3;
+            this.rotationSpeed = Math.max(-1.0, Math.min(1.0, this.rotationSpeed));
+            this.rotation += this.rotationSpeed;
+
+            if (this.rotation < 0) this.rotation += 360;
+            if (this.rotation >= 360) this.rotation -= 360;
+
+            // Screen boundary logic
+            this.x = clamp(this.x, margin, window.innerWidth - margin)
+            this.y = clamp(this.y, margin, window.innerHeight - margin)
+          }
+          
+          seekTarget() {
+            // Check if food still exists (another turtle might have eaten it)
+            if (!foodItems.includes(this.targetFood)) {
+              this.targetFood = null;
+              this.path = null; // Clear path
+              return;
+            }
+
+            const dx = this.targetFood.x - this.x;
+            const dy = this.targetFood.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // --- A* Pathfinding Logic ---
+            // 1. Check for existing path
+            if (this.path && this.path.length > 0) {
+                this.followPath();
+                return; // Don't do normal seeking
+            }
+
+            // 2. Check if we need to calculate a path
+            const clear = this.isPathClear(this.targetFood.x, this.targetFood.y, distance);
+
+            if (!clear && settings.useAStar) {
+                // Path is blocked and A* is on. Try to find a path.
+                // This is the HEAVY calculation
+                this.path = findPathAStar(this.x, this.y, this.targetFood.x, this.targetFood.y);
+                
+                if (this.path && this.path.length > 0) {
+                    this.followPath(); // Follow the new path
+                } else {
+                    // A* failed (no path found), give up
+                    this.targetFood = null; 
+                    this.path = null;
+                }
+                return; // Stop here, we either followed path or gave up
+            }
+            // --- End of A* Logic ---
+
+
+            // 3. Normal Seek (A* is off or path is clear)
+            let targetAngle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+            let angleDiff = targetAngle - this.rotation;
+            while (angleDiff < -180) angleDiff += 360;
+            while (angleDiff > 180) angleDiff -= 360;
+            
+            const maxTurn = 2.0;
+            this.rotation += Math.max(-maxTurn, Math.min(maxTurn, angleDiff));
+            
+            // 2. Accelerate / Decelerate (uses personality)
+            const arrivalRadius = 150; // When to start slowing down
+            const maxSeekSpeed = this.personality.maxSeekSpeed;
+            
+            if (distance < arrivalRadius) {
+              // Decelerate as we get closer
+              this.speed = (distance / arrivalRadius) * (maxSeekSpeed - this.minSpeed) + this.minSpeed;
+            } else {
+              // Accelerate
+              this.speed += 0.05;
+              this.speed = Math.min(this.speed, maxSeekSpeed);
+            }
+            
+            // 3. Eat food
+            if (distance < 30) {
+              this.element.classList.add('neck-extend'); // extend forward
+              setTimeout(() => {
+                this.element.classList.remove('neck-extend');
+              }, 200);
+              
+              this.targetFood.remove();
+              this.targetFood = null;
+              this.path = null; // Clear path
+            }
+          }
+
+          // NEW: Follow A* Path
+          followPath() {
+            if (!this.path || this.path.length === 0) return;
+
+            const targetNode = this.path[0];
+            const dx = targetNode.x - this.x;
+            const dy = targetNode.y - this.y;
+            const distance = Math.hypot(dx, dy);
+
+            // 1. Steer towards the next waypoint
+            let targetAngle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+            let angleDiff = targetAngle - this.rotation;
+            while (angleDiff < -180) angleDiff += 360;
+            while (angleDiff > 180) angleDiff -= 360;
+            
+            const maxTurn = 4.0; // Turn faster when pathing
+            this.rotation += Math.max(-maxTurn, Math.min(maxTurn, angleDiff));
+
+            // 2. Move at max speed
+            this.speed = this.personality.maxSeekSpeed;
+
+            // 3. Check if we arrived at the waypoint
+            if (distance < GRID_SIZE / 2) {
+                this.path.shift(); // Remove this waypoint, move to next
+            }
+          }
+
+
+          // NEW: Obstacle avoidance with whiskers
+          avoidObstacles() {
+            const lookAhead = this.personality.whiskerLength;
+            const whiskerAngle = 30; // 30 degrees
+            let avoidanceTurn = 0;
+
+            // 1. Center Whisker
+            const aheadX = this.x + Math.sin(this.rotation * Math.PI/180) * lookAhead;
+            const aheadY = this.y - Math.cos(this.rotation * Math.PI/180) * lookAhead;
+
+            // 2. Left Whisker
+            const leftRot = (this.rotation - whiskerAngle + 360) % 360;
+            const leftX = this.x + Math.sin(leftRot * Math.PI/180) * lookAhead;
+            const leftY = this.y - Math.cos(leftRot * Math.PI/180) * lookAhead;
+
+            // 3. Right Whisker
+            const rightRot = (this.rotation + whiskerAngle) % 360;
+            const rightX = this.x + Math.sin(rightRot * Math.PI/180) * lookAhead;
+            const rightY = this.y - Math.cos(rightRot * Math.PI/180) * lookAhead;
+
+            // Check whiskers against all obstacles
+            for (const obs of obstacles) {
+                const obsProximity = 20; // How close whisker needs to be to trigger
+                
+                if (distToSegment(leftX, leftY, obs.x1, obs.y1, obs.x2, obs.y2) < obsProximity) {
+                    avoidanceTurn += 1.5; // Turn right
+                }
+                if (distToSegment(rightX, rightY, obs.x1, obs.y1, obs.x2, obs.y2) < obsProximity) {
+                    avoidanceTurn -= 1.5; // Turn left
+                }
+                if (distToSegment(aheadX, aheadY, obs.x1, obs.y1, obs.x2, obs.y2) < obsProximity) {
+                    avoidanceTurn += (avoidanceTurn > 0 ? 2 : -2); // Turn harder
+                    this.speed = Math.max(this.minSpeed, this.speed * 0.9); // Slow down
+                }
+            }
+
+            this.rotation += avoidanceTurn;
+          }
+
+          // --- Main Update Loop ---
+          
+          update() {
+            // 1. If being dragged, only update position and stop
+            if (this.isBeingDragged) {
+              this.element.classList.remove('is-moving');
+              this.updateElementStyle();
+              return;
+            }
+
+            // 2. AI: Find food (if needed)
+            this.findFood();
+            
+            // 3. AI: Decide movement
+            if (this.targetFood) {
+              this.seekTarget();
+            } else {
+              this.wander();
+            }
+
+            // 4. AI: Avoid obstacles (modifies rotation)
+            this.avoidObstacles();
+
+            // 5. Collision Check (Failsafe)
+            let nudged = false;
+            for (const obs of obstacles) {
+              if (distToSegment(this.x, this.y, obs.x1, obs.y1, obs.x2, obs.y2) < TURTLE_BODY_RADIUS) { // 30px buffer -> Use constant
+                // Too close → nudge back
+                this.x -= this.getDX();
+                this.y -= this.getDY();
+                this.speed = 0;
+                this.rotation += 5; // Turn away
+                nudged = true;
+                break;
+              }
+            }
+            
+            // 6. Apply movement (if not nudged)
+            if (!nudged) {
+                this.x += this.getDX();
+                this.y += this.getDY();
+            }
+            
+            // 7. Update CSS classes (for leg animation)
+            if (this.speed > this.minSpeed + 0.1) {
+              this.element.classList.add('is-moving');
+            } else {
+              this.element.classList.remove('is-moving');
+            }
+
+            // 8. Apply all styles
+            this.updateElementStyle();
+          }
+          
+          updateElementStyle() {
+            this.element.style.left = `${this.x}px`;
+            this.element.style.top = `${this.y}px`;
+            this.element.style.transform = `translate(-50%, -50%) scale(${this.scale}) rotate(${this.rotation}deg)`;
+            
+            // Position name separately (no scale)
+            if (settings.namesEnabled){
+              this.nameElement.style.left = `${this.x}px`;
+              this.nameElement.style.top = `${this.y - (this.scale * 300)}px`; // Adjust float height based on scale
+            }
+          }
+        }
+
+        // --- Obstacle Drawing ---
+
+        function updatePreview(x1, y1, x2, y2) {
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const length = Math.hypot(dx, dy);
+          const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+
+          if (!previewLine) {
+            previewLine = document.createElement('div');
+            previewLine.className = 'obstacle-preview';
+            document.body.appendChild(previewLine);
+          }
+          previewLine.style.left = `${x1}px`;
+          previewLine.style.top = `${y1}px`;
+          previewLine.style.width = `${length}px`;
+          previewLine.style.transform = `translate(0, -50%) rotate(${angleDeg}deg)`;
+        }
+
+        // --- A* Pathfinding Functions ---
+
+        function initializeGrid() {
+            numGridX = Math.ceil(window.innerWidth / GRID_SIZE);
+            numGridY = Math.ceil(window.innerHeight / GRID_SIZE);
+            grid = [];
+
+            let gridContainer = document.getElementById('grid-container');
+            if (debugGrid) {
+                if (!gridContainer) {
+                    gridContainer = document.createElement('div');
+                    gridContainer.id = 'grid-container';
+                    document.body.appendChild(gridContainer);
+                }
+                gridContainer.innerHTML = ''; // Clear old debug nodes
+            }
+
+            for (let x = 0; x < numGridX; x++) {
+                grid[x] = [];
+                for (let y = 0; y < numGridY; y++) {
+                    grid[x][y] = {
+                        x: x, y: y,
+                        f: 0, g: 0, h: 0,
+                        walkable: true,
+                        parent: null,
+                        debugEl: null
+                    };
+
+                    if (debugGrid) {
+                        const nodeEl = document.createElement('div');
+                        nodeEl.className = 'grid-node';
+                        nodeEl.style.left = `${x * GRID_SIZE}px`;
+                        nodeEl.style.top = `${y * GRID_SIZE}px`;
+                        gridContainer.appendChild(nodeEl);
+                        grid[x][y].debugEl = nodeEl;
+                    }
+                }
+            }
+            // After creating grid, rasterize existing obstacles
+            rasterizeObstacles();
+        }
+
+        // Converts pixel coordinates to grid coordinates
+        function worldToGrid(wx, wy) {
+            const gx = Math.floor(Math.max(0, Math.min(wx, window.innerWidth - 1)) / GRID_SIZE);
+            const gy = Math.floor(Math.max(0, Math.min(wy, window.innerHeight - 1)) / GRID_SIZE);
+            return grid[gx][gy];
+        }
+
+        // Converts grid coordinates to center pixel coordinates
+        function gridToWorld(gx, gy) {
+            const wx = gx * GRID_SIZE + GRID_SIZE / 2;
+            const wy = gy * GRID_SIZE + GRID_SIZE / 2;
+            return { x: wx, y: wy };
+        }
+
+        // Updates the grid to mark nodes as "unwalkable" based on obstacles
+        function rasterizeObstacles() {
+            if (!grid.length) return; // Grid not initialized
+
+            // NEW: Buffer must be larger than the turtle's body radius to prevent snagging
+            const obstacleBuffer = TURTLE_BODY_RADIUS + 5; 
+
+            for (let x = 0; x < numGridX; x++) {
+                for (let y = 0; y < numGridY; y++) {
+                    const node = grid[x][y];
+                    const { x: wx, y: wy } = gridToWorld(x, y);
+                    node.walkable = true; // Reset
+
+                    for (const obs of obstacles) {
+                        if (distToSegment(wx, wy, obs.x1, obs.y1, obs.x2, obs.y2) < obstacleBuffer) {
+                            node.walkable = false;
+                            break;
+                        }
+                    }
+
+                    if (debugGrid && node.debugEl) {
+                        node.debugEl.classList.toggle('is-blocked', !node.walkable);
+                    }
+                }
+            }
+        }
+        
+        // The A* Algorithm
+        function findPathAStar(startX, startY, endX, endY) {
+            const startNode = worldToGrid(startX, startY);
+            const endNode = worldToGrid(endX, endY);
+
+            if (!startNode || !endNode || !startNode.walkable || !endNode.walkable) {
+                return null; // Start or end is blocked
+            }
+
+            let openSet = [startNode];
+            let closedSet = [];
+
+            // Reset grid node properties
+            for (let x = 0; x < numGridX; x++) {
+                for (let y = 0; y < numGridY; y++) {
+                    grid[x][y].f = 0;
+                    grid[x][y].g = 0;
+                    grid[x][y].h = 0;
+                    grid[x][y].parent = null;
+                }
+            }
+
+            while (openSet.length > 0) {
+                // Find node with lowest F score in openSet
+                let lowestFIndex = 0;
+                for (let i = 1; i < openSet.length; i++) {
+                    if (openSet[i].f < openSet[lowestFIndex].f) {
+                        lowestFIndex = i;
+                    }
+                }
+                let currentNode = openSet[lowestFIndex];
+
+                // Check if we reached the end
+                if (currentNode === endNode) {
+                    // Reconstruct path
+                    let path = [];
+                    let temp = currentNode;
+                    while (temp.parent) {
+                        path.push(gridToWorld(temp.x, temp.y));
+                        temp = temp.parent;
+                    }
+                    return path.reverse(); // Return world coordinates
+                }
+
+                // Move current node from open to closed
+                openSet.splice(lowestFIndex, 1);
+                closedSet.push(currentNode);
+
+                // Get neighbors
+                let neighbors = [];
+                const { x, y } = currentNode;
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        if (i === 0 && j === 0) continue;
+                        const nx = x + i, ny = y + j;
+
+                        // Check if neighbor is valid
+                        if (nx >= 0 && nx < numGridX && ny >= 0 && ny < numGridY) {
+                            neighbors.push(grid[nx][ny]);
+                        }
+                    }
+                }
+
+                for (const neighbor of neighbors) {
+                    // Skip if unwalkable or already processed
+                    if (!neighbor.walkable || closedSet.includes(neighbor)) {
+                        continue;
+                    }
+
+                    // Distance from start to neighbor
+                    const gScore = currentNode.g + Math.hypot(neighbor.x - currentNode.x, neighbor.y - currentNode.y);
+
+                    if (!openSet.includes(neighbor)) {
+                        openSet.push(neighbor);
+                    } else if (gScore >= neighbor.g) {
+                        continue; // This is not a better path
+                    }
+
+                    // This is the best path so far. Record it.
+                    neighbor.g = gScore;
+                    neighbor.h = Math.hypot(neighbor.x - endNode.x, neighbor.y - endNode.y);
+                    neighbor.f = neighbor.g + neighbor.h;
+                    neighbor.parent = currentNode;
+                }
+            }
+
+            return null; // No path found
+        }
+
+
+        // --- Global Event Listeners ---
+
+        document.addEventListener('mousedown', (e) => {
+            // NEW: Shift+Mousedown to start drawing obstacle
+            if (e.shiftKey) {
+                e.preventDefault();
+                obstacleStart = { x: e.clientX, y: e.clientY };
+                updatePreview(obstacleStart.x, obstacleStart.y, e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          turtles.forEach(t => t.drag(e));
+          // Update preview line if drawing
+          if (obstacleStart){
+            updatePreview(obstacleStart.x, obstacleStart.y, e.clientX, e.clientY);
+          }
+        });
+        
+        document.addEventListener('mouseup', (e) => {
+          turtles.forEach(t => t.stopDrag());
+          
+          // NEW: Finish drawing obstacle
+          if (obstacleStart) {
+            const x1 = obstacleStart.x, y1 = obstacleStart.y;
+            const x2 = e.clientX, y2 = e.clientY;
+            
+            // Don't create zero-length lines
+            if (Math.hypot(x2-x1, y2-y1) > 5) {
+                const dx = x2 - x1, dy = y2 - y1;
+                const length = Math.hypot(dx, dy);
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                const line = document.createElement('div');
+                line.className = 'obstacle-line';
+                line.style.width = `${length}px`;
+                line.style.left = `${x1}px`;
+                line.style.top = `${y1}px`;
+                line.style.transform = `translate(0, -50%) rotate(${angle}deg)`;
+                document.body.appendChild(line);
+
+                obstacles.push({ x1, y1, x2, y2, el: line });
+                rasterizeObstacles(); // NEW: Update the grid
+            }
+            obstacleStart = null;
+          }
+
+          if (previewLine) {
+            previewLine.remove();
+            previewLine = null;
+          }
+        });
+
+        // Global click-to-add-food listener
+        document.addEventListener('click', (e) => {
+          // Don't add food if shift was pressed (for obstacle drawing)
+          if (e.shiftKey) {
+            return;
+          }
+
+          // Normal click → spawn food
+          if (e.target === document.body) {
+            new Food(e.clientX, e.clientY);
+          }
+        });
+
+
+        // --- Initialization ---
+
+        // 1. Create all the turtles
+        for (let i = 0; i < settings.numTurtles; i++) {
+          turtles.push(new Turtle(i));
+        }
+
+        // NEW: 2. Initialize the navigation grid
+        initializeGrid();
+
+        // 3. Create the animation loop
+        function animate() {
+          // Tell every turtle to update
+          turtles.forEach(turtle => turtle.update());
+          
+          // Request the next animation frame
+          requestAnimationFrame(animate);
+        }
+
+        // 4. Start the loop!
+        animate();
+
+        // NEW: Re-initialize grid on window resize
+        window.addEventListener('resize', () => {
+            initializeGrid();
+        });
+
+    </script>
+</body>
+</html>
+<!-- I think we all know who this is...
+
+                     wmmm                    
+              dyxszxzzzzzacccasyb            
+           huxxxxnzzzzzssacseeeeejem         
+         mnxzzzxezzssssseeerceexxxfff        
+        uexzsxxeacsseeeeeececfezeaczzsv      
+     doqqqqqqqqqpyececccccceacezzzzrszsaw    
+   gqqqqqqqqqqqqqqqocjtfascaaaacsssseffj}    
+  qqqqqqqqqqqqqqqqqqpnaaaaatraaaacsseaerfr   
+ qqqqqqqqqqqqqqqqqqgdpnraarrrfrffffrtrrrrfq  
+wn;:qqqqqqqqqqqpf}pqqqysrrrrrrfrrrrr}frrrr}  
+dy".:yqqqqqqqqqf`:fqqqonfrrftjfffffffjtrrj]u 
+hooppqqqooooqqqpcfyoppox}ftj{}}jtttttt]{{]{}v
+ vopqqqqqqqqqqqqpoooopyfjtjtfjjffff}ffftj{{{j
+ mpqqqqqqqqqqqqqpppppyenyooopuffttfjtuqqqqu  
+   duoqqqqqqqqqqqqquajyyooopocssexqysvqqqqn  
+    yoyyyxf{czom     uooooppx      bvqqqqqvm 
+    kcuuuyek         nooppppd       guyyuzk  
+                      puzsoq                 
+ -->
