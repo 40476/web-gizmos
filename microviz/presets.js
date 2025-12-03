@@ -618,7 +618,7 @@ geometryPulse: {
         { id: 'speedMultiplier', type: 'range', label: 'Realistic Depth Multiplier', min: 1, max: 6, step: 0.05, default: 3 },
         { id: 'RoadWidth', type: 'range', label: 'Road Width', min: 0.01, max: 1, step: 0.01, default: 1 },
         { id: 'sunStripes', type: 'range', label: 'Sun Stripes', min: 1, max: 50, default: 9 },
-        { id: 'sunStripeThickness', type: 'range', label: 'Max Stripe Thickness', min: 1, max: 20, default: 8 },
+        { id: 'sunStripeThickness', type: 'range', label: 'Sun Stripe Thickness', min: 1, max: 20, default: 8 },
 
 
       ],
@@ -639,7 +639,7 @@ geometryPulse: {
           const horizonY = h/2;
           const columns = cfg.columns;
           // Bars inside road lanes
-          analyser.getByteFrequencyData(audioData);
+
           ctx.fillStyle = cfg.barColor;
 
           for (let i = 0; i < columns; i++) {
@@ -783,7 +783,7 @@ geometryPulse: {
         { id: 'scaleMultiplier', type: 'range', label: 'Scale Multiplier', min: 0, max: 1, step: 0.05, default: 0.8 }
       ],
       modules: [
-          // { id: 'three', url: 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js', type: 'script' },
+          
       ],
       draw: () => {
         let angle = 0;
@@ -827,6 +827,965 @@ geometryPulse: {
         };
       }
     },
+    rainbowWaveGrid: {
+  displayName: "Rainbow Wave Grid",
+  settings: [
+    { id: 'size', type: 'range', label: 'Diamond Size', min: 10, max: 80, step: 5, default: 30 },
+    { id: 'spacing', type: 'range', label: 'Spacing', min: 0, max: 50, step: 1, default: 5 }
+  ],
+  modules: [],
+  draw: () => {
+    let hue = 0;
+    return () => {
+      const cfg = CONFIG.settings.rainbowWaveGrid;
+      const mids = audioData.slice(32,128).reduce((a,b)=>a+b,0)/96;
+      const highs = audioData.slice(128).reduce((a,b)=>a+b,0)/(audioData.length-128);
+      const midsNorm = mids/255;
+      const highsNorm = highs/255;
+
+      hue = (hue+1)%360;
+
+      ctx.save();
+      ctx.clearRect(0,0,canvas2D.width,canvas2D.height);
+
+      const step = cfg.size+cfg.spacing;
+      const cols = Math.ceil(canvas2D.width/step)+2;
+      const rows = Math.ceil(canvas2D.height/step)+2;
+
+      for(let i=0;i<cols;i++){
+        for(let j=0;j<rows;j++){
+          const cx = i*step;
+          const cy = j*step;
+
+          const waveOffset = Math.sin((i+j+Date.now()/200)*0.5)*cfg.size*highsNorm;
+
+          ctx.fillStyle = `hsl(${(hue+i*10+j*10)%360},100%,50%)`;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy-waveOffset-cfg.size/2);
+          ctx.lineTo(cx+cfg.size/2, cy-waveOffset);
+          ctx.lineTo(cx, cy-waveOffset+cfg.size/2);
+          ctx.lineTo(cx-cfg.size/2, cy-waveOffset);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    };
+  }
+},
+diamondTunnel: {
+  displayName: "Diamond Tunnel",
+  settings: [
+    { id: 'layers', type: 'range', label: 'Layers', min: 5, max: 50, step: 1, default: 20 },
+    { id: 'size', type: 'range', label: 'Base Size', min: 20, max: 100, step: 5, default: 40 },
+    { id: 'color', type: 'color', label: 'Color', default: '#ff6600' }
+  ],
+  modules: [],
+  draw: () => {
+    return () => {
+      const cfg = CONFIG.settings.diamondTunnel;
+      const highs = audioData.slice(128).reduce((a,b)=>a+b,0)/(audioData.length-128);
+      const highsNorm = highs/255;
+
+      ctx.save();
+      ctx.clearRect(0,0,canvas2D.width,canvas2D.height);
+      ctx.translate(canvas2D.width/2, canvas2D.height/2);
+
+      for(let i=0;i<cfg.layers;i++){
+        const scale = 1+i*0.1*(1+highsNorm);
+        const s = cfg.size*scale;
+        ctx.strokeStyle = cfg.color;
+        ctx.beginPath();
+        ctx.moveTo(0,-s/2);
+        ctx.lineTo(s/2,0);
+        ctx.lineTo(0,s/2);
+        ctx.lineTo(-s/2,0);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+  }
+},
+dataStream:{
+    displayName: "Data Stream",
+    settings: [
+        { id: 'color', type: 'color', label: 'Color', default: '#00ffff' },
+        { id: 'glowColor', type: 'color', label: 'Glow Color', default: '#00ffff' },
+        { id: 'numBars', type: 'range', label: 'Number of Bars', min: 10, max: 100, step: 2, default: 40 },
+        { id: 'sensitivity', type: 'range', label: 'Sensitivity', min: 0.5, max: 3, step: 0.1, default: 1.5 },
+        { id: 'scanlineOpacity', type: 'range', label: 'Scanline Opacity', min: 0, max: 0.5, step: 0.01, default: 0.1 },
+        { id: 'showParticles', type: 'checkbox', label: 'Show Particles', default: true },
+        { id: 'showBrackets', type: 'checkbox', label: 'Show Brackets', default: true },
+    ],
+    modules: [
+        { id: 'barcodeFont', url: 'https://fonts.gstatic.com/s/librebarcode39/v25/-nFnOHM08vwC6h8Li1eQnP_AHzI2G_Bx0g.woff2', type: 'font' },
+    ],
+    draw: (modules, store) => {
+        // Persistent store for this visualizer
+        if (!store.barValues) store.barValues = [];
+        if (!store.scanlineY) store.scanlineY = 0;
+        if (!store.particles) store.particles = [];
+        
+        const barcodeChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%";
+        
+        return () => {
+            const config = CONFIG.settings.dataStream;
+            const w = canvas2D.width;
+            const h = canvas2D.height;
+            
+            const fontName = modules.barcodeFont || 'monospace';
+            
+            // Audio analysis
+            const dataLen = audioData.length;
+            const bass = audioData.slice(0, Math.floor(dataLen * 0.1)).reduce((a, b) => a + b, 0) / (dataLen * 0.1) / 255;
+            const highs = audioData.slice(Math.floor(dataLen * 0.7), dataLen).reduce((a, b) => a + b, 0) / (dataLen * 0.3) / 255;
+            
+            // --- Draw ---
+            
+            // Fading background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Glow effect
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = config.glowColor;
+            
+            const barWidth = w / config.numBars;
+            
+            // Lazily fill store arrays
+            if (store.barValues.length !== config.numBars) {
+                store.barValues = new Array(config.numBars).fill(0);
+            }
+            
+            ctx.font = `30px ${fontName}`;
+            ctx.fillStyle = config.color;
+            ctx.textAlign = 'center';
+            
+            // --- Draw Floor ---
+            const floorY = h * 0.9;
+            ctx.beginPath();
+            ctx.moveTo(0, floorY);
+            ctx.lineTo(w, floorY);
+            ctx.strokeStyle = config.color;
+            ctx.globalAlpha = 0.5;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+            
+            for (let i = 0; i < config.numBars; i++) {
+                // Get audio data for this bar
+                const audioIndex = Math.floor(mapRange(i, 0, config.numBars, 0, audioData.length));
+                const audioValue = (audioData[audioIndex] / 255) * config.sensitivity;
+                
+                // Use a simple smoothing equation
+                let newHeight = audioValue * h * 0.7; // Max height is 70%
+                store.barValues[i] = store.barValues[i] * 0.8 + newHeight * 0.2; // Lerp
+                
+                const x = i * barWidth + barWidth / 2;
+                const yBase = floorY;
+                
+                if (store.barValues[i] < 10) continue; // Don't draw tiny bars
+                
+                // --- Add Particles ---
+                if (config.showParticles && store.barValues[i] > h * 0.5 && Math.random() > 0.95) {
+                    store.particles.push({
+                        x: x,
+                        y: yBase - store.barValues[i],
+                        vx: (Math.random() - 0.5) * 2,
+                                         vy: (Math.random() - 1) * 3,
+                                         life: 1.0
+                    });
+                }
+                
+                // Generate a random barcode character
+                const char = barcodeChars[Math.floor(Math.random() * barcodeChars.length)];
+                
+                // Draw the text repeatedly to create a "bar"
+                ctx.save();
+                ctx.translate(x, yBase);
+                ctx.rotate(-Math.PI / 2); // Rotate text to be vertical
+                
+                // Glitch effect on highs
+                const jitter = (highs > 0.8) ? (Math.random() - 0.5) * 10 : 0;
+                
+                // Vary opacity based on height
+                ctx.globalAlpha = mapRange(store.barValues[i], 0, h * 0.7, 0.1, 1.0);
+                
+                // Draw text multiple times to form the bar
+                for(let j = 0; j < store.barValues[i]; j += 20) {
+                    ctx.fillText(char, j, jitter);
+                }
+                
+                ctx.restore();
+            }
+            
+            // --- Update and Draw Particles ---
+            if (config.showParticles) {
+                ctx.fillStyle = config.glowColor;
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = config.glowColor;
+                for (let i = store.particles.length - 1; i >= 0; i--) {
+                    const p = store.particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.05; // gravity
+                    p.life -= 0.02;
+                    
+                    if (p.life <= 0) {
+                        store.particles.splice(i, 1);
+                    } else {
+                        ctx.globalAlpha = p.life;
+                        ctx.fillRect(p.x - 1, p.y - 1, 3, 3);
+                    }
+                }
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // Draw scanline effect
+            if (config.scanlineOpacity > 0) {
+                store.scanlineY = (store.scanlineY + 0.5 + (bass * 2)) % h; // Move scanline, speed up with bass
+                ctx.fillStyle = config.glowColor;
+                ctx.globalAlpha = config.scanlineOpacity;
+                ctx.shadowBlur = 0; // No glow for scanline
+                ctx.fillRect(0, store.scanlineY, w, 2);
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // --- Draw Corner Brackets ---
+            if(config.showBrackets) {
+                ctx.strokeStyle = config.color;
+                ctx.lineWidth = 3;
+                ctx.globalAlpha = 0.8;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = config.glowColor;
+                
+                const bracketSize = 30;
+                const padding = 20;
+                
+                // Top Left
+                ctx.beginPath();
+                ctx.moveTo(padding + bracketSize, padding);
+                ctx.lineTo(padding, padding);
+                ctx.lineTo(padding, padding + bracketSize);
+                ctx.stroke();
+                
+                // Top Right
+                ctx.beginPath();
+                ctx.moveTo(w - padding - bracketSize, padding);
+                ctx.lineTo(w - padding, padding);
+                ctx.lineTo(w - padding, padding + bracketSize);
+                ctx.stroke();
+                
+                // Bottom Left
+                ctx.beginPath();
+                ctx.moveTo(padding + bracketSize, h - padding);
+                ctx.lineTo(padding, h - padding);
+                ctx.lineTo(padding, h - padding - bracketSize);
+                ctx.stroke();
+                
+                // Bottom Right
+                ctx.beginPath();
+                ctx.moveTo(w - padding - bracketSize, h - padding);
+                ctx.lineTo(w - padding, h - padding);
+                ctx.lineTo(w - padding, h - padding - bracketSize);
+                ctx.stroke();
+                
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // Reset glow
+            ctx.shadowBlur = 0;
+        };
+    }
+},
+arcReactor:{
+    displayName: "Arc Reactor",
+    settings: [
+        { id: 'coreColor', type: 'color', label: 'Core Color', default: '#00ffff' },
+        { id: 'arcColor', type: 'color', label: 'Arc Color', default: '#ffffff' },
+        { id: 'numArcs', type: 'range', label: 'Max Arcs', min: 3, max: 20, step: 1, default: 10 },
+        { id: 'arcThickness', type: 'range', label: 'Arc Thickness', min: 1, max: 10, step: 1, default: 4 },
+        { id: 'bassSensitivity', type: 'range', label: 'Core Pulse', min: 1, max: 50, step: 1, default: 30 },
+        { id: 'midSensitivity', type: 'range', label: 'Arc Count', min: 0.5, max: 2, step: 0.1, default: 1.2 },
+    ],
+    modules: [],
+    draw: (modules, store) => {
+        
+        // Helper function to draw one arc segment
+        function drawArcSegment(ctx, x, y, radius, startAngle, endAngle) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, startAngle, endAngle);
+            ctx.stroke();
+        }
+        
+        return () => {
+            const config = CONFIG.settings.arcReactor;
+            const w = canvas2D.width;
+            const h = canvas2D.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            const dataLen = audioData.length;
+            const bass = audioData.slice(0, Math.floor(dataLen * 0.1)).reduce((a, b) => a + b, 0) / (dataLen * 0.1) / 255;
+            const mids = audioData.slice(Math.floor(dataLen * 0.1), Math.floor(dataLen * 0.4)).reduce((a, b) => a + b, 0) / (dataLen * 0.3) / 255;
+            
+            // --- Draw ---
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, w, h);
+            
+            // --- Draw Core ---
+            const coreMinRadius = h * 0.1;
+            const corePulse = bass * config.bassSensitivity;
+            const coreRadius = coreMinRadius + corePulse;
+            
+            // Core glow
+            ctx.shadowBlur = 40 + corePulse * 2;
+            ctx.shadowColor = config.coreColor;
+            
+            // Core gradient
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreRadius);
+            gradient.addColorStop(0, config.coreColor);
+            gradient.addColorStop(0.5, config.coreColor);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(cx, cy, coreRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // --- Draw Portioned Arcs ---
+            const arcsToShow = Math.floor(mids * config.numArcs * config.midSensitivity);
+            const startRadius = coreRadius + 30;
+            const radiusStep = (h * 0.4 - startRadius) / config.numArcs;
+            
+            ctx.strokeStyle = config.arcColor;
+            ctx.lineWidth = config.arcThickness;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = config.arcColor;
+            
+            // This creates the )))) effect
+            const segmentAngle = Math.PI / 8; // The size of each arc segment
+            const gapAngle = Math.PI / 16; // The gap between segments
+            const numSegments = 4; // Number of segments per ring
+            
+            for (let i = 0; i < arcsToShow; i++) {
+                const radius = startRadius + i * radiusStep;
+                
+                // Set opacity based on index
+                ctx.globalAlpha = mapRange(i, 0, config.numArcs, 1.0, 0.1);
+                
+                const segmentStart = (Math.PI - (numSegments * (segmentAngle + gapAngle))) / 2;
+                
+                // Draw segments on the right side
+                for(let j = 0; j < numSegments; j++) {
+                    const start = -Math.PI/2 + segmentStart + j * (segmentAngle + gapAngle);
+                    const end = start + segmentAngle;
+                    drawArcSegment(ctx, cx, cy, radius, start, end);
+                }
+                
+                // Draw segments on the left side
+                for(let j = 0; j < numSegments; j++) {
+                    const start = Math.PI/2 + segmentStart + j * (segmentAngle + gapAngle);
+                    const end = start + segmentAngle;
+                    drawArcSegment(ctx, cx, cy, radius, start, end);
+                }
+            }
+            
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
+        };
+    }
+},
+visHUD:{
+    displayName: "HUD",
+    settings: [
+        { id: 'primaryColor', type: 'color', label: 'UI Color', default: '#00ff88' },
+        { id: 'glowColor', type: 'color', label: 'Glow Color', default: '#33BBAD' },
+        { id: 'showBassGauge', type: 'checkbox', label: 'Show Bass Gauge', default: true },
+        { id: 'showMidBar', type: 'checkbox', label: 'Show Mid Bar', default: true },
+        { id: 'showHighBar', type: 'checkbox', label: 'Show High Bar', default: true },
+        { id: 'showTrebleText', type: 'checkbox', label: 'Show Treble Flash', default: true },
+        { id: 'warningThreshold', type: 'range', label: 'Mids Warning Threshold', min: 0.5, max: 1.0, step: 0.05, default: 0.8 },
+        { id: 'bassShakeTrigger', type: 'range', label: 'Base Shake Threshold', min: 0.5, max: 1.0, step: 0.05, default: 0.8 },
+        { id: 'showReticle', type: 'checkbox', label: 'Show Reticle', default: true },
+        { id: 'showCornerText', type: 'checkbox', label: 'Show Corner Text', default: true },
+        { id: 'showGraphs', type: 'checkbox', label: 'Show Graphs', default: true },
+        { id: 'graphHistory', type: 'range', label: 'Graph History', min: 50, max: 300, step: 10, default: 150 },
+    ],
+    modules: [
+        { id: 'orbitronFont', url: 'https://fonts.gstatic.com/s/orbitron/v31/yMJRMIlzdpvBhQQL_Qq7dy0.woff2', type: 'font' },
+    ],
+    draw: (modules, store) => {
+        if (!store.bassNeedle) store.bassNeedle = 0;
+        if (!store.midBar) store.midBar = 0;
+        if (!store.highBar) store.highBar = 0;
+        if (!store.trebleFlash) store.trebleFlash = 0;
+        if (!store.shake) store.shake = 0;
+        if (!store.frame) store.frame = 0;
+        // Init history arrays for graphs
+        if (!store.bassHistory) store.bassHistory = [];
+        if (!store.midHistory) store.midHistory = [];
+        if (!store.highHistory) store.highHistory = [];
+        
+        return () => {
+            const config = CONFIG.settings.visHUD;
+            const w = canvas2D.width;
+            const h = canvas2D.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            const fontName = modules.orbitronFont || 'sans-serif';
+            
+            // Audio analysis
+            const dataLen = audioData.length;
+            const bass = audioData.slice(0, Math.floor(dataLen * 0.1)).reduce((a, b) => a + b, 0) / (dataLen * 0.1) / 255;
+            const mids = audioData.slice(Math.floor(dataLen * 0.1), Math.floor(dataLen * 0.4)).reduce((a, b) => a + b, 0) / (dataLen * 0.3) / 255;
+            const highs = audioData.slice(Math.floor(dataLen * 0.4), dataLen).reduce((a, b) => a + b, 0) / (dataLen * 0.6) / 255;
+            const overall = (bass + mids + highs) / 3;
+            store.frame++;
+            
+            // --- Update Graph History ---
+            const maxHistory = config.graphHistory;
+            store.bassHistory.push(bass);
+            store.midHistory.push(mids);
+            store.highHistory.push(highs);
+            
+            if (store.bassHistory.length > maxHistory) store.bassHistory.shift();
+            if (store.midHistory.length > maxHistory) store.midHistory.shift();
+            if (store.highHistory.length > maxHistory) store.highHistory.shift();
+            
+            
+            // --- Shake Effect ---
+            if (bass > config.bassShakeTrigger) store.shake = 15; // Set shake intensity
+            
+            ctx.save();
+            if (store.shake > 0) {
+                const xOffset = (Math.random() - 0.5) * store.shake;
+                const yOffset = (Math.random() - 0.5) * store.shake;
+                ctx.translate(xOffset, yOffset);
+                store.shake *= 0.8; // Decay
+            }
+            
+            // --- Draw ---
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Fading background
+            ctx.fillRect(0, 0, w, h);
+            
+            ctx.strokeStyle = config.primaryColor;
+            ctx.fillStyle = config.primaryColor;
+            ctx.shadowColor = config.glowColor;
+            ctx.shadowBlur = 12;
+            ctx.lineWidth = 2;
+            ctx.font = `18px ${fontName}`;
+            
+            // --- 1. Bass Gauge (Bottom Left) ---
+            if (config.showBassGauge) {
+                const gaugeX = w * 0.15;
+                const gaugeY = h * 0.85;
+                const radius = h * 0.3;
+                
+                // Draw gauge housing (arc)
+                ctx.beginPath();
+                ctx.arc(gaugeX, gaugeY, radius, Math.PI, 0);
+                ctx.stroke();
+                
+                // Draw tick marks
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 10; i++) {
+                    const angle = Math.PI + (i / 10) * Math.PI;
+                    const sx = gaugeX + Math.cos(angle) * (radius - 5);
+                    const sy = gaugeY + Math.sin(angle) * (radius - 5);
+                    const ex = gaugeX + Math.cos(angle) * radius;
+                    const ey = gaugeY + Math.sin(angle) * radius;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.lineTo(ex, ey);
+                    ctx.stroke();
+                }
+                ctx.lineWidth = 2;
+                
+                // Draw label
+                ctx.textAlign = 'center';
+                ctx.fillText("BASS", gaugeX, gaugeY - 10);
+                
+                // Draw needle
+                const targetAngle = Math.PI + bass * Math.PI;
+                store.bassNeedle = store.bassNeedle * 0.9 + targetAngle * 0.1; // Smooth
+                
+                ctx.beginPath();
+                ctx.moveTo(gaugeX, gaugeY);
+                ctx.lineTo(gaugeX + Math.cos(store.bassNeedle) * (radius - 10), gaugeY + Math.sin(store.bassNeedle) * (radius - 10));
+                ctx.strokeStyle = config.primaryColor;
+                ctx.stroke();
+            }
+            
+            // --- 2. Mid Bar (Bottom Right) ---
+            if (config.showMidBar) {
+                const barX = w * 0.7;
+                const barY = h * 0.85;
+                const barW = w * 0.2;
+                const barH = h * 0.1;
+                
+                // Draw bar outline
+                ctx.strokeRect(barX, barY - barH, barW, barH);
+                
+                // Draw label
+                ctx.textAlign = 'center';
+                ctx.fillText("MIDS", barX + barW / 2, barY - barH - 10);
+                
+                // Draw filling
+                const targetHeight = mids * barH;
+                store.midBar = store.midBar * 0.85 + targetHeight * 0.15; // Smooth
+                ctx.fillRect(barX, barY - store.midBar, barW, store.midBar);
+            }
+            
+            // --- 3. High Bar (Top Right) ---
+            if (config.showHighBar) {
+                const barX = w * 0.9;
+                const barY = h * 0.1;
+                const barW = w * 0.05;
+                const barH = h * 0.3;
+                
+                // Draw bar outline
+                ctx.strokeRect(barX, barY, barW, barH);
+                
+                // Draw label
+                ctx.textAlign = 'center';
+                ctx.fillText("HIGHS", barX + barW / 2, barY - 10);
+                
+                // Draw filling
+                const targetHeight = highs * barH;
+                store.highBar = store.highBar * 0.8 + targetHeight * 0.2; // Smooth
+                ctx.fillRect(barX, barY, barW, store.highBar);
+            }
+            
+            // --- 4. Treble Flash Text (Top Center) ---
+            if (config.showTrebleText) {
+                ctx.textAlign = 'center';
+                ctx.font = `24px ${fontName}`;
+                
+                if (mids > config.warningThreshold) {
+                    store.trebleFlash = 1.0; // Set flash to full opacity
+                }
+                
+                if (store.trebleFlash > 0) {
+                    ctx.globalAlpha = store.trebleFlash;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = config.glowColor;
+                    
+                    ctx.fillText("! WARNING !", cx, h * 0.1);
+                    
+                    store.trebleFlash *= 0.9; // Fade out
+                }
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // --- 5. Central Reticle ---
+            if (config.showReticle) {
+                const r = h * 0.05 + overall * 20;
+                ctx.lineWidth = 1;
+                
+                // Outer circle
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Crosshairs
+                ctx.beginPath();
+                ctx.moveTo(cx - r, cy);
+                ctx.lineTo(cx - r * 0.6, cy);
+                ctx.moveTo(cx + r, cy);
+                ctx.lineTo(cx + r * 0.6, cy);
+                ctx.moveTo(cx, cy - r);
+                ctx.lineTo(cx, cy - r * 0.6);
+                ctx.moveTo(cx, cy + r);
+                ctx.lineTo(cx, cy + r * 0.6);
+                ctx.stroke();
+                
+                // Inner dot
+                ctx.beginPath();
+                ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // --- 6. Corner Text ---
+            let topLeftY = 40; // Default Y position
+            if (config.showCornerText) {
+                ctx.font = `14px ${fontName}`;
+                ctx.textAlign = 'left';
+                ctx.globalAlpha = 0.7;
+                
+                // Adjust Y if graphs are shown
+                if (config.showGraphs) {
+                    topLeftY = h * 0.5 + 30; // Position below the new graphs
+                }
+                
+                // Top Left
+                ctx.fillText("SYSTEM: ONLINE", 30, topLeftY);
+                ctx.fillText(`FRAME: ${store.frame}`, 30, topLeftY + 20);
+                
+                // Top Right
+                ctx.textAlign = 'right';
+                ctx.fillText("TARGET: ACQUIRED", w - 30, 40);
+                ctx.fillText(`FREQ: ${Math.round(overall * 100)}%`, w - 30, 60);
+                
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // --- 7. Draw Line Graphs ---
+            if (config.showGraphs) {
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.8;
+                ctx.font = `14px ${fontName}`;
+                
+                const gW = w * 0.2, gH = h * 0.08, gPad = 10;
+                const gX = 30;
+                const gY_Bass = h * 0.15;
+                const gY_Mid = gY_Bass + gH + gPad + 20;
+                const gY_High = gY_Mid + gH + gPad + 20;
+                
+                // Draw Bass Graph
+                ctx.textAlign = 'center'; 
+                ctx.fillText("BASS RMS", gX + gW / 2, gY_Bass - 10);
+                ctx.strokeRect(gX, gY_Bass, gW, gH);
+                ctx.beginPath();
+                ctx.moveTo(gX, gY_Bass + gH);
+                for (let i = 0; i < store.bassHistory.length; i++) {
+                    const xPos = gX + (i / maxHistory) * gW;
+                    const yPos = gY_Bass + gH - (store.bassHistory[i] * gH);
+                    ctx.lineTo(xPos, yPos);
+                }
+                ctx.stroke();
+                
+                // Draw Mid Graph
+                ctx.textAlign = 'center'; 
+                ctx.fillText("MID RMS", gX + gW / 2, gY_Mid - 10);
+                ctx.strokeRect(gX, gY_Mid, gW, gH);
+                ctx.beginPath();
+                ctx.moveTo(gX, gY_Mid + gH);
+                for (let i = 0; i < store.midHistory.length; i++) {
+                    const xPos = gX + (i / maxHistory) * gW;
+                    const yPos = gY_Mid + gH - (store.midHistory[i] * gH);
+                    ctx.lineTo(xPos, yPos);
+                }
+                ctx.stroke();
+                
+                // Draw High Graph
+                ctx.textAlign = 'center'; 
+                ctx.fillText("HIGH RMS", gX + gW / 2, gY_High - 10);
+                ctx.strokeRect(gX, gY_High, gW, gH);
+                ctx.beginPath();
+                ctx.moveTo(gX, gY_High + gH);
+                for (let i = 0; i < store.highHistory.length; i++) {
+                    const xPos = gX + (i / maxHistory) * gW;
+                    const yPos = gY_High + gH - (store.highHistory[i] * gH);
+                    ctx.lineTo(xPos, yPos);
+                }
+                ctx.stroke();
+                
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // Reset shadow and restore context from shake
+            ctx.lineWidth = 2; // Reset default line width
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        };
+    }
+},
+dataPulse:{
+    displayName: "CPU Pulse",
+    settings: [
+        { id: 'pulseColor', type: 'color', label: 'Pulse Color', default: '#00ffff' },
+        { id: 'traceColor', type: 'color', label: 'Trace Color', default: '#004444' },
+        { id: 'chipColor', type: 'color', label: 'Chip Color', default: '#1a1a1a' },
+        { id: 'chipBorderColor', type: 'color', label: 'Chip Border', default: '#999999' },
+        { id: 'chipText', type: 'text', label: 'Chip Text', default: 'CPU' },
+        { id: 'numTraces', type: 'range', label: 'Num Traces', min: 4, max: 40, step: 2, default: 20 },
+        { id: 'traceWidth', type: 'range', label: 'Trace Width', min: 1, max: 8, step: 1, default: 2 },
+        { id: 'viaSize', type: 'range', label: 'Via (Pin Hole) Size', min: 0, max: 6, step: 1, default: 3 },
+        { id: 'traceAngle', type: 'select', label: 'Trace Angles', options: ['90', '45', 'Both'], default: '90' },
+        { id: 'squiggleChance', type: 'range', label: 'Squiggle Chance', min: 0, max: 1, step: 0.1, default: 0.2 },
+        { id: 'bassDeltaThreshold', type: 'range', label: 'Pulse Trigger (Delta)', min: 0.01, max: 0.5, step: 0.01, default: 0.1 },
+        { id: 'pulseSpeed', type: 'range', label: 'Base Pulse Speed', min: 0.01, max: 0.1, step: 0.005, default: 0.03 },
+    ],
+    modules: [
+        // Add orbitron for the "CPU" text
+        { id: 'orbitronFont', url: 'https://fonts.gstatic.com/s/orbitron/v31/yMJRMIlzdpvBhQQL_Qq7dy0.woff2', type: 'font' },
+    ],
+    draw: (modules, store) => {
+        if (!store.initialized) store.initialized = false;
+        if (!store.traces) store.traces = [];
+        if (!store.pulses) store.pulses = [];
+        if (!store.prevBass) store.prevBass = 0;
+        if (!store.prevConfig) store.prevConfig = {};
+        
+        // --- Helper: Get random point on a rect's edge ---
+        function getPointOnRect(r) {
+            const side = Math.floor(Math.random() * 4);
+            switch (side) {
+                case 0: return { x: r.x + Math.random() * r.w, y: r.y }; // Top
+                case 1: return { x: r.x + Math.random() * r.w, y: r.y + r.h }; // Bottom
+                case 2: return { x: r.x, y: r.y + Math.random() * r.h }; // Left
+                case 3: return { x: r.x + r.w, y: r.y + Math.random() * r.h }; // Right
+            }
+            return { x: r.x, y: r.y }; // fallback
+        }
+        
+        // --- Helper: Get initial direction vector away from chip ---
+        function getInitialDir(p, r) {
+            if (p.y === r.y) return { x: 0, y: -1 }; // Top
+            if (p.y === r.y + r.h) return { x: 0, y: 1 }; // Bottom
+            if (p.x === r.x) return { x: -1, y: 0 }; // Left
+            if (p.x === r.x + r.w) return { x: 1, y: 0 }; // Right
+            return {x: 0, y: -1}; // Default
+        }
+        
+        // --- Helper: Turn 90 degrees ---
+        function turn90(dir, turnRight) {
+            if (turnRight) {
+                return { x: -dir.y, y: dir.x };
+            } else {
+                return { x: dir.y, y: -dir.x };
+            }
+        }
+        
+        // --- Helper: Turn 45 degrees ---
+        function turn45(dir, turnRight) {
+            const { x, y } = dir;
+            let newDir;
+            if (turnRight) { newDir = { x: x - y, y: x + y }; }
+            else { newDir = { x: x + y, y: y - x }; }
+            const mag = Math.sqrt(newDir.x * newDir.x + newDir.y * newDir.y);
+            if (mag === 0) return dir; // Should not happen
+            return { x: newDir.x / mag, y: newDir.y / mag };
+        }
+        
+        // --- Helper: Draw a squiggle segment ---
+        function drawSquiggleSegment(ctx, start, end) {
+            const dx = end.x - start.x, dy = end.y - start.y;
+            const mag = Math.sqrt(dx * dx + dy * dy);
+            if (mag === 0) return;
+            const perpX = -dy / mag, perpY = dx / mag;
+            const numWiggles = 6;
+            const amplitude = 8;
+            
+            for (let t = 0.05; t <= 1.01; t += 0.05) {
+                const x = start.x + dx * t;
+                const y = start.y + dy * t;
+                const offset = Math.sin(t * Math.PI * numWiggles) * amplitude;
+                ctx.lineTo(x + perpX * offset, y + perpY * offset);
+            }
+        }
+        
+        // --- Helper function to generate the traces ---
+        function generateTraces(store, w, h, config) {
+            store.traces = [];
+            const cx = w / 2;
+            const cy = h / 2;
+            const chipW = 100, chipH = 60;
+            const chipRect = { x: cx - chipW/2, y: cy - chipH/2, w: chipW, h: chipH };
+            store.chipRect = chipRect;
+            
+            for (let i = 0; i < config.numTraces; i++) {
+                const trace = [];
+                let startPos = getPointOnRect(chipRect);
+                trace.push({ pos: startPos, squiggle: false }); // Start point
+                
+                let currentPos = startPos;
+                let currentDir = getInitialDir(startPos, chipRect);
+                
+                // 1. Move away from chip
+                let moveDist = 20 + Math.random() * 30;
+                currentPos = { x: currentPos.x + currentDir.x * moveDist, y: currentPos.y + currentDir.y * moveDist };
+                trace.push({ pos: currentPos, squiggle: false }); // First segment
+                
+                // 2. Path randomly
+                const numSegments = 5 + Math.floor(Math.random() * 5);
+                for (let j = 0; j < numSegments; j++) {
+                    // Decide turn type
+                    let turnType = config.traceAngle;
+                    if (turnType === 'Both') turnType = Math.random() > 0.5 ? '90' : '45';
+                    
+                    if (turnType === '90') {
+                        currentDir = turn90(currentDir, Math.random() > 0.5);
+                    } else {
+                        currentDir = turn45(currentDir, Math.random() > 0.5);
+                    }
+                    
+                    moveDist = 40 + Math.random() * 150;
+                    currentPos = { x: currentPos.x + currentDir.x * moveDist, y: currentPos.y + currentDir.y * moveDist };
+                    
+                    // Stop if we go way off screen
+                    if (currentPos.x < -w || currentPos.x > w*2 || currentPos.y < -h || currentPos.y > h*2) {
+                        break;
+                    }
+                    
+                    const isSquiggle = Math.random() < config.squiggleChance;
+                    trace.push({ pos: currentPos, squiggle: isSquiggle });
+                }
+                store.traces.push(trace);
+            }
+            store.initialized = true;
+        }
+        
+        // --- Return the main draw function ---
+        return () => {
+            const config = CONFIG.settings.dataPulse;
+            const w = canvas2D.width;
+            const h = canvas2D.height;
+            const fontName = modules.orbitronFont || 'sans-serif';
+            
+            // --- Audio Analysis (with Delta) ---
+            const dataLen = audioData.length;
+            const bass = audioData.slice(0, Math.floor(dataLen * 0.1)).reduce((a, b) => a + b, 0) / (dataLen * 0.1) / 255;
+            const highs = audioData.slice(Math.floor(dataLen * 0.7), dataLen).reduce((a, b) => a + b, 0) / (dataLen * 0.3) / 255;
+            const bassDelta = bass - store.prevBass;
+            store.prevBass = bass;
+            
+            // --- Re-generate if config changes ---
+            if (store.w !== w || store.h !== h || 
+                store.prevConfig.numTraces !== config.numTraces ||
+                store.prevConfig.traceAngle !== config.traceAngle ||
+                store.prevConfig.squiggleChance !== config.squiggleChance
+            ) {
+                store.initialized = false;
+            }
+            
+            if (!store.initialized) {
+                generateTraces(store, w, h, config);
+                store.w = w; store.h = h;
+                store.prevConfig.numTraces = config.numTraces;
+                store.prevConfig.traceAngle = config.traceAngle;
+                store.prevConfig.squiggleChance = config.squiggleChance;
+            }
+            
+            // --- Draw ---
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, w, h);
+            
+            // --- 1. Draw Static Traces ---
+            ctx.strokeStyle = config.traceColor;
+            ctx.lineWidth = config.traceWidth;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = config.traceColor;
+            ctx.globalAlpha = 0.5;
+            
+            for (const trace of store.traces) {
+                ctx.beginPath();
+                ctx.moveTo(trace[0].pos.x, trace[0].pos.y);
+                for (let i = 0; i < trace.length - 1; i++) {
+                    const start = trace[i].pos;
+                    const end = trace[i + 1].pos;
+                    const isSquiggle = trace[i + 1].squiggle;
+                    
+                    if (isSquiggle) {
+                        drawSquiggleSegment(ctx, start, end);
+                    } else {
+                        ctx.lineTo(end.x, end.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // --- 2. Draw Vias (Pin Holes) ---
+            ctx.fillStyle = config.traceColor;
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = config.traceColor;
+            if (config.viaSize > 0) {
+                for (const trace of store.traces) {
+                    for (let i = 1; i < trace.length; i++) { // Start from 1 (first turn)
+                        const p = trace[i].pos;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, config.viaSize, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1.0;
+            
+            // --- 3. Draw Central Chip ---
+            const r = store.chipRect;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = config.chipBorderColor;
+            ctx.fillStyle = config.chipColor;
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+            ctx.strokeStyle = config.chipBorderColor;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(r.x, r.y, r.w, r.h);
+            
+            ctx.fillStyle = config.pulseColor;
+            ctx.font = `20px ${fontName}`;
+            ctx.textAlign = 'center';
+            ctx.shadowColor = config.pulseColor;
+            ctx.shadowBlur = 10;
+            ctx.fillText(config.chipText, r.x + r.w / 2, r.y + r.h / 2 + 8);
+            
+            // --- 4. Create New Pulses on Bass Delta ---
+            if (bassDelta > config.bassDeltaThreshold) {
+                for (let i = 0; i < store.traces.length; i++) {
+                    if (Math.random() > 0.5) { // 50% chance per trace
+                        store.pulses.push({
+                            traceIndex: i,
+                            segment: 0,
+                            pos: 0,
+                            speed: config.pulseSpeed + highs * 0.05, // Speed boosted by highs
+                            life: 1.0
+                        });
+                    }
+                }
+            }
+            
+            // --- 5. Update and Draw Pulses ---
+            ctx.fillStyle = config.pulseColor;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = config.pulseColor;
+            
+            for (let i = store.pulses.length - 1; i >= 0; i--) {
+                const p = store.pulses[i];
+                const trace = store.traces[p.traceIndex];
+                
+                if (!trace || p.segment >= trace.length - 1 || p.life <= 0) {
+                    store.pulses.splice(i, 1);
+                    continue;
+                }
+                
+                p.pos += p.speed;
+                p.life -= 0.01; // Fade out
+                
+                const startNode = trace[p.segment].pos;
+                const endNode = trace[p.segment + 1].pos;
+                const isSquiggle = trace[p.segment + 1].squiggle;
+                
+                const dx = endNode.x - startNode.x, dy = endNode.y - startNode.y;
+                let x = startNode.x + dx * p.pos;
+                let y = startNode.y + dy * p.pos;
+                
+                if (isSquiggle) {
+                    const mag = Math.sqrt(dx * dx + dy * dy);
+                    if (mag > 0) {
+                        const perpX = -dy / mag, perpY = dx / mag;
+                        const offset = Math.sin(p.pos * Math.PI * 6) * 8;
+                        x += perpX * offset;
+                        y += perpY * offset;
+                    }
+                }
+                
+                if (p.pos >= 1.0) {
+                    p.pos = 0;
+                    p.segment++;
+                }
+                
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
+        };
+    }
+},
 /*blank: {
   displayName: "blank",
   settings: [
@@ -849,199 +1808,17 @@ geometryPulse: {
 },*/
 
 
-//SPECIAL THANKS TO GITHUB COPILOT FOR GIVING ME THE ABILITY TO MAKE EVEN DUMBER STUFF WHEN I SHOULD BE SLEEPING    
-babylonReactiveText3D: {
-    displayName: "I honestly dont know what copilot was trying to do with this one",
-    settings: [
-        { id: 'text', type: 'text', label: 'Text', default: 'EMPLOYMENT' },
-        { id: 'color', type: 'color', label: 'Base Color', default: '#00ff00' },
-        { id: 'shakeIntensity', type: 'range', label: 'Shake Intensity', min: 0, max: 20, step: 1, default: 9 },
-        { id: 'warpAmount', type: 'range', label: 'Warp Amount', min: 0, max: 1, step: 0.000001, default: 0.0507 },
-        { id: 'scaleMultiplier', type: 'range', label: 'Scale Multiplier', min: 0, max: 1, step: 0.05, default: 0.8 },
-        { id: 'speed', type: 'range', label: 'Travel Speed', min: 0, max: 2, step: 0.01, default: 0.6 },
-        { id: 'boxSize', type: 'range', label: 'Bounds Size', min: 50, max: 400, step: 10, default: 200 }
-    ],
-    modules: [
-        { id: 'babylon', url: 'https://cdn.babylonjs.com/babylon.js', type: 'script' }
-    ],
-    draw: (modules, store) => {
-        const BABYLON = window.BABYLON;
-        
-        if (!store.initialized) {
-            // Engine/scene/camera
-            const engine = new BABYLON.Engine(canvas3D, true);
-            const scene = new BABYLON.Scene(engine);
-            scene.clearColor = new BABYLON.Color4(0, 0, 0, 0); // transparent over your 2D overlay
-            
-            const camera = new BABYLON.ArcRotateCamera("cam",
-                                                       Math.PI / 2, Math.PI / 3, 120,
-                                                       new BABYLON.Vector3(0, 0, 0),
-                                                       scene
-            );
-            camera.attachControl(canvas3D, true);
-            
-            // Lights: ambient + directional for shiny “screensaver” look
-            const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
-            hemi.intensity = 0.5;
-            
-            const dir = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-0.5, -1, -0.3), scene);
-            dir.intensity = 1.0;
-            dir.position = new BABYLON.Vector3(50, 80, 60);
-            
-            // Text as dynamic texture on a plane
-            const plane = BABYLON.MeshBuilder.CreatePlane("textPlane", { width: 60, height: 30 }, scene);
-            plane.position = new BABYLON.Vector3(0, 0, 0);
-            
-            const dynTex = new BABYLON.DynamicTexture("dynTex", { width: 1024, height: 512 }, scene, true);
-            dynTex.hasAlpha = true;
-            
-            const mat = new BABYLON.StandardMaterial("textMat", scene);
-            mat.diffuseTexture = dynTex;
-            mat.emissiveColor = new BABYLON.Color3(0, 0, 0); // keep glow subtle; we’ll drive emissive with highs
-            mat.specularColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-            mat.specularPower = 64;
-            mat.backFaceCulling = false;
-            plane.material = mat;
-            
-            // Initial text draw
-            const drawText = () => {
-                dynTex.clear();
-                const color = CONFIG.settings.babylonReactiveText3D.color;
-                dynTex.drawText(
-                    CONFIG.settings.babylonReactiveText3D.text,
-                    null, // center X
-                    360,  // baseline Y
-                    "bold 220px Impact, Arial, sans-serif",
-                    color,
-                    "transparent",
-                    true // invertY (Babylon's canvas coordinates)
-                );
-            };
-            drawText();
-            
-            // Bounds box (invisible) for bounce
-            const boxSize = CONFIG.settings.babylonReactiveText3D.boxSize;
-            const boundsMin = new BABYLON.Vector3(-boxSize, -boxSize * 0.6, -boxSize);
-            const boundsMax = new BABYLON.Vector3(boxSize, boxSize * 0.6, boxSize);
-            
-            // Motion state
-            store.velocity = new BABYLON.Vector3(
-                (Math.random() * 2 - 1) * 30,
-                                                 (Math.random() * 2 - 1) * 20,
-                                                 (Math.random() * 2 - 1) * 30
-            );
-            store.angle = 0;
-            store.shakeMomentum = 0;
-            store.bassBaseline = 0;
-            
-            // Save to store
-            store.engine = engine;
-            store.scene = scene;
-            store.camera = camera;
-            store.plane = plane;
-            store.dynTex = dynTex;
-            store.drawText = drawText;
-            store.boundsMin = boundsMin;
-            store.boundsMax = boundsMax;
-            store.initialized = true;
-            
-            // Resize handler
-            const onResize = () => engine.resize();
-            store.onResize = onResize;
-            window.addEventListener('resize', onResize);
-            
-            // Run loop separate from your 2D RAF if needed
-            engine.runRenderLoop(() => scene.render());
-        }
-        
-        return () => {
-            const cfg = CONFIG.settings.babylonReactiveText3D;
-            
-            // Audio metrics (mirroring your 2D reactive logic)
-            const bass = audioData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
-            const mids = audioData.slice(32, 128).reduce((a, b) => a + b, 0) / 96;
-            const highs = audioData.slice(128).reduce((a, b) => a + b, 0) / (audioData.length - 128);
-            
-            // Baseline + normalization (with floor to avoid collapse)
-            store.bassBaseline = (store.bassBaseline * 0.98 + bass * 0.02) * (bass !== 0 ? 1 : 0);
-            const bassNormRaw = (bass - store.bassBaseline) / 80;
-            const bassNorm = Math.max(0, Math.pow(bassNormRaw, 5));
-            
-            // Shake momentum
-            store.shakeMomentum = store.shakeMomentum * 0.85 + bassNorm * 0.15;
-            
-            // Shake offset
-            const shakeX = (Math.random() - 0.5) * cfg.shakeIntensity * store.shakeMomentum * 4;
-            const shakeY = (Math.random() - 0.5) * cfg.shakeIntensity * store.shakeMomentum * 4;
-            
-            // Angle and warp
-            store.angle += (highs / 255) * 0.04; // slower spin than 2D
-            const warp = Math.pow(mids / 255, 1.5) * cfg.warpAmount * 3;
-            
-            // Scale react
-            const scale = 1 + bassNorm * cfg.scaleMultiplier;
-            
-            // Apply transform
-            store.plane.rotation.y = store.angle;
-            store.plane.rotation.x = warp * 0.3;
-            store.plane.scaling.set(scale, 1 + warp, 1);
-            
-            // Slight emissive “glow” on highs
-            const glow = Math.min(1, highs / 255);
-            store.plane.material.emissiveColor.set(glow * 0.25, glow * 0.25, glow * 0.25);
-            
-            // Travel + bounce in a box
-            const dt = store.engine.getDeltaTime() / 1000; // seconds
-            const speed = cfg.speed;
-            store.plane.position.addInPlace(store.velocity.scale(dt * speed));
-            
-            // Add shake offsets in screen space by nudging position
-            store.plane.position.x += shakeX * 0.02;
-            store.plane.position.y += shakeY * 0.02;
-            
-            const p = store.plane.position, v = store.velocity;
-            const min = store.boundsMin, max = store.boundsMax;
-            
-            if (p.x < min.x || p.x > max.x) { v.x *= -1; p.x = BABYLON.Scalar.Clamp(p.x, min.x, max.x); }
-            if (p.y < min.y || p.y > max.y) { v.y *= -1; p.y = BABYLON.Scalar.Clamp(p.y, min.y, max.y); }
-            if (p.z < min.z || p.z > max.z) { v.z *= -1; p.z = BABYLON.Scalar.Clamp(p.z, min.z, max.z); }
-            
-            // If text or color changed, refresh the dynamic texture
-            // (optional: detect changes to avoid per-frame draw)
-            if (store.lastText !== cfg.text || store.lastColor !== cfg.color) {
-                store.drawText();
-                store.lastText = cfg.text;
-                store.lastColor = cfg.color;
-            }
-        };
-    }
-},
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  testVisualizer: {
     displayName: "Test Visualizer",
     settings: [
       { id: 'text', type: 'text', label: 'Text', default: 'TEST' },
       { id: 'color', type: 'color', label: 'Color', default: '#00ff00' },
-      { id: 'size', type: 'range', label: 'Size', min: 20, max: 200, step: 10, default: 60 }
+      { id: 'size', type: 'range', label: 'Size', min: 20, max: 200, step: 10, default: 60 },
+      { id: 'file', type: 'file', label: 'filetest'}
     ],
     modules: [
-      { id: 'orbitron', url: 'https://fonts.gstatic.com/s/orbitron/v35/yMJRMIlzdpvBhQQL_Qq7dy0.woff2', type: 'font' }
+      { id: 'orbitron', url: 'example.woff2', type: 'font' },
+      { id: 'orbitron', url: 'example.png', type: 'image' }
     ],
     draw: (modules, store) => {
       if (!store.angle) store.angle = 0;
