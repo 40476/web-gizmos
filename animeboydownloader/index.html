@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nekos API boy viewer (for wzium)</title>
+  <style>
+    body {
+      font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #ffe6f0, #e6f7ff);
+      text-align: center;
+      padding: 30px;
+      color: #444;
+    }
+    h1 {
+      color: #ff66a3;
+      text-shadow: 1px 1px #fff;
+    }
+    button {
+      background: #ffb3d9;
+      border: none;
+      border-radius: 20px;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ff66a3;
+      color: #fff;
+    }
+    img {
+      max-width: 400px;
+      border-radius: 15px;
+      margin: 20px 0;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .card {
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 0 auto;
+      display: inline-block;
+      text-align: left;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .info p {
+      margin: 6px 0;
+    }
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin: 5px;
+      border: 2px solid #eee;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>🐾 Nekos API boy viewer (for wzium) 🐾</h1>
+  <button onclick="loadImage()">✨ Fetch New Image ✨</button>
+  <div id="content"></div>
+
+  <script>
+    const apiUrl = "https://api.codetabs.com/v1/proxy?quest=https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe,suggestive&without_tags=girl,pussy,exposed_girl_breasts";
+
+    async function loadImage() {
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        const image = data[0];
+
+        // Build color palette swatches
+        const paletteHTML = image.color_palette.map(
+          rgb => `<div class="swatch" style="background: rgb(${rgb.join(",")});"></div>`
+        ).join("");
+
+        document.getElementById("content").innerHTML = `
+          <img src="${image.url}" alt="Neko Image">
+          <div class="card">
+            <div class="info">
+              <p><strong>ID:</strong> ${image.id}</p>
+              <p><strong>Rating:</strong> ${image.rating}</p>
+              <p><strong>Tags:</strong> ${image.tags.join(", ")}</p>
+              <p><strong>Source:</strong> <a href="${image.source_url}" target="_blank">Pixiv Link</a></p>
+              <p><strong>Palette:</strong></p>
+              <div class="palette">${paletteHTML}</div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        document.getElementById("content").innerHTML = "<p>Oops! Couldn’t fetch image 🥺</p>";
+        console.error(error);
+      }
+    }
+
+    // Load one image on startup
+    loadImage();
+  </script>
+</body>
+</html>
