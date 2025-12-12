@@ -1,5 +1,5 @@
 let dataset = [];
-let glossMap = {}; // auto-built from WLASL JSON
+let glossMap = {}; // gloss → array of mp4 URLs
 
 // Load WLASL dataset JSON
 fetch("WLASL_v0.3.json")
@@ -10,12 +10,14 @@ fetch("WLASL_v0.3.json")
   populateAutocomplete(data);
 });
 
-// Build gloss → mp4 URL map automatically
+// Build gloss → all mp4 URLs map
 function buildGlossMap(data) {
   data.forEach(entry => {
-    const mp4Instance = entry.instances.find(inst => inst.url.endsWith(".mp4"));
-    if (mp4Instance) {
-      glossMap[entry.gloss.toLowerCase()] = mp4Instance.url;
+    const urls = entry.instances
+    .map(inst => inst.url)
+    .filter(url => url.endsWith(".mp4"));
+    if (urls.length > 0) {
+      glossMap[entry.gloss.toLowerCase()] = urls;
     }
   });
 }
@@ -30,10 +32,9 @@ function populateAutocomplete(data) {
   });
 }
 
-// Words to ignore (articles, filler)
+// Words to ignore
 const ignoreWords = ["the", "a", "an", "to", "and"];
 
-// Rule-based glosser using WLASL dataset
 function glossText(text) {
   return text
   .toLowerCase()
@@ -41,26 +42,44 @@ function glossText(text) {
   .filter(word => !ignoreWords.includes(word))
   .map(word => ({
     gloss: word,
-    url: glossMap[word] || null
+    urls: glossMap[word] || []
   }))
-  .filter(entry => entry.url); // only keep words with clips
+  .filter(entry => entry.urls.length > 0);
 }
 
 function fetchSequence() {
   const text = document.getElementById("userText").value;
   const entries = glossText(text);
-  const clips = entries.map(e => e.url);
-  playSequence(clips);
+  playSequence(entries);
 }
 
-function playSequence(clips) {
+function playSequence(entries) {
   const video = document.getElementById("aslVideo");
   let index = 0;
   
+  // Prefetch all videos
+  entries.forEach(entry => {
+    entry.urls.forEach(url => {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = url;
+      document.head.appendChild(link);
+    });
+  });
+  
+  function tryPlay(entry, urlIndex = 0) {
+    if (urlIndex < entry.urls.length) {
+      video.src = entry.urls[urlIndex];
+      video.play().catch(() => {
+        // If playback fails, try next URL
+        tryPlay(entry, urlIndex + 1);
+      });
+    }
+  }
+  
   function playNext() {
-    if (index < clips.length) {
-      video.src = clips[index];
-      video.play();
+    if (index < entries.length) {
+      tryPlay(entries[index]);
       index++;
     }
   }
