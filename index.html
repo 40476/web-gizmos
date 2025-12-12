@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ASL Sequence Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ASL Sequence Player</h1>
+  
+  <input id="userText" placeholder="Enter text..." list="glossList"/>
+  <datalist id="glossList"></datalist>
+  
+  <button onclick="fetchSequence()">Play</button>
+  <video id="aslVideo" width="400" controls></video>
+
+  <script src="script.js"></script>
+</body>
+</html>
