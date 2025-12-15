@@ -7,12 +7,14 @@
 <body>
   <h1>ASL Sequence Player</h1>
   
-  <input id="userText" placeholder="Enter text..." list="glossList"/>
-  <datalist id="glossList"></datalist>
+  <div class="input-container">
+    <input id="userText" placeholder="Enter text..." autocomplete="off"/>
+    <div id="suggestions"></div>
+  </div>
   
   <button onclick="fetchSequence()">Play</button>
   <br>
-  <video id="aslVideo" width="400" controls></video>
+  <video id="aslVideo" width="500" controls></video>
 
   <script src="script.js"></script>
 </body>
