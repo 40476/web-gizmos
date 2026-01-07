@@ -3,28 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Floating Turtles — grid obstacles</title>
+  <title>Floating Turtles — Pathfinding & Logic</title>
   <style>
-     html{
-        user-select: none;
-        -moz-user-select: none;
-        -khtml-user-select: none;
-        -webkit-user-select: none;
-        -o-user-select: none;
-     }
+    html {
+      user-select: none;
+      -moz-user-select: none;
+      -khtml-user-select: none;
+      -webkit-user-select: none;
+      -o-user-select: none;
+    }
+    body {
+      width: 100vw; height: 100vh; background-color: #f0f4f8; overflow: hidden;
+      margin: 0; padding: 0; cursor: crosshair; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* --- TURTLE CSS (Original + Variables) --- */
     .turtle {
       width: 500px;
       height: 500px;
       position: absolute;
-      transform: scale(0.2);
       transform-origin: center center;
       z-index: 10;
+      pointer-events: none; /* Let clicks pass to wrapper/elements */
+      will-change: transform;
     }
+    
     .turtle__head {
       width: 75px; height: 85px; border-radius: 50%;
-      background-color: #82C49F; position: relative;
+      background-color: var(--skin-color, #82C49F); position: relative;
       top: 22%; left: 50%; transform: translate(-50%, -50%);
       cursor: pointer; transition: top 0.3s ease-in-out; z-index: 4;
+      pointer-events: auto;
     }
     .turtle__head::before, .turtle__head::after {
       top: 20px; width: 8px; height: 8px; border-radius: 50%;
@@ -38,6 +47,7 @@
       width: 220px; height: 250px; background-color: var(--shell-base);
       border-radius: 50%; overflow: hidden; position: absolute;
       top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; cursor: grab;
+      pointer-events: auto;
     }
     .turtle__shell::before, .turtle__shell::after {
       content: ""; position: absolute; top: 50%; left: 50%;
@@ -69,498 +79,1188 @@
       0% { filter: hue-rotate(0deg) saturate(2) contrast(1.5); }
       100% { filter: hue-rotate(360deg) saturate(2) contrast(1.5); }
     }
-    .rainbow { animation: rainbowCycle 8s linear infinite; }
+    .rainbow .turtle__shell { animation: rainbowCycle 8s linear infinite; }
 
     .turtle__tail {
       width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent;
-      border-top: 35px solid #84C3A0; position: absolute; bottom: 18%; left: 50%;
+      border-top: 35px solid var(--skin-color, #84C3A0); position: absolute; bottom: 18%; left: 50%;
       transform: translate(-50%, -50%); z-index: 3;
     }
     .turtle__legs {
-      width: 30px; height: 300px; border-radius: 20%; background-color: #82C49F;
+      width: 30px; height: 300px; border-radius: 20%; background-color: var(--skin-color, #82C49F);
       position: absolute; top: 50%; left: 50%; z-index: 3;
     }
     .turtle__legs.-left  { transform: translate(-50%, -50%) rotate(-45deg); }
     .turtle__legs.-right { transform: translate(-50%, -50%) rotate(45deg); }
+    
     .turtle.is-moving .turtle__legs.-left  { animation: walking-turtle-01 1.5s ease-in-out infinite alternate; }
     .turtle.is-moving .turtle__legs.-right { animation: walking-turtle-02 1.5s ease-in-out infinite alternate; }
+    
     .turtle.is-retracted .turtle__head { top: 28%; }
-    .turtle.neck-extend .turtle__head { top: 18%; }
+    .turtle.neck-extend .turtle__head { top: 12%; } 
     .turtle.is-dragging { z-index: 100; }
     .turtle.is-dragging .turtle__shell { cursor: grabbing; }
 
     .turtle-name {
-      position: absolute; font-size: 14px; font-family: Arial, sans-serif; color: #333;
-      background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 6px;
-      transform: translate(-50%, -100%); pointer-events: none; white-space: nowrap;
+      position: absolute; font-size: 14px; font-family: 'Segoe UI', sans-serif; 
+      font-weight: bold; color: #333;
+      background: rgba(255,255,255,0.85); padding: 4px 8px; border-radius: 12px;
+      transform: translate(-50%, -100%); pointer-events: auto; white-space: nowrap;
+      top: 10%; left: 50%;
+      border: 1px solid rgba(0,0,0,0.1);
+      cursor: text;
     }
 
-    body {
-      width: 100vw; height: 100vh; background-color: #ADD8E6; overflow: hidden;
-      margin: 0; padding: 0; cursor: crosshair; font-family: 'Inter', sans-serif;
+    /* --- FOOD TYPES --- */
+    .food {
+      position: absolute; z-index: 2; transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: popIn 0.3s ease-out;
     }
-
     .food-pellet {
-      position: absolute; width: 10px; height: 10px; background-color: #c27a3a;
-      border: 2px solid #8f592a; border-radius: 50%; z-index: 1;
-      transform: translate(-50%, -50%); pointer-events: none;
+      width: 12px; height: 12px; background: radial-gradient(#d35400, #a04000);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-leaf {
+      width: 16px; height: 16px; background: linear-gradient(135deg, #2ecc71, #27ae60);
+      border-radius: 0 50% 0 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-fruit {
+      width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-fruit::after {
+      content: ''; position: absolute; top: -2px; left: 50%; width: 3px; height: 5px;
+      background: #27ae60; border-radius: 2px;
     }
 
     @keyframes walking-turtle-01 {
       0%   { transform: translate(-50%, -50%) rotate(-40deg); }
-      25%  { transform: translate(-50%, -50%) rotate(-45deg); }
-      50%  { transform: translate(-50%, -50%) rotate(-30deg); }
-      75%  { transform: translate(-50%, -50%) rotate(-45deg); }
-      100% { transform: translate(-50%, -50%) rotate(-40deg); }
+      100% { transform: translate(-50%, -50%) rotate(-30deg); }
     }
     @keyframes walking-turtle-02 {
       0%   { transform: translate(-50%, -50%) rotate(40deg); }
-      25%  { transform: translate(-50%, -50%) rotate(45deg); }
-      50%  { transform: translate(-50%, -50%) rotate(35deg); }
-      75%  { transform: translate(-50%, -50%) rotate(45deg); }
       100% { transform: translate(-50%, -50%) rotate(30deg); }
     }
+    @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
 
     /* Grid overlay */
     #grid {
-      position: absolute;
-      inset: 0;
-      pointer-events: none; /* toggled to allow painting only with Shift */
-      z-index: 2;
+      position: absolute; inset: 0; pointer-events: none; z-index: 1;
+      opacity: 0; transition: opacity 0.3s;
     }
     .grid-cell {
-      position: absolute;
-      box-sizing: border-box;
-      border: 1px solid rgba(0,0,0,0.08);
-      background: rgba(0,0,0,0.0);
+      position: absolute; box-sizing: border-box;
+      border: 1px solid rgba(0,0,0,0.08); background: rgba(0,0,0,0.0);
+      transition: background-color 0.1s;
     }
-    .grid-cell.is-blocked {
-      background: rgba(220, 60, 60, 0.25);
+    .grid-cell:hover { background-color: rgba(0,0,0,0.05); }
+    
+    /* Wall (State 1) */
+    .grid-cell.is-blocked { background: #2c3e50; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    
+    /* Glass (State 2) */
+    .grid-cell.is-glass { 
+      background: rgba(200, 230, 255, 0.4); 
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(2px);
     }
+
+    /* Debug Canvas */
+    #debug-canvas {
+      position: absolute; inset: 0; pointer-events: none; z-index: 20;
+    }
+
+    /* Settings panel */
+    #settings-panel {
+      position: fixed; top: 10px; right: 10px; z-index: 999;
+      background: rgba(255,255,255,0.95); border-radius: 12px;
+      padding: 15px; font-size: 13px; color: #222;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px;
+      backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.8);
+      cursor: grab; max-height: 90vh; overflow-y: auto;
+    }
+    #settings-panel.dragging { cursor: grabbing; opacity: 0.9; }
+    #settings-panel h2 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    #settings-panel .row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; gap: 8px; }
+    #settings-panel label { flex: 1; font-weight: 500; color: #444; }
+    #settings-panel input[type="number"], #settings-panel input[type="range"], #settings-panel select { flex: 1; padding: 4px; border-radius: 4px; border: 1px solid #ccc; }
+    #settings-panel small { opacity: 0.7; font-size: 11px; display: block; margin-top: 10px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 5px; }
+    
+    button.btn {
+      width: 100%; padding: 6px; background: #3498db; color: white; border: none;
+      border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 5px;
+    }
+    button.btn:hover { background: #2980b9; }
+    button.btn.secondary { background: #95a5a6; }
   </style>
 </head>
 <body>
 
+<div id="grid"></div>
+<canvas id="debug-canvas"></canvas>
+
+<div id="settings-panel">
+  <h2>Turtle Lab</h2>
+
+  <div class="row">
+    <label for="numTurtles">Turtles</label>
+    <input id="numTurtles" type="range" min="1" max="30" value="6">
+    <span id="numDisplay" style="font-size:0.9em; width: 20px;">6</span>
+  </div>
+
+  <div class="row">
+    <label for="gridSize">Grid Size</label>
+    <input id="gridSize" type="range" min="20" max="80" step="5" value="40">
+    <span id="gridDisplay" style="font-size:0.9em; width: 20px;">40</span>
+  </div>
+
+  <div class="row">
+    <label for="globalPersonality">Personality bias</label>
+    <select id="globalPersonality">
+      <option value="mixed" selected>Mixed</option>
+      <option value="default">Default</option>
+      <option value="shy">Shy</option>
+      <option value="aggressive">Aggressive</option>
+      <option value="lazy">Lazy</option>
+      <option value="scout">Scout</option>
+      <option value="social">Social</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="rainbowChance">Rainbow shells</label>
+    <input id="rainbowChance" type="range" min="0" max="1" step="0.1" value="0.2">
+  </div>
+
+  <div class="row">
+    <label for="speedScale">Speed scale</label>
+    <input id="speedScale" type="range" min="0.5" max="3" step="0.1" value="1">
+  </div>
+
+  <div class="row">
+    <label><input id="namesEnabled" type="checkbox" checked> Names</label>
+  </div>
+
+  <div class="row">
+    <label><input id="toggleGrid" type="checkbox"> Show grid</label>
+  </div>
+
+  <div class="row">
+    <label><input id="editGrid" type="checkbox"> ✏️ Edit</label>
+    <select id="brushType" style="flex: 0.6;">
+        <option value="1">🧱 Wall</option>
+        <option value="2">🪟 Glass</option>
+    </select>
+  </div>
+  
+  <div class="row">
+    <label><input id="toggleDebug" type="checkbox"> 🛠️ Debug (D)</label>
+  </div>
+
+  <button class="btn" id="genMazeBtn" style="background: #9b59b6; margin-top: 10px;">🧩 Generate Maze</button>
+  <button class="btn secondary" id="resetGridBtn">Reset Grid</button>
+  <button class="btn secondary" id="clearFoodBtn">Clear Food</button>
+
+  <small>
+    Click empty space to add food.<br>
+    Drag shells to move turtles.<br>
+    Click names to rename.<br>
+    Paint walls when "Edit" is checked.
+  </small>
+</div>
+
 <script>
-  // --- Global Setup ---
+  // -------------------------
+  // Configuration
+  // -------------------------
+  let GRID_SIZE = 40;
+  let gridCols = 0;
+  let gridRows = 0;
+  let grid = []; // 0=free, 1=wall, 2=glass
+  
   let foodItems = [];
   let turtles = [];
-  const margin = 25;
+  
+  // DOM Elements
+  const gridRoot = document.getElementById('grid');
+  const canvas = document.getElementById('debug-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // State
+  let isPainting = false;
+  let paintValue = 1; 
+  let draggingPanel = false;
+  let panelOffset = {x:0, y:0};
 
-  // Grid settings (canvas-based)
-  const GRID_SIZE = 40;
-  const BLOCK_MARGIN = 80; // pixels
-  const TURTLE_BODY_RADIUS = 30;
-  let numGridX = 0, numGridY = 0;
-  let gridBlocked = []; // boolean array
-  let showLines = false;
-  let gridCanvas, gridCtx;
-  let painting = false;
-  let paintToValue = null; // true/false based on first toggled cell
-
-  // Keep your getSettings/personality code
-  function getSettings() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      rainbowChance: parseFloat(params.get('rainbowChance')) || 0,
-      numTurtles: parseInt(params.get('count') || 5),
-      sizeVariation: parseFloat(params.get('sizeVariation')) || 0.3,
-      namesEnabled: params.get('namesEnabled') === 'true',
-      turtleColors: (params.get('colors') || 'green,brown').split(',')
-    };
-  }
-  const settings = getSettings();
-
-  const PERSONALITIES = {
-    default:   { idleChance: 0.0002, idleDuration: 300, minSpeed: 0.2, maxSpeed: 1.0, maxSeekSpeed: 3.0, visionDistance: 300, whiskerLength: 40 },
-    shy:       { idleChance: 0.0005, idleDuration: 600, minSpeed: 0.1, maxSpeed: 0.8, maxSeekSpeed: 2.0, visionDistance: 200, whiskerLength: 50 },
-    aggressive:{ idleChance: 0.0001, idleDuration: 100, minSpeed: 0.3, maxSpeed: 1.5, maxSeekSpeed: 4.0, visionDistance: 400, whiskerLength: 30 },
-    lazy:      { idleChance: 0.001,  idleDuration: 1000,minSpeed: 0.1, maxSpeed: 0.5, maxSeekSpeed: 1.0, visionDistance: 150, whiskerLength: 40 }
+  // Settings UI
+  const ui = {
+    numTurtles: document.getElementById('numTurtles'),
+    numDisplay: document.getElementById('numDisplay'),
+    gridSize: document.getElementById('gridSize'),
+    gridDisplay: document.getElementById('gridDisplay'),
+    personality: document.getElementById('globalPersonality'),
+    rainbow: document.getElementById('rainbowChance'),
+    speed: document.getElementById('speedScale'),
+    names: document.getElementById('namesEnabled'),
+    grid: document.getElementById('toggleGrid'),
+    edit: document.getElementById('editGrid'),
+    brush: document.getElementById('brushType'),
+    debug: document.getElementById('toggleDebug'),
+    panel: document.getElementById('settings-panel'),
+    maze: document.getElementById('genMazeBtn'),
+    reset: document.getElementById('resetGridBtn'),
+    clearFood: document.getElementById('clearFoodBtn')
   };
 
-  function loadNames() { return JSON.parse(localStorage.getItem('turtleNames') || '[]'); }
-  function saveNames(names) { localStorage.setItem('turtleNames', JSON.stringify(names)); }
-  function loadPersonalities() { return JSON.parse(localStorage.getItem('turtlePersonalities') || '{}'); }
-  function savePersonalities(p) { localStorage.setItem('turtlePersonalities', JSON.stringify(p)); }
-  function clamp(num, min, max) { return Math.min(Math.max(num, min), max); }
+  // Personalities
+  const PERSONALITIES = {
+    default:    { minSpeed: 0.5, maxSpeed: 1.5, viewDist: 300, fov: 120, skin: '#82C49F', shell: '#6A757A' },
+    shy:        { minSpeed: 0.3, maxSpeed: 0.8, viewDist: 200, fov: 180, skin: '#e67e22', shell: '#5d4037' },
+    aggressive: { minSpeed: 0.8, maxSpeed: 2.5, viewDist: 450, fov: 90,  skin: '#7f8c8d', shell: '#2c3e50' },
+    lazy:       { minSpeed: 0.1, maxSpeed: 0.6, viewDist: 150, fov: 60,  skin: '#95a5a6', shell: '#7f8c8d' },
+    scout:      { minSpeed: 1.2, maxSpeed: 2.0, viewDist: 600, fov: 360, skin: '#48dbfb', shell: '#2980b9' },
+    social:     { minSpeed: 0.5, maxSpeed: 1.2, viewDist: 250, fov: 100, skin: '#f1c40f', shell: '#d35400' }
+  };
 
-  // --- Grid canvas initialization ---
-  function initGridCanvas() {
-    numGridX = Math.ceil(window.innerWidth / GRID_SIZE);
-    numGridY = Math.ceil(window.innerHeight / GRID_SIZE);
+  // -------------------------
+  // Helpers
+  // -------------------------
+  const dist = (x1, y1, x2, y2) => Math.hypot(x1-x2, y1-y2);
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+  const random = (min, max) => Math.random() * (max - min) + min;
+  const toRad = deg => deg * Math.PI / 180;
+  const lerp = (start, end, amt) => (1-amt)*start + amt*end;
 
-    if (!gridCanvas) {
-      gridCanvas = document.createElement('canvas');
-      gridCanvas.id = 'grid-canvas';
-      gridCanvas.style.position = 'absolute';
-      gridCanvas.style.left = '0';
-      gridCanvas.style.top = '0';
-      gridCanvas.style.zIndex = '2';
-      gridCanvas.style.display = 'block'; // hidden by default
-      document.body.appendChild(gridCanvas);
-      gridCtx = gridCanvas.getContext('2d');
+  // -------------------------
+  // Grid System & A*
+  // -------------------------
+  function initGrid(skipClear = false) {
+    if(!skipClear) gridRoot.innerHTML = '';
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    
+    GRID_SIZE = parseInt(ui.gridSize.value);
+    ui.gridDisplay.innerText = GRID_SIZE;
 
-      // Painting
-      gridCanvas.addEventListener('mousedown', (e) => {
-        if (!showLines) return;
-        const { gx, gy } = screenToGrid(e.clientX, e.clientY);
-        if (gx === null) return;
-        painting = true;
-        const current = gridBlocked[idx(gx, gy)];
-        paintToValue = !current;
-        gridBlocked[idx(gx, gy)] = paintToValue;
-        drawGrid();
-      });
-      document.addEventListener('mousemove', (e) => {
-        if (!painting || !showLines) return;
-        const { gx, gy } = screenToGrid(e.clientX, e.clientY);
-        if (gx === null) return;
-        gridBlocked[idx(gx, gy)] = paintToValue;
-        drawGrid();
-      });
-      document.addEventListener('mouseup', () => { painting = false; });
+    gridCols = Math.ceil(w / GRID_SIZE);
+    gridRows = Math.ceil(h / GRID_SIZE);
+    
+    // Logic Grid
+    // If not restored from save later, it will be fresh 0s
+    grid = new Array(gridCols).fill(0).map(() => new Array(gridRows).fill(0));
+
+    // Visual Grid
+    if(!skipClear) {
+        for(let y=0; y<gridRows; y++) {
+          for(let x=0; x<gridCols; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.style.width = GRID_SIZE + 'px';
+            cell.style.height = GRID_SIZE + 'px';
+            cell.style.left = (x * GRID_SIZE) + 'px';
+            cell.style.top = (y * GRID_SIZE) + 'px';
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+            gridRoot.appendChild(cell);
+          }
+        }
+    }
+    resizeCanvas();
+    updateGridVisibility();
+  }
+
+  function toggleCell(gx, gy, forceValue=null) {
+    if(gx < 0 || gx >= gridCols || gy < 0 || gy >= gridRows) return;
+    
+    let val = 0;
+    if (forceValue !== null) {
+        val = forceValue;
+    } else {
+        const current = grid[gx][gy];
+        const brush = parseInt(ui.brush.value);
+        val = (current === brush) ? 0 : brush;
     }
 
-    gridCanvas.width = window.innerWidth;
-    gridCanvas.height = window.innerHeight;
-    gridBlocked = new Array(numGridX * numGridY).fill(false);
-  }
-  function idx(gx, gy) { return gy * numGridX + gx; }
-
-  function screenToGrid(sx, sy) {
-    const gx = Math.floor(sx / GRID_SIZE);
-    const gy = Math.floor(sy / GRID_SIZE);
-    if (gx < 0 || gy < 0 || gx >= numGridX || gy >= numGridY) return { gx: null, gy: null };
-    return { gx, gy };
-  }
-
-  function isBlockedWorld(wx, wy) {
-    const gx = Math.floor(wx / GRID_SIZE);
-    const gy = Math.floor(wy / GRID_SIZE);
-    if (gx < 0 || gy < 0 || gx >= numGridX || gy >= numGridY) return true;
-    if (!gridBlocked[idx(gx, gy)]) return false;
-
-    // margin: treat near edges as blocked too
-    const cx = gx * GRID_SIZE + GRID_SIZE/2;
-    const cy = gy * GRID_SIZE + GRID_SIZE/2;
-    const dist = Math.hypot(wx - cx, wy - cy);
-    return dist < GRID_SIZE/2 + BLOCK_MARGIN;
+    grid[gx][gy] = val;
+    
+    const idx = gy * gridCols + gx;
+    const cell = gridRoot.children[idx];
+    if(cell) {
+      cell.className = 'grid-cell'; 
+      if(val === 1) cell.classList.add('is-blocked');
+      else if(val === 2) cell.classList.add('is-glass');
+    }
+    saveData(); // Save on modification
   }
 
-  function drawGrid() {
-    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+  function worldToGrid(x, y) {
+    return { x: Math.floor(x/GRID_SIZE), y: Math.floor(y/GRID_SIZE) };
+  }
 
-    // blocked cells always visible
-    gridCtx.fillStyle = 'rgba(220,60,60,0.35)';
-    for (let gx = 0; gx < numGridX; gx++) {
-      for (let gy = 0; gy < numGridY; gy++) {
-        if (gridBlocked[idx(gx, gy)]) {
-          const cx = gx * GRID_SIZE + GRID_SIZE/2;
-          const cy = gy * GRID_SIZE + GRID_SIZE/2;
-          gridCtx.beginPath();
-          gridCtx.arc(cx, cy, GRID_SIZE/1.2, 0, Math.PI*2);
-          gridCtx.fill();
+  function gridToWorld(gx, gy) {
+    return { x: gx*GRID_SIZE + GRID_SIZE/2, y: gy*GRID_SIZE + GRID_SIZE/2 };
+  }
+
+  function isBlocked(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return true;
+    return grid[g.x][g.y] !== 0; 
+  }
+
+  function findNearestFree(gx, gy) {
+    const queue = [{x:gx, y:gy}];
+    const visited = new Set([`${gx},${gy}`]);
+    
+    while(queue.length) {
+      const current = queue.shift();
+      const {x, y} = current;
+      if (x < 0 || x >= gridCols || y < 0 || y >= gridRows) continue;
+      if (grid[x][y] === 0) return {x, y};
+      
+      const neighbors = [{x:x+1, y:y}, {x:x-1, y:y}, {x:x, y:y+1}, {x:x, y:y-1}];
+      for(let n of neighbors) {
+        const key = `${n.x},${n.y}`;
+        if(!visited.has(key)) {
+          visited.add(key);
+          queue.push(n);
         }
       }
     }
-
-    // grid lines only when editing
-    if (showLines) {
-      gridCtx.strokeStyle = 'rgba(0,0,0,0.08)';
-      gridCtx.beginPath();
-      for (let gx = 0; gx <= numGridX; gx++) {
-        const x = gx * GRID_SIZE;
-        gridCtx.moveTo(x, 0);
-        gridCtx.lineTo(x, gridCanvas.height);
-      }
-      for (let gy = 0; gy <= numGridY; gy++) {
-        const y = gy * GRID_SIZE;
-        gridCtx.moveTo(0, y);
-        gridCtx.lineTo(gridCanvas.width, y);
-      }
-      gridCtx.stroke();
-    }
+    return {x:gx, y:gy}; 
   }
-  // --- Food class (unchanged) ---
+
+  function generateMaze() {
+    const wallType = parseInt(ui.brush.value) || 1; 
+    
+    // Fill with selected wall type
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            grid[x][y] = wallType;
+        }
+    }
+
+    // Iterative Recursive Backtracking
+    const stack = [];
+    const startX = 1; 
+    const startY = 1;
+    
+    if(startX < gridCols && startY < gridRows) {
+        grid[startX][startY] = 0;
+        stack.push({x: startX, y: startY});
+    }
+
+    const dirs = [
+        {x: 0, y: -2}, {x: 0, y: 2}, {x: -2, y: 0}, {x: 2, y: 0}
+    ];
+
+    while(stack.length > 0) {
+        const current = stack[stack.length - 1];
+        const {x, y} = current;
+        
+        const neighbors = [];
+        for(let d of dirs) {
+            const nx = x + d.x;
+            const ny = y + d.y;
+            // Check if neighbor is valid and not yet visited (still a wall)
+            if(nx > 0 && nx < gridCols-1 && ny > 0 && ny < gridRows-1 && grid[nx][ny] !== 0) {
+                neighbors.push({x: nx, y: ny, mx: x + d.x/2, my: y + d.y/2});
+            }
+        }
+
+        if(neighbors.length > 0) {
+            const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            grid[next.mx][next.my] = 0;
+            grid[next.x][next.y] = 0;
+            stack.push({x: next.x, y: next.y});
+        } else {
+            stack.pop();
+        }
+    }
+    
+    // Sync Visuals
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            const idx = y * gridCols + x;
+            const cell = gridRoot.children[idx];
+            if(cell) {
+                cell.className = 'grid-cell';
+                if(grid[x][y] === 1) cell.classList.add('is-blocked');
+                else if(grid[x][y] === 2) cell.classList.add('is-glass');
+            }
+        }
+    }
+    
+    // Teleport stuck turtles
+    turtles.forEach(t => {
+        if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+           t.path = []; 
+        }
+    });
+    saveData();
+  }
+
+  // --- A* Algorithm ---
+  function findPath(sx, sy, ex, ey) {
+    const start = worldToGrid(sx, sy);
+    const end = worldToGrid(ex, ey);
+    
+    if (start.x < 0 || start.x >= gridCols || start.y < 0 || start.y >= gridRows) return null;
+    if (end.x < 0 || end.x >= gridCols || end.y < 0 || end.y >= gridRows) return null;
+    if (grid[end.x][end.y] !== 0) return null; 
+
+    const openSet = [];
+    const closedSet = new Set();
+    const gScore = {};
+    const fScore = {};
+    const cameFrom = {};
+    const getKey = (n) => `${n.x},${n.y}`;
+
+    openSet.push(start);
+    gScore[getKey(start)] = 0;
+    fScore[getKey(start)] = dist(start.x, start.y, end.x, end.y);
+
+    while(openSet.length > 0) {
+      let current = openSet.reduce((a, b) => (fScore[getKey(a)]||Infinity) < (fScore[getKey(b)]||Infinity) ? a : b);
+
+      if(current.x === end.x && current.y === end.y) {
+        const path = [];
+        let temp = current;
+        while(cameFrom[getKey(temp)]) {
+          path.push(gridToWorld(temp.x, temp.y));
+          temp = cameFrom[getKey(temp)];
+        }
+        return path.reverse();
+      }
+
+      openSet.splice(openSet.indexOf(current), 1);
+      closedSet.add(getKey(current));
+
+      for(let dx = -1; dx <= 1; dx++) {
+        for(let dy = -1; dy <= 1; dy++) {
+          if(dx === 0 && dy === 0) continue;
+          
+          const nx = current.x + dx;
+          const ny = current.y + dy;
+
+          if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows) {
+            if(grid[nx][ny] !== 0) continue;
+            // Corner Cutting Check
+            if(dx !== 0 && dy !== 0) {
+              if(grid[current.x + dx][current.y] !== 0 || grid[current.x][current.y + dy] !== 0) continue; 
+            }
+
+            const neighbor = {x: nx, y: ny};
+            if(closedSet.has(getKey(neighbor))) continue;
+
+            const moveCost = (dx!==0 && dy!==0) ? 1.414 : 1;
+            const tentativeG = (gScore[getKey(current)]||0) + moveCost;
+
+            if(!openSet.some(n => n.x === neighbor.x && n.y === neighbor.y)) {
+              openSet.push(neighbor);
+            } else if (tentativeG >= (gScore[getKey(neighbor)]||Infinity)) {
+              continue;
+            }
+
+            cameFrom[getKey(neighbor)] = current;
+            gScore[getKey(neighbor)] = tentativeG;
+            fScore[getKey(neighbor)] = tentativeG + dist(nx, ny, end.x, end.y);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // -------------------------
+  // Entities
+  // -------------------------
   class Food {
     constructor(x, y) {
-      this.x = x; this.y = y;
-      this.element = document.createElement('div');
-      this.element.className = 'food-pellet';
-      this.element.style.left = `${x}px`;
-      this.element.style.top  = `${y}px`;
-      document.body.appendChild(this.element);
+      this.x = x;
+      this.y = y;
+      const types = ['food-pellet', 'food-leaf', 'food-fruit'];
+      this.type = types[Math.floor(Math.random() * types.length)];
+      
+      this.el = document.createElement('div');
+      this.el.className = `food ${this.type}`;
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+      document.body.appendChild(this.el);
       foodItems.push(this);
     }
     remove() {
-      if (this.element.parentNode) this.element.remove();
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
       foodItems = foodItems.filter(f => f !== this);
     }
   }
 
-  // --- Turtle class (kept, with obstacle avoidance changed to grid-based) ---
   class Turtle {
-    constructor(index) {
-      this.element = document.createElement('main');
-      this.scale = (0.2 * (0.8 + Math.random() * (settings.sizeVariation || 0))) || 0.2;
-      this.element.className = 'turtle';
-      this.element.innerHTML = `
+    constructor(id, data = null) {
+      this.id = id;
+      
+      
+      
+      
+      if(data) {
+        // Restore from data
+        this.x = data.x;
+        this.y = data.y;
+        this.pKey = data.pKey;
+        this.angle = data.angle || random(0, 360);
+      } else {
+        // New turtle
+        this.x = random(100, window.innerWidth-100);
+        this.y = random(100, window.innerHeight-100);
+        this.angle = random(0, 360);
+        // Personality
+        let pKey = ui.personality.value;
+        if(pKey === 'mixed') pKey = Object.keys(PERSONALITIES)[Math.floor(Math.random()*Object.keys(PERSONALITIES).length)];
+        this.pKey = pKey;
+      }
+      
+      this.p = PERSONALITIES[this.pKey];
+      
+      this.wanderTarget = this.angle; 
+      this.speed = 0;
+      this.state = 'IDLE';
+      this.targetFood = null;
+      this.path = [];
+      this.pathIndex = 0;
+      this.idleTimer = 0;
+      this.isDragging = false;
+      this.dragOffset = {x:0, y:0};
+
+      this.el = document.createElement('div');
+      this.el.className = 'turtle';
+      
+      this.el.style.setProperty('--skin-color', this.p.skin);
+      this.el.style.setProperty('--shell-base', this.p.shell);
+      
+      // Restore or generate rainbow
+      const isRainbow = data ? data.isRainbow : (Math.random() < parseFloat(ui.rainbow.value));
+      if(isRainbow) this.el.classList.add('rainbow');
+
+      const nameText = data ? data.name : `Turtle ${id+1} (${this.pKey})`;
+
+      this.el.innerHTML = `
         <div class="turtle__head"></div>
         <div class="turtle__legs -left"></div>
         <div class="turtle__legs -right"></div>
         <div class="turtle__tail"></div>
-        <section class="turtle__shell"><div></div></section>
+        <div class="turtle__shell"><div></div></div>
+        <div class="turtle-name">${nameText}</div>
       `;
-      this.headElement = this.element.querySelector('.turtle__head');
-      this.shellElement = this.element.querySelector('.turtle__shell');
-      if (Math.random() < settings.rainbowChance) this.shellElement.classList.add('rainbow');
-
-      const types = Object.keys(PERSONALITIES);
-      let nameList = loadNames();
-      this.name = settings.namesEnabled ? (nameList[index] || `Turtle ${index+1}`) : null;
-      let allPers = loadPersonalities();
-      this.personalityType = settings.namesEnabled
-        ? (allPers[this.name] || types[Math.floor(Math.random()*types.length)])
-        : types[Math.floor(Math.random()*types.length)];
-      if (settings.namesEnabled && !allPers[this.name]) { allPers[this.name] = this.personalityType; savePersonalities(allPers); }
-      this.personality = PERSONALITIES[this.personalityType];
-
-      if (settings.namesEnabled) {
-        this.nameElement = document.createElement('div');
-        this.nameElement.className = 'turtle-name';
-        this.nameElement.textContent = `${this.name} (${this.personalityType})`;
-        document.body.appendChild(this.nameElement);
-
-        this.shellElement.addEventListener('dblclick', () => {
-          const oldName = this.name;
-          const newName = prompt('Enter turtle name:', this.name);
-          if (newName && newName !== oldName) {
-            const names = loadNames(); names[index] = newName; saveNames(names);
-            const pers = loadPersonalities(); const p = pers[oldName];
-            if (p) { delete pers[oldName]; pers[newName] = p; savePersonalities(pers); }
-            this.name = newName;
-            this.nameElement.textContent = `${this.name} (${this.personalityType})`;
-          }
-        });
-      }
-
-      this.x = Math.random() * window.innerWidth;
-      this.y = Math.random() * window.innerHeight;
-      this.rotation = Math.random() * 360;
-      this.minSpeed = this.personality.minSpeed;
-      this.maxSpeed = this.personality.maxSpeed;
-      this.speed = this.minSpeed;
-      this.rotationSpeed = (Math.random() - 0.5) * 1.0;
-      this.idleTimer = 0;
-      this.idleChance = this.personality.idleChance;
-      this.idleDuration = this.personality.idleDuration;
-      this.isBeingDragged = false;
-      this.offsetX = 0; this.offsetY = 0;
-      this.targetFood = null;
-
-      document.body.appendChild(this.element);
-      this.addListeners();
+      
+      document.body.appendChild(this.el);
+      
+      this.head = this.el.querySelector('.turtle__head');
+      this.shell = this.el.querySelector('.turtle__shell');
+      this.nameEl = this.el.querySelector('.turtle-name');
+      
+      this.attachEvents();
+      this.updateVisuals();
     }
 
-    addListeners() {
-      this.headElement.addEventListener('click', (e) => { e.stopPropagation(); this.retractHead(); });
-      this.shellElement.addEventListener('mousedown', (e) => {
-        e.stopPropagation(); this.isBeingDragged = true;
-        this.element.classList.add('is-dragging');
-        this.offsetX = e.clientX - this.x; this.offsetY = e.clientY - this.y;
+    attachEvents() {
+      this.head.addEventListener('click', e => {
+        e.stopPropagation();
+        this.el.classList.add('is-retracted');
+        setTimeout(() => this.el.classList.remove('is-retracted'), 2000);
+      });
+
+      this.nameEl.addEventListener('click', e => {
+        e.stopPropagation();
+        const currentName = this.nameEl.innerText;
+        const newName = prompt("Rename Turtle:", currentName);
+        if(newName) {
+            this.nameEl.innerText = newName;
+            saveData();
+        }
+      });
+
+      this.shell.addEventListener('mousedown', e => {
+        e.stopPropagation();
+        this.isDragging = true;
+        this.el.classList.add('is-dragging');
+        this.targetFood = null;
+        this.path = [];
+        this.dragOffset.x = e.clientX - this.x;
+        this.dragOffset.y = e.clientY - this.y;
       });
     }
 
-    retractHead() {
-      if (this.element.classList.contains('is-retracted')) return;
-      this.element.classList.add('is-retracted');
-      setTimeout(() => this.element.classList.remove('is-retracted'), 2000);
+    destroy() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
     }
-    drag(e) { if (!this.isBeingDragged) return; this.x = e.clientX - this.offsetX; this.y = e.clientY - this.offsetY; }
-    stopDrag() { this.isBeingDragged = false; this.element.classList.remove('is-dragging'); }
 
-    getDX() { return Math.sin(this.rotation * Math.PI / 180) * this.speed; }
-    getDY() { return -Math.cos(this.rotation * Math.PI / 180) * this.speed; }
+    update() {
+      this.updateVisuals();
+      if(this.isDragging) return;
 
-    findFood() {
-      if (this.targetFood) return;
-      const visionDistance = this.personality.visionDistance;
-      const visionAngle = 90;
-      let closestFood = null; let minDistance = visionDistance;
+      const spdMult = parseFloat(ui.speed.value);
+      let desiredSpeed = 0;
 
-      for (const food of foodItems) {
-        const dx = food.x - this.x; const dy = food.y - this.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < minDistance) {
-          let angleToFood = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
-          let angleDiff = Math.abs(this.rotation - angleToFood);
-          if (angleDiff > 180) angleDiff = 360 - angleDiff;
-          if (angleDiff < visionAngle / 2 && this.lineMostlyClear(this.x, this.y, food.x, food.y)) {
-            minDistance = dist; closestFood = food;
+      // --- BRAIN ---
+      if(this.state === 'IDLE') {
+        desiredSpeed = this.p.minSpeed * spdMult;
+        
+        if(Math.random() < 0.05) {
+            this.wanderTarget += random(-40, 40);
+        }
+        // REDUCED ROTATION SPEED for natural wandering
+        // Use smoothRotate with a small coefficient for gentle wandering
+        this.smoothRotate(this.wanderTarget, 0.05, true); 
+        
+        this.scanForFood();
+        
+        // ** CRITICAL FIX **
+        // If scanForFood found food, immediately stop running IDLE logic
+        if (this.state !== 'IDLE') return;
+
+        if(Math.random() < 0.005) {
+          this.idleTimer = random(50, 150);
+          this.state = 'WAIT';
+        }
+
+        const lookX = this.x + Math.cos(toRad(this.angle)) * 60;
+        const lookY = this.y + Math.sin(toRad(this.angle)) * 60;
+        if(isBlocked(lookX, lookY)) {
+          this.wanderTarget = this.angle + 160 + random(-20, 20); 
+        }
+      }
+      else if (this.state === 'WAIT') {
+        desiredSpeed = 0;
+        
+        // ** CRITICAL FIX: Allow waking up if food appears **
+        this.scanForFood();
+        if (this.state !== 'WAIT') return;
+
+        this.idleTimer--;
+        if(this.idleTimer <= 0) this.state = 'IDLE';
+      }
+      else if (this.state === 'SEEK') {
+        if(!this.targetFood || !foodItems.includes(this.targetFood)) {
+          this.state = 'IDLE';
+          this.targetFood = null;
+          this.path = [];
+        } else {
+          const distToFood = dist(this.x, this.y, this.targetFood.x, this.targetFood.y);
+          
+          if (distToFood < GRID_SIZE * 1 && !this.physicalRaycast(this.targetFood.x, this.targetFood.y)) {
+             const angleToFood = Math.atan2(this.targetFood.y - this.y, this.targetFood.x - this.x) * 180 / Math.PI;
+             this.smoothRotate(angleToFood, 0.2, true); 
+             this.speed = Math.min(this.p.maxSpeed * spdMult, distToFood * 0.2 + 0.5); 
+             if(distToFood < 20) this.eat();
+             desiredSpeed = this.speed; 
+          } else {
+            if(this.path.length === 0) {
+              this.path = findPath(this.x, this.y, this.targetFood.x, this.targetFood.y);
+              this.pathIndex = 0;
+              if(!this.path) {
+                this.state = 'IDLE'; 
+                this.targetFood = null;
+              }
+            } else {
+              if (this.pathIndex >= this.path.length) {
+                  this.path = [];
+                  return;
+              }
+
+              const target = this.path[this.pathIndex];
+              const distToNode = dist(this.x, this.y, target.x, target.y);
+              const isFinalTarget = (this.pathIndex === this.path.length - 1);
+              
+              const angleToNode = Math.atan2(target.y - this.y, target.x - this.x) * 180 / Math.PI;
+              const angleDiff = Math.abs(((angleToNode - this.angle + 540) % 360) - 180);
+
+              // Use smoothed rotation with higher factor for seeking
+              let turnFactor = 0.1;
+              if (distToNode < 60) turnFactor = 0.2;
+              if (angleDiff > 90) turnFactor = 0.3; 
+              
+              this.smoothRotate(angleToNode, turnFactor, true);
+              
+              desiredSpeed = this.p.maxSpeed * spdMult;
+
+              if (angleDiff > 45) desiredSpeed *= 0.2;
+              else if (angleDiff > 20) desiredSpeed *= 0.6;
+
+              if (!isFinalTarget && distToNode < 80) {
+                  const nextNode = this.path[this.pathIndex + 1];
+                  const angleToNext = Math.atan2(nextNode.y - target.y, nextNode.x - target.x) * 180 / Math.PI;
+                  const turnSeverity = Math.abs(((angleToNext - angleToNode + 540) % 360) - 180);
+                  if (turnSeverity > 45) desiredSpeed *= 0.4;
+              }
+
+              if (isFinalTarget && distToNode < 120) {
+                  desiredSpeed *= (distToNode / 120);
+                  if (desiredSpeed < 0.3) desiredSpeed = 0.3;
+              }
+
+              if(distToNode < 15) {
+                this.pathIndex++;
+                if(this.pathIndex >= this.path.length) {
+                  const foodD = dist(this.x, this.y, this.targetFood.x, this.targetFood.y);
+                  if(foodD < 20) this.eat();
+                  else this.path = []; 
+                }
+              }
+            }
           }
         }
       }
-      if (closestFood) this.targetFood = closestFood;
-    }
 
-    lineMostlyClear(x1, y1, x2, y2) {
-      const steps = Math.max(1, Math.ceil(Math.hypot(x2-x1, y2-y1) / GRID_SIZE));
-      let blockedCount = 0;
-      for (let i = 1; i < steps; i++) {
-        const t = i / steps;
-        const sx = x1 + (x2 - x1) * t;
-        const sy = y1 + (y2 - y1) * t;
-        if (isBlockedWorld(sx, sy)) blockedCount++;
-        if (blockedCount > 2) return false;
-      }
-      return true;
-    }
+      this.speed = lerp(this.speed, desiredSpeed, 0.05);
 
-    wander() {
-      if (Date.now() < this.navigationTimestamp) { return }
-      if (this.idleTimer > 0) { this.idleTimer--; this.speed = 0; return; }
-      if (Math.random() < this.idleChance) { this.idleTimer = Math.random() * this.idleDuration; this.speed = 0; return; }
-      this.speed += (Math.random() - 0.45) * 0.1;
-      this.speed = Math.max(this.minSpeed, Math.min(this.maxSpeed, this.speed));
-      this.rotationSpeed += (Math.random() - 0.5) * 0.3;
-      this.rotationSpeed = Math.max(-1.0, Math.min(1.0, this.rotationSpeed));
-      this.rotation += this.rotationSpeed;
-      if (this.rotation < 0) this.rotation += 360;
-      if (this.rotation >= 360) this.rotation -= 360;
-      this.x = clamp(this.x, margin, window.innerWidth - margin);
-      this.y = clamp(this.y, margin, window.innerHeight - margin);
-    }
+      const rad = toRad(this.angle);
+      const vx = Math.cos(rad) * this.speed;
+      const vy = Math.sin(rad) * this.speed;
 
-    seekTarget() {
-      if (!foodItems.includes(this.targetFood)) { this.targetFood = null; return; }
-      const dx = this.targetFood.x - this.x; const dy = this.targetFood.y - this.y;
-      const distance = Math.hypot(dx, dy);
+      let nextX = this.x + vx;
+      let nextY = this.y + vy;
 
-      let targetAngle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
-      let angleDiff = targetAngle - this.rotation;
-      while (angleDiff < -180) angleDiff += 360;
-      while (angleDiff > 180) angleDiff -= 360;
-
-      const maxTurn = 2.0;
-      this.rotation += Math.max(-maxTurn, Math.min(maxTurn, angleDiff));
-
-      const arrivalRadius = 150;
-      const maxSeekSpeed = this.personality.maxSeekSpeed;
-      if (distance < arrivalRadius) {
-        this.speed = (distance / arrivalRadius) * (maxSeekSpeed - this.minSpeed) + this.minSpeed;
-      } else {
-        this.speed += 0.05; this.speed = Math.min(this.speed, maxSeekSpeed);
+      if(isBlocked(nextX, nextY)) {
+        if(!isBlocked(nextX, this.y)) nextY = this.y;
+        else if(!isBlocked(this.x, nextY)) nextX = this.x;
+        else {
+          nextX = this.x;
+          nextY = this.y;
+          this.wanderTarget = this.angle + 180;
+        }
       }
 
-      if (distance < 30) {
-        this.element.classList.add('neck-extend');
-        setTimeout(() => this.element.classList.remove('neck-extend'), 200);
-        this.targetFood.remove(); this.targetFood = null;
+      for(let t of turtles) {
+        if(t !== this) {
+          const d = dist(this.x, this.y, t.x, t.y);
+          if(d < 50) { 
+            const a = Math.atan2(this.y - t.y, this.x - t.x);
+            nextX += Math.cos(a) * 1.0;
+            nextY += Math.sin(a) * 1.0;
+          }
+        }
       }
+
+      this.x = clamp(nextX, 0, window.innerWidth);
+      this.y = clamp(nextY, 0, window.innerHeight);
     }
 
-    avoidGridObstacles() {
-      const look = this.personality.whiskerLength;
-      const aheadX = this.x + Math.sin(this.rotation * Math.PI/180) * look;
-      const aheadY = this.y - Math.cos(this.rotation * Math.PI/180) * look;
+    scanForFood() {
+      let best = null;
+      let minDist = Infinity;
+      
+      for(let f of foodItems) {
+        const d = dist(this.x, this.y, f.x, f.y);
+        if (d >= minDist) continue;
 
-      if (isBlockedWorld(aheadX, aheadY)) {
-        // check left and right directions
-        this.navigationTimestamp=Date.now()+3000
-        const leftRot = (this.rotation - 10 + 360) % 360;
-        const rightRot = (this.rotation + 10) % 360;
+        let detected = false;
+        
+        // Check obstructions FIRST.
+        // raycastBlocked returns TRUE if a Wall (1) intersects.
+        // It returns FALSE if Air (0) or Glass (2) intersects.
+        // This ensures the "smell" (150px detection) is still blocked by walls.
+        const blocked = this.raycastBlocked(f.x, f.y);
 
-        const leftX = this.x + Math.sin(leftRot * Math.PI/180) * look;
-        const leftY = this.y - Math.cos(leftRot * Math.PI/180) * look;
-        const rightX = this.x + Math.sin(rightRot * Math.PI/180) * look;
-        const rightY = this.y - Math.cos(rightRot * Math.PI/180) * look;
-
-        if (!isBlockedWorld(leftX, leftY)) {
-          this.rotation = leftRot; // steer left
-        } else if (!isBlockedWorld(rightX, rightY)) {
-          this.rotation = rightRot; // steer right
-        } else {
-          this.rotation += 180; // dead end, turn around
+        if (!blocked) {
+            // 1. Close Range (Smell) - 360 detection
+            if (d < 150) {
+                detected = true;
+            } 
+            // 2. Long Range (Sight) - FOV restricted
+            else if (d < this.p.viewDist) {
+                const angleTo = Math.atan2(f.y - this.y, f.x - this.x) * 180 / Math.PI;
+                const diff = Math.abs(((angleTo - this.angle + 540) % 360) - 180);
+                if (diff < this.p.fov/2) {
+                    detected = true;
+                }
+            }
         }
 
-        this.speed = Math.max(this.minSpeed, this.speed * 0.85);
+        if (detected) {
+            best = f;
+            minDist = d;
+        }
+      }
+
+      if(best) {
+        this.targetFood = best;
+        this.state = 'SEEK';
+        this.path = []; // Reset old path
+        this.pathIndex = 0;
       }
     }
 
-
-    update() {
-      if (this.isBeingDragged) {
-        this.element.classList.remove('is-moving');
-        this.updateElementStyle(); return;
+    raycastBlocked(tx, ty) {
+      const d = dist(this.x, this.y, tx, ty);
+      const steps = Math.floor(d / (GRID_SIZE/2));
+      for(let i=1; i<steps; i++) {
+        const r = i/steps;
+        const cx = this.x + (tx-this.x)*r;
+        const cy = this.y + (ty-this.y)*r;
+        const g = worldToGrid(cx, cy);
+        if(g.x>=0 && g.x<gridCols && g.y>=0 && g.y<gridRows && grid[g.x][g.y] === 1) return true;
       }
+      return false;
+    }
 
-      this.findFood();
-      if (this.targetFood) this.seekTarget(); else this.wander();
+    physicalRaycast(tx, ty) {
+      const d = dist(this.x, this.y, tx, ty);
+      const steps = Math.floor(d / (GRID_SIZE/2));
+      for(let i=1; i<steps; i++) {
+        const r = i/steps;
+        const cx = this.x + (tx-this.x)*r;
+        const cy = this.y + (ty-this.y)*r;
+        const g = worldToGrid(cx, cy);
+        if(g.x>=0 && g.x<gridCols && g.y>=0 && g.y<gridRows && grid[g.x][g.y] !== 0) return true;
+      }
+      return false;
+    }
 
-      this.avoidGridObstacles();
-
-      const nextX = this.x + this.getDX();
-      const nextY = this.y + this.getDY();
-      if (isBlockedWorld(nextX, nextY)) {
-        this.speed = Math.max(this.minSpeed, this.speed * 0.85);
-        this.rotation += 2;
+    // New smoothed rotation function using Lerp
+    // factor: 0.0 to 1.0 (smaller = smoother/slower)
+    smoothRotate(target, factor = 0.1, useLerp = false) {
+      let diff = ((target - this.angle + 540) % 360) - 180;
+      
+      if (useLerp) {
+          // Proportional smoothing
+          this.angle += diff * factor;
       } else {
-        this.x = nextX; this.y = nextY;
+          // Linear smoothing (old way, kept as fallback if needed)
+          if(Math.abs(diff) < factor) this.angle = target;
+          else this.angle += Math.sign(diff) * factor;
       }
-
-      if (this.speed > this.minSpeed + 0.1) this.element.classList.add('is-moving');
-      else this.element.classList.remove('is-moving');
-
-      this.updateElementStyle();
     }
 
-    updateElementStyle() {
-      this.element.style.left = `${this.x}px`;
-      this.element.style.top  = `${this.y}px`;
-      this.element.style.transform = `translate(-50%, -50%) scale(${this.scale}) rotate(${this.rotation}deg)`;
-      if (settings.namesEnabled) {
-        this.nameElement.style.left = `${this.x}px`;
-        this.nameElement.style.top  = `${this.y - (this.scale * 300)}px`;
-      }
+    eat() {
+      this.el.classList.add('neck-extend');
+      setTimeout(() => this.el.classList.remove('neck-extend'), 200);
+      this.targetFood.remove();
+      this.targetFood = null;
+      this.path = []; // Reset path to prevent ghost walking
+      this.pathIndex = 0;
+      this.state = 'IDLE';
+    }
+
+    updateVisuals() {
+      const visualAngle = this.angle + 90;
+      this.el.style.transform = `translate(${this.x - 250}px, ${this.y - 250}px) scale(0.2) rotate(${visualAngle}deg)`;
+      
+      if(this.speed > 0.1) this.el.classList.add('is-moving');
+      else this.el.classList.remove('is-moving');
+      
+      this.nameEl.style.display = ui.names.checked ? 'block' : 'none';
+      this.nameEl.style.transform = `translate(-50%, -100%) rotate(${-visualAngle}deg) scale(5)`; 
     }
   }
+
+  // -------------------------
+  // Storage & State
+  // -------------------------
   
-  // --- Global interactions ---
-  document.addEventListener('mousemove', (e) => { turtles.forEach(t => t.drag(e)); });
-  document.addEventListener('mouseup', () => { turtles.forEach(t => t.stopDrag()); });
-  document.addEventListener('keydown', (e) => {
-    if (e.key.toLowerCase() === 'q' && !e.repeat) {
-    console.log('bruh',showLines)
-      showLines = !showLines;
-      drawGrid(showLines);
-    }
-  });
-
-
-
-  // Click to add food (ignore when painting)
-  document.addEventListener('click', (e) => {
-    if (showLines) return;
-    if (e.target === document.body || e.target.id === 'grid-canvas') {
-      new Food(e.clientX, e.clientY);
-    }
-  });
-
-  // --- Initialization ---
-  for (let i = 0; i < settings.numTurtles; i++) {
-    turtles.push(new Turtle(i));
+  function saveData() {
+    const settings = {
+        numTurtles: ui.numTurtles.value,
+        gridSize: ui.gridSize.value,
+        personality: ui.personality.value,
+        rainbow: ui.rainbow.value,
+        speed: ui.speed.value,
+        names: ui.names.checked,
+        gridVisible: ui.grid.checked,
+        editMode: ui.edit.checked,
+        brush: ui.brush.value
+    };
+    localStorage.setItem('ts_settings', JSON.stringify(settings));
+    localStorage.setItem('ts_grid', JSON.stringify(grid));
+    
+    // Save Turtle State
+    const turtleData = turtles.map(t => ({
+        id: t.id,
+        x: t.x,
+        y: t.y,
+        angle: t.angle,
+        pKey: t.pKey,
+        name: t.nameEl.innerText,
+        isRainbow: t.el.classList.contains('rainbow')
+    }));
+    localStorage.setItem('ts_turtles', JSON.stringify(turtleData));
   }
-  initGridCanvas();
 
-  function animate() {
+  function loadData() {
+    try {
+        const s = JSON.parse(localStorage.getItem('ts_settings'));
+        if(s) {
+            ui.numTurtles.value = s.numTurtles;
+            ui.numDisplay.innerText = s.numTurtles;
+            ui.gridSize.value = s.gridSize;
+            ui.gridDisplay.innerText = s.gridSize;
+            ui.personality.value = s.personality;
+            ui.rainbow.value = s.rainbow;
+            ui.speed.value = s.speed;
+            ui.names.checked = s.names;
+            ui.grid.checked = s.gridVisible;
+            ui.edit.checked = s.editMode;
+            ui.brush.value = s.brush;
+        }
+        
+        // Init logic based on (potentially restored) settings
+        initGrid(false); 
+
+        const g = JSON.parse(localStorage.getItem('ts_grid'));
+        // Only restore grid if dimensions match to prevent crash on resize
+        if(g && g.length === gridCols && g[0].length === gridRows) {
+            grid = g;
+            // Restore visual grid classes
+            for(let x=0; x<gridCols; x++) {
+                for(let y=0; y<gridRows; y++) {
+                    if(grid[x][y] !== 0) {
+                        const idx = y * gridCols + x;
+                        const cell = gridRoot.children[idx];
+                        if(cell) {
+                            if(grid[x][y]===1) cell.classList.add('is-blocked');
+                            else if(grid[x][y]===2) cell.classList.add('is-glass');
+                        }
+                    }
+                }
+            }
+        }
+
+        const t = JSON.parse(localStorage.getItem('ts_turtles'));
+        if(t && Array.isArray(t) && t.length > 0) {
+            // Restore turtles
+            turtles.forEach(x => x.destroy());
+            turtles = [];
+            t.forEach(data => {
+                const nt = new Turtle(data.id, data);
+                turtles.push(nt);
+            });
+            // Update slider if count mismatches saved data
+            if(turtles.length !== parseInt(ui.numTurtles.value)) {
+                ui.numTurtles.value = turtles.length;
+                ui.numDisplay.innerText = turtles.length;
+            }
+        } else {
+            updatePopulation();
+        }
+    } catch(e) {
+        console.error("Save data invalid", e);
+        initGrid();
+        updatePopulation();
+    }
+    updateGridVisibility();
+  }
+
+  // -------------------------
+  // Loop & Events
+  // -------------------------
+  
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function updateGridVisibility() {
+    if(ui.grid.checked) {
+      gridRoot.style.opacity = 1;
+      gridRoot.style.pointerEvents = ui.edit.checked ? 'auto' : 'none';
+    } else {
+      gridRoot.style.opacity = 0;
+      gridRoot.style.pointerEvents = 'none';
+    }
+  }
+
+  function updatePopulation() {
+    const count = parseInt(ui.numTurtles.value);
+    ui.numDisplay.innerText = count;
+    
+    while(turtles.length > count) {
+      turtles.pop().destroy();
+    }
+    while(turtles.length < count) {
+      turtles.push(new Turtle(turtles.length));
+    }
+    saveData();
+  }
+
+  function drawDebug() {
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+    ctx.lineWidth = 2;
+    
+    turtles.forEach(t => {
+      // Vision Cone
+      const rad = toRad(t.angle);
+      const halfFov = toRad(t.p.fov/2);
+      
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.beginPath();
+      ctx.moveTo(t.x, t.y);
+      ctx.arc(t.x, t.y, t.p.viewDist, rad - halfFov, rad + halfFov);
+      ctx.lineTo(t.x, t.y);
+      ctx.stroke();
+
+      // Path
+      if(t.path && t.path.length > 0) {
+        ctx.strokeStyle = 'rgba(0, 255, 100, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y);
+        for(let i=t.pathIndex; i<t.path.length; i++) {
+          ctx.lineTo(t.path[i].x, t.path[i].y);
+        }
+        ctx.stroke();
+      }
+
+      // Target Line
+      if(t.targetFood) {
+        ctx.strokeStyle = 'rgba(255, 100, 0, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y);
+        ctx.lineTo(t.targetFood.x, t.targetFood.y);
+        ctx.stroke();
+      }
+    });
+  }
+
+  function loop() {
     turtles.forEach(t => t.update());
-    requestAnimationFrame(animate);
+    if(ui.debug.checked) drawDebug();
+    else ctx.clearRect(0,0, canvas.width, canvas.height);
+    requestAnimationFrame(loop);
   }
-  animate();
+
+  // --- Input Wiring ---
+
+  // Grid Painting
+  gridRoot.addEventListener('mousedown', e => {
+    if(!ui.edit.checked) return;
+    isPainting = true;
+    const cell = e.target.closest('.grid-cell');
+    if(cell) {
+      const gx = parseInt(cell.dataset.x);
+      const gy = parseInt(cell.dataset.y);
+      
+      const brush = parseInt(ui.brush.value);
+      const current = grid[gx][gy];
+      paintValue = (current === brush) ? 0 : brush;
+      
+      toggleCell(gx, gy, paintValue);
+    }
+  });
+  window.addEventListener('mousemove', e => {
+    // Grid Paint
+    if(isPainting && ui.edit.checked) {
+      const cell = document.elementFromPoint(e.clientX, e.clientY);
+      if(cell && cell.classList.contains('grid-cell')) {
+        toggleCell(parseInt(cell.dataset.x), parseInt(cell.dataset.y), paintValue);
+      }
+    }
+    // Turtle Drag
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.x = e.clientX - t.dragOffset.x;
+        t.y = e.clientY - t.dragOffset.y;
+      }
+    });
+    // Panel Drag
+    if(draggingPanel) {
+      ui.panel.style.left = (e.clientX - panelOffset.x) + 'px';
+      ui.panel.style.top = (e.clientY - panelOffset.y) + 'px';
+    }
+  });
+  window.addEventListener('mouseup', () => {
+    isPainting = false;
+    draggingPanel = false;
+    ui.panel.classList.remove('dragging');
+    let dragged = false;
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.isDragging = false;
+        t.el.classList.remove('is-dragging');
+        dragged = true;
+        
+        // Safety: If dropped in a wall, push to nearest free space
+        if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+        }
+      }
+    });
+    if(dragged) saveData();
+  });
+
+  // Food Click
+  document.addEventListener('click', e => {
+    if(e.target.closest('#settings-panel') || e.target.closest('.turtle') || ui.edit.checked) return;
+    
+    // Safety: Don't spawn food in walls
+    if(isBlocked(e.clientX, e.clientY)) return;
+    
+    new Food(e.clientX, e.clientY);
+  });
+
+  // Settings Panel Dragging
+  ui.panel.querySelector('h2').addEventListener('mousedown', e => {
+    draggingPanel = true;
+    ui.panel.classList.add('dragging');
+    panelOffset.x = e.clientX - ui.panel.offsetLeft;
+    panelOffset.y = e.clientY - ui.panel.offsetTop;
+  });
+
+  // Controls - Add saveData to all interactive elements
+  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow', 'speed', 'names', 'grid', 'edit', 'brush'];
+  changeHandlers.forEach(id => {
+      ui[id].addEventListener('change', saveData);
+  });
+
+  // Maze Generator Event
+  ui.maze.addEventListener('click', generateMaze);
+
+  ui.numTurtles.addEventListener('input', updatePopulation);
+  ui.personality.addEventListener('change', () => {
+    while(turtles.length > 0) turtles.pop().destroy();
+    updatePopulation();
+  });
+  ui.gridSize.addEventListener('change', () => initGrid(false));
+  ui.grid.addEventListener('change', updateGridVisibility);
+  ui.edit.addEventListener('change', updateGridVisibility);
+  ui.reset.addEventListener('click', () => {
+    if(confirm("Clear all walls?")) {
+        grid = grid.map(col => col.fill(0));
+        Array.from(gridRoot.children).forEach(c => {
+            c.className = 'grid-cell';
+            c.classList.remove('is-blocked', 'is-glass');
+        });
+        saveData();
+    }
+  });
+  ui.clearFood.addEventListener('click', () => {
+    foodItems.forEach(f => f.remove());
+    foodItems = [];
+    turtles.forEach(t => { t.targetFood = null; t.path = []; t.state='IDLE'; });
+  });
 
   window.addEventListener('resize', () => {
-    initGridCanvas(); // rebuild canvas and preserve as much as possible
+    resizeCanvas();
+    // Re-init grid visual but don't clear logic if possible, 
+    // though safe approach for now is full reset if size changes
+    initGrid(false); 
   });
+  window.addEventListener('keydown', e => {
+    if(e.key.toLowerCase() === 'd') ui.debug.checked = !ui.debug.checked;
+    if(e.key.toLowerCase() === 'h') ui.panel.hidden = !ui.panel.hidden;
+  });
+
+  // Init sequence: Load data, build grid, spawn turtles
+  loadData();
+  loop();
 </script>
 </body>
 </html>
