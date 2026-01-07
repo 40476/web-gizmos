@@ -709,6 +709,8 @@
 
       // --- BRAIN ---
       if(this.state === 'IDLE') {
+        this.scanForFood();
+        
         desiredSpeed = this.p.minSpeed * spdMult;
         
         if(Math.random() < 0.05) {
@@ -717,8 +719,6 @@
         // REDUCED ROTATION SPEED for natural wandering
         // Use smoothRotate with a small coefficient for gentle wandering
         this.smoothRotate(this.wanderTarget, 0.05, true); 
-        
-        this.scanForFood();
         
         // ** CRITICAL FIX **
         // If scanForFood found food, immediately stop running IDLE logic
@@ -736,10 +736,11 @@
         }
       }
       else if (this.state === 'WAIT') {
+      this.scanForFood();
         desiredSpeed = 0;
         
         // ** CRITICAL FIX: Allow waking up if food appears **
-        this.scanForFood();
+        
         if (this.state !== 'WAIT') return;
 
         this.idleTimer--;
@@ -875,7 +876,9 @@
             // 2. Long Range (Sight) - FOV restricted
             else if (d < this.p.viewDist) {
                 const angleTo = Math.atan2(f.y - this.y, f.x - this.x) * 180 / Math.PI;
-                const diff = Math.abs(((angleTo - this.angle + 540) % 360) - 180);
+                let diff = ((angleTo - this.angle + 360) % 360);
+                if (diff > 180) diff -= 360;
+                diff = Math.abs(diff);
                 if (diff < this.p.fov/2) {
                     detected = true;
                 }
