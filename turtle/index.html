@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Floating Turtles — Pathfinding & Logic</title>
+  <title>Floating Turtles — Enhanced Edition</title>
   <style>
     html {
       user-select: none;
@@ -135,6 +134,43 @@
       background: #27ae60; border-radius: 2px;
     }
 
+    /* New food types */
+    .food-meat {
+      width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #8e44ad, #6c3483);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-meat::after {
+      content: ''; position: absolute; top: -1px; left: 50%; width: 4px; height: 3px;
+      background: #c0392b; border-radius: 1px;
+    }
+
+    /* --- OBSTACLES --- */
+    .obstacle {
+      position: absolute; z-index: 3; transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .obstacle-rock {
+      width: 40px; height: 40px; background: radial-gradient(#7f8c8d, #34495e);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .obstacle-rock::before {
+      content: ''; position: absolute; top: 5px; left: 5px; width: 30px; height: 30px;
+      background: radial-gradient(#5d6d7e, #2c3e50); border-radius: 50%;
+    }
+
+    /* --- SPECIAL EFFECTS --- */
+    .effect {
+      position: absolute; z-index: 15; pointer-events: none;
+    }
+    .effect-eat {
+      width: 30px; height: 30px; background: radial-gradient(circle, rgba(255,215,0,0.8), transparent);
+      border-radius: 50%; animation: puff 0.5s ease-out forwards;
+    }
+    @keyframes puff {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+    }
+
     @keyframes walking-turtle-01 {
       0%   { transform: translate(-50%, -50%) rotate(-40deg); }
       100% { transform: translate(-50%, -50%) rotate(-30deg); }
@@ -167,6 +203,13 @@
       backdrop-filter: blur(2px);
     }
 
+    /* Water (State 3) */
+    .grid-cell.is-water {
+      background: rgba(0, 191, 255, 0.6);
+      box-shadow: inset 0 0 10px rgba(0, 191, 255, 0.8);
+      border: 1px solid rgba(0, 191, 255, 0.3);
+    }
+
     /* Debug Canvas */
     #debug-canvas {
       position: absolute; inset: 0; pointer-events: none; z-index: 20;
@@ -194,12 +237,60 @@
     }
     button.btn:hover { background: #2980b9; }
     button.btn.secondary { background: #95a5a6; }
+    button.btn.danger { background: #e74c3c; }
+
+    /* Stats panel */
+    #stats-panel {
+      position: fixed; bottom: 10px; left: 10px; z-index: 999;
+      background: rgba(255,255,255,0.9); border-radius: 8px;
+      padding: 10px; font-size: 12px; color: #222;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(5px);
+      max-width: 250px;
+    }
+    #stats-panel h3 { margin: 0 0 8px 0; font-size: 14px; }
+    #stats-panel .stat-row { display: flex; justify-content: space-between; margin: 4px 0; }
+    #stats-panel .stat-label { font-weight: 500; }
+    #stats-panel .stat-value { color: #3498db; }
+
+    /* Turtle counter */
+    #turtle-counter {
+      position: fixed; top: 10px; left: 10px; z-index: 999;
+      background: rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 8px 15px; font-size: 14px; color: #222;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(5px);
+    }
+
+    /* Notification system */
+    .notification {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+      border-radius: 20px; z-index: 1000; font-size: 14px;
+      animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 2.5s forwards;
+      pointer-events: none;
+    }
+    @keyframes slideIn {
+      from { transform: translate(-50%, -50px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
   </style>
 </head>
 <body>
 
 <div id="grid"></div>
 <canvas id="debug-canvas"></canvas>
+<div id="turtle-counter">🐢 0</div>
+<div id="stats-panel">
+  <h3>Simulation Stats</h3>
+  <div class="stat-row"><span class="stat-label">Food Eaten: </span><span class="stat-value" id="food-eaten">0</span></div>
+  <div class="stat-row"><span class="stat-label">Time Elapsed: </span><span class="stat-value" id="time-elapsed">0s</span></div>
+  <div class="stat-row"><span class="stat-label">Avg Speed: </span><span class="stat-value" id="avg-speed">0</span></div>
+</div>
 
 <div id="settings-panel">
   <h2>Turtle Lab</h2>
@@ -242,11 +333,13 @@
   <div class="row">
     <label><input id="namesEnabled" type="checkbox" checked> Names</label>
   </div>
+
   <div class="row">
     <label><input id="editGrid" type="checkbox"> ✏️ Edit</label>
     <select id="brushType" style="flex: 0.6;">
         <option value="1">🧱 Wall</option>
         <option value="2">🪟 Glass</option>
+        <option value="3">💧 Water</option>
     </select>
   </div>
 
@@ -254,9 +347,18 @@
     <label><input id="toggleDebug" type="checkbox"> 🛠️ Debug (D)</label>
   </div>
 
+  <div class="row">
+    <label><input id="autoSpawnFood" type="checkbox"> 🍽️ Auto-spawn food</label>
+  </div>
+
+  <div class="row">
+    <label><input id="showStats" type="checkbox" checked> 📊 Show stats</label>
+  </div>
+
   <button class="btn" id="genMazeBtn" style="background: #9b59b6; margin-top: 10px;">🧩 Generate Maze</button>
   <button class="btn secondary" id="resetGridBtn">Reset Grid</button>
   <button class="btn secondary" id="clearFoodBtn">Clear Food</button>
+  <button class="btn danger" id="nukeBtn">💥 Nuke All</button>
 
   <small>
     Click empty space to add food.<br>
@@ -273,15 +375,30 @@
   let GRID_SIZE = 40;
   let gridCols = 0;
   let gridRows = 0;
-  let grid = []; // 0=free, 1=wall, 2=glass
+  let grid = []; // 0=free, 1=wall, 2=glass, 3=water
 
   let foodItems = [];
   let turtles = [];
+  let obstacles = [];
+  let effects = [];
+
+  // Simulation stats
+  let stats = {
+    foodEaten: 0,
+    startTime: Date.now(),
+    totalSpeed: 0,
+    speedSamples: 0
+  };
 
   // DOM Elements
   const gridRoot = document.getElementById('grid');
   const canvas = document.getElementById('debug-canvas');
   const ctx = canvas.getContext('2d');
+  const turtleCounter = document.getElementById('turtle-counter');
+  const foodEatenDisplay = document.getElementById('food-eaten');
+  const timeElapsedDisplay = document.getElementById('time-elapsed');
+  const avgSpeedDisplay = document.getElementById('avg-speed');
+  const statsPanel = document.getElementById('stats-panel');
 
   // State
   let isPainting = false;
@@ -289,6 +406,8 @@
   let draggingPanel = false;
   let panelOffset = {x:0, y:0};
   let lastDebugToggle = false;
+  let autoSpawnInterval = null;
+
   // Settings UI
   const ui = {
     numTurtles: document.getElementById('numTurtles'),
@@ -305,7 +424,10 @@
     panel: document.getElementById('settings-panel'),
     maze: document.getElementById('genMazeBtn'),
     reset: document.getElementById('resetGridBtn'),
-    clearFood: document.getElementById('clearFoodBtn')
+    clearFood: document.getElementById('clearFoodBtn'),
+    nuke: document.getElementById('nukeBtn'),
+    autoSpawn: document.getElementById('autoSpawnFood'),
+    showStats: document.getElementById('showStats')
   };
 
   // Personalities
@@ -326,6 +448,21 @@
   const random = (min, max) => Math.random() * (max - min) + min;
   const toRad = deg => deg * Math.PI / 180;
   const lerp = (start, end, amt) => (1-amt)*start + amt*end;
+
+  function showNotification(message) {
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+  }
+
+  function formatTime(ms) {
+    const seconds = Math.floor(ms / 1000) % 60;
+    const minutes = Math.floor(ms / 60000) % 60;
+    const hours = Math.floor(ms / 3600000);
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
 
   // -------------------------
   // Grid System & A*
@@ -388,6 +525,7 @@
       cell.className = 'grid-cell';
       if(val === 1) cell.classList.add('is-blocked');
       else if(val === 2) cell.classList.add('is-glass');
+      else if(val === 3) cell.classList.add('is-water');
     }
     saveData(); // Save on modification
   }
@@ -403,7 +541,13 @@
   function isBlocked(x, y) {
     const g = worldToGrid(x, y);
     if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return true;
-    return grid[g.x][g.y] !== 0;
+    return grid[g.x][g.y] === 1; // Only walls block movement
+  }
+
+  function isWater(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return false;
+    return grid[g.x][g.y] === 3;
   }
 
   function findNearestFree(gx, gy) {
@@ -485,6 +629,7 @@
                 cell.className = 'grid-cell';
                 if(grid[x][y] === 1) cell.classList.add('is-blocked');
                 else if(grid[x][y] === 2) cell.classList.add('is-glass');
+                else if(grid[x][y] === 3) cell.classList.add('is-water');
             }
         }
     }
@@ -582,7 +727,7 @@
     constructor(x, y) {
       this.x = x;
       this.y = y;
-      const types = ['food-pellet', 'food-leaf', 'food-fruit'];
+      const types = ['food-pellet', 'food-leaf', 'food-fruit', 'food-meat'];
       this.type = types[Math.floor(Math.random() * types.length)];
 
       this.el = document.createElement('div');
@@ -598,12 +743,49 @@
     }
   }
 
+  class Obstacle {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+
+      this.el = document.createElement('div');
+      this.el.className = 'obstacle obstacle-rock';
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+      document.body.appendChild(this.el);
+      obstacles.push(this);
+    }
+    remove() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+      obstacles = obstacles.filter(o => o !== this);
+    }
+  }
+
+  class Effect {
+    constructor(x, y, type = 'eat') {
+      this.x = x;
+      this.y = y;
+      this.type = type;
+
+      this.el = document.createElement('div');
+      this.el.className = `effect effect-${type}`;
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+      document.body.appendChild(this.el);
+      effects.push(this);
+
+      // Auto-remove after animation
+      setTimeout(() => this.remove(), 500);
+    }
+    remove() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+      effects = effects.filter(e => e !== this);
+    }
+  }
+
   class Turtle {
     constructor(id, data = null) {
       this.id = id;
-
-
-
 
       if(data) {
         // Restore from data
@@ -633,6 +815,7 @@
       this.idleTimer = 0;
       this.isDragging = false;
       this.dragOffset = {x:0, y:0};
+      this.inWater = false;
 
       this.el = document.createElement('div');
       this.el.className = 'turtle';
@@ -698,6 +881,9 @@
     }
 
     update() {
+      // Check if in water
+      this.inWater = isWater(this.x, this.y);
+
       this.updateVisuals();
       if(this.isDragging) return;
 
@@ -815,7 +1001,16 @@
         }
       }
 
+      // Apply water resistance
+      if(this.inWater) {
+        desiredSpeed *= 0.6;
+      }
+
       this.speed = lerp(this.speed, desiredSpeed, 0.05);
+
+      // Update stats
+      stats.totalSpeed += this.speed;
+      stats.speedSamples++;
 
       const rad = toRad(this.angle);
       const vx = Math.cos(rad) * this.speed;
@@ -940,11 +1135,16 @@
     eat() {
       this.el.classList.add('neck-extend');
       setTimeout(() => this.el.classList.remove('neck-extend'), 200);
+      new Effect(this.x, this.y);
       this.targetFood.remove();
       this.targetFood = null;
       this.path = []; // Reset path to prevent ghost walking
       this.pathIndex = 0;
       this.state = 'IDLE';
+
+      // Update stats
+      stats.foodEaten++;
+      foodEatenDisplay.textContent = stats.foodEaten;
     }
 
     updateVisuals() {
@@ -956,6 +1156,15 @@
 
       this.nameEl.style.display = ui.names.checked ? 'block' : 'none';
       this.nameEl.style.transform = `translate(-50%, -100%) rotate(${-visualAngle}deg) scale(5)`;
+
+      // Change color when in water
+      if(this.inWater) {
+        this.el.style.setProperty('--skin-color', '#48dbfb');
+        this.el.style.setProperty('--shell-base', '#2980b9');
+      } else {
+        this.el.style.setProperty('--skin-color', this.p.skin);
+        this.el.style.setProperty('--shell-base', this.p.shell);
+      }
     }
   }
 
@@ -972,7 +1181,9 @@
         speed: ui.speed.value,
         names: ui.names.checked,
         editMode: ui.edit.checked,
-        brush: ui.brush.value
+        brush: ui.brush.value,
+        autoSpawn: ui.autoSpawn.checked,
+        showStats: ui.showStats.checked
     };
     localStorage.setItem('ts_settings', JSON.stringify(settings));
     localStorage.setItem('ts_grid', JSON.stringify(grid));
@@ -1004,6 +1215,8 @@
             ui.names.checked = s.names;
             ui.edit.checked = s.editMode;
             ui.brush.value = s.brush;
+            ui.autoSpawn.checked = s.autoSpawn;
+            ui.showStats.checked = s.showStats;
         }
 
         // Init logic based on (potentially restored) settings
@@ -1022,6 +1235,7 @@
                         if(cell) {
                             if(grid[x][y]===1) cell.classList.add('is-blocked');
                             else if(grid[x][y]===2) cell.classList.add('is-glass');
+                            else if(grid[x][y]===3) cell.classList.add('is-water');
                         }
                     }
                 }
@@ -1051,6 +1265,8 @@
         updatePopulation();
     }
     updateGridVisibility();
+    updatePopulation();
+    updateStatsVisibility();
   }
 
   // -------------------------
@@ -1066,9 +1282,14 @@
     gridRoot.style.pointerEvents = ui.edit.checked ? 'auto' : 'none';
   }
 
+  function updateStatsVisibility() {
+    statsPanel.style.display = ui.showStats.checked ? 'block' : 'none';
+  }
+
   function updatePopulation() {
     const count = parseInt(ui.numTurtles.value);
     ui.numDisplay.innerText = count;
+    turtleCounter.textContent = `🐢 ${count}`;
 
     while(turtles.length > count) {
       turtles.pop().destroy();
@@ -1118,8 +1339,26 @@
     });
   }
 
+  function updateStats() {
+    const elapsed = Date.now() - stats.startTime;
+    timeElapsedDisplay.textContent = formatTime(elapsed);
+
+    if(stats.speedSamples > 0) {
+      const avg = (stats.totalSpeed / stats.speedSamples).toFixed(2);
+      avgSpeedDisplay.textContent = avg;
+    }
+
+    // Reset counters periodically
+    if(elapsed > 10000) {
+      stats.totalSpeed = 0;
+      stats.speedSamples = 0;
+    }
+  }
+
   function loop() {
     turtles.forEach(t => t.update());
+    updateStats();
+
     if(ui.debug.checked){drawDebug();}else ctx.clearRect(0,0, canvas.width, canvas.height);
     if(lastDebugToggle!==ui.debug.checked){
       document.querySelectorAll('.grid-cell').forEach(element => {
@@ -1128,6 +1367,22 @@
       lastDebugToggle=ui.debug.checked;
     }
     requestAnimationFrame(loop);
+  }
+
+  function startAutoSpawn() {
+    if(autoSpawnInterval) clearInterval(autoSpawnInterval);
+
+    if(ui.autoSpawn.checked) {
+      autoSpawnInterval = setInterval(() => {
+        if(foodItems.length < 50) { // Limit max food
+          const x = random(50, window.innerWidth - 50);
+          const y = random(50, window.innerHeight - 50);
+          if(!isBlocked(x, y)) {
+            new Food(x, y);
+          }
+        }
+      }, 3000);
+    }
   }
 
   // --- Input Wiring ---
@@ -1148,6 +1403,7 @@
       toggleCell(gx, gy, paintValue);
     }
   });
+
   window.addEventListener('mousemove', e => {
     // Grid Paint
     if(isPainting && ui.edit.checked) {
@@ -1169,6 +1425,7 @@
       ui.panel.style.top = (e.clientY - panelOffset.y) + 'px';
     }
   });
+
   window.addEventListener('mouseup', () => {
     isPainting = false;
     draggingPanel = false;
@@ -1203,6 +1460,16 @@
     new Food(e.clientX, e.clientY);
   });
 
+  // Right click for obstacles
+  document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if(e.target.closest('#settings-panel') || e.target.closest('.turtle') || ui.edit.checked) return;
+
+    if(isBlocked(e.clientX, e.clientY)) return;
+
+    new Obstacle(e.clientX, e.clientY);
+  });
+
   // Settings Panel Dragging
   ui.panel.querySelector('h2').addEventListener('mousedown', e => {
     draggingPanel = true;
@@ -1212,9 +1479,13 @@
   });
 
   // Controls - Add saveData to all interactive elements
-  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow', 'speed', 'names', 'edit', 'brush'];
+  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow', 'speed', 'names', 'edit', 'brush', 'autoSpawn', 'showStats'];
   changeHandlers.forEach(id => {
-      ui[id].addEventListener('change', saveData);
+      ui[id].addEventListener('change', () => {
+        saveData();
+        if(id === 'autoSpawn') startAutoSpawn();
+        if(id === 'showStats') updateStatsVisibility();
+      });
   });
 
   // Maze Generator Event
@@ -1232,7 +1503,7 @@
         grid = grid.map(col => col.fill(0));
         Array.from(gridRoot.children).forEach(c => {
             c.className = 'grid-cell';
-            c.classList.remove('is-blocked', 'is-glass');
+            c.classList.remove('is-blocked', 'is-glass', 'is-water');
         });
         saveData();
     }
@@ -1243,20 +1514,82 @@
     turtles.forEach(t => { t.targetFood = null; t.path = []; t.state='IDLE'; });
   });
 
+  ui.nuke.addEventListener('click', () => {
+    if(confirm("NUKE EVERYTHING? This will reset the entire simulation!")) {
+      // Clear everything
+      turtles.forEach(t => t.destroy());
+      turtles = [];
+      foodItems.forEach(f => f.remove());
+      foodItems = [];
+      obstacles.forEach(o => o.remove());
+      obstacles = [];
+      effects.forEach(e => e.remove());
+      effects = [];
+
+      // Reset grid
+      grid = grid.map(col => col.fill(0));
+      Array.from(gridRoot.children).forEach(c => {
+        c.className = 'grid-cell';
+        c.classList.remove('is-blocked', 'is-glass', 'is-water');
+      });
+
+      // Reset stats
+      stats.foodEaten = 0;
+      stats.startTime = Date.now();
+      stats.totalSpeed = 0;
+      stats.speedSamples = 0;
+      foodEatenDisplay.textContent = '0';
+      timeElapsedDisplay.textContent = '0s';
+      avgSpeedDisplay.textContent = '0';
+
+      // Reset to default settings
+      ui.numTurtles.value = 6;
+      ui.numDisplay.innerText = '6';
+      ui.gridSize.value = 40;
+      ui.gridDisplay.innerText = '40';
+      ui.personality.value = 'mixed';
+      ui.rainbow.value = 0.2;
+      ui.speed.value = 1;
+      ui.names.checked = true;
+      ui.edit.checked = false;
+      ui.brush.value = '1';
+      ui.autoSpawn.checked = false;
+      ui.showStats.checked = true;
+
+      updatePopulation();
+      updateStatsVisibility();
+      saveData();
+      showNotification("💥 Simulation reset!");
+    }
+  });
+
   window.addEventListener('resize', () => {
     resizeCanvas();
     // Re-init grid visual but don't clear logic if possible,
     // though safe approach for now is full reset if size changes
     initGrid(false);
   });
+
   window.addEventListener('keydown', e => {
     if(e.key.toLowerCase() === 'd') ui.debug.checked = !ui.debug.checked;
     if(e.key.toLowerCase() === 'h') ui.panel.hidden = !ui.panel.hidden;
+    if(e.key.toLowerCase() === 's') ui.showStats.checked = !ui.showStats.checked;
+    if(e.key.toLowerCase() === 'a') ui.autoSpawn.checked = !ui.autoSpawn.checked;
+
+    // Update UI elements that were toggled by keyboard
+    if(e.key.toLowerCase() === 'd' || e.key.toLowerCase() === 's') {
+      updateStatsVisibility();
+    }
+    if(e.key.toLowerCase() === 'a') {
+      startAutoSpawn();
+    }
   });
 
   // Init sequence: Load data, build grid, spawn turtles
   loadData();
+  startAutoSpawn();
   loop();
+  stats.startTime = Date.now();
 </script>
 </body>
 </html>
