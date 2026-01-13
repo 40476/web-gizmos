@@ -135,11 +135,11 @@
     }
 
     /* New food types */
-    .food-meat {
+    .food-purple {
       width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #8e44ad, #6c3483);
       border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-    .food-meat::after {
+    .food-purple::after {
       content: ''; position: absolute; top: -1px; left: 50%; width: 4px; height: 3px;
       background: #c0392b; border-radius: 1px;
     }
@@ -156,6 +156,126 @@
     .obstacle-rock::before {
       content: ''; position: absolute; top: 5px; left: 5px; width: 30px; height: 30px;
       background: radial-gradient(#5d6d7e, #2c3e50); border-radius: 50%;
+    }
+
+    /* --- LILYPAD --- */
+    .lilypad {
+      position: absolute;
+      z-index: 4;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      cursor: pointer;
+    }
+    .lilypad-inner {
+      position: relative;
+      background-color: #478740;
+      border: 15px solid #366631;
+      border-radius: 50%;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    .lilypad .cut {
+      position: absolute;
+      border-top: 105px solid transparent;
+      border-left: 300px solid #0e4772;
+      border-bottom: 40px solid transparent;
+      top: 30%;
+      left: -10%;
+      transform: rotate(5deg);
+    }
+    .lilypad .flower {
+      position: absolute;
+      height: 150px;
+      width: 150px;
+      left: 55%;
+      top: 5%;
+    }
+    .lilypad .flower .outermost1 {
+      position: absolute;
+      height: 175px;
+      width: 50px;
+      background-color: #fff8b7;
+      border-radius: 50%;
+      left: 33%;
+      top: -10%;
+    }
+    .lilypad .flower .outermost2 {
+      position: absolute;
+      height: 50px;
+      width: 175px;
+      background-color: #fff8b7;
+      border-radius: 50%;
+      left: -8%;
+      top: 30%;
+    }
+    .lilypad .flower .outer1 {
+      position: absolute;
+      height: 150px;
+      width: 25px;
+      background-color: #fffad1;
+      border-radius: 50%;
+      transform: rotate(45deg);
+      left: 40%;
+      top: -5%;
+    }
+    .lilypad .flower .outer2 {
+      position: absolute;
+      height: 25px;
+      width: 150px;
+      background-color: #fffad1;
+      transform: rotate(45deg);
+      border-radius: 50%;
+      left: -3%;
+      top: 35%;
+    }
+    .lilypad .flower .inner1 {
+      position: absolute;
+      height: 125px;
+      width: 10px;
+      background-color: #fffbe2;
+      border-radius: 50%;
+      left: 46%;
+      top: 5%;
+    }
+    .lilypad .flower .inner2 {
+      position: absolute;
+      height: 10px;
+      width: 125px;
+      background-color: #fffbe2;
+      border-radius: 50%;
+      left: 8%;
+      top: 43%;
+    }
+    .lilypad .flower .innermost1 {
+      position: absolute;
+      height: 100px;
+      width: 5px;
+      background-color: #fffdf4;
+      transform: rotate(45deg);
+      border-radius: 50%;
+      left: 45%;
+      top: 13%;
+    }
+    .lilypad .flower .innermost2 {
+      position: absolute;
+      height: 5px;
+      width: 100px;
+      background-color: #fffdf4;
+      transform: rotate(45deg);
+      border-radius: 50%;
+      left: 14%;
+      top: 42%;
+    }
+    .lilypad .flower .center {
+      position: absolute;
+      height: 50px;
+      width: 50px;
+      background-color: #edcb31;
+      border-radius: 40%;
+      transform: rotate(45deg);
+      top: 30%;
+      left: 33%;
     }
 
     /* --- SPECIAL EFFECTS --- */
@@ -208,6 +328,20 @@
       background: rgba(0, 191, 255, 0.6);
       box-shadow: inset 0 0 10px rgba(0, 191, 255, 0.8);
       border: 1px solid rgba(0, 191, 255, 0.3);
+    }
+
+    /* Grass (State 4) */
+    .grid-cell.is-grass {
+      background: rgba(124, 252, 0, 0.3);
+      box-shadow: inset 0 0 10px rgba(124, 252, 0, 0.5);
+      border: 1px solid rgba(124, 252, 0, 0.2);
+    }
+
+    /* Sand (State 5) */
+    .grid-cell.is-sand {
+      background: rgba(255, 218, 185, 0.4);
+      box-shadow: inset 0 0 10px rgba(255, 218, 185, 0.6);
+      border: 1px solid rgba(255, 218, 185, 0.3);
     }
 
     /* Debug Canvas */
@@ -340,7 +474,14 @@
         <option value="1">🧱 Wall</option>
         <option value="2">🪟 Glass</option>
         <option value="3">💧 Water</option>
+        <option value="4">🌿 Grass</option>
+        <option value="5">🏖️ Sand</option>
     </select>
+  </div>
+
+  <div class="row">
+    <label for="lilypadSize">Lilypad Size</label>
+    <input id="lilypadSize" type="range" min="1" max="3" value="1">
   </div>
 
   <div class="row">
@@ -358,10 +499,14 @@
   <button class="btn" id="genMazeBtn" style="background: #9b59b6; margin-top: 10px;">🧩 Generate Maze</button>
   <button class="btn secondary" id="resetGridBtn">Reset Grid</button>
   <button class="btn secondary" id="clearFoodBtn">Clear Food</button>
+  <button class="btn secondary" id="addLilypadBtn">Add Lilypad</button>
+  <button class="btn secondary" id="removeLilypadBtn">Remove Lilypad</button>
+  <button class="btn secondary" id="genTerrainBtn">Generate Terrain</button>
   <button class="btn danger" id="nukeBtn">💥 Nuke All</button>
 
   <small>
     Click empty space to add food.<br>
+    Right-click to add obstacles.<br>
     Drag shells to move turtles.<br>
     Click names to rename.<br>
     Paint walls when "Edit" is checked.
@@ -375,12 +520,13 @@
   let GRID_SIZE = 40;
   let gridCols = 0;
   let gridRows = 0;
-  let grid = []; // 0=free, 1=wall, 2=glass, 3=water
+  let grid = []; // 0=free, 1=wall, 2=glass, 3=water, 4=grass, 5=sand
 
   let foodItems = [];
   let turtles = [];
   let obstacles = [];
   let effects = [];
+  let lilyPads = [];
 
   // Simulation stats
   let stats = {
@@ -407,6 +553,8 @@
   let panelOffset = {x:0, y:0};
   let lastDebugToggle = false;
   let autoSpawnInterval = null;
+  let placingLilypad = false;
+  let removingLilypad = false;
 
   // Settings UI
   const ui = {
@@ -425,9 +573,13 @@
     maze: document.getElementById('genMazeBtn'),
     reset: document.getElementById('resetGridBtn'),
     clearFood: document.getElementById('clearFoodBtn'),
+    addLilypad: document.getElementById('addLilypadBtn'),
+    removeLilypad: document.getElementById('removeLilypadBtn'),
+    genTerrain: document.getElementById('genTerrainBtn'),
     nuke: document.getElementById('nukeBtn'),
     autoSpawn: document.getElementById('autoSpawnFood'),
-    showStats: document.getElementById('showStats')
+    showStats: document.getElementById('showStats'),
+    lilypadSize: document.getElementById('lilypadSize')
   };
 
   // Personalities
@@ -526,6 +678,8 @@
       if(val === 1) cell.classList.add('is-blocked');
       else if(val === 2) cell.classList.add('is-glass');
       else if(val === 3) cell.classList.add('is-water');
+      else if(val === 4) cell.classList.add('is-grass');
+      else if(val === 5) cell.classList.add('is-sand');
     }
     saveData(); // Save on modification
   }
@@ -541,13 +695,25 @@
   function isBlocked(x, y) {
     const g = worldToGrid(x, y);
     if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return true;
-    return grid[g.x][g.y] === 1; // Only walls block movement
+    return grid[g.x][g.y] === 1 || grid[g.x][g.y] === 2; // Only walls block movement
   }
 
   function isWater(x, y) {
     const g = worldToGrid(x, y);
     if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return false;
     return grid[g.x][g.y] === 3;
+  }
+
+  function isGrass(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return false;
+    return grid[g.x][g.y] === 4;
+  }
+
+  function isSand(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return false;
+    return grid[g.x][g.y] === 5;
   }
 
   function findNearestFree(gx, gy) {
@@ -558,7 +724,7 @@
       const current = queue.shift();
       const {x, y} = current;
       if (x < 0 || x >= gridCols || y < 0 || y >= gridRows) continue;
-      if (grid[x][y] === 0) return {x, y};
+      if (grid[x][y] === 0 || grid[x][y] === 4 || grid[x][y] === 5) return {x, y};
 
       const neighbors = [{x:x+1, y:y}, {x:x-1, y:y}, {x:x, y:y+1}, {x:x, y:y-1}];
       for(let n of neighbors) {
@@ -627,9 +793,11 @@
             const cell = gridRoot.children[idx];
             if(cell) {
                 cell.className = 'grid-cell';
-                if(grid[x][y] === 1) cell.classList.add('is-blocked');
-                else if(grid[x][y] === 2) cell.classList.add('is-glass');
-                else if(grid[x][y] === 3) cell.classList.add('is-water');
+                if(grid[x][y]===1) cell.classList.add('is-blocked');
+                else if(grid[x][y]===2) cell.classList.add('is-glass');
+                else if(grid[x][y]===3) cell.classList.add('is-water');
+                else if(grid[x][y]===4) cell.classList.add('is-grass');
+                else if(grid[x][y]===5) cell.classList.add('is-sand');
             }
         }
     }
@@ -648,6 +816,179 @@
     saveData();
   }
 
+  // Terrain Generator
+  function generateTerrain() {
+    // Clear existing terrain
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            grid[x][y] = 0;
+        }
+    }
+
+    // Create water areas (ponds, rivers)
+    createWaterAreas();
+
+    // Create grass areas
+    createGrassAreas();
+
+    // Create sand areas (beaches)
+    createSandAreas();
+
+    // Create structures (glass and walls)
+    createStructures();
+
+    // Sync Visuals
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            const idx = y * gridCols + x;
+            const cell = gridRoot.children[idx];
+            if(cell) {
+                cell.className = 'grid-cell';
+                if(grid[x][y]===1) cell.classList.add('is-blocked');
+                else if(grid[x][y]===2) cell.classList.add('is-glass');
+                else if(grid[x][y]===3) cell.classList.add('is-water');
+                else if(grid[x][y]===4) cell.classList.add('is-grass');
+                else if(grid[x][y]===5) cell.classList.add('is-sand');
+            }
+        }
+    }
+
+    // Teleport stuck turtles
+    turtles.forEach(t => {
+        if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+           t.path = [];
+        }
+    });
+
+    saveData();
+    showNotification("Terrain generated!");
+  }
+
+  function createWaterAreas() {
+    // Create a large central pond
+    const centerX = Math.floor(gridCols / 2);
+    const centerY = Math.floor(gridRows / 2);
+    const pondRadius = Math.min(gridCols, gridRows) * 0.2;
+
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            const distToCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+            if(distToCenter < pondRadius) {
+                grid[x][y] = 3; // Water
+            }
+        }
+    }
+
+    // Create a river
+    const riverWidth = 3;
+    const riverStartX = Math.floor(random(0, gridCols));
+    const riverStartY = Math.floor(random(0, gridRows));
+    const riverEndX = Math.floor(random(0, gridCols));
+    const riverEndY = Math.floor(random(0, gridRows));
+
+    const riverSteps = 20;
+    for(let i=0; i<riverSteps; i++) {
+        const t = i / riverSteps;
+        const x = Math.floor(lerp(riverStartX, riverEndX, t));
+        const y = Math.floor(lerp(riverStartY, riverEndY, t));
+
+        for(let dx=-riverWidth; dx<=riverWidth; dx++) {
+            for(let dy=-riverWidth; dy<=riverWidth; dy++) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows) {
+                    grid[nx][ny] = 3; // Water
+                }
+            }
+        }
+    }
+  }
+
+  function createGrassAreas() {
+    // Create grass patches
+    const grassPatchCount = 10;
+    const grassPatchSize = Math.min(gridCols, gridRows) * 0.1;
+
+    for(let i=0; i<grassPatchCount; i++) {
+        const centerX = Math.floor(random(0, gridCols));
+        const centerY = Math.floor(random(0, gridRows));
+
+        for(let x=0; x<gridCols; x++) {
+            for(let y=0; y<gridRows; y++) {
+                const distToCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                if(distToCenter < grassPatchSize && grid[x][y] === 0) {
+                    grid[x][y] = 4; // Grass
+                }
+            }
+        }
+    }
+  }
+
+  function createSandAreas() {
+    // Create sand areas around water
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            if(grid[x][y] === 3) { // If it's water
+                // Check neighbors
+                for(let dx=-1; dx<=1; dx++) {
+                    for(let dy=-1; dy<=1; dy++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows && grid[nx][ny] === 0) {
+                            grid[nx][ny] = 5; // Sand
+                        }
+                    }
+                }
+            }
+        }
+    }
+  }
+
+  function createStructures() {
+    // Create glass structures
+    const glassStructureCount = 5;
+    const glassStructureSize = 5;
+
+    for(let i=0; i<glassStructureCount; i++) {
+        const centerX = Math.floor(random(0, gridCols));
+        const centerY = Math.floor(random(0, gridRows));
+
+        for(let x=0; x<glassStructureSize; x++) {
+            for(let y=0; y<glassStructureSize; y++) {
+                const nx = centerX - Math.floor(glassStructureSize/2) + x;
+                const ny = centerY - Math.floor(glassStructureSize/2) + y;
+                if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows && grid[nx][ny] === 0) {
+                    grid[nx][ny] = 2; // Glass
+                }
+            }
+        }
+    }
+
+    // Create wall structures
+    const wallStructureCount = 3;
+    const wallStructureSize = 4;
+
+    for(let i=0; i<wallStructureCount; i++) {
+        const centerX = Math.floor(random(0, gridCols));
+        const centerY = Math.floor(random(0, gridRows));
+
+        for(let x=0; x<wallStructureSize; x++) {
+            for(let y=0; y<wallStructureSize; y++) {
+                const nx = centerX - Math.floor(wallStructureSize/2) + x;
+                const ny = centerY - Math.floor(wallStructureSize/2) + y;
+                if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows && grid[nx][ny] === 0) {
+                    grid[nx][ny] = 1; // Wall
+                }
+            }
+        }
+    }
+  }
+
   // --- A* Algorithm ---
   function findPath(sx, sy, ex, ey) {
     const start = worldToGrid(sx, sy);
@@ -655,7 +996,7 @@
 
     if (start.x < 0 || start.x >= gridCols || start.y < 0 || start.y >= gridRows) return null;
     if (end.x < 0 || end.x >= gridCols || end.y < 0 || end.y >= gridRows) return null;
-    if (grid[end.x][end.y] !== 0) return null;
+    if (grid[end.x][end.y] === 1) return null; // Only walls block pathfinding
 
     const openSet = [];
     const closedSet = new Set();
@@ -692,10 +1033,10 @@
           const ny = current.y + dy;
 
           if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows) {
-            if(grid[nx][ny] !== 0) continue;
+            if(grid[nx][ny] === 1) continue;
             // Corner Cutting Check
             if(dx !== 0 && dy !== 0) {
-              if(grid[current.x + dx][current.y] !== 0 || grid[current.x][current.y + dy] !== 0) continue;
+              if(grid[current.x + dx][current.y] === 1 || grid[current.x][current.y + dy] === 1) continue;
             }
 
             const neighbor = {x: nx, y: ny};
@@ -727,7 +1068,7 @@
     constructor(x, y) {
       this.x = x;
       this.y = y;
-      const types = ['food-pellet', 'food-leaf', 'food-fruit', 'food-meat'];
+      const types = ['food-pellet', 'food-leaf', 'food-fruit', 'food-purple'];
       this.type = types[Math.floor(Math.random() * types.length)];
 
       this.el = document.createElement('div');
@@ -783,6 +1124,126 @@
     }
   }
 
+  class Lilypad {
+    constructor(x, y, size = 1) {
+      this.x = x;
+      this.y = y;
+      this.size = size;
+      this.radius = 50 * size;
+      this.turtlesOnPad = [];
+
+      this.el = document.createElement('div');
+      this.el.className = 'lilypad';
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+      this.el.style.width = this.radius * 2 + 'px';
+      this.el.style.height = this.radius * 2 + 'px';
+
+      const inner = document.createElement('div');
+      inner.className = 'lilypad-inner';
+      inner.style.width = this.radius * 2 + 'px';
+      inner.style.height = this.radius * 2 + 'px';
+
+      const cut = document.createElement('div');
+      cut.className = 'cut';
+      cut.style.borderLeftWidth = this.radius * 0.6 + 'px';
+
+      const flower = document.createElement('div');
+      flower.className = 'flower';
+      flower.style.width = this.radius * 0.3 + 'px';
+      flower.style.height = this.radius * 0.3 + 'px';
+
+      const outer1 = document.createElement('div');
+      outer1.className = 'outermost1';
+      outer1.style.height = this.radius * 0.35 + 'px';
+      outer1.style.width = this.radius * 0.1 + 'px';
+
+      const outer2 = document.createElement('div');
+      outer2.className = 'outermost2';
+      outer2.style.height = this.radius * 0.1 + 'px';
+      outer2.style.width = this.radius * 0.35 + 'px';
+
+      const inner1 = document.createElement('div');
+      inner1.className = 'outer1';
+      inner1.style.height = this.radius * 0.3 + 'px';
+      inner1.style.width = this.radius * 0.05 + 'px';
+
+      const inner2 = document.createElement('div');
+      inner2.className = 'outer2';
+      inner2.style.height = this.radius * 0.05 + 'px';
+      inner2.style.width = this.radius * 0.3 + 'px';
+
+      const innermost1 = document.createElement('div');
+      innermost1.className = 'innermost1';
+      innermost1.style.height = this.radius * 0.2 + 'px';
+      innermost1.style.width = this.radius * 0.01 + 'px';
+
+      const innermost2 = document.createElement('div');
+      innermost2.className = 'innermost2';
+      innermost2.style.height = this.radius * 0.01 + 'px';
+      innermost2.style.width = this.radius * 0.2 + 'px';
+
+      const center = document.createElement('div');
+      center.className = 'center';
+      center.style.width = this.radius * 0.1 + 'px';
+      center.style.height = this.radius * 0.1 + 'px';
+
+      flower.appendChild(outer1);
+      flower.appendChild(outer2);
+      flower.appendChild(inner1);
+      flower.appendChild(inner2);
+      flower.appendChild(innermost1);
+      flower.appendChild(innermost2);
+      flower.appendChild(center);
+
+      inner.appendChild(cut);
+      inner.appendChild(flower);
+      this.el.appendChild(inner);
+
+      // Add click event for removal
+      this.el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(removingLilypad) {
+          this.remove();
+          showNotification("Lily pad removed");
+          removingLilypad = false;
+        }
+      });
+
+      document.body.appendChild(this.el);
+      lilyPads.push(this);
+    }
+
+    remove() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+      lilyPads = lilyPads.filter(l => l !== this);
+    }
+
+    checkTurtleCollision(turtle) {
+      const dx = turtle.x - this.x;
+      const dy = turtle.y - this.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= this.radius) {
+        if (!this.turtlesOnPad.includes(turtle)) {
+          this.turtlesOnPad.push(turtle);
+          turtle.originalIdleTime = turtle.idleTimer;
+          turtle.idleTimer *= 3; // Triple idle time when on lily pad
+        }
+        return true;
+      } else {
+        if (this.turtlesOnPad.includes(turtle)) {
+          this.turtlesOnPad = this.turtlesOnPad.filter(t => t !== turtle);
+          if (turtle.originalIdleTime !== undefined) {
+            turtle.idleTimer = turtle.originalIdleTime;
+            delete turtle.originalIdleTime;
+          }
+        }
+        return false;
+      }
+    }
+  }
+
   class Turtle {
     constructor(id, data = null) {
       this.id = id;
@@ -816,6 +1277,8 @@
       this.isDragging = false;
       this.dragOffset = {x:0, y:0};
       this.inWater = false;
+      this.onLilypad = false;
+      this.lilypadSpeedMultiplier = 1;
 
       this.el = document.createElement('div');
       this.el.className = 'turtle';
@@ -883,6 +1346,15 @@
     update() {
       // Check if in water
       this.inWater = isWater(this.x, this.y);
+
+      // Check lily pad collisions
+      this.onLilypad = false;
+      for (let pad of lilyPads) {
+        if (pad.checkTurtleCollision(this)) {
+          this.onLilypad = true;
+          break;
+        }
+      }
 
       this.updateVisuals();
       if(this.isDragging) return;
@@ -1006,6 +1478,19 @@
         desiredSpeed *= 0.6;
       }
 
+      // Apply water resistance
+      if(isGrass(this.x,this.y) || isSand(this.x,this.y)) {
+        desiredSpeed *= 0.3;
+      }
+
+      // Apply lily pad speed multiplier
+      if(this.onLilypad) {
+        // If moving fast enough, allow jumping on lily pad
+        if(this.speed > 1.5) {
+          desiredSpeed *= 1.2; // Slight speed boost when jumping on pad
+        }
+      }
+
       this.speed = lerp(this.speed, desiredSpeed, 0.05);
 
       // Update stats
@@ -1112,7 +1597,7 @@
         const cx = this.x + (tx-this.x)*r;
         const cy = this.y + (ty-this.y)*r;
         const g = worldToGrid(cx, cy);
-        if(g.x>=0 && g.x<gridCols && g.y>=0 && g.y<gridRows && grid[g.x][g.y] !== 0) return true;
+        if(g.x>=0 && g.x<gridCols && g.y>=0 && g.y<gridRows && grid[g.x][g.y] === 1) return true;
       }
       return false;
     }
@@ -1199,6 +1684,14 @@
         isRainbow: t.el.classList.contains('rainbow')
     }));
     localStorage.setItem('ts_turtles', JSON.stringify(turtleData));
+
+    // Save Lily Pads
+    const lilypadData = lilyPads.map(p => ({
+        x: p.x,
+        y: p.y,
+        size: p.size
+    }));
+    localStorage.setItem('ts_lilypads', JSON.stringify(lilypadData));
   }
 
   function loadData() {
@@ -1236,6 +1729,8 @@
                             if(grid[x][y]===1) cell.classList.add('is-blocked');
                             else if(grid[x][y]===2) cell.classList.add('is-glass');
                             else if(grid[x][y]===3) cell.classList.add('is-water');
+                            else if(grid[x][y]===4) cell.classList.add('is-grass');
+                            else if(grid[x][y]===5) cell.classList.add('is-sand');
                         }
                     }
                 }
@@ -1258,6 +1753,17 @@
             }
         } else {
             updatePopulation();
+        }
+
+        // Restore lily pads
+        const l = JSON.parse(localStorage.getItem('ts_lilypads'));
+        if(l && Array.isArray(l) && l.length > 0) {
+            lilyPads.forEach(p => p.remove());
+            lilyPads = [];
+            l.forEach(data => {
+                const np = new Lilypad(data.x, data.y, data.size);
+                lilyPads.push(np);
+            });
         }
     } catch(e) {
         console.error("Save data invalid", e);
@@ -1336,6 +1842,14 @@
         ctx.lineTo(t.targetFood.x, t.targetFood.y);
         ctx.stroke();
       }
+    });
+
+    // Draw lily pads
+    lilyPads.forEach(pad => {
+      ctx.strokeStyle = 'rgba(0, 100, 0, 0.5)';
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, pad.radius, 0, Math.PI * 2);
+      ctx.stroke();
     });
   }
 
@@ -1479,7 +1993,7 @@
   });
 
   // Controls - Add saveData to all interactive elements
-  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow', 'speed', 'names', 'edit', 'brush', 'autoSpawn', 'showStats'];
+  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow', 'speed', 'names', 'edit', 'brush', 'autoSpawn', 'showStats', 'lilypadSize'];
   changeHandlers.forEach(id => {
       ui[id].addEventListener('change', () => {
         saveData();
@@ -1491,6 +2005,9 @@
   // Maze Generator Event
   ui.maze.addEventListener('click', generateMaze);
 
+  // Terrain Generator Event
+  ui.genTerrain.addEventListener('click', generateTerrain);
+
   ui.numTurtles.addEventListener('input', updatePopulation);
   ui.personality.addEventListener('change', () => {
     while(turtles.length > 0) turtles.pop().destroy();
@@ -1499,19 +2016,29 @@
   ui.gridSize.addEventListener('change', () => initGrid(false));
   ui.edit.addEventListener('change', updateGridVisibility);
   ui.reset.addEventListener('click', () => {
-    if(confirm("Clear all walls?")) {
-        grid = grid.map(col => col.fill(0));
-        Array.from(gridRoot.children).forEach(c => {
-            c.className = 'grid-cell';
-            c.classList.remove('is-blocked', 'is-glass', 'is-water');
-        });
-        saveData();
-    }
+      grid = grid.map(col => col.fill(0));
+      Array.from(gridRoot.children).forEach(c => {
+          c.className = 'grid-cell';
+          c.classList.remove('is-blocked', 'is-glass', 'is-water', 'is-grass', 'is-sand');
+      });
+      saveData();
   });
   ui.clearFood.addEventListener('click', () => {
     foodItems.forEach(f => f.remove());
     foodItems = [];
     turtles.forEach(t => { t.targetFood = null; t.path = []; t.state='IDLE'; });
+  });
+
+  ui.addLilypad.addEventListener('click', () => {
+    placingLilypad = true;
+    removingLilypad = false;
+    showNotification("Click to place lily pad");
+  });
+
+  ui.removeLilypad.addEventListener('click', () => {
+    removingLilypad = true;
+    placingLilypad = false;
+    showNotification("Click on a lily pad to remove it");
   });
 
   ui.nuke.addEventListener('click', () => {
@@ -1525,12 +2052,14 @@
       obstacles = [];
       effects.forEach(e => e.remove());
       effects = [];
+      lilyPads.forEach(p => p.remove());
+      lilyPads = [];
 
       // Reset grid
       grid = grid.map(col => col.fill(0));
       Array.from(gridRoot.children).forEach(c => {
         c.className = 'grid-cell';
-        c.classList.remove('is-blocked', 'is-glass', 'is-water');
+        c.classList.remove('is-blocked', 'is-glass', 'is-water', 'is-grass', 'is-sand');
       });
 
       // Reset stats
@@ -1555,6 +2084,7 @@
       ui.brush.value = '1';
       ui.autoSpawn.checked = false;
       ui.showStats.checked = true;
+      ui.lilypadSize.value = 1;
 
       updatePopulation();
       updateStatsVisibility();
@@ -1582,6 +2112,16 @@
     }
     if(e.key.toLowerCase() === 'a') {
       startAutoSpawn();
+    }
+  });
+
+  // Handle lily pad placement
+  document.addEventListener('click', e => {
+    if(placingLilypad) {
+      placingLilypad = false;
+      const size = parseInt(ui.lilypadSize.value);
+      new Lilypad(e.clientX, e.clientY, size);
+      saveData();
     }
   });
 
