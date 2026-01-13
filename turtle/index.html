@@ -268,20 +268,20 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       backdrop-filter: blur(5px);
       max-width: 250px;
+      transition: all 0.3s ease;
+    }
+    #stats-panel.mobile {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 400px;
     }
     #stats-panel h3 { margin: 0 0 8px 0; font-size: 14px; }
     #stats-panel .stat-row { display: flex; justify-content: space-between; margin: 4px 0; }
     #stats-panel .stat-label { font-weight: 500; }
     #stats-panel .stat-value { color: #3498db; }
-
-    /* Turtle counter */
-    #turtle-counter {
-      position: fixed; top: 10px; left: 10px; z-index: 999;
-      background: rgba(255,255,255,0.9); border-radius: 20px;
-      padding: 8px 15px; font-size: 14px; color: #222;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      backdrop-filter: blur(5px);
-    }
 
     /* Notification system */
     .notification {
@@ -299,15 +299,96 @@
       from { opacity: 1; }
       to { opacity: 0; }
     }
+
+    /* Instructions modal */
+    #instructions-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #instructions-content {
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    #instructions-content h2 {
+      color: #2c3e50;
+      margin-top: 0;
+    }
+
+    #instructions-content h3 {
+      color: #3498db;
+      margin-top: 20px;
+    }
+
+    #instructions-content ul {
+      padding-left: 20px;
+    }
+
+    #instructions-content li {
+      margin-bottom: 8px;
+    }
+
+    #close-instructions {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    #close-instructions:hover {
+      background: #2980b9;
+    }
+
+    /* Mobile UI adjustments */
+    @media (max-width: 768px) {
+      #settings-panel {
+        max-width: 90%;
+        left: 5% !important;
+        right: 5% !important;
+        top: 10px !important;
+      }
+
+      #stats-panel {
+        bottom: 70px;
+      }
+
+      button.btn {
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 <body>
 
 <div id="grid"></div>
 <canvas id="debug-canvas"></canvas>
-<div id="turtle-counter">🐢 0</div>
 <div id="stats-panel">
   <h3>Simulation Stats</h3>
+  <div class="stat-row"><span class="stat-label">Turtles: </span><span class="stat-value" id="turtle-count">0</span></div>
   <div class="stat-row"><span class="stat-label">Food Eaten: </span><span class="stat-value" id="food-eaten">0</span></div>
   <div class="stat-row"><span class="stat-label">Time Elapsed: </span><span class="stat-value" id="time-elapsed">0s</span></div>
   <div class="stat-row"><span class="stat-label">Avg Speed: </span><span class="stat-value" id="avg-speed">0</span></div>
@@ -389,6 +470,7 @@
   <button class="btn secondary" id="addLilypadBtn">Add Lilypad</button>
   <button class="btn secondary" id="removeLilypadBtn">Remove Lilypad</button>
   <button class="btn secondary" id="genTerrainBtn">Generate Terrain</button>
+  <button class="btn secondary" id="showInstructionsBtn">Show Instructions</button>
   <button class="btn danger" id="nukeBtn">💥 Nuke All</button>
 
   <small>
@@ -399,6 +481,77 @@
     (H) to hide menu<br>
     Paint walls when "Edit" is checked.
   </small>
+</div>
+
+<!-- Instructions Modal -->
+<div id="instructions-modal" style="display:none">
+  <div id="instructions-content">
+    <h2>🐢 Floating Turtles - Instructions</h2>
+
+    <h3>Basic Controls</h3>
+    <ul>
+      <li><strong>Click on empty space</strong> - Add food for turtles</li>
+      <li><strong>Right-click on empty space</strong> - Add obstacles (rocks)</li>
+      <li><strong>Click on turtle's head</strong> - Make it retract its head</li>
+      <li><strong>Click on turtle's name</strong> - Rename the turtle</li>
+      <li><strong>Drag turtle's shell</strong> - Move the turtle around</li>
+    </ul>
+
+    <h3>Mobile Controls</h3>
+    <ul>
+      <li><strong>Double-tap on empty space</strong> - Add food</li>
+      <li><strong>Tap and hold on empty space</strong> - Add obstacles (rocks)</li>
+      <li><strong>Double-tap on turtle's head</strong> - Make it retract its head</li>
+      <li><strong>Tap on turtle's name</strong> - Rename the turtle</li>
+      <li><strong>Drag turtle's shell</strong> - Move the turtle around</li>
+    </ul>
+
+    <h3>Keyboard Shortcuts</h3>
+    <ul>
+      <li><strong>D</strong> - Toggle debug mode</li>
+      <li><strong>H</strong> - Hide/show settings panel</li>
+      <li><strong>S</strong> - Toggle stats display</li>
+      <li><strong>A</strong> - Toggle auto-spawn food</li>
+    </ul>
+
+    <h3>Settings Panel</h3>
+    <ul>
+      <li><strong>Turtles</strong> - Adjust the number of turtles in the simulation</li>
+      <li><strong>Grid Size</strong> - Change the size of the grid cells</li>
+      <li><strong>Personality bias</strong> - Set the default personality type for new turtles</li>
+      <li><strong>Rainbow shells</strong> - Chance for turtles to have rainbow shells</li>
+      <li><strong>Speed scale</strong> - Adjust the overall speed of all turtles</li>
+      <li><strong>Names</strong> - Toggle turtle name visibility</li>
+      <li><strong>Edit</strong> - Enable grid editing mode</li>
+      <li><strong>Lilypad Size</strong> - Set the size of new lily pads</li>
+      <li><strong>Debug</strong> - Show debug information (pathfinding, vision cones)</li>
+      <li><strong>Auto-spawn food</strong> - Automatically spawn food at regular intervals</li>
+      <li><strong>Show stats</strong> - Display the statistics panel</li>
+    </ul>
+
+    <h3>Buttons</h3>
+    <ul>
+      <li><strong>Generate Maze</strong> - Create a random maze using the current brush type</li>
+      <li><strong>Reset Grid</strong> - Clear all grid modifications</li>
+      <li><strong>Clear Food</strong> - Remove all food items</li>
+      <li><strong>Add Lilypad</strong> - Enter lily pad placement mode</li>
+      <li><strong>Remove Lilypad</strong> - Enter lily pad removal mode</li>
+      <li><strong>Generate Terrain</strong> - Create random terrain with water, grass, and sand</li>
+      <li><strong>Nuke All</strong> - Reset the entire simulation to default</li>
+    </ul>
+
+    <h3>Turtle Personalities</h3>
+    <ul>
+      <li><strong>Default</strong> - Balanced personality</li>
+      <li><strong>Shy</strong> - Slow, cautious, wide field of view</li>
+      <li><strong>Aggressive</strong> - Fast, narrow field of view, long detection range</li>
+      <li><strong>Lazy</strong> - Very slow, short detection range</li>
+      <li><strong>Scout</strong> - Fast, 360° vision, very long detection range</li>
+      <li><strong>Social</strong> - Moderate speed, average detection</li>
+    </ul>
+
+    <button id="close-instructions">Close Instructions</button>
+  </div>
 </div>
 
 <script>
@@ -415,6 +568,37 @@
   let obstacles = [];
   let effects = [];
   let lilyPads = [];
+  let turtleSafeFoods = [
+    // Vegetables and Leafy Greens (staples of the diet)
+    "🥬", // Leafy greens
+    "🥦", // Broccoli (in moderation)
+    "🥕", // Carrots
+    "🌽", // Corn (in moderation)
+    "🥒", // Cucumber
+    "🍆", // Eggplant (aubergine) (in moderation)
+    "🥗", // Salad greens (representing various safe greens like collard, mustard, dandelion)
+    "🌶️", // Bell peppers (red, yellow, orange - rich in vitamin A)
+    "🥔", // Potato/Sweet potato (cooked, in moderation)
+    "🎃", // Pumpkin (in moderation)
+    "🍅", // Tomato (ripe, in moderation)
+
+    // Fruits (offer as occasional treats)
+    "🍎", // Apple (seeds removed)
+    "🍌", // Banana
+    "🫐", // Blueberries
+    "🍒", // Cherries (pits removed, in moderation)
+    "🍇", // Grapes (in moderation)
+    "🥝", // Kiwi (in moderation)
+    "🥭", // Mango
+    "🍈", // Melon (cantaloupe, watermelon)
+    "🍑", // Peach/Apricot (pits removed, in moderation)
+    "🍐", // Pear (in moderation)
+    "🍍", // Pineapple (in moderation)
+    "🍓", // Strawberries
+
+    // Silly
+    "food?",
+  ];
 
   // Simulation stats
   let stats = {
@@ -428,11 +612,14 @@
   const gridRoot = document.getElementById('grid');
   const canvas = document.getElementById('debug-canvas');
   const ctx = canvas.getContext('2d');
-  const turtleCounter = document.getElementById('turtle-counter');
   const foodEatenDisplay = document.getElementById('food-eaten');
   const timeElapsedDisplay = document.getElementById('time-elapsed');
   const avgSpeedDisplay = document.getElementById('avg-speed');
   const statsPanel = document.getElementById('stats-panel');
+  const turtleCountDisplay = document.getElementById('turtle-count');
+  const instructionsModal = document.getElementById('instructions-modal');
+  const closeInstructionsBtn = document.getElementById('close-instructions');
+  const showInstructionsBtn = document.getElementById('showInstructionsBtn');
 
   // State
   let isPainting = false;
@@ -443,6 +630,9 @@
   let autoSpawnInterval = null;
   let placingLilypad = false;
   let removingLilypad = false;
+  let isMobile = false;
+  let lastTapTime = 0;
+  let lastTapTarget = null;
 
   // Settings UI
   const ui = {
@@ -754,6 +944,7 @@
     });
 
     saveData();
+    saveData();
     showNotification("Terrain generated!");
   }
 
@@ -956,11 +1147,11 @@
     constructor(x, y) {
       this.x = x;
       this.y = y;
-      const types = ['food-pellet', 'food-leaf', 'food-fruit', 'food-purple'];
-      this.type = types[Math.floor(Math.random() * types.length)];
+      this.type = turtleSafeFoods[Math.floor(Math.random() * turtleSafeFoods.length)];
 
       this.el = document.createElement('div');
-      this.el.className = `food ${this.type}`;
+      this.el.textContent=this.type;
+      this.el.className = `food`;
       this.el.style.left = x + 'px';
       this.el.style.top = y + 'px';
       document.body.appendChild(this.el);
@@ -1014,14 +1205,6 @@
 
   class Lilypad {
     constructor(x, y, size = 1) {
-    // const existingPad = lilyPads.find(pad =>
-    //     Math.abs(pad.x - x) < 1 && Math.abs(pad.y - y) < 1
-    //   );
-    //
-    //   if (existingPad) {
-    //     console.warn("Cannot place lily pad - another pad already exists at these coordinates");
-    //     return null; // Return null to indicate failure
-    //   }
       this.x = x;
       this.y = y;
 
@@ -1785,7 +1968,7 @@
   function updatePopulation() {
     const count = parseInt(ui.numTurtles.value);
     ui.numDisplay.innerText = count;
-    turtleCounter.textContent = `🐢 ${count}`;
+    turtleCountDisplay.textContent = count;
 
     while(turtles.length > count) {
       turtles.pop().destroy();
@@ -1889,7 +2072,71 @@
     }
   }
 
-  // --- Input Wiring ---
+  // Check if device is mobile
+  function checkMobile() {
+    isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(new URLSearchParams(window.location.search).get('ua') || navigator.userAgent);
+    if (isMobile) {
+      statsPanel.classList.add('mobile');
+      showNotification("Mobile mode activated");
+    }
+  }
+
+  // Handle double tap for mobile
+  function handleTap(e) {
+    const now = Date.now();
+    const target = e.target;
+
+    // Check if it's a double tap on empty space (for food)
+    if (target === document.body || target === gridRoot) {
+      if (now - lastTapTime < 300 && lastTapTarget === target) {
+        // Double tap - add food
+        if (!isBlocked(e.clientX, e.clientY)) {
+          new Food(e.clientX, e.clientY);
+        }
+        lastTapTime = 0;
+        lastTapTarget = null;
+        e.preventDefault();
+      } else {
+        // First tap
+        lastTapTime = now;
+        lastTapTarget = target;
+      }
+    }
+
+    // Check if it's a double tap on turtle head
+    if (target.classList.contains('turtle__head')) {
+      if (now - lastTapTime < 300 && lastTapTarget === target) {
+        // Double tap - retract head
+        const turtleEl = target.closest('.turtle');
+        if (turtleEl) {
+          turtleEl.classList.add('is-retracted');
+          setTimeout(() => turtleEl.classList.remove('is-retracted'), 2000);
+        }
+        lastTapTime = 0;
+        lastTapTarget = null;
+        e.preventDefault();
+      } else {
+        // First tap
+        lastTapTime = now;
+        lastTapTarget = target;
+      }
+    }
+  }
+
+  // Handle long press for mobile (for rocks)
+  function handleLongPress(e) {
+    if (isMobile && (e.target === document.body || e.target === gridRoot)) {
+      // Long press - add obstacle
+      if (!isBlocked(e.clientX, e.clientY)) {
+        new Obstacle(e.clientX, e.clientY);
+      }
+      e.preventDefault();
+    }
+  }
+
+  // -------------------------
+  // Event Listeners
+  // -------------------------
 
   // Grid Painting
   gridRoot.addEventListener('mousedown', e => {
@@ -1961,7 +2208,10 @@
     // Safety: Don't spawn food in walls
     if(isBlocked(e.clientX, e.clientY)) return;
 
-    new Food(e.clientX, e.clientY);
+    // On desktop, single click adds food
+    if (!isMobile) {
+      new Food(e.clientX, e.clientY);
+    }
   });
 
   // Right click for obstacles
@@ -1971,7 +2221,41 @@
 
     if(isBlocked(e.clientX, e.clientY)) return;
 
-    new Obstacle(e.clientX, e.clientY);
+    // On desktop, right click adds obstacles
+    if (!isMobile) {
+      new Obstacle(e.clientX, e.clientY);
+    }
+  });
+
+  // Mobile touch events
+  document.addEventListener('touchstart', handleTap);
+  document.addEventListener('touchend', e => {
+    // Reset long press detection
+    if (e.target === document.body || e.target === gridRoot) {
+      setTimeout(() => {
+        if (lastTapTarget === e.target) {
+          lastTapTarget = null;
+        }
+      }, 500);
+    }
+  });
+
+  // Long press detection
+  let longPressTimer;
+  document.addEventListener('touchstart', e => {
+    if (isMobile && (e.target === document.body || e.target === gridRoot)) {
+      longPressTimer = setTimeout(() => {
+        handleLongPress(e);
+      }, 500);
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    clearTimeout(longPressTimer);
+  });
+
+  document.addEventListener('touchmove', e => {
+    clearTimeout(longPressTimer);
   });
 
   // Settings Panel Dragging
@@ -2087,11 +2371,36 @@
     }
   });
 
+  // Instructions modal
+  showInstructionsBtn.addEventListener('click', () => {
+    instructionsModal.style.display = 'flex';
+  });
+
+  closeInstructionsBtn.addEventListener('click', () => {
+    instructionsModal.style.display = 'none';
+  });
+
+  // Close instructions when clicking outside the content
+  instructionsModal.addEventListener('click', (e) => {
+    if (e.target === instructionsModal) {
+      instructionsModal.style.display = 'none';
+    }
+  });
+
   window.addEventListener('resize', () => {
     resizeCanvas();
     // Re-init grid visual but don't clear logic if possible,
     // though safe approach for now is full reset if size changes
     initGrid(false);
+
+    // Adjust panel positions to stay on screen
+    const panelRect = ui.panel.getBoundingClientRect();
+    if (panelRect.right > window.innerWidth) {
+      ui.panel.style.left = (window.innerWidth - panelRect.width - 10) + 'px';
+    }
+    if (panelRect.bottom > window.innerHeight) {
+      ui.panel.style.top = (window.innerHeight - panelRect.height - 10) + 'px';
+    }
   });
 
   window.addEventListener('keydown', e => {
@@ -2120,6 +2429,7 @@
   });
 
   // Init sequence: Load data, build grid, spawn turtles
+  checkMobile();
   loadData();
   startAutoSpawn();
   loop();
