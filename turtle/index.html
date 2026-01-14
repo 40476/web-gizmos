@@ -11,10 +11,9 @@
       -khtml-user-select: none;
       -webkit-user-select: none;
       -o-user-select: none;
-      overflow: hidden;
     }
     body {
-      width: 100dvw; height: 100dvh; background-color: #f0f4f8; overflow: hidden;
+      width: 100vw; height: 100vh; background-color: #f0f4f8; overflow: hidden;
       margin: 0; padding: 0; cursor: crosshair; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
@@ -245,7 +244,6 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px;
       backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.8);
       cursor: grab; max-height: 90vh; overflow-y: auto;
-      width: 80vw;
     }
     #settings-panel.dragging { cursor: grabbing; opacity: 0.9; }
     #settings-panel h2 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
@@ -366,57 +364,25 @@
     }
 
     /* Mobile UI adjustments */
-  @media (max-width: 768px) {
-  #settings-panel {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    @media (max-width: 768px) {
+      #settings-panel {
+        max-width: 90%;
+        left: 5% !important;
+        right: 5% !important;
+        top: 10px !important;
+      }
 
-    /* Override desktop positioning */
-    top: auto !important;
+      #stats-panel {
+        bottom: 70px;
+      }
 
-    /* Override desktop sizing */
-    width: auto !important;
-    max-width: none !important;
-    max-height: calc(100dvh - 20px) !important
-    height: auto !important;
-
-    border-radius: 16px 16px 0 0;
-
-    /* Hide except for handle */
-    transform: translateY(calc(100% - 40px));
-    transition: transform 0.3s ease;
-
-    padding-left: calc(env(safe-area-inset-left) + 10px);
-    padding-right: calc(env(safe-area-inset-right) + 10px);
-
-    will-change: transform;
-  }
-
-  #settings-panel.open {
-    transform: translateY(0);
-  }
-#settings-handle-wrapper { width: 100%; padding: 0 0 16px 0; /* big tap zone */ cursor: pointer; }
-  #settings-handle {
-    width: 50px;
-    height: 6px;
-    background: #ccc;
-    border-radius: 3px;
-    margin: 6px auto;
-  }
-}
-
-#world {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
-
+      button.btn {
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
-<body id="world">
+<body>
 
 <div id="grid"></div>
 <canvas id="debug-canvas"></canvas>
@@ -429,7 +395,6 @@
 </div>
 
 <div id="settings-panel">
-  <div id="settings-handle-wrapper"> <div id="settings-handle"></div> </div>
   <h2>Turtle Lab</h2>
 
   <div class="row">
@@ -590,10 +555,6 @@
 </div>
 
 <script>
-document.getElementById("settings-handle-wrapper").addEventListener("click", () => {
-  document.getElementById("settings-panel").classList.toggle("open");
-});
-
   // -------------------------
   // Configuration
   // -------------------------
@@ -855,106 +816,6 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
     return {x:gx, y:gy};
   }
 
-  // Improved A* algorithm with better obstacle handling
-  function findPath(sx, sy, ex, ey) {
-    const start = worldToGrid(sx, sy);
-    const end = worldToGrid(ex, ey);
-
-    // Validate positions
-    if (start.x < 0 || start.x >= gridCols || start.y < 0 || start.y >= gridRows) return null;
-    if (end.x < 0 || end.x >= gridCols || end.y < 0 || end.y >= gridRows) return null;
-    if (grid[end.x][end.y] === 1) return null; // Can't pathfind to a wall
-
-    const openSet = [];
-    const closedSet = new Set();
-    const gScore = Array(gridCols).fill().map(() => Array(gridRows).fill(Infinity));
-    const fScore = Array(gridCols).fill().map(() => Array(gridRows).fill(Infinity));
-    const cameFrom = Array(gridCols).fill().map(() => Array(gridRows).fill(null));
-
-    openSet.push(start);
-    gScore[start.x][start.y] = 0;
-    fScore[start.x][start.y] = heuristic(start.x, start.y, end.x, end.y);
-
-    while (openSet.length > 0) {
-        // Find node with lowest fScore
-        let current = openSet.reduce((a, b) =>
-            fScore[a.x][a.y] < fScore[b.x][b.y] ? a : b);
-
-        // Check if we've reached the goal
-        if (current.x === end.x && current.y === end.y) {
-            return reconstructPath(cameFrom, current);
-        }
-
-        openSet.splice(openSet.indexOf(current), 1);
-        closedSet.add(`${current.x},${current.y}`);
-
-        // Generate neighbors (8-directional)
-        for (let dx = -1; dx <= 1; dx++) {
-            for (let dy = -1; dy <= 1; dy++) {
-                if (dx === 0 && dy === 0) continue; // Skip current node
-
-                const nx = current.x + dx;
-                const ny = current.y + dy;
-
-                // Check bounds
-                if (nx < 0 || nx >= gridCols || ny < 0 || ny >= gridRows) continue;
-
-                // Check if blocked (walls only)
-                if (grid[nx][ny] === 1) continue;
-
-                // Check for diagonal movement through corners
-                if (dx !== 0 && dy !== 0) {
-                    if (grid[current.x + dx][current.y] === 1 ||
-                        grid[current.x][current.y + dy] === 1) {
-                        continue;
-                    }
-                }
-
-                const neighbor = {x: nx, y: ny};
-
-                // Skip if already evaluated
-                if (closedSet.has(`${nx},${ny}`)) continue;
-
-                // Calculate tentative gScore
-                const tentativeG = gScore[current.x][current.y] +
-                                  (dx !== 0 && dy !== 0 ? 1.414 : 1); // Diagonal cost
-
-                // Check if this path is better
-                if (!openSet.some(n => n.x === nx && n.y === ny)) {
-                    openSet.push(neighbor);
-                } else if (tentativeG >= gScore[nx][ny]) {
-                    continue; // Not a better path
-                }
-
-                // This path is the best so far
-                cameFrom[nx][ny] = current;
-                gScore[nx][ny] = tentativeG;
-                fScore[nx][ny] = tentativeG + heuristic(nx, ny, end.x, end.y);
-            }
-        }
-    }
-
-    return null; // No path found
-  }
-
-  // Helper function for A*
-  function heuristic(x1, y1, x2, y2) {
-    // Octile distance for 8-directional movement
-    const dx = Math.abs(x1 - x2);
-    const dy = Math.abs(y1 - y2);
-    return (dx + dy) + (1.414 - 2) * Math.min(dx, dy);
-  }
-
-  // Reconstruct path from cameFrom
-  function reconstructPath(cameFrom, current) {
-    const path = [];
-    while (current) {
-        path.push(gridToWorld(current.x, current.y));
-        current = cameFrom[current.x][current.y];
-    }
-    return path.reverse();
-  }
-
   function generateMaze() {
     const wallType = parseInt(ui.brush.value) || 1;
 
@@ -1083,6 +944,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
     });
 
     saveData();
+    saveData();
     showNotification("Terrain generated!");
   }
 
@@ -1204,6 +1066,78 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
             }
         }
     }
+  }
+
+  // --- A* Algorithm ---
+  function findPath(sx, sy, ex, ey) {
+    const start = worldToGrid(sx, sy);
+    const end = worldToGrid(ex, ey);
+
+    if (start.x < 0 || start.x >= gridCols || start.y < 0 || start.y >= gridRows) return null;
+    if (end.x < 0 || end.x >= gridCols || end.y < 0 || end.y >= gridRows) return null;
+    if (grid[end.x][end.y] === 1) return null; // Only walls block pathfinding
+
+    const openSet = [];
+    const closedSet = new Set();
+    const gScore = {};
+    const fScore = {};
+    const cameFrom = {};
+    const getKey = (n) => `${n.x},${n.y}`;
+
+    openSet.push(start);
+    gScore[getKey(start)] = 0;
+    fScore[getKey(start)] = dist(start.x, start.y, end.x, end.y);
+
+    while(openSet.length > 0) {
+      let current = openSet.reduce((a, b) => (fScore[getKey(a)]||Infinity) < (fScore[getKey(b)]||Infinity) ? a : b);
+
+      if(current.x === end.x && current.y === end.y) {
+        const path = [];
+        let temp = current;
+        while(cameFrom[getKey(temp)]) {
+          path.push(gridToWorld(temp.x, temp.y));
+          temp = cameFrom[getKey(temp)];
+        }
+        return path.reverse();
+      }
+
+      openSet.splice(openSet.indexOf(current), 1);
+      closedSet.add(getKey(current));
+
+      for(let dx = -1; dx <= 1; dx++) {
+        for(let dy = -1; dy <= 1; dy++) {
+          if(dx === 0 && dy === 0) continue;
+
+          const nx = current.x + dx;
+          const ny = current.y + dy;
+
+          if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows) {
+            if(grid[nx][ny] === 1) continue;
+            // Corner Cutting Check
+            if(dx !== 0 && dy !== 0) {
+              if(grid[current.x + dx][current.y] === 1 || grid[current.x][current.y + dy] === 1) continue;
+            }
+
+            const neighbor = {x: nx, y: ny};
+            if(closedSet.has(getKey(neighbor))) continue;
+
+            const moveCost = (dx!==0 && dy!==0) ? 1.414 : 1;
+            const tentativeG = (gScore[getKey(current)]||0) + moveCost;
+
+            if(!openSet.some(n => n.x === neighbor.x && n.y === neighbor.y)) {
+              openSet.push(neighbor);
+            } else if (tentativeG >= (gScore[getKey(neighbor)]||Infinity)) {
+              continue;
+            }
+
+            cameFrom[getKey(neighbor)] = current;
+            gScore[getKey(neighbor)] = tentativeG;
+            fScore[getKey(neighbor)] = tentativeG + dist(nx, ny, end.x, end.y);
+          }
+        }
+      }
+    }
+    return null;
   }
 
   // -------------------------
@@ -1577,15 +1511,6 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
         this.dragOffset.x = e.clientX - this.x;
         this.dragOffset.y = e.clientY - this.y;
       });
-      this.shell.addEventListener('touchstart', e => {
-        e.stopPropagation();
-        this.isDragging = true;
-        this.el.classList.add('is-dragging');
-        this.targetFood = null;
-        this.path = [];
-        this.dragOffset.x = e.clientX - this.x;
-        this.dragOffset.y = e.clientY - this.y;
-      });
     }
 
     destroy() {
@@ -1655,88 +1580,92 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
           this.state = 'IDLE';
           this.targetFood = null;
           this.path = [];
-          this.pathIndex = 0;
-          return;
-        }
+        } else {
+          const distToFood = dist(this.x, this.y, this.targetFood.x, this.targetFood.y);
 
-        const distToFood = dist(this.x, this.y, this.targetFood.x, this.targetFood.y);
-
-        // If we're very close to food and have clear line of sight, go straight to it
-        if (distToFood < GRID_SIZE * 1.5 && !this.raycastBlocked(this.targetFood.x, this.targetFood.y)) {
-            const angleToFood = Math.atan2(this.targetFood.y - this.y, this.targetFood.x - this.x) * 180 / Math.PI;
-            this.smoothRotate(angleToFood, 0.2, true);
-            this.speed = Math.min(this.p.maxSpeed * spdMult, distToFood * 0.2 + 0.5);
-            if(distToFood < 20) this.eat();
-            return;
-        }
-
-        // If we don't have a path or need to replan
-        if(this.path.length === 0 || this.pathIndex >= this.path.length) {
-            this.path = findPath(this.x, this.y, this.targetFood.x, this.targetFood.y);
-            this.pathIndex = 0;
-
-            // If no path found, give up
-            if(!this.path || this.path.length === 0) {
+          if (distToFood < GRID_SIZE * 1 && !this.physicalRaycast(this.targetFood.x, this.targetFood.y)) {
+             const angleToFood = Math.atan2(this.targetFood.y - this.y, this.targetFood.x - this.x) * 180 / Math.PI;
+             this.smoothRotate(angleToFood, 0.2, true);
+             this.speed = Math.min(this.p.maxSpeed * spdMult, distToFood * 0.2 + 0.5);
+             if(distToFood < 20) this.eat();
+             desiredSpeed = this.speed;
+          } else {
+            if(this.path.length === 0) {
+              this.path = findPath(this.x, this.y, this.targetFood.x, this.targetFood.y);
+              this.pathIndex = 0;
+              if(!this.path) {
                 this.state = 'IDLE';
                 this.targetFood = null;
-                return;
-            }
-        }
+              }
+            } else {
+              if (this.pathIndex >= this.path.length) {
+                  this.path = [];
+                  return;
+              }
 
-        // Follow the current path
-        const target = this.path[this.pathIndex];
-        const distToNode = dist(this.x, this.y, target.x, target.y);
-        const angleToNode = Math.atan2(target.y - this.y, target.x - this.x) * 180 / Math.PI;
+              const target = this.path[this.pathIndex];
+              const distToNode = dist(this.x, this.y, target.x, target.y);
+              const isFinalTarget = (this.pathIndex === this.path.length - 1);
 
-        // Calculate angle difference
-        let angleDiff = Math.abs(((angleToNode - this.angle + 540) % 360) - 180);
+              const angleToNode = Math.atan2(target.y - this.y, target.x - this.x) * 180 / Math.PI;
+              const angleDiff = Math.abs(((angleToNode - this.angle + 540) % 360) - 180);
 
-        // Adjust rotation speed based on distance and angle
-        let turnFactor = 0.1;
-        if (distToNode < 60) turnFactor = 0.2;
-        if (angleDiff > 90) turnFactor = 0.3;
+              // Use smoothed rotation with higher factor for seeking
+              let turnFactor = 0.1;
+              if (distToNode < 60) turnFactor = 0.2;
+              if (angleDiff > 90) turnFactor = 0.3;
 
-        this.smoothRotate(angleToNode, turnFactor, true);
+              this.smoothRotate(angleToNode, turnFactor, true);
 
-        // Calculate desired speed
-        let desiredSpeed = this.p.maxSpeed * spdMult;
+              desiredSpeed = this.p.maxSpeed * spdMult;
 
-        // Slow down when turning sharply
-        if (angleDiff > 45) desiredSpeed *= 0.2;
-        else if (angleDiff > 20) desiredSpeed *= 0.6;
+              if (angleDiff > 45) desiredSpeed *= 0.2;
+              else if (angleDiff > 20) desiredSpeed *= 0.6;
 
-        // Slow down when approaching waypoint
-        if (distToNode < 30) {
-            desiredSpeed *= (distToNode / 30);
-        }
+              if (!isFinalTarget && distToNode < 80) {
+                  const nextNode = this.path[this.pathIndex + 1];
+                  const angleToNext = Math.atan2(nextNode.y - target.y, nextNode.x - target.x) * 180 / Math.PI;
+                  const turnSeverity = Math.abs(((angleToNext - angleToNode + 540) % 360) - 180);
+                  if (turnSeverity > 45) desiredSpeed *= 0.4;
+              }
 
-        // Apply environment modifiers
-        if(this.inWater) desiredSpeed *= 0.6;
-        if(isGrass(this.x,this.y) || isSand(this.x,this.y)) desiredSpeed *= 0.3;
+              if (isFinalTarget && distToNode < 120) {
+                  desiredSpeed *= (distToNode / 120);
+                  if (desiredSpeed < 0.3) desiredSpeed = 0.3;
+              }
 
-        this.speed = lerp(this.speed, desiredSpeed, 0.05);
-
-        // Check if we've reached the current waypoint
-        if(distToNode < 15) {
-            this.pathIndex++;
-
-            // If we've reached the end of the path
-            if(this.pathIndex >= this.path.length) {
-                // Check if we can now see the food
-                if(!this.raycastBlocked(this.targetFood.x, this.targetFood.y)) {
-                    // Go straight to food
-                    const angleToFood = Math.atan2(this.targetFood.y - this.y, this.targetFood.x - this.x) * 180 / Math.PI;
-                    this.smoothRotate(angleToFood, 0.2, true);
-                    this.speed = Math.min(this.p.maxSpeed * spdMult, distToFood * 0.2 + 0.5);
-                    if(distToFood < 20) this.eat();
-                } else {
-                    // Replan path
-                    this.path = [];
-                    this.pathIndex = 0;
+              if(distToNode < 15) {
+                this.pathIndex++;
+                if(this.pathIndex >= this.path.length) {
+                  const foodD = dist(this.x, this.y, this.targetFood.x, this.targetFood.y);
+                  if(foodD < 20) this.eat();
+                  else this.path = [];
                 }
+              }
             }
+          }
         }
       }
+
+      // Apply water resistance
+      if(this.inWater) {
+        desiredSpeed *= 0.6;
+      }
+
+      // Apply water resistance
+      if(isGrass(this.x,this.y) || isSand(this.x,this.y)) {
+        desiredSpeed *= 0.3;
+      }
+
+      // Apply lily pad speed multiplier
+      if(this.onLilypad) {
+        // If moving fast enough, allow jumping on lily pad
+        if(this.speed > 1.5) {
+          desiredSpeed *= 1.2; // Slight speed boost when jumping on pad
+        }
+      }
+
+      this.speed = lerp(this.speed, desiredSpeed, 0.05);
 
       // Update stats
       stats.totalSpeed += this.speed;
@@ -1823,20 +1752,26 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
 
     raycastBlocked(tx, ty) {
       const d = dist(this.x, this.y, tx, ty);
-      const steps = Math.max(5, Math.floor(d / (GRID_SIZE/2)));
-
-      for(let i = 1; i < steps; i++) {
-        const r = i / steps;
-        const cx = this.x + (tx - this.x) * r;
-        const cy = this.y + (ty - this.y) * r;
-
-        // Check if this point is in a wall
+      const steps = Math.floor(d / (GRID_SIZE/2));
+      for(let i=1; i<steps; i++) {
+        const r = i/steps;
+        const cx = this.x + (tx-this.x)*r;
+        const cy = this.y + (ty-this.y)*r;
         const g = worldToGrid(cx, cy);
-        if (g.x >= 0 && g.x < gridCols && g.y >= 0 && g.y < gridRows) {
-            if (grid[g.x][g.y] === 1) {
-                return true;
-            }
-        }
+        if(g.x>=0 && g.x<gridCols && g.y>=0 && g.y<gridRows && grid[g.x][g.y] === 1) return true;
+      }
+      return false;
+    }
+
+    physicalRaycast(tx, ty) {
+      const d = dist(this.x, this.y, tx, ty);
+      const steps = Math.floor(d / (GRID_SIZE/2));
+      for(let i=1; i<steps; i++) {
+        const r = i/steps;
+        const cx = this.x + (tx-this.x)*r;
+        const cy = this.y + (ty-this.y)*r;
+        const g = worldToGrid(cx, cy);
+        if(g.x>=0 && g.x<gridCols && g.y>=0 && g.y<gridRows && grid[g.x][g.y] === 1) return true;
       }
       return false;
     }
@@ -2070,15 +2005,6 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
           ctx.lineTo(t.path[i].x, t.path[i].y);
         }
         ctx.stroke();
-
-        // Highlight current target node
-        if(t.pathIndex < t.path.length) {
-          const target = t.path[t.pathIndex];
-          ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-          ctx.beginPath();
-          ctx.arc(target.x, target.y, 8, 0, Math.PI * 2);
-          ctx.fill();
-        }
       }
 
       // Target Line
@@ -2164,12 +2090,12 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
     if (target === document.body || target === gridRoot) {
       if (now - lastTapTime < 300 && lastTapTarget === target) {
         // Double tap - add food
-        if (!isBlocked(e.touches[0].clientX, e.touches[0].clientY)) {
-          new Food(e.touches[0].clientX, e.touches[0].clientY);
+        if (!isBlocked(e.clientX, e.clientY)) {
+          new Food(e.clientX, e.clientY);
         }
         lastTapTime = 0;
         lastTapTarget = null;
-
+        e.preventDefault();
       } else {
         // First tap
         lastTapTime = now;
@@ -2179,15 +2105,21 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
 
     // Check if it's a double tap on turtle head
     if (target.classList.contains('turtle__head')) {
-      // Double tap - retract head
-      const turtleEl = target.closest('.turtle');
-      if (turtleEl) {
-        turtleEl.classList.add('is-retracted');
-        setTimeout(() => turtleEl.classList.remove('is-retracted'), 2000);
+      if (now - lastTapTime < 300 && lastTapTarget === target) {
+        // Double tap - retract head
+        const turtleEl = target.closest('.turtle');
+        if (turtleEl) {
+          turtleEl.classList.add('is-retracted');
+          setTimeout(() => turtleEl.classList.remove('is-retracted'), 2000);
+        }
+        lastTapTime = 0;
+        lastTapTarget = null;
+        e.preventDefault();
+      } else {
+        // First tap
+        lastTapTime = now;
+        lastTapTarget = target;
       }
-      lastTapTime = 0;
-      lastTapTarget = null;
-      e.preventDefault();
     }
   }
 
@@ -2195,8 +2127,8 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   function handleLongPress(e) {
     if (isMobile && (e.target === document.body || e.target === gridRoot)) {
       // Long press - add obstacle
-      if (!isBlocked(e.touches[0].clientX, e.touches[0].clientY)) {
-        new Obstacle(e.touches[0].clientX, e.touches[0].clientY);
+      if (!isBlocked(e.clientX, e.clientY)) {
+        new Obstacle(e.clientX, e.clientY);
       }
       e.preventDefault();
     }
@@ -2245,54 +2177,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
     }
   });
 
-  window.addEventListener('touchmove', e => {
-    // Grid Paint
-    if(isPainting && ui.edit.checked) {
-      const cell = document.elementFromPoint(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
-      if(cell && cell.classList.contains('grid-cell')) {
-        toggleCell(parseInt(cell.dataset.x), parseInt(cell.dataset.y), paintValue);
-      }
-    }
-
-    // Turtle Drag
-    turtles.forEach(t => {
-      if(t.isDragging) {
-        t.x = e.targetTouches[0].clientX - t.dragOffset.x;
-        t.y = e.targetTouches[0].clientY - t.dragOffset.y;
-      }
-    });
-    // Panel Drag
-    if(draggingPanel) {
-      ui.panel.style.left = (e.targetTouches[0].clientX - panelOffset.x) + 'px';
-      ui.panel.style.top = (e.targetTouches[0].clientY - panelOffset.y) + 'px';
-    }
-  });
-
   window.addEventListener('mouseup', () => {
-    isPainting = false;
-    draggingPanel = false;
-    ui.panel.classList.remove('dragging');
-    let dragged = false;
-    turtles.forEach(t => {
-      if(t.isDragging) {
-        t.isDragging = false;
-        t.el.classList.remove('is-dragging');
-        dragged = true;
-
-        // Safety: If dropped in a wall, push to nearest free space
-        if(isBlocked(t.x, t.y)) {
-           const g = worldToGrid(t.x, t.y);
-           const safe = findNearestFree(g.x, g.y);
-           const safeWorld = gridToWorld(safe.x, safe.y);
-           t.x = safeWorld.x;
-           t.y = safeWorld.y;
-        }
-      }
-    });
-    if(dragged) saveData();
-  });
-
-  window.addEventListener('touchend', () => {
     isPainting = false;
     draggingPanel = false;
     ui.panel.classList.remove('dragging');
