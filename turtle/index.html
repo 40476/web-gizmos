@@ -11,11 +11,14 @@
       -khtml-user-select: none;
       -webkit-user-select: none;
       -o-user-select: none;
+      overflow: hidden;
     }
     body {
-      width: 100vw; height: 100vh; background-color: #f0f4f8; overflow: hidden;
+      width: 100dvw; height: 100dvh; background-color: #f0f4f8; overflow: hidden;
       margin: 0; padding: 0; cursor: crosshair; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
+
+
 
     /* --- TURTLE CSS (Original + Variables) --- */
     .turtle {
@@ -244,6 +247,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px;
       backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.8);
       cursor: grab; max-height: 90vh; overflow-y: auto;
+      width: 80vw;
     }
     #settings-panel.dragging { cursor: grabbing; opacity: 0.9; }
     #settings-panel h2 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
@@ -364,25 +368,59 @@
     }
 
     /* Mobile UI adjustments */
-    @media (max-width: 768px) {
-      #settings-panel {
-        max-width: 90%;
-        left: 5% !important;
-        right: 5% !important;
-        top: 10px !important;
-      }
+  @media (max-width: 768px) {
+  #settings-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
 
-      #stats-panel {
-        bottom: 70px;
-      }
+    /* Override desktop positioning */
+    top: auto !important;
 
-      button.btn {
-        font-size: 14px;
-      }
-    }
+    /* Override desktop sizing */
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 20px) !important
+    height: auto !important;
+
+    border-radius: 16px 16px 0 0;
+
+    /* Hide except for handle */
+    transform: translateY(calc(100% - 40px));
+    transition: transform 0.3s ease;
+
+    padding-left: calc(env(safe-area-inset-left) + 10px);
+    padding-right: calc(env(safe-area-inset-right) + 10px);
+
+    will-change: transform;
+  }
+
+  #settings-panel.open {
+    transform: translateY(0);
+  }
+#settings-handle-wrapper { width: 100%; padding: 0 0 16px 0; /* big tap zone */ cursor: pointer; }
+  #settings-handle {
+    width: 50px;
+    height: 6px;
+    background: #ccc;
+    border-radius: 3px;
+    margin: 6px auto;
+  }
+}
+
+
+
+#world {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
   </style>
 </head>
-<body>
+<body id="world">
 
 <div id="grid"></div>
 <canvas id="debug-canvas"></canvas>
@@ -395,6 +433,7 @@
 </div>
 
 <div id="settings-panel">
+  <div id="settings-handle-wrapper"> <div id="settings-handle"></div> </div>
   <h2>Turtle Lab</h2>
 
   <div class="row">
@@ -555,6 +594,11 @@
 </div>
 
 <script>
+
+document.getElementById("settings-handle-wrapper").addEventListener("click", () => {
+  document.getElementById("settings-panel").classList.toggle("open");
+});
+
   // -------------------------
   // Configuration
   // -------------------------
@@ -1511,6 +1555,15 @@
         this.dragOffset.x = e.clientX - this.x;
         this.dragOffset.y = e.clientY - this.y;
       });
+      this.shell.addEventListener('touchstart', e => {
+        e.stopPropagation();
+        this.isDragging = true;
+        this.el.classList.add('is-dragging');
+        this.targetFood = null;
+        this.path = [];
+        this.dragOffset.x = e.clientX - this.x;
+        this.dragOffset.y = e.clientY - this.y;
+      });
     }
 
     destroy() {
@@ -1953,8 +2006,8 @@
   // -------------------------
 
   function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = '100vw';
+    canvas.height = '100vh';
   }
 
   function updateGridVisibility() {
@@ -2090,12 +2143,12 @@
     if (target === document.body || target === gridRoot) {
       if (now - lastTapTime < 300 && lastTapTarget === target) {
         // Double tap - add food
-        if (!isBlocked(e.clientX, e.clientY)) {
-          new Food(e.clientX, e.clientY);
+        if (!isBlocked(e.touches[0].clientX, e.touches[0].clientY)) {
+          new Food(e.touches[0].clientX, e.touches[0].clientY);
         }
         lastTapTime = 0;
         lastTapTarget = null;
-        e.preventDefault();
+
       } else {
         // First tap
         lastTapTime = now;
@@ -2105,21 +2158,15 @@
 
     // Check if it's a double tap on turtle head
     if (target.classList.contains('turtle__head')) {
-      if (now - lastTapTime < 300 && lastTapTarget === target) {
-        // Double tap - retract head
-        const turtleEl = target.closest('.turtle');
-        if (turtleEl) {
-          turtleEl.classList.add('is-retracted');
-          setTimeout(() => turtleEl.classList.remove('is-retracted'), 2000);
-        }
-        lastTapTime = 0;
-        lastTapTarget = null;
-        e.preventDefault();
-      } else {
-        // First tap
-        lastTapTime = now;
-        lastTapTarget = target;
+      // Double tap - retract head
+      const turtleEl = target.closest('.turtle');
+      if (turtleEl) {
+        turtleEl.classList.add('is-retracted');
+        setTimeout(() => turtleEl.classList.remove('is-retracted'), 2000);
       }
+      lastTapTime = 0;
+      lastTapTarget = null;
+      e.preventDefault();
     }
   }
 
@@ -2127,8 +2174,8 @@
   function handleLongPress(e) {
     if (isMobile && (e.target === document.body || e.target === gridRoot)) {
       // Long press - add obstacle
-      if (!isBlocked(e.clientX, e.clientY)) {
-        new Obstacle(e.clientX, e.clientY);
+      if (!isBlocked(e.touches[0].clientX, e.touches[0].clientY)) {
+        new Obstacle(e.touches[0].clientX, e.touches[0].clientY);
       }
       e.preventDefault();
     }
@@ -2177,7 +2224,56 @@
     }
   });
 
+  window.addEventListener('touchmove', e => {
+    // Grid Paint
+
+    if(isPainting && ui.edit.checked) {
+
+      const cell = document.elementFromPoint(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
+      if(cell && cell.classList.contains('grid-cell')) {
+        toggleCell(parseInt(cell.dataset.x), parseInt(cell.dataset.y), paintValue);
+      }
+    }
+
+    // Turtle Drag
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.x = e.targetTouches[0].clientX;
+        t.y = e.targetTouches[0].clientY;
+      }
+    });
+    // Panel Drag
+    if(draggingPanel) {
+      ui.panel.style.left = (e.targetTouches[0].clientX - panelOffset.x) + 'px';
+      ui.panel.style.top = (e.targetTouches[0].clientY - panelOffset.y) + 'px';
+    }
+  });
+
   window.addEventListener('mouseup', () => {
+    isPainting = false;
+    draggingPanel = false;
+    ui.panel.classList.remove('dragging');
+    let dragged = false;
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.isDragging = false;
+        t.el.classList.remove('is-dragging');
+        dragged = true;
+
+        // Safety: If dropped in a wall, push to nearest free space
+        if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+        }
+      }
+    });
+    if(dragged) saveData();
+  });
+
+  window.addEventListener('touchend', () => {
     isPainting = false;
     draggingPanel = false;
     ui.panel.classList.remove('dragging');
