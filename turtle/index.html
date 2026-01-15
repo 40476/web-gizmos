@@ -2262,9 +2262,25 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
       }
 
       // Reset counters periodically
-      if(elapsed > 10000) {
+      if(elapsed > 1000) {
         stats.totalSpeed = 0;
         stats.speedSamples = 0;
+        stats.startTime = Date.now();
+        if(ui.showStats.checked){
+          foodCounts.push(foodItems.length);
+          if (foodCounts.length > 100) {foodCounts.shift();}
+          // Redraw graph
+          drawLineGraph(
+            document.getElementById("foodGraph").getContext("2d"), foodCounts, {
+              padding: 50,
+              lineColor: "green",
+              axisColor: "#333",
+              title: "Food Over Time",
+              xLabel: "updated every 1000 ms",
+              yLabel: "Count"
+            }
+          );
+        }
       }
     }
   }
@@ -2293,21 +2309,6 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
           if (!isBlocked(x, y)) {
             new Food(x, y);
           }
-        }
-        if(ui.showStats.checked){
-          foodCounts.push(foodItems.length);
-          if (foodCounts.length > 100) {foodCounts.shift();}
-          // Redraw graph
-          drawLineGraph(
-            document.getElementById("foodGraph").getContext("2d"), foodCounts, {
-              padding: 50,
-              lineColor: "green",
-              axisColor: "#333",
-              title: "Food per Interval",
-              xLabel: "Spawn intervals (currently : " + ui.autoSpawnDelay.value + " ms)",
-              yLabel: "Count"
-            }
-          );
         }
       }, ui.autoSpawnDelay.value);
     }
