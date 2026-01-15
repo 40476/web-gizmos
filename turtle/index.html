@@ -13,8 +13,9 @@
       -o-user-select: none;
       overflow: hidden;
     }
+
     body {
-      width: 100dvw; height: 100dvh; background-color: #f0f4f8; overflow: hidden;
+      width: 100dvw; height: 100dvh; overflow: hidden;
       margin: 0; padding: 0; cursor: crosshair; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
@@ -269,7 +270,7 @@
       padding: 10px; font-size: 12px; color: #222;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       backdrop-filter: blur(5px);
-      max-width: 250px;
+      max-width: 500px;
       transition: all 0.3s ease;
     }
     #stats-panel.mobile {
@@ -416,16 +417,23 @@
 
   </style>
 </head>
-<body id="world">
+<body id="world" style="background-color: #d1e7ff;">
 
 <div id="grid"></div>
 <canvas id="debug-canvas"></canvas>
 <div id="stats-panel">
-  <h3>Simulation Stats</h3>
-  <div class="stat-row"><span class="stat-label">Turtles: </span><span class="stat-value" id="turtle-count">0</span></div>
-  <div class="stat-row"><span class="stat-label">Food Eaten: </span><span class="stat-value" id="food-eaten">0</span></div>
-  <div class="stat-row"><span class="stat-label">Time Elapsed: </span><span class="stat-value" id="time-elapsed">0s</span></div>
-  <div class="stat-row"><span class="stat-label">Avg Speed: </span><span class="stat-value" id="avg-speed">0</span></div>
+  <div style="display: flex;">
+    <div style="flex: 1">
+      <h3>Simulation Stats</h3>
+      <div class="stat-row"><span class="stat-label">Turtles: </span><span class="stat-value" id="turtle-count">0</span></div>
+      <div class="stat-row"><span class="stat-label">Food Eaten: </span><span class="stat-value" id="food-eaten">0</span></div>
+      <div class="stat-row"><span class="stat-label">Time Elapsed:&nbsp;</span><span class="stat-value" id="time-elapsed">0s</span></div>
+      <div class="stat-row"><span class="stat-label">Avg Speed: </span><span class="stat-value" id="avg-speed">0</span></div>
+    </div>
+    <div style="flex: 1">
+        <canvas id="foodGraph" width="300" height="225"></canvas>
+    </div>
+  </div>
 </div>
 
 <div id="settings-panel">
@@ -496,8 +504,20 @@
   </div>
 
   <div class="row">
+    <label for="autoSpawnDelay">Auto-Spawn Interval</label>
+    <input id="autoSpawnDelay" type="range" min="50" max="10000" value="3000">
+  </div>
+
+  <div class="row">
     <label><input id="showStats" type="checkbox" checked> 📊 Show stats</label>
   </div>
+
+  <div class="row">
+    <label for="bgColorPicker">Background color</label>
+    <input id="bgColorPicker" type="color" value="#f0f4f8" style="width:100%">
+  </div>
+
+
 
   <button class="btn" id="genMazeBtn" style="background: #9b59b6; margin-top: 10px;">🧩 Generate Maze</button>
   <button class="btn secondary" id="resetGridBtn">Reset Grid</button>
@@ -589,7 +609,7 @@
   </div>
 </div>
 
-<script>try{
+<script>
 document.getElementById("settings-handle-wrapper").addEventListener("click", () => {
   document.getElementById("settings-panel").classList.toggle("open");
 });
@@ -603,6 +623,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   let grid = []; // 0=free, 1=wall, 2=glass, 3=water, 4=grass, 5=sand
 
   let foodItems = [];
+  let foodCounts=[];
   let turtles = [];
   let obstacles = [];
   let effects = [];
@@ -695,8 +716,11 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
     genTerrain: document.getElementById('genTerrainBtn'),
     nuke: document.getElementById('nukeBtn'),
     autoSpawn: document.getElementById('autoSpawnFood'),
+    autoSpawnDelay: document.getElementById('autoSpawnDelay'),
     showStats: document.getElementById('showStats'),
-    lilypadSize: document.getElementById('lilypadSize')
+    lilypadSize: document.getElementById('lilypadSize'),
+    bgColorPicker: document.getElementById('bgColorPicker')
+
   };
 
   // Personalities
@@ -717,6 +741,112 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   const random = (min, max) => Math.random() * (max - min) + min;
   const toRad = deg => deg * Math.PI / 180;
   const lerp = (start, end, amt) => (1-amt)*start + amt*end;
+
+  function drawLineGraph(ctx, values, options = {}) {
+    const width  = ctx.canvas.width;
+    const height = ctx.canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (!values || values.length === 0) return;
+
+    const padding   = options.padding   || 40;
+    const lineColor = options.lineColor || "blue";
+    const axisColor = options.axisColor || "#444";
+    const title     = options.title     || "";
+    const xLabel    = options.xLabel    || "";
+    const yLabel    = options.yLabel    || "";
+
+    // AUTO or LOCKED SCALE
+    const autoMin = Math.min(...values);
+    const autoMax = Math.max(...values);
+
+    const yMin = (options.yMin !== undefined) ? options.yMin : autoMin;
+    const yMax = (options.yMax !== undefined) ? options.yMax : autoMax;
+
+    const range = yMax - yMin || 1;
+
+    const innerWidth  = width  - padding * 2;
+    const innerHeight = height - padding * 2;
+
+    function getX(i) {
+      if (values.length === 1) return padding + innerWidth / 2;
+      return padding + (i / (values.length - 1)) * innerWidth;
+    }
+
+    function getY(v) {
+      const normalized = (v - yMin) / range;
+      return padding + innerHeight - normalized * innerHeight;
+    }
+
+    // Draw title
+    if (title) {
+      ctx.font = "18px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#000";
+      ctx.fillText(title, width / 2, padding - 15);
+    }
+
+    // Draw axes
+    ctx.strokeStyle = axisColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+
+    // Draw Y-axis label
+    if (yLabel) {
+      ctx.save();
+      ctx.translate(padding - 30, height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(yLabel, 0, 0);
+      ctx.restore();
+    }
+
+    // Draw X-axis label
+    if (xLabel) {
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(xLabel, width / 2, height - padding + 30);
+    }
+
+    // Draw Y-axis ticks + labels
+    const ticks = 5;
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "right";
+
+    for (let i = 0; i <= ticks; i++) {
+      const t = i / ticks;
+      const value = yMin + t * range;
+      const y = padding + innerHeight - t * innerHeight;
+
+      // Tick mark
+      ctx.beginPath();
+      ctx.moveTo(padding - 5, y);
+      ctx.lineTo(padding, y);
+      ctx.stroke();
+
+      // Label
+      ctx.fillText(value.toFixed(0), padding - 8, y + 3);
+    }
+
+    // Draw line
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(getX(0), getY(values[0]));
+    for (let i = 1; i < values.length; i++) {
+      ctx.lineTo(getX(i), getY(values[i]));
+    }
+    ctx.stroke();
+  }
+
 
   function showNotification(message) {
     const notif = document.createElement('div');
@@ -1923,7 +2053,9 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
         editMode: ui.edit.checked,
         brush: ui.brush.value,
         autoSpawn: ui.autoSpawn.checked,
-        showStats: ui.showStats.checked
+        autoSpawnDelay: ui.autoSpawnDelay.value,
+        showStats: ui.showStats.checked,
+        bgColorPicker: ui.bgColorPicker.value
     };
     localStorage.setItem('ts_settings', JSON.stringify(settings));
     localStorage.setItem('ts_grid', JSON.stringify(grid));
@@ -1964,7 +2096,10 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
             ui.edit.checked = s.editMode;
             ui.brush.value = s.brush;
             ui.autoSpawn.checked = s.autoSpawn;
+            ui.autoSpawnDelay.value = s.autoSpawnDelay;
             ui.showStats.checked = s.showStats;
+            ui.bgColorPicker.value = s.bgColorPicker;
+            document.getElementById('world').style.backgroundColor=ui.bgColorPicker.value;
         }
 
         // Init logic based on (potentially restored) settings
@@ -2117,18 +2252,20 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   }
 
   function updateStats() {
-    const elapsed = Date.now() - stats.startTime;
-    timeElapsedDisplay.textContent = formatTime(elapsed);
+    if(ui.showStats.checked){
+      const elapsed = Date.now() - stats.startTime;
+      timeElapsedDisplay.textContent = formatTime(elapsed);
 
-    if(stats.speedSamples > 0) {
-      const avg = (stats.totalSpeed / stats.speedSamples).toFixed(2);
-      avgSpeedDisplay.textContent = avg;
-    }
+      if(stats.speedSamples > 0) {
+        const avg = (stats.totalSpeed / stats.speedSamples).toFixed(2);
+        avgSpeedDisplay.textContent = avg;
+      }
 
-    // Reset counters periodically
-    if(elapsed > 10000) {
-      stats.totalSpeed = 0;
-      stats.speedSamples = 0;
+      // Reset counters periodically
+      if(elapsed > 10000) {
+        stats.totalSpeed = 0;
+        stats.speedSamples = 0;
+      }
     }
   }
 
@@ -2148,17 +2285,31 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
 
   function startAutoSpawn() {
     if(autoSpawnInterval) clearInterval(autoSpawnInterval);
-
     if(ui.autoSpawn.checked) {
       autoSpawnInterval = setInterval(() => {
-        if(foodItems.length < 50) { // Limit max food
+        if (foodItems.length < 50) {
           const x = random(50, window.innerWidth - 50);
           const y = random(50, window.innerHeight - 50);
-          if(!isBlocked(x, y)) {
+          if (!isBlocked(x, y)) {
             new Food(x, y);
           }
         }
-      }, 3000);
+        if(ui.showStats.checked){
+          foodCounts.push(foodItems.length);
+          if (foodCounts.length > 100) {foodCounts.shift();}
+          // Redraw graph
+          drawLineGraph(
+            document.getElementById("foodGraph").getContext("2d"), foodCounts, {
+              padding: 50,
+              lineColor: "green",
+              axisColor: "#333",
+              title: "Food per Interval",
+              xLabel: "Spawn intervals (currently : " + ui.autoSpawnDelay.value + " ms)",
+              yLabel: "Count"
+            }
+          );
+        }
+      }, ui.autoSpawnDelay.value);
     }
   }
 
@@ -2400,11 +2551,15 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   });
 
   // Controls - Add saveData to all interactive elements
-  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow', 'speed', 'names', 'edit', 'brush', 'autoSpawn', 'showStats', 'lilypadSize'];
+  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow',
+                          'speed', 'names', 'edit', 'brush', 'autoSpawn',
+                          'autoSpawnDelay', 'showStats', 'lilypadSize',
+                          'bgColorPicker'];
   changeHandlers.forEach(id => {
       ui[id].addEventListener('change', () => {
         saveData();
-        if(id === 'autoSpawn') startAutoSpawn();
+        if(id === 'bgColorPicker') document.getElementById('world').style.backgroundColor = ui.bgColorPicker.value;
+        if(id === 'autoSpawn' || id === 'autoSpawnDelay') startAutoSpawn();
         if(id === 'showStats') updateStatsVisibility();
       });
   });
@@ -2494,8 +2649,10 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
       ui.edit.checked = false;
       ui.brush.value = '1';
       ui.autoSpawn.checked = false;
+      ui.autoSpawnDelay.value = 3000;
       ui.showStats.checked = true;
       ui.lilypadSize.value = 1;
+      ui.bgColorPicker.value = '#f0f4f8';
 
       updatePopulation();
       updateStatsVisibility();
@@ -2566,7 +2723,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   loadData();
   startAutoSpawn();
   loop();
-  stats.startTime = Date.now();}catch(e){echo(e)}
+  stats.startTime = Date.now();
 </script>
 </body>
 </html>
