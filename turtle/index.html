@@ -812,7 +812,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   function isBlocked(x, y) {
     const g = worldToGrid(x, y);
     if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return true;
-    return grid[g.x][g.y] === 1 || grid[g.x][g.y] === 2; // Only walls block movement
+    return grid[g.x][g.y] === 1 || grid[g.x][g.y] === 2; // Only walls & glass block movement
   }
 
   function isWater(x, y) {
@@ -1856,7 +1856,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
       }
       return false;
     }
-    
+
     // New smoothed rotation function using Lerp
     // factor: 0.0 to 1.0 (smaller = smoother/slower)
     smoothRotate(target, factor = 0.1, useLerp = false) {
@@ -2263,7 +2263,9 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
 
   window.addEventListener('touchmove', e => {
     // Grid Paint
+
     if(isPainting && ui.edit.checked) {
+
       const cell = document.elementFromPoint(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
       if(cell && cell.classList.contains('grid-cell')) {
         toggleCell(parseInt(cell.dataset.x), parseInt(cell.dataset.y), paintValue);
@@ -2273,8 +2275,8 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
     // Turtle Drag
     turtles.forEach(t => {
       if(t.isDragging) {
-        t.x = e.targetTouches[0].clientX - t.dragOffset.x;
-        t.y = e.targetTouches[0].clientY - t.dragOffset.y;
+        t.x = e.targetTouches[0].clientX;
+        t.y = e.targetTouches[0].clientY;
       }
     });
     // Panel Drag
@@ -2320,13 +2322,13 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
         dragged = true;
 
         // Safety: If dropped in a wall, push to nearest free space
-        if(isBlocked(t.x, t.y)) {
+        try{if(isBlocked(t.x, t.y)) {
            const g = worldToGrid(t.x, t.y);
            const safe = findNearestFree(g.x, g.y);
            const safeWorld = gridToWorld(safe.x, safe.y);
            t.x = safeWorld.x;
            t.y = safeWorld.y;
-        }
+        }}catch(e){console.log(e)}
       }
     });
     if(dragged) saveData();
