@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Floating Turtles — Enhanced Edition</title>
+  <title>Turtles!</title>
   <style>
     html {
       user-select: none;
@@ -32,9 +32,10 @@
 
     .turtle__head {
       width: 75px; height: 85px; border-radius: 50%;
+
       background-color: var(--skin-color, #82C49F); position: relative;
       top: 22%; left: 50%; transform: translate(-50%, -50%);
-      cursor: pointer; transition: top 0.3s ease-in-out; z-index: 4;
+      cursor: pointer; transition: top 0.2s ease-in-out; z-index: 4;
       pointer-events: auto;
     }
     .turtle__head::before, .turtle__head::after {
@@ -43,6 +44,21 @@
     }
     .turtle__head::before { left: 13px; }
     .turtle__head::after  { right: 13px; }
+
+    /* Added neck element */
+    .turtle__neck {
+      width: 60px;
+      height: 120px;
+      background-color: var(--skin-color, #82C49F);
+      position: absolute;
+      bottom: -70px; /* Extends downward from head */
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      border-radius: 0 0 5px 5px; /* Rounded only at bottom */
+      /* Optional: Add a slight shadow to create depth */
+      box-shadow: 0 2px 2px rgba(0,0,0,0.1);
+    }
 
     .turtle__shell {
       --shell-base: #6A757A; --shell-inner: #5D666B; --shell-plate: #636E72;
@@ -99,7 +115,7 @@
     .turtle.is-moving .turtle__legs.-right { animation: walking-turtle-02 1.5s ease-in-out infinite alternate; }
 
     .turtle.is-retracted .turtle__head { top: 28%; }
-    .turtle.neck-extend .turtle__head { top: 12%; }
+    .turtle.neck-extend .turtle__head { top: 14%; }
     .turtle.is-dragging { z-index: 100; }
     .turtle.is-dragging .turtle__shell { cursor: grabbing; }
 
@@ -368,52 +384,59 @@
 
     /* Mobile UI adjustments */
   @media (max-width: 768px) {
-  #settings-panel {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    #settings-panel {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      /* Override desktop positioning */
+      top: auto !important;
 
-    /* Override desktop positioning */
-    top: auto !important;
+      /* Override desktop sizing */
+      width: auto !important;
+      max-width: none !important;
+      max-height: calc(100dvh - 20px) !important
+      height: auto !important;
 
-    /* Override desktop sizing */
-    width: auto !important;
-    max-width: none !important;
-    max-height: calc(100dvh - 20px) !important
-    height: auto !important;
+      border-radius: 16px 16px 0 0;
 
-    border-radius: 16px 16px 0 0;
+      /* Hide except for handle */
+      transform: translateY(calc(100% - 40px));
+      transition: transform 0.3s ease;
 
-    /* Hide except for handle */
-    transform: translateY(calc(100% - 40px));
-    transition: transform 0.3s ease;
+      padding-left: calc(env(safe-area-inset-left) + 10px);
+      padding-right: calc(env(safe-area-inset-right) + 10px);
 
-    padding-left: calc(env(safe-area-inset-left) + 10px);
-    padding-right: calc(env(safe-area-inset-right) + 10px);
+      will-change: transform;
+    }
 
-    will-change: transform;
+    #settings-panel.open {
+      transform: translateY(0);
+      overflow: auto;
+    }
+
+    #settings-handle-wrapper {
+      width: 100%;
+      padding: 0 0 16px 0; /* big tap zone */
+      cursor: pointer;
+    }
+
+    #settings-handle {
+      width: 50px;
+      height: 6px;
+      background: #ccc;
+      border-radius: 3px;
+      margin: 6px auto;
+    }
   }
 
-  #settings-panel.open {
-    transform: translateY(0);
+  #world {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
   }
-#settings-handle-wrapper { width: 100%; padding: 0 0 16px 0; /* big tap zone */ cursor: pointer; }
-  #settings-handle {
-    width: 50px;
-    height: 6px;
-    background: #ccc;
-    border-radius: 3px;
-    margin: 6px auto;
-  }
-}
-
-#world {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
 
   </style>
 </head>
@@ -509,12 +532,12 @@
   </div>
 
   <div class="row">
-    <label><input id="showStats" type="checkbox" checked> 📊 Show stats</label>
+    <label><input id="showStats" type="checkbox"> 📊 Show stats</label>
   </div>
 
   <div class="row">
     <label for="bgColorPicker">Background color</label>
-    <input id="bgColorPicker" type="color" value="#f0f4f8" style="width:100%">
+    <input id="bgColorPicker" type="color" value="#d1e7ff" style="width:100%">
   </div>
 
 
@@ -1663,7 +1686,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
       const nameText = data ? data.name : `Turtle ${id+1} (${this.pKey})`;
 
       this.el.innerHTML = `
-        <div class="turtle__head"></div>
+        <div class="turtle__head"><div class="turtle__neck"></div></div>
         <div class="turtle__legs -left"></div>
         <div class="turtle__legs -right"></div>
         <div class="turtle__tail"></div>
@@ -2155,9 +2178,13 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
             });
         }
     } catch(e) {
-        console.error("Save data invalid", e);
-        initGrid();
-        updatePopulation();
+        prompt("Save data invalid! (Application will reset)", e);
+        localStorage.removeItem('ts_grid');
+        localStorage.removeItem('ts_lilypads');
+        localStorage.removeItem('ts_settings');
+        localStorage.removeItem('ts_turtles');
+        localStorage.removeItem('ts_intro');
+        location.reload();
     }
     updateGridVisibility();
     updatePopulation();
