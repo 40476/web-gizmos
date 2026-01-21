@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drift.js Multiplayer (P2P)</title>
+    <!-- PeerJS Library for P2P Networking -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --bg-dark: #0a0a0f;
+            --panel-bg: rgba(16, 20, 30, 0.95);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Roboto', sans-serif;
+            color: white;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        /* CRT Effect Overlay */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* UI Containers */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Main Menu */
+        #main-menu {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            backdrop-filter: blur(5px);
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            padding: 2rem;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        input[type="text"], input[type="number"], input[type="color"] {
+            background: #1a1a24;
+            border: 1px solid #333;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 1rem;
+            font-family: 'Orbitron', sans-serif;
+            border-radius: 4px;
+        }
+
+        input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--neon-blue), #00aaff);
+            border: none;
+            color: black;
+            padding: 12px 24px;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.1s, box-shadow 0.1s;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid var(--neon-pink);
+            color: var(--neon-pink);
+            margin-top: 10px;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 0 15px var(--neon-pink);
+            background: rgba(255, 0, 255, 0.1);
+        }
+
+        /* HUD */
+        #hud {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        #editor-ui {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            padding: 10px;
+            border: 1px solid var(--neon-pink);
+            display: none; /* Hidden by default */
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #555;
+            background: #222;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .tool-btn.active {
+            border-color: var(--neon-blue);
+            background: rgba(0, 243, 255, 0.2);
+        }
+
+        .editor-input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .editor-input-group input {
+            width: 60px;
+            margin: 0;
+            padding: 5px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Chat */
+        #chat-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
+            height: 250px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            border-radius: 4px;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #ddd;
+        }
+
+        .chat-msg { margin-bottom: 4px; word-wrap: break-word; }
+        .sys-msg { color: var(--neon-blue); font-style: italic; }
+        .err-msg { color: var(--neon-pink); }
+
+        #chat-input {
+            background: rgba(0,0,0,0.8);
+            border: none;
+            border-top: 1px solid #333;
+            color: white;
+            padding: 8px;
+            outline: none;
+        }
+
+        /* Minimap */
+        #minimap-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            border: 2px solid var(--neon-blue);
+            background: rgba(0,0,0,0.8);
+            width: 200px;
+            height: 200px;
+        }
+        #minimap-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Saved Maps Modal */
+        #maps-modal {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanlines"></div>
+
+    <div id="ui-layer">
+        <!-- Main Menu -->
+        <div id="main-menu" class="interactive">
+            <div class="panel">
+                <h1>Cyber Drift P2P</h1>
+                <input type="text" id="username" placeholder="Racer Name" maxlength="12">
+                <input type="text" id="room-name" placeholder="Room Name (e.g. cat)" value="lobby">
+                <div class="text-left text-sm text-gray-400 mb-2">Car Color</div>
+                <input type="color" id="car-color" value="#00f3ff">
+                <button onclick="startGame()">Connect & Race</button>
+                <div id="connection-status" class="mt-2 text-xs text-gray-500">Ready to connect...</div>
+            </div>
+        </div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div>
+                <div class="text-xl" style="color: var(--neon-blue)">SPEED: <span id="speed-display">0</span> KM/H</div>
+                <div class="text-sm text-gray-400">POS: <span id="pos-display">0,0</span></div>
+            </div>
+            <div class="text-right">
+                <div class="text-xl" style="color: var(--neon-pink)">ROOM: <span id="room-display">--</span></div>
+                <div id="role-display" class="text-xs text-gray-400 font-mono mb-1">...</div>
+                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="toggleEditor()">Toggle Map Editor</button>
+                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="openSaveMenu()">Load/Save Maps</button>
+            </div>
+        </div>
+
+        <!-- Editor UI -->
+        <div id="editor-ui" class="interactive">
+            <div class="tool-btn active" onclick="setTool(1)" title="Wall">🧱</div>
+            <div class="tool-btn" onclick="setTool(0)" title="Eraser">❌</div>
+            <div class="tool-btn" onclick="setTool(2)" title="Spawn Point">🏁</div>
+            <div class="border-l border-gray-600 mx-1"></div>
+
+            <div class="editor-input-group">
+                <label>W:</label>
+                <input type="number" id="map-w" value="100" min="20" max="300">
+            </div>
+            <div class="editor-input-group">
+                <label>H:</label>
+                <input type="number" id="map-h" value="100" min="20" max="300">
+            </div>
+
+            <button class="text-xs px-3 py-1 bg-gray-700" onclick="applyMapSize()">Resize</button>
+            <button class="text-xs px-3 py-1 bg-purple-700" onclick="generateTerrain()">Gen Terrain</button>
+
+            <div class="border-l border-gray-600 mx-1"></div>
+            <div class="tool-btn" onclick="shareMap()" title="Share Map to Room" style="border-color: var(--neon-blue)">📡</div>
+            <div class="tool-btn" onclick="clearMap()" title="Clear All" style="border-color: var(--neon-pink)">🗑️</div>
+        </div>
+
+        <!-- Chat -->
+        <div id="chat-container" class="interactive">
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Chat... (/kick name, /mute name)">
+        </div>
+
+        <!-- Minimap -->
+        <div id="minimap-container">
+            <canvas id="minimap-canvas" width="200" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Map Save/Load Modal -->
+    <div id="maps-modal" class="interactive fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
+        <div class="panel w-96">
+            <h2 class="text-xl mb-4 text-white font-bold">Saved Maps</h2>
+            <div id="maps-list" class="max-h-60 overflow-y-auto mb-4 text-left space-y-2">
+                <!-- Map items injected here -->
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="map-save-name" placeholder="Map Name" class="flex-1">
+                <button onclick="saveCurrentMap()" class="w-auto px-4">Save</button>
+            </div>
+            <button onclick="closeSaveMenu()" class="secondary mt-4">Close</button>
+        </div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+<script>
+/**
+ * CONFIG & GLOBALS
+ */
+const CLIENT_ID = "racer_" + Math.random().toString(16).substr(2, 8);
+
+// Game State
+let canvas, ctx, miniCanvas, miniCtx;
+let isConnected = false;
+let isEditorOpen = false;
+let myCar = {
+    x: 0, y: 0,
+    angle: 0,
+    speed: 0,
+    color: '#00f3ff',
+    name: 'Player',
+    id: CLIENT_ID,
+    accel: 0,
+    steer: 0
+};
+let players = {}; // Map of remote players
+let chatMuted = []; // List of muted names
+let mapData = []; // Grid: 0=empty, 1=wall, 2=spawn
+const TILE_SIZE = 40;
+let mapWidth = 100;
+let mapHeight = 100;
+
+// Camera
+let camera = { x: 0, y: 0, zoom: 1 };
+
+// P2P State
+let peer;
+let roomHash = "";
+let isHost = false;
+let hostConn = null; // Client's connection to host
+let clientConns = []; // Host's list of connected clients
+
+// Inputs
+const keys = { w: false, a: false, s: false, d: false, Shift: false };
+
+// Physics Constants
+const MAX_SPEED = 15;
+const ACCEL = 0.2;
+const FRICTION = 0.96;
+const TURN_SPEED = 0.06;
+
+// Editor
+let currentTool = 1;
+let mouse = { x: 0, y: 0, leftDown: false, rightDown: false };
+
+/**
+ * INITIALIZATION
+ */
+window.onload = () => {
+    canvas = document.getElementById('game-canvas');
+    ctx = canvas.getContext('2d');
+
+    miniCanvas = document.getElementById('minimap-canvas');
+    miniCtx = miniCanvas.getContext('2d');
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Default empty map
+    initMap(100, 100);
+
+    // Input Listeners
+    window.addEventListener('keydown', e => {
+        if(document.activeElement.tagName === 'INPUT') return;
+        if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true;
+        if(e.key === 'Shift') keys.Shift = true;
+    });
+
+    window.addEventListener('keyup', e => {
+        if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false;
+        if(e.key === 'Shift') keys.Shift = false;
+    });
+
+    // Chat
+    document.getElementById('chat-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') sendChat();
+    });
+
+    // Mouse for editor
+    canvas.addEventListener('mousedown', e => {
+        if(!isEditorOpen) return;
+        if(e.button === 0) mouse.leftDown = true;
+        if(e.button === 2) mouse.rightDown = true;
+        handleEditorInput(e);
+    });
+    window.addEventListener('mouseup', () => { mouse.leftDown = false; mouse.rightDown = false; });
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+        if(isEditorOpen && (mouse.leftDown || mouse.rightDown)) handleEditorInput(e);
+    });
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Load Maps from LocalStorage
+    loadSavedMapsList();
+
+    // Start Loop
+    requestAnimationFrame(gameLoop);
+};
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function initMap(w, h) {
+    mapWidth = w;
+    mapHeight = h;
+    mapData = new Array(mapWidth * mapHeight).fill(0);
+
+    // Default borders
+    for(let x=0; x<mapWidth; x++) {
+        setTile(x, 0, 1);
+        setTile(x, mapHeight-1, 1);
+    }
+    for(let y=0; y<mapHeight; y++) {
+        setTile(0, y, 1);
+        setTile(mapWidth-1, y, 1);
+    }
+    setTile(10, 10, 2); // Spawn
+    respawn();
+
+    // Update UI inputs
+    document.getElementById('map-w').value = mapWidth;
+    document.getElementById('map-h').value = mapHeight;
+}
+
+/**
+ * NETWORKING (PeerJS P2P)
+ */
+async function startGame() {
+    const nameInput = document.getElementById('username').value.trim() || "Racer";
+    const roomInput = document.getElementById('room-name').value.trim().toLowerCase() || "lobby";
+    const colorInput = document.getElementById('car-color').value;
+
+    myCar.name = nameInput;
+    myCar.color = colorInput;
+
+    document.getElementById('connection-status').innerText = "Hashing Room Name...";
+
+    // Hash Room Name to create a consistent Peer ID for the Host
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(roomInput));
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    // PeerJS IDs allow alphanumerics. Hex is safe.
+    roomHash = "drift_v2_" + hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substr(0, 16);
+
+    document.getElementById('room-display').innerText = roomInput;
+    document.getElementById('connection-status').innerText = "Connecting to P2P Cloud...";
+
+    // Attempt to be the Host (claim the Room ID)
+    initPeer(true);
+}
+
+function initPeer(attemptHost) {
+    if (attemptHost) {
+        // Try to create peer with the specific Room Hash ID
+        peer = new Peer(roomHash, { debug: 1 });
+    } else {
+        // Create peer with random ID (as Client)
+        peer = new Peer({ debug: 1 });
+    }
+
+    peer.on('open', (id) => {
+        if (id === roomHash) {
+            setupHostMode();
+        } else {
+            setupClientMode();
+        }
+    });
+
+    peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+            // ID taken, meaning Host exists. Switch to Client mode.
+            console.log("Room Host exists, joining as Client...");
+            initPeer(false);
+        } else {
+            document.getElementById('connection-status').innerText = "Error: " + err.type;
+            console.error(err);
+        }
+    });
+
+    peer.on('disconnected', () => {
+        if(isConnected) addSystemMessage("Disconnected from signaling server.");
+    });
+}
+
+function setupHostMode() {
+    isHost = true;
+    isConnected = true;
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('role-display').innerText = "HOST (Server)";
+    addSystemMessage("You are the HOST of this room.");
+    addSystemMessage("Waiting for challengers...");
+
+    peer.on('connection', (conn) => {
+        handleIncomingConnection(conn);
+    });
+
+    // Start tick
+    setInterval(sendUpdate, 50); // 20Hz
+}
+
+function setupClientMode() {
+    isHost = false;
+    document.getElementById('role-display').innerText = "CLIENT";
+    document.getElementById('connection-status').innerText = "Joining Host...";
+
+    // Connect to Host
+    hostConn = peer.connect(roomHash);
+
+    hostConn.on('open', () => {
+        isConnected = true;
+        document.getElementById('main-menu').style.display = 'none';
+        addSystemMessage("Connected to Host!");
+
+        // Send Join Packet
+        sendData({ type: 'join', name: myCar.name, color: myCar.color, id: myCar.id });
+
+        // Start tick
+        setInterval(sendUpdate, 50); // 20Hz
+    });
+
+    hostConn.on('data', (data) => {
+        handleNetworkMessage(data);
+    });
+
+    hostConn.on('close', () => {
+        alert("Host disconnected. Room closed.");
+        location.reload();
+    });
+}
+
+function handleIncomingConnection(conn) {
+    clientConns.push(conn);
+    conn.on('open', () => {
+        // Send current map to new player
+        conn.send({ type: 'map', sender: 'Host', data: mapData, w: mapWidth, h: mapHeight });
+
+        // Send existing players to new player (host state)
+        // (Actually, the next update loop will sync positions, but 'join' events are nice)
+    });
+
+    conn.on('data', (data) => {
+        // Host Logic:
+        // 1. Process message locally
+        handleNetworkMessage(data);
+
+        // 2. Relay to ALL other clients (Broadcasting)
+        broadcast(data, conn.peer); // Don't send back to sender
+    });
+
+    conn.on('close', () => {
+        clientConns = clientConns.filter(c => c !== conn);
+        // Maybe broadcast a leave message?
+    });
+}
+
+function broadcast(data, excludePeerId) {
+    // Used by Host to relay data
+    clientConns.forEach(c => {
+        if (c.peer !== excludePeerId && c.open) {
+            c.send(data);
+        }
+    });
+}
+
+function sendData(payload) {
+    if (!isConnected) return;
+
+    // Always include ID for convenience
+    payload.id = myCar.id;
+
+    if (isHost) {
+        // Host broadcasts to everyone
+        broadcast(payload, null);
+    } else if (hostConn && hostConn.open) {
+        // Client sends to Host
+        hostConn.send(payload);
+    }
+}
+
+function sendUpdate() {
+    if (!isConnected) return;
+    sendData({
+        type: 'update',
+        name: myCar.name,
+        color: myCar.color,
+        x: Math.round(myCar.x),
+        y: Math.round(myCar.y),
+        angle: parseFloat(myCar.angle.toFixed(2)),
+        speed: Math.round(myCar.speed)
+    });
+}
+
+/**
+ * MESSAGE HANDLING
+ */
+function handleNetworkMessage(payload) {
+    // Ignore self (shouldn't happen with correct relay logic, but safety first)
+    if (payload.id === myCar.id) return;
+
+    if (payload.type === 'update') {
+        if (!players[payload.id]) {
+            players[payload.id] = { ...payload, lastSeen: Date.now() };
+            addSystemMessage(`${payload.name} detected.`);
+        } else {
+            // Interpolation target
+            const p = players[payload.id];
+            p.targetX = payload.x;
+            p.targetY = payload.y;
+            p.targetAngle = payload.angle;
+            p.speed = payload.speed;
+            p.lastSeen = Date.now();
+            // Update metadata if changed
+            if (p.color !== payload.color) p.color = payload.color;
+        }
+    } else if (payload.type === 'join') {
+        players[payload.id] = {
+            x: 0, y: 0, angle: 0,
+            name: payload.name,
+            color: payload.color,
+            id: payload.id,
+            lastSeen: Date.now()
+        };
+        addSystemMessage(`${payload.name} joined.`);
+    } else if (payload.type === 'chat') {
+        if (chatMuted.includes(payload.name)) return;
+        addChatMessage(payload.name, payload.text, payload.color);
+    } else if (payload.type === 'map') {
+        addSystemMessage(`${payload.sender} shared a map!`);
+        if(payload.w && payload.h) {
+            mapWidth = payload.w;
+            mapHeight = payload.h;
+        }
+        loadMapData(payload.data);
+    } else if (payload.type === 'tile_change') {
+        // Live editor sync
+        setTile(payload.x, payload.y, payload.val, false); // false = don't re-emit
+    } else if (payload.type === 'kick') {
+        if (payload.targetName === myCar.name) {
+            alert("You have been kicked by the host.");
+            location.reload();
+        }
+    }
+}
+
+/**
+ * GAME LOGIC
+ */
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Always update physics to allow moving while editing
+    updatePhysics();
+
+    // Camera follow
+    camera.x = myCar.x - canvas.width / 2;
+    camera.y = myCar.y - canvas.height / 2;
+
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
+    drawMap();
+
+    // Draw Remote Players
+    for (let id in players) {
+        const p = players[id];
+        if(p.targetX !== undefined) {
+            // Simple Lerp
+            p.x += (p.targetX - p.x) * 0.2;
+            p.y += (p.targetY - p.y) * 0.2;
+            p.angle = p.targetAngle;
+        }
+        drawCar(p);
+
+        // Remove stale players (> 10 sec)
+        if (Date.now() - p.lastSeen > 10000) delete players[id];
+    }
+
+    drawCar(myCar);
+
+    if(isEditorOpen) drawEditorCursor();
+
+    ctx.restore();
+
+    drawMinimap();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function updatePhysics() {
+    if (keys.w) myCar.speed += ACCEL;
+    if (keys.s) myCar.speed -= ACCEL;
+    myCar.speed *= FRICTION;
+
+    if (Math.abs(myCar.speed) > 0.1) {
+        const dir = myCar.speed > 0 ? 1 : -1;
+        if (keys.a) myCar.angle -= TURN_SPEED * dir;
+        if (keys.d) myCar.angle += TURN_SPEED * dir;
+    }
+
+    const vx = Math.cos(myCar.angle) * myCar.speed;
+    const vy = Math.sin(myCar.angle) * myCar.speed;
+
+    let nextX = myCar.x + vx;
+    let nextY = myCar.y + vy;
+
+    if (checkCollision(nextX, nextY)) {
+        myCar.speed *= -0.5;
+    } else {
+        myCar.x = nextX;
+        myCar.y = nextY;
+    }
+
+    document.getElementById('speed-display').innerText = Math.abs(Math.round(myCar.speed * 10));
+    document.getElementById('pos-display').innerText = `${Math.floor(myCar.x)},${Math.floor(myCar.y)}`;
+}
+
+function checkCollision(x, y) {
+    const r = 15;
+    const checks = [
+        {x: x - r, y: y - r}, {x: x + r, y: y - r},
+        {x: x - r, y: y + r}, {x: x + r, y: y + r}
+    ];
+
+    for (let p of checks) {
+        const tx = Math.floor(p.x / TILE_SIZE);
+        const ty = Math.floor(p.y / TILE_SIZE);
+        if (getTile(tx, ty) === 1) return true;
+    }
+    return false;
+}
+
+function drawCar(c) {
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.angle);
+
+    ctx.fillStyle = c.color;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = c.color;
+    ctx.fillRect(-20, -10, 40, 20);
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(-5, -8, 10, 16);
+
+    ctx.fillStyle = "#fff";
+    ctx.shadowColor = "#fff";
+    ctx.fillRect(18, -9, 4, 4);
+    ctx.fillRect(18, 5, 4, 4);
+
+    ctx.restore();
+
+    ctx.fillStyle = "white";
+    ctx.font = "12px Roboto";
+    ctx.textAlign = "center";
+    ctx.shadowBlur = 0;
+    ctx.fillText(c.name, c.x, c.y - 25);
+}
+
+function drawMinimap() {
+    miniCtx.fillStyle = '#000';
+    miniCtx.fillRect(0, 0, 200, 200);
+
+    // Scaling factors
+    const scaleX = 200 / mapWidth;
+    const scaleY = 200 / mapHeight;
+
+    // Draw Walls (optimization: only redraw if dirty? for now brute force is fine for 10k items)
+    // Actually iterating 10000 items at 60fps is fine in modern JS engines
+    miniCtx.fillStyle = '#666';
+    for(let y=0; y<mapHeight; y++) {
+        for(let x=0; x<mapWidth; x++) {
+            if(getTile(x, y) === 1) {
+                miniCtx.fillRect(x * scaleX, y * scaleY, scaleX, scaleY);
+            }
+        }
+    }
+
+    // Draw Me
+    miniCtx.fillStyle = '#00f3ff';
+    const myMX = (myCar.x / TILE_SIZE) * scaleX;
+    const myMY = (myCar.y / TILE_SIZE) * scaleY;
+    miniCtx.beginPath();
+    miniCtx.arc(myMX, myMY, 3, 0, Math.PI*2);
+    miniCtx.fill();
+
+    // Draw Others
+    miniCtx.fillStyle = '#ff0055';
+    for(let id in players) {
+        const p = players[id];
+        const px = (p.x / TILE_SIZE) * scaleX;
+        const py = (p.y / TILE_SIZE) * scaleY;
+        miniCtx.beginPath();
+        miniCtx.arc(px, py, 2, 0, Math.PI*2);
+        miniCtx.fill();
+    }
+}
+
+/**
+ * MAP SYSTEM
+ */
+function getTile(x, y) {
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return 1;
+    return mapData[y * mapWidth + x];
+}
+
+function setTile(x, y, val, emit = true) {
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
+
+    const idx = y * mapWidth + x;
+    if(mapData[idx] === val) return; // No change
+
+    mapData[idx] = val;
+
+    if (emit && isConnected) {
+        sendData({ type: 'tile_change', x: x, y: y, val: val });
+    }
+}
+
+function drawMap() {
+    const startX = Math.floor(camera.x / TILE_SIZE);
+    const startY = Math.floor(camera.y / TILE_SIZE);
+    const endX = startX + Math.ceil(canvas.width / TILE_SIZE) + 1;
+    const endY = startY + Math.ceil(canvas.height / TILE_SIZE) + 1;
+
+    for (let y = startY; y < endY; y++) {
+        for (let x = startX; x < endX; x++) {
+            const t = getTile(x, y);
+            if (t === 1) {
+                ctx.fillStyle = "#444";
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                ctx.strokeStyle = "var(--neon-blue)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            } else if (t === 2) {
+                ctx.fillStyle = ((x + y) % 2 === 0) ? "#fff" : "#000";
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            } else {
+                ctx.strokeStyle = "#222";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+    }
+}
+
+/**
+ * EDITOR & GENERATOR
+ */
+function toggleEditor() {
+    isEditorOpen = !isEditorOpen;
+    document.getElementById('editor-ui').style.display = isEditorOpen ? 'flex' : 'none';
+}
+
+function setTool(t) {
+    currentTool = t;
+    document.querySelectorAll('.tool-btn').forEach((b, i) => {
+        // Simple index match for visual toggle
+        if(i < 3) b.classList.toggle('active', i === (t === 0 ? 1 : t === 1 ? 0 : 2));
+    });
+}
+
+function handleEditorInput(e) {
+    const worldX = mouse.x + camera.x;
+    const worldY = mouse.y + camera.y;
+    const tx = Math.floor(worldX / TILE_SIZE);
+    const ty = Math.floor(worldY / TILE_SIZE);
+
+    if (mouse.leftDown) setTile(tx, ty, currentTool);
+    if (mouse.rightDown) setTile(tx, ty, 0);
+}
+
+function drawEditorCursor() {
+    const worldX = mouse.x + camera.x;
+    const worldY = mouse.y + camera.y;
+    const tx = Math.floor(worldX / TILE_SIZE);
+    const ty = Math.floor(worldY / TILE_SIZE);
+
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+}
+
+function clearMap() {
+    if(confirm("Clear map?")) {
+        mapData.fill(0);
+        shareMap(); // Sync clear
+    }
+}
+
+function applyMapSize() {
+    const w = parseInt(document.getElementById('map-w').value);
+    const h = parseInt(document.getElementById('map-h').value);
+    if (w < 20 || h < 20 || w > 300 || h > 300) {
+        alert("Size must be between 20 and 300");
+        return;
+    }
+    if(confirm("Resize map? This will clear current data.")) {
+        initMap(w, h);
+        shareMap();
+    }
+}
+
+function generateTerrain() {
+    if(!confirm("Generate new terrain? Overwrites current map.")) return;
+
+    // Cellular Automata
+    // 1. Fill random
+    for(let i=0; i<mapData.length; i++) {
+        // Leave borders
+        let x = i % mapWidth;
+        let y = Math.floor(i / mapWidth);
+        if (x===0 || y===0 || x===mapWidth-1 || y===mapHeight-1) {
+            mapData[i] = 1;
+        } else {
+            mapData[i] = Math.random() < 0.45 ? 1 : 0;
+        }
+    }
+
+    // 2. Smooth (Simulation Steps)
+    for(let k=0; k<5; k++) {
+        let newData = [...mapData];
+        for(let y=1; y<mapHeight-1; y++) {
+            for(let x=1; x<mapWidth-1; x++) {
+                let neighbors = 0;
+                for(let dy=-1; dy<=1; dy++) {
+                    for(let dx=-1; dx<=1; dx++) {
+                        if(dx===0 && dy===0) continue;
+                        if(getTile(x+dx, y+dy) === 1) neighbors++;
+                    }
+                }
+
+                // Rules
+                if (neighbors > 4) newData[y*mapWidth+x] = 1;
+                else if (neighbors < 4) newData[y*mapWidth+x] = 0;
+            }
+        }
+        mapData = newData;
+    }
+
+    // 3. Ensure Spawn is clear
+    setTile(10, 10, 2, false);
+    for(let y=9; y<=11; y++) {
+        for(let x=9; x<=11; x++) {
+            if(y!==10 || x!==10) setTile(x, y, 0, false);
+        }
+    }
+
+    respawn();
+    shareMap();
+}
+
+function respawn() {
+    let spawnFound = false;
+    for(let y=0; y<mapHeight; y++) {
+        for(let x=0; x<mapWidth; x++) {
+            if(getTile(x, y) === 2) {
+                myCar.x = x * TILE_SIZE + TILE_SIZE/2;
+                myCar.y = y * TILE_SIZE + TILE_SIZE/2;
+                myCar.speed = 0;
+                myCar.angle = 0;
+                spawnFound = true;
+                break;
+            }
+        }
+        if(spawnFound) break;
+    }
+    if(!spawnFound) {
+        myCar.x = 200; myCar.y = 200;
+        myCar.speed = 0;
+    }
+}
+
+/**
+ * SAVE/LOAD/SHARE
+ */
+function openSaveMenu() {
+    document.getElementById('maps-modal').style.display = 'flex';
+    loadSavedMapsList();
+}
+
+function closeSaveMenu() {
+    document.getElementById('maps-modal').style.display = 'none';
+}
+
+function saveCurrentMap() {
+    const name = document.getElementById('map-save-name').value || "Untitled";
+    const saveObj = {
+        name: name,
+        date: new Date().toLocaleDateString(),
+        data: mapData,
+        w: mapWidth,
+        h: mapHeight
+    };
+    localStorage.setItem('drift_map_' + name, JSON.stringify(saveObj));
+    loadSavedMapsList();
+}
+
+function loadSavedMapsList() {
+    const list = document.getElementById('maps-list');
+    list.innerHTML = "";
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('drift_map_')) {
+            const val = JSON.parse(localStorage.getItem(key));
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center bg-gray-800 p-2 rounded";
+            div.innerHTML = `<span>${val.name}</span>`;
+
+            const btnLoad = document.createElement('button');
+            btnLoad.innerText = "Load";
+            btnLoad.className = "text-xs px-2 py-1 w-auto ml-2";
+            btnLoad.onclick = () => {
+                if (val.w) { mapWidth = val.w; mapHeight = val.h; }
+                loadMapData(val.data);
+                shareMap(); // Auto share on load
+                closeSaveMenu();
+            };
+
+            div.appendChild(btnLoad);
+            list.appendChild(div);
+        }
+    }
+}
+
+function loadMapData(newData) {
+    if(newData) {
+        mapData = newData;
+        // Re-validate UI
+        document.getElementById('map-w').value = mapWidth;
+        document.getElementById('map-h').value = mapHeight;
+        respawn();
+    }
+}
+
+function shareMap() {
+    if(!isConnected) { alert("Connect first!"); return; }
+    sendData({ type: 'map', sender: myCar.name, data: mapData, w: mapWidth, h: mapHeight });
+}
+
+/**
+ * CHAT & ADMIN
+ */
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (text.startsWith('/')) {
+        handleCommand(text);
+    } else {
+        sendData({ type: 'chat', name: myCar.name, text: text, color: myCar.color });
+    }
+    input.value = "";
+}
+
+function handleCommand(cmd) {
+    const parts = cmd.split(' ');
+    const action = parts[0];
+    const target = parts[1];
+
+    if (action === '/kick') {
+        if (!isHost) {
+            addSystemMessage("Only the Host can kick players.");
+            return;
+        }
+        sendData({ type: 'kick', targetName: target });
+        addSystemMessage(`Attempting to kick ${target}...`);
+    } else if (action === '/mute') {
+        chatMuted.push(target);
+        addSystemMessage(`Muted ${target} locally.`);
+    } else {
+        addSystemMessage("Unknown command. Try /kick [name] or /mute [name]");
+    }
+}
+
+function addChatMessage(name, text, color) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.innerHTML = `<span style="color:${color}; font-weight:bold">${name}:</span> ${text}`;
+    const container = document.getElementById('chat-messages');
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function addSystemMessage(text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg sys-msg';
+    div.innerText = `[SYS] ${text}`;
+    const container = document.getElementById('chat-messages');
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+</script>
+</body>
+</html>
