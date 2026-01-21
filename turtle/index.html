@@ -123,7 +123,7 @@
       position: absolute; font-size: 14px; font-family: 'Segoe UI', sans-serif;
       font-weight: bold; color: #333;
       background: rgba(255,255,255,0.85); padding: 4px 8px; border-radius: 12px;
-      transform: translate(-50%, -100%); pointer-events: auto; white-space: nowrap;
+      pointer-events: auto; white-space: nowrap;
       top: 10%; left: 50%;
       border: 1px solid rgba(0,0,0,0.1);
       cursor: text;
@@ -269,6 +269,31 @@
     #settings-panel .row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; gap: 8px; }
     #settings-panel label { flex: 1; font-weight: 500; color: #444; }
     #settings-panel input[type="number"], #settings-panel input[type="range"], #settings-panel select { flex: 1; padding: 4px; border-radius: 4px; border: 1px solid #ccc; }
+    #settings-panel input[type="color"] {
+      -webkit-appearance: none; /* Safari/Chrome */
+      -moz-appearance: none;    /* Firefox */
+      appearance: none;
+      width: 50px;
+      height: 50px;
+      border: 2px solid #ccc;
+      border-radius: 0px;
+      cursor: pointer;
+      background: none;
+      box-sizing: border-box; /* Ensures consistent sizing [10] */
+    }
+    /* Specific styling for WebKit/Blink (Safari/Chrome) */
+    #settings-panel input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    #settings-panel input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 0px;
+    }
+    /* Specific styling for Firefox */
+    #settings-panel input[type="color"]::-moz-color-swatch {
+      border: none;
+      border-radius: 0px;
+    }
     #settings-panel small { opacity: 0.7; font-size: 11px; display: block; margin-top: 10px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 5px; }
 
     button.btn {
@@ -537,7 +562,7 @@
 
   <div class="row">
     <label for="bgColorPicker">Background color</label>
-    <input id="bgColorPicker" type="color" value="#d1e7ff" style="width:100%">
+    <input id="bgColorPicker" type="color" value="#d1e7ff">
   </div>
 
 
@@ -644,6 +669,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   let gridCols = 0;
   let gridRows = 0;
   let grid = []; // 0=free, 1=wall, 2=glass, 3=water, 4=grass, 5=sand
+  let resetWithNoConfirm = false
 
   let foodItems = [];
   let foodCounts=[];
@@ -688,7 +714,8 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
     foodEaten: 0,
     startTime: Date.now(),
     totalSpeed: 0,
-    speedSamples: 0
+    speedSamples: 0,
+    lastStatReset:0
   };
 
   // DOM Elements
@@ -1684,21 +1711,24 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
       if(isRainbow) this.el.classList.add('rainbow');
 
       const nameText = data ? data.name : `Turtle ${id+1} (${this.pKey})`;
-
+      // Copilot wrote this logic for the name rotation its witchcraft to me kek
       this.el.innerHTML = `
         <div class="turtle__head"><div class="turtle__neck"></div></div>
         <div class="turtle__legs -left"></div>
         <div class="turtle__legs -right"></div>
         <div class="turtle__tail"></div>
         <div class="turtle__shell"><div></div></div>
-        <div class="turtle-name">${nameText}</div>
       `;
 
+      this.nameEl = document.createElement('div');
+      this.nameEl.className = 'turtle-name';
+      this.nameEl.textContent = nameText;
+
       document.body.appendChild(this.el);
+      document.body.appendChild(this.nameEl);
 
       this.head = this.el.querySelector('.turtle__head');
       this.shell = this.el.querySelector('.turtle__shell');
-      this.nameEl = this.el.querySelector('.turtle-name');
 
       this.attachEvents();
       this.updateVisuals();
@@ -1730,6 +1760,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
         this.dragOffset.x = e.clientX - this.x;
         this.dragOffset.y = e.clientY - this.y;
       });
+
       this.shell.addEventListener('touchstart', e => {
         e.stopPropagation();
         this.isDragging = true;
@@ -2047,8 +2078,12 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
       if(this.speed > 0.1) this.el.classList.add('is-moving');
       else this.el.classList.remove('is-moving');
 
+      // Copilot wrote this logic for the name rotation its witchcraft to me kek
       this.nameEl.style.display = ui.names.checked ? 'block' : 'none';
-      this.nameEl.style.transform = `translate(-50%, -100%) rotate(${-visualAngle}deg) scale(5)`;
+      this.nameEl.style.left = `${this.x}px`;
+      this.nameEl.style.top = `${this.y - 60}px`; // adjust height above turtle
+      this.nameEl.style.transform = `translate(-50%, -20%) scale(1)`;
+
 
       // Change color when in water
       if(this.inWater) {
@@ -2106,6 +2141,10 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
 
   function loadData() {
     try {
+        if(localStorage.ts_settings===undefined){
+            resetWithNoConfirm=true;
+            ui.nuke.click()
+        }
         const s = JSON.parse(localStorage.getItem('ts_settings'));
         if(s) {
             ui.numTurtles.value = s.numTurtles;
@@ -2122,7 +2161,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
             ui.autoSpawnDelay.value = s.autoSpawnDelay;
             ui.showStats.checked = s.showStats;
             ui.bgColorPicker.value = s.bgColorPicker;
-            document.getElementById('world').style.backgroundColor=ui.bgColorPicker.value;
+            document.getElementById("world").style.backgroundColor=s.bgColorPicker;
         }
 
         // Init logic based on (potentially restored) settings
@@ -2281,18 +2320,19 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   function updateStats() {
     if(ui.showStats.checked){
       const elapsed = Date.now() - stats.startTime;
-      timeElapsedDisplay.textContent = formatTime(elapsed);
+      const resetTime = Date.now() - stats.lastStatReset;
 
+      timeElapsedDisplay.textContent = formatTime(elapsed);
       if(stats.speedSamples > 0) {
         const avg = (stats.totalSpeed / stats.speedSamples).toFixed(2);
         avgSpeedDisplay.textContent = avg;
       }
 
       // Reset counters periodically
-      if(elapsed > 1000) {
+      if(resetTime > 1000) {
         stats.totalSpeed = 0;
         stats.speedSamples = 0;
-        stats.startTime = Date.now();
+        stats.lastStatReset=Date.now()
         if(ui.showStats.checked){
           foodCounts.push(foodItems.length);
           if (foodCounts.length > 100) {foodCounts.shift();}
@@ -2636,7 +2676,7 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
   });
 
   ui.nuke.addEventListener('click', () => {
-    if(confirm("NUKE EVERYTHING? This will reset the entire simulation!")) {
+    if(resetWithNoConfirm || confirm("NUKE EVERYTHING? This will reset the entire simulation!")) {
       // Clear everything
       turtles.forEach(t => t.destroy());
       turtles = [];
@@ -2680,12 +2720,14 @@ document.getElementById("settings-handle-wrapper").addEventListener("click", () 
       ui.autoSpawnDelay.value = 3000;
       ui.showStats.checked = true;
       ui.lilypadSize.value = 1;
-      ui.bgColorPicker.value = '#f0f4f8';
+      ui.bgColorPicker.value = '#d1e7ff';
+      document.getElementById('world').style.backgroundColor = ui.bgColorPicker.value;
 
       updatePopulation();
       updateStatsVisibility();
       saveData();
-      showNotification("💥 Simulation reset!");
+      showNotification(resetWithNoConfirm ? "Defaults Loaded!" : "Simulation reset!");
+      resetWithNoConfirm=false;
     }
   });
 
