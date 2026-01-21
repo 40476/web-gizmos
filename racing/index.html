@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -97,6 +97,25 @@
             margin-bottom: 1rem;
             font-family: 'Orbitron', sans-serif;
             border-radius: 4px;
+        }
+        
+        /* Range Sliders */
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+            background: #333;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--neon-blue);
+            border-radius: 50%;
+            cursor: pointer;
         }
 
         input[type="color"] {
@@ -231,11 +250,31 @@
             outline: none;
         }
 
-        /* Minimap */
-        #minimap-container {
+        /* Minimap & Leaderboard */
+        #right-panel {
             position: absolute;
             bottom: 20px;
             right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        #leaderboard {
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--neon-blue);
+            padding: 10px;
+            width: 200px;
+            font-size: 12px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .lb-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .lb-name { color: #ddd; }
+        .lb-laps { color: var(--neon-blue); font-weight: bold; }
+
+        #minimap-container {
             border: 2px solid var(--neon-blue);
             background: rgba(0,0,0,0.8);
             width: 200px;
@@ -248,7 +287,7 @@
         }
 
         /* Saved Maps Modal */
-        #maps-modal, #network-modal {
+        #maps-modal, #settings-modal {
             display: none;
         }
     </style>
@@ -261,13 +300,13 @@
         <!-- Main Menu -->
         <div id="main-menu" class="interactive">
             <div class="panel">
-                <h1>Cyber Drift</h1>
+                <h1>DRiFT.js</h1>
                 <input type="text" id="username" placeholder="Racer Name" maxlength="12">
                 <input type="text" id="room-name" placeholder="Room Name (e.g. cat)" value="lobby">
                 <div class="text-left text-sm text-gray-400 mb-2">Car Color</div>
                 <input type="color" id="car-color" value="#00f3ff">
                 <button onclick="startGame()">Connect & Race</button>
-                <button class="secondary text-xs" onclick="openNetworkSettings()">Network Settings</button>
+                <button class="secondary text-xs" onclick="openSettings()">Settings & Network</button>
                 <div id="connection-status" class="mt-2 text-xs text-gray-500">Free Public Servers (No Signup)</div>
             </div>
         </div>
@@ -290,7 +329,7 @@
         <div id="editor-ui" class="interactive">
             <div class="tool-btn active" onclick="setTool(1)" title="Wall">🧱</div>
             <div class="tool-btn" onclick="setTool(0)" title="Pavement (Eraser)">🛣️</div>
-            <div class="tool-btn" onclick="setTool(2)" title="Spawn Point">🏁</div>
+            <div class="tool-btn" onclick="setTool(2)" title="Start/Finish">🏁</div>
             <div class="tool-btn" onclick="setTool(3)" title="Grass" style="color:#4f4">🌱</div>
             <div class="tool-btn" onclick="setTool(4)" title="Dirt" style="color:#d84">💩</div>
             <div class="tool-btn" onclick="setTool(5)" title="Sand" style="color:#fd4">🏖️</div>
@@ -321,9 +360,15 @@
             <input type="text" id="chat-input" placeholder="Chat... (/kick name, /mute name)">
         </div>
         
-        <!-- Minimap -->
-        <div id="minimap-container">
-            <canvas id="minimap-canvas" width="200" height="200"></canvas>
+        <!-- Right Panel (Leaderboard + Minimap) -->
+        <div id="right-panel">
+            <div id="leaderboard">
+                <div class="border-b border-gray-600 mb-2 pb-1 text-center">LEADERBOARD</div>
+                <div id="lb-content"></div>
+            </div>
+            <div id="minimap-container">
+                <canvas id="minimap-canvas" width="200" height="200"></canvas>
+            </div>
         </div>
     </div>
 
@@ -340,21 +385,36 @@
         </div>
     </div>
 
-    <!-- Network Settings Modal -->
-    <div id="network-modal" class="interactive fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
-        <div class="panel w-96">
-            <h2 class="text-xl mb-4 text-white font-bold">Network Settings</h2>
-            <p class="text-xs text-gray-400 mb-2">If connection fails, try a different public broker.</p>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="interactive fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
+        <div class="panel w-96 text-left">
+            <h2 class="text-xl mb-4 text-white font-bold text-center">Settings</h2>
             
+            <label class="text-xs text-gray-400">Master Volume (<span id="vol-master-val">100</span>%)</label>
+            <input type="range" id="vol-master" min="0" max="200" value="100" oninput="updateVolumes()">
+            
+            <label class="text-xs text-gray-400">Engine Volume (<span id="vol-engine-val">100</span>%)</label>
+            <input type="range" id="vol-engine" min="0" max="200" value="100" oninput="updateVolumes()">
+            
+            <label class="text-xs text-gray-400">Tire Volume (<span id="vol-tires-val">100</span>%)</label>
+            <input type="range" id="vol-tires" min="0" max="200" value="100" oninput="updateVolumes()">
+            
+            <label class="text-xs text-gray-400">SFX Volume (<span id="vol-sfx-val">100</span>%)</label>
+            <input type="range" id="vol-sfx" min="0" max="200" value="100" oninput="updateVolumes()">
+
+            <div class="border-t border-gray-700 my-4"></div>
+
             <label class="block text-left text-sm mb-1">MQTT Broker URL (WSS)</label>
             <select id="broker-select" class="text-xs mb-4">
-                <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (Recommended)</option>
-                <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public</option>
+                <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public (Recommended)</option>
+                <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public</option>
                 <option value="wss://test.mosquitto.org:8081">Mosquitto Public</option>
             </select>
             
-            <button onclick="saveNetworkSettings()">Save & Close</button>
-            <button onclick="closeNetworkSettings()" class="secondary mt-2">Cancel</button>
+            <div class="flex gap-2">
+                <button onclick="saveSettings()">Save & Close</button>
+                <button onclick="closeSettings()" class="secondary">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -380,7 +440,9 @@ let myCar = {
     color: '#00f3ff', 
     name: 'Player',
     id: CLIENT_ID,
-    accel: 0, steer: 0, drifting: false
+    accel: 0, steer: 0, drifting: false,
+    laps: 0,
+    onFinishLine: false
 };
 let players = {}; 
 let chatMuted = []; 
@@ -393,7 +455,7 @@ let mapHeight = 100;
 const TILES = {
     PAVEMENT: 0,
     WALL: 1,
-    SPAWN: 2,
+    SPAWN: 2, // Start/Finish Line
     GRASS: 3,
     DIRT: 4,
     SAND: 5,
@@ -412,7 +474,7 @@ let camera = { x: 0, y: 0, zoom: 1 };
 // MQTT State
 let mqttClient;
 let roomTopicBase = "";
-let currentBroker = "wss://broker.emqx.io:8084/mqtt"; // Default free broker
+let currentBroker = "wss://broker.hivemq.com:8884/mqtt"; // Default to Hive
 
 // Inputs
 const keys = { w: false, a: false, s: false, d: false, Shift: false, " ": false };
@@ -431,6 +493,9 @@ class SoundManager {
         this.engineGain = null;
         this.noiseNode = null;
         this.noiseGain = null;
+        
+        // Volume Multipliers (0.0 - 2.0)
+        this.vols = { master: 1, engine: 1, tires: 1, sfx: 1 };
     }
 
     init() {
@@ -438,14 +503,16 @@ class SoundManager {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.ctx = new AudioContext();
 
+        // Engine
         this.engineOsc = this.ctx.createOscillator();
         this.engineOsc.type = 'square';
         this.engineGain = this.ctx.createGain();
-        this.engineGain.gain.value = 0.1;
+        this.engineGain.gain.value = 0;
         this.engineOsc.connect(this.engineGain);
         this.engineGain.connect(this.ctx.destination);
         this.engineOsc.start();
 
+        // Noise
         const bufferSize = this.ctx.sampleRate * 2;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -471,27 +538,48 @@ class SoundManager {
         if (!this.ctx) return;
         const baseFreq = 80;
         this.engineOsc.frequency.setTargetAtTime(baseFreq + (Math.abs(speed) * 20), this.ctx.currentTime, 0.1);
+        
+        // Gains based on master volume and individual sliders
+        let engVol = 0.1 * this.vols.master * this.vols.engine;
+        this.engineGain.gain.setTargetAtTime(engVol, this.ctx.currentTime, 0.1);
+
         let skidVol = 0;
         if (Math.abs(speed) > 2) {
             if (isDrifting) skidVol = 0.3;
             else if (isSlipSurface && Math.abs(speed) > 5) skidVol = 0.2;
         }
+        skidVol = skidVol * this.vols.master * this.vols.tires;
         this.noiseGain.gain.setTargetAtTime(skidVol, this.ctx.currentTime, 0.1);
     }
 
-    playCrash() {
+    playTone(freq, type, duration, volMod = 1) {
         if (!this.ctx) return;
         const osc = this.ctx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.value = 100;
+        osc.type = type;
+        osc.frequency.value = freq;
         const gain = this.ctx.createGain();
-        gain.gain.value = 0.3;
+        gain.gain.value = 0.3 * this.vols.master * this.vols.sfx * volMod;
+        
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.3);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-        osc.stop(this.ctx.currentTime + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    playCrash() { this.playTone(100, 'sawtooth', 0.3); }
+    playChat() { this.playTone(800, 'sine', 0.1); }
+    playJoin() { 
+        this.playTone(400, 'triangle', 0.1, 0.5); 
+        setTimeout(() => this.playTone(600, 'triangle', 0.2, 0.5), 100);
+    }
+    playLeave() {
+        this.playTone(600, 'triangle', 0.1, 0.5); 
+        setTimeout(() => this.playTone(400, 'triangle', 0.2, 0.5), 100);
+    }
+    playLap() {
+        this.playTone(880, 'square', 0.1, 0.7);
+        setTimeout(() => this.playTone(1100, 'square', 0.3, 0.7), 100);
     }
 }
 
@@ -501,6 +589,9 @@ const audio = new SoundManager();
  * INITIALIZATION
  */
 window.onload = () => {
+    // Load Settings
+    loadLocalSettings();
+
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
     miniCanvas = document.getElementById('minimap-canvas');
@@ -550,6 +641,34 @@ window.onload = () => {
     requestAnimationFrame(gameLoop);
 };
 
+function loadLocalSettings() {
+    if(localStorage.getItem('drift_username')) document.getElementById('username').value = localStorage.getItem('drift_username');
+    if(localStorage.getItem('drift_room')) document.getElementById('room-name').value = localStorage.getItem('drift_room');
+    if(localStorage.getItem('drift_color')) document.getElementById('car-color').value = localStorage.getItem('drift_color');
+    
+    if(localStorage.getItem('drift_broker')) {
+        currentBroker = localStorage.getItem('drift_broker');
+        document.getElementById('broker-select').value = currentBroker;
+    }
+
+    // Vols
+    const vols = ['master', 'engine', 'tires', 'sfx'];
+    vols.forEach(v => {
+        const val = localStorage.getItem('drift_vol_'+v);
+        if(val) {
+            document.getElementById('vol-'+v).value = val;
+            audio.vols[v] = parseInt(val) / 100;
+            document.getElementById(`vol-${v}-val`).innerText = val;
+        }
+    });
+}
+
+function saveLocalInputs() {
+    localStorage.setItem('drift_username', document.getElementById('username').value);
+    localStorage.setItem('drift_room', document.getElementById('room-name').value);
+    localStorage.setItem('drift_color', document.getElementById('car-color').value);
+}
+
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -559,15 +678,8 @@ function initMap(w, h) {
     mapWidth = w;
     mapHeight = h;
     mapData = new Array(mapWidth * mapHeight).fill(0);
-    // Borders
-    for(let x=0; x<mapWidth; x++) {
-        setTile(x, 0, TILES.WALL, false);
-        setTile(x, mapHeight-1, TILES.WALL, false);
-    }
-    for(let y=0; y<mapHeight; y++) {
-        setTile(0, y, TILES.WALL, false);
-        setTile(mapWidth-1, y, TILES.WALL, false);
-    }
+    for(let x=0; x<mapWidth; x++) { setTile(x, 0, TILES.WALL, false); setTile(x, mapHeight-1, TILES.WALL, false); }
+    for(let y=0; y<mapHeight; y++) { setTile(0, y, TILES.WALL, false); setTile(mapWidth-1, y, TILES.WALL, false); }
     setTile(10, 10, TILES.SPAWN, false);
     respawn();
     document.getElementById('map-w').value = mapWidth;
@@ -579,6 +691,7 @@ function initMap(w, h) {
  */
 async function startGame() {
     audio.init();
+    saveLocalInputs();
 
     const nameInput = document.getElementById('username').value.trim() || "Racer";
     const roomInput = document.getElementById('room-name').value.trim().toLowerCase() || "lobby";
@@ -589,12 +702,11 @@ async function startGame() {
 
     document.getElementById('connection-status').innerText = "Hashing Room...";
     
-    // Hash Room Name
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(roomInput));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substr(0, 16);
     
-    roomTopicBase = `drift_v7/${hashHex}`;
+    roomTopicBase = `drift_v8/${hashHex}`;
     
     document.getElementById('room-display').innerText = roomInput;
     document.getElementById('connection-status').innerText = `Connecting to ${currentBroker}...`;
@@ -612,14 +724,8 @@ async function startGame() {
             isConnected = true;
             document.getElementById('main-menu').style.display = 'none';
             addSystemMessage("Connected to Broker.");
-            
-            // Subscribe to all room events
             mqttClient.subscribe(`${roomTopicBase}/#`);
-            
-            // Announce
             publish('join', { name: myCar.name, color: myCar.color, id: myCar.id });
-            
-            // Start Update Loop
             setInterval(sendUpdate, 50); // 20Hz
         });
 
@@ -656,7 +762,8 @@ function sendUpdate() {
         x: Math.round(myCar.x),
         y: Math.round(myCar.y),
         angle: parseFloat(myCar.angle.toFixed(2)),
-        speed: Math.round(myCar.speed)
+        speed: Math.round(myCar.speed),
+        laps: myCar.laps
     });
 }
 
@@ -667,32 +774,32 @@ function handleNetworkMessage(subTopic, data) {
         if (!players[data.id]) {
             players[data.id] = { ...data, lastSeen: Date.now() };
             addSystemMessage(`${data.name} detected.`);
-            // Send map to new player if we have one
+            audio.playJoin();
             publish('map_sync', { data: mapData, w: mapWidth, h: mapHeight, targetId: data.id });
         } else {
             const p = players[data.id];
-            p.x = data.x; // Direct sync for simplicity with MQTT lag
-            p.y = data.y;
-            p.angle = data.angle;
-            p.speed = data.speed;
-            p.color = data.color;
-            p.name = data.name;
+            p.x = data.x; p.y = data.y;
+            p.angle = data.angle; p.speed = data.speed;
+            p.color = data.color; p.name = data.name;
+            p.laps = data.laps || 0;
             p.lastSeen = Date.now();
         }
     } else if (subTopic === 'join') {
-        players[data.id] = { ...data, x:0, y:0, angle:0, lastSeen: Date.now() };
+        players[data.id] = { ...data, x:0, y:0, angle:0, laps:0, lastSeen: Date.now() };
         addSystemMessage(`${data.name} joined.`);
+        audio.playJoin();
         publish('map_sync', { data: mapData, w: mapWidth, h: mapHeight, targetId: data.id });
     } else if (subTopic === 'chat') {
-        if (!chatMuted.includes(data.name)) addChatMessage(data.name, data.text, data.color);
+        if (!chatMuted.includes(data.name)) {
+            addChatMessage(data.name, data.text, data.color);
+            audio.playChat();
+        }
     } else if (subTopic === 'map') {
         addSystemMessage(`${data.sender} shared a map.`);
         loadMapData(data.data);
         if(data.w) { mapWidth = data.w; mapHeight = data.h; }
     } else if (subTopic === 'map_sync') {
-        // Only load if it's meant for me OR broadast (no targetId)
         if (!data.targetId || data.targetId === myCar.id) {
-            // Only update if map is empty/default to avoid overwriting edits
             if (mapData.every(t => t === 0 || t === 1)) {
                 loadMapData(data.data);
                 if(data.w) { mapWidth = data.w; mapHeight = data.h; }
@@ -707,7 +814,8 @@ function handleNetworkMessage(subTopic, data) {
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    if(!isEditorOpen) updatePhysics();
+    // Always update physics (Removed check for editor open)
+    updatePhysics();
 
     camera.x = myCar.x - canvas.width / 2;
     camera.y = myCar.y - canvas.height / 2;
@@ -717,32 +825,46 @@ function gameLoop() {
 
     drawMap();
 
-    // Particles
     particles.forEach((p, i) => {
         p.update();
         p.draw(ctx);
         if(p.life <= 0) particles.splice(i, 1);
     });
 
-    // Remote Players
     for (let id in players) {
         const p = players[id];
         drawCar(p);
-        if (Date.now() - p.lastSeen > 10000) delete players[id];
+        if (Date.now() - p.lastSeen > 10000) {
+            audio.playLeave();
+            delete players[id];
+        }
     }
 
     drawCar(myCar);
-    
     if(isEditorOpen) drawEditorCursor();
 
     ctx.restore();
     drawMinimap();
+    updateLeaderboard();
 
     requestAnimationFrame(gameLoop);
 }
 
 function updatePhysics() {
     const centerTile = getTile(Math.floor(myCar.x / TILE_SIZE), Math.floor(myCar.y / TILE_SIZE));
+    
+    // Lap Counting
+    if (centerTile === TILES.SPAWN) {
+        if (!myCar.onFinishLine) {
+            myCar.laps++;
+            myCar.onFinishLine = true;
+            audio.playLap();
+            addSystemMessage(`Lap ${myCar.laps}!`);
+        }
+    } else {
+        myCar.onFinishLine = false;
+    }
+
     let grip = 0.96; 
     let drag = 0.98;
     let surfaceType = 'pavement';
@@ -756,14 +878,18 @@ function updatePhysics() {
     }
 
     if (keys[" "]) {
-        grip = 0.15; 
+        // AGGRESSIVE DRIFT: Much lower grip
+        grip = 0.05; 
         myCar.drifting = true;
     } else {
         myCar.drifting = false;
     }
 
-    if (keys.a) myCar.angle -= TURN_SPEED;
-    if (keys.d) myCar.angle += TURN_SPEED;
+    // Slightly sharper turn while drifting
+    const effectiveTurnSpeed = myCar.drifting ? TURN_SPEED * 1.2 : TURN_SPEED;
+
+    if (keys.a) myCar.angle -= effectiveTurnSpeed;
+    if (keys.d) myCar.angle += effectiveTurnSpeed;
 
     let accel = 0;
     if (keys.w) accel = ENGINE_POWER;
@@ -827,12 +953,23 @@ function drawCar(c) {
     ctx.fillStyle = c.color;
     ctx.shadowBlur = 10; ctx.shadowColor = c.color;
     ctx.fillRect(-15, -10, 30, 20);
-    ctx.fillStyle = "#222"; ctx.fillRect(-18, -11, 5, 22); // Spoiler
-    ctx.fillStyle = "#000"; ctx.fillRect(-2, -8, 8, 16); // Windshield
-    ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.fillRect(14, -8, 2, 4); ctx.fillRect(14, 4, 2, 4); // Lights
+    ctx.fillStyle = "#222"; ctx.fillRect(-18, -11, 5, 22);
+    ctx.fillStyle = "#000"; ctx.fillRect(-2, -8, 8, 16);
+    ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.fillRect(14, -8, 2, 4); ctx.fillRect(14, 4, 2, 4);
     ctx.restore();
     ctx.fillStyle = "white"; ctx.font = "10px Orbitron"; ctx.textAlign = "center"; ctx.shadowBlur = 0;
     ctx.fillText(c.name, c.x, c.y - 25);
+}
+
+function updateLeaderboard() {
+    // Sort myCar and players
+    const all = [{name: myCar.name, laps: myCar.laps, color: myCar.color}, ...Object.values(players)];
+    all.sort((a,b) => (b.laps || 0) - (a.laps || 0));
+    
+    const div = document.getElementById('lb-content');
+    div.innerHTML = all.map(p => 
+        `<div class="lb-row"><span class="lb-name" style="color:${p.color}">${p.name}</span><span class="lb-laps">${p.laps||0}</span></div>`
+    ).join('');
 }
 
 /**
@@ -846,7 +983,6 @@ function setTile(x, y, val) {
     if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
     const idx = y * mapWidth + x;
     mapData[idx] = val;
-    // Map sync is done via 'Share' button to save bandwidth
 }
 
 function drawMap() {
@@ -878,6 +1014,7 @@ function drawMap() {
                 ctx.fillStyle = (x + y) % 2 === 0 ? "#e22" : "#eee"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
             } else if (t === TILES.SPAWN) {
                 ctx.fillStyle = ((x + y) % 2 === 0) ? "#fff" : "#000"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                ctx.strokeStyle = "white"; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
             }
         }
     }
@@ -1009,6 +1146,7 @@ function sendChatFunc() {
     else {
         publish('chat', { name: myCar.name, text: text, color: myCar.color });
         addChatMessage(myCar.name, text, myCar.color);
+        audio.playChat();
     }
     input.value = "";
 }
@@ -1037,15 +1175,25 @@ function addSystemMessage(text) {
 }
 
 // Network Settings UI
-function openNetworkSettings() { document.getElementById('network-modal').style.display = 'flex'; }
-function closeNetworkSettings() { document.getElementById('network-modal').style.display = 'none'; }
-function saveNetworkSettings() {
+function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+function saveSettings() {
     currentBroker = document.getElementById('broker-select').value;
-    closeNetworkSettings();
+    localStorage.setItem('drift_broker', currentBroker);
+    closeSettings();
     if (isConnected) {
         alert("Broker changed. Please reconnect.");
         location.reload();
     }
+}
+function updateVolumes() {
+    const vols = ['master', 'engine', 'tires', 'sfx'];
+    vols.forEach(v => {
+        const val = document.getElementById('vol-'+v).value;
+        audio.vols[v] = parseInt(val) / 100;
+        document.getElementById(`vol-${v}-val`).innerText = val;
+        localStorage.setItem('drift_vol_'+v, val);
+    });
 }
 
 // Particle Class
