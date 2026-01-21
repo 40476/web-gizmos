@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drift.js Multiplayer (P2P)</title>
-    <!-- PeerJS Library for P2P Networking -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>Drift.js Multiplayer (Torrent P2P)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -157,7 +155,7 @@
             justify-content: center;
             gap: 10px;
             border-radius: 8px;
-            max-width: 80%;
+            max-width: 90%;
         }
 
         .tool-btn {
@@ -171,11 +169,15 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
+            transition: all 0.2s;
         }
+
+        .tool-btn:hover { background: #333; }
 
         .tool-btn.active {
             border-color: var(--neon-blue);
             background: rgba(0, 243, 255, 0.2);
+            transform: scale(1.1);
         }
 
         .editor-input-group {
@@ -263,7 +265,7 @@
                 <div class="text-left text-sm text-gray-400 mb-2">Car Color</div>
                 <input type="color" id="car-color" value="#00f3ff">
                 <button onclick="startGame()">Connect & Race</button>
-                <div id="connection-status" class="mt-2 text-xs text-gray-500">Ready to connect...</div>
+                <div id="connection-status" class="mt-2 text-xs text-gray-500">Uses Trystero (Torrent) - May take 5-10s</div>
             </div>
         </div>
 
@@ -275,8 +277,8 @@
             </div>
             <div class="text-right">
                 <div class="text-xl" style="color: var(--neon-pink)">ROOM: <span id="room-display">--</span></div>
-                <div id="role-display" class="text-xs text-gray-400 font-mono mb-1">...</div>
-                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="toggleEditor()">Toggle Map Editor</button>
+                <div id="role-display" class="text-xs text-gray-400 font-mono mb-1">MESH MODE</div>
+                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="toggleEditor()">Map Editor</button>
                 <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="openSaveMenu()">Load/Save Maps</button>
             </div>
         </div>
@@ -284,8 +286,13 @@
         <!-- Editor UI -->
         <div id="editor-ui" class="interactive">
             <div class="tool-btn active" onclick="setTool(1)" title="Wall">🧱</div>
-            <div class="tool-btn" onclick="setTool(0)" title="Eraser">❌</div>
+            <div class="tool-btn" onclick="setTool(0)" title="Pavement (Eraser)">🛣️</div>
             <div class="tool-btn" onclick="setTool(2)" title="Spawn Point">🏁</div>
+            <div class="tool-btn" onclick="setTool(3)" title="Grass" style="color:#4f4">🌱</div>
+            <div class="tool-btn" onclick="setTool(4)" title="Dirt" style="color:#d84">💩</div>
+            <div class="tool-btn" onclick="setTool(5)" title="Sand" style="color:#fd4">🏖️</div>
+            <div class="tool-btn" onclick="setTool(6)" title="Rumble Strip" style="color:#f44">💈</div>
+
             <div class="border-l border-gray-600 mx-1"></div>
 
             <div class="editor-input-group">
@@ -334,7 +341,10 @@
 
     <canvas id="game-canvas"></canvas>
 
-<script>
+<script type="module">
+// FIX 1: Explicitly import Torrent strategy to avoid Nostr relay errors
+import { joinRoom } from 'https://esm.sh/trystero/torrent';
+
 /**
  * CONFIG & GLOBALS
  */
@@ -344,45 +354,145 @@ const CLIENT_ID = "racer_" + Math.random().toString(16).substr(2, 8);
 let canvas, ctx, miniCanvas, miniCtx;
 let isConnected = false;
 let isEditorOpen = false;
+let particles = []; // Particle system
+
 let myCar = {
     x: 0, y: 0,
+    vx: 0, vy: 0, // Velocity Vector
     angle: 0,
-    speed: 0,
+    speed: 0, // Scalar speed for display/pitch
     color: '#00f3ff',
     name: 'Player',
     id: CLIENT_ID,
     accel: 0,
-    steer: 0
+    steer: 0,
+    drifting: false
 };
-let players = {}; // Map of remote players
-let chatMuted = []; // List of muted names
-let mapData = []; // Grid: 0=empty, 1=wall, 2=spawn
+let players = {}; // Remote players
+let chatMuted = [];
+let mapData = [];
 const TILE_SIZE = 40;
 let mapWidth = 100;
 let mapHeight = 100;
 
+// Tile Definitions
+const TILES = {
+    PAVEMENT: 0,
+    WALL: 1,
+    SPAWN: 2,
+    GRASS: 3,
+    DIRT: 4,
+    SAND: 5,
+    RUMBLE: 6
+};
+
+// Physics Constants
+const ENGINE_POWER = 0.5; // Slightly increased
+const REVERSE_POWER = 0.2;
+const TURN_SPEED = 0.08;
+const DRAG_AIR = 0.98; // Less air resistance for better coasting
+
 // Camera
 let camera = { x: 0, y: 0, zoom: 1 };
 
-// P2P State
-let peer;
+// Trystero State
+let room;
 let roomHash = "";
-let isHost = false;
-let hostConn = null; // Client's connection to host
-let clientConns = []; // Host's list of connected clients
+let sendUpdate, sendMap, sendChat, sendKick, sendTile;
 
 // Inputs
-const keys = { w: false, a: false, s: false, d: false, Shift: false };
-
-// Physics Constants
-const MAX_SPEED = 15;
-const ACCEL = 0.2;
-const FRICTION = 0.96;
-const TURN_SPEED = 0.06;
+const keys = { w: false, a: false, s: false, d: false, Shift: false, " ": false };
 
 // Editor
 let currentTool = 1;
 let mouse = { x: 0, y: 0, leftDown: false, rightDown: false };
+
+/**
+ * AUDIO SYSTEM (8-bit style)
+ */
+class SoundManager {
+    constructor() {
+        this.ctx = null;
+        this.engineOsc = null;
+        this.engineGain = null;
+        this.noiseNode = null;
+        this.noiseGain = null;
+    }
+
+    init() {
+        if (this.ctx) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        // Engine Sound (Square wave for 8-bit feel)
+        this.engineOsc = this.ctx.createOscillator();
+        this.engineOsc.type = 'square';
+        this.engineGain = this.ctx.createGain();
+        this.engineGain.gain.value = 0.1;
+        this.engineOsc.connect(this.engineGain);
+        this.engineGain.connect(this.ctx.destination);
+        this.engineOsc.start();
+
+        // Drift/Skid Noise (White Noise Buffer)
+        const bufferSize = this.ctx.sampleRate * 2; // 2 seconds buffer
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        this.noiseNode = this.ctx.createBufferSource();
+        this.noiseNode.buffer = buffer;
+        this.noiseNode.loop = true;
+        this.noiseGain = this.ctx.createGain();
+        this.noiseGain.gain.value = 0;
+
+        // Lowpass filter for skid sound
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 800;
+
+        this.noiseNode.connect(filter);
+        filter.connect(this.noiseGain);
+        this.noiseGain.connect(this.ctx.destination);
+        this.noiseNode.start();
+    }
+
+    update(speed, isDrifting, isSlipSurface) {
+        if (!this.ctx) return;
+
+        // Engine Pitch
+        const baseFreq = 80;
+        this.engineOsc.frequency.setTargetAtTime(baseFreq + (Math.abs(speed) * 20), this.ctx.currentTime, 0.1);
+
+        // Tire Noise Volume
+        let skidVol = 0;
+        if (Math.abs(speed) > 2) {
+            if (isDrifting) skidVol = 0.3; // Louder drift
+            else if (isSlipSurface && Math.abs(speed) > 5) skidVol = 0.2;
+        }
+        this.noiseGain.gain.setTargetAtTime(skidVol, this.ctx.currentTime, 0.1);
+    }
+
+    playCrash() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 100;
+        const gain = this.ctx.createGain();
+        gain.gain.value = 0.3;
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+        osc.stop(this.ctx.currentTime + 0.3);
+    }
+}
+
+const audio = new SoundManager();
 
 /**
  * INITIALIZATION
@@ -397,27 +507,29 @@ window.onload = () => {
     resize();
     window.addEventListener('resize', resize);
 
-    // Default empty map
     initMap(100, 100);
 
-    // Input Listeners
+    // Inputs
     window.addEventListener('keydown', e => {
         if(document.activeElement.tagName === 'INPUT') return;
-        if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true;
+        const k = e.key.toLowerCase();
+        if(keys.hasOwnProperty(k)) keys[k] = true;
         if(e.key === 'Shift') keys.Shift = true;
+        if(e.key === ' ') keys[" "] = true;
     });
 
     window.addEventListener('keyup', e => {
-        if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false;
+        const k = e.key.toLowerCase();
+        if(keys.hasOwnProperty(k)) keys[k] = false;
         if(e.key === 'Shift') keys.Shift = false;
+        if(e.key === ' ') keys[" "] = false;
     });
 
-    // Chat
     document.getElementById('chat-input').addEventListener('keydown', e => {
-        if (e.key === 'Enter') sendChat();
+        if (e.key === 'Enter') sendChatFunc();
     });
 
-    // Mouse for editor
+    // Editor Mouse Interaction
     canvas.addEventListener('mousedown', e => {
         if(!isEditorOpen) return;
         if(e.button === 0) mouse.leftDown = true;
@@ -433,12 +545,21 @@ window.onload = () => {
     });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-    // Load Maps from LocalStorage
     loadSavedMapsList();
-
-    // Start Loop
     requestAnimationFrame(gameLoop);
 };
+
+// Global exports
+window.startGame = startGame;
+window.toggleEditor = toggleEditor;
+window.setTool = setTool;
+window.shareMap = shareMap;
+window.clearMap = clearMap;
+window.applyMapSize = applyMapSize;
+window.generateTerrain = generateTerrain;
+window.openSaveMenu = openSaveMenu;
+window.closeSaveMenu = closeSaveMenu;
+window.saveCurrentMap = saveCurrentMap;
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -450,27 +571,27 @@ function initMap(w, h) {
     mapHeight = h;
     mapData = new Array(mapWidth * mapHeight).fill(0);
 
-    // Default borders
+    // Borders
     for(let x=0; x<mapWidth; x++) {
-        setTile(x, 0, 1);
-        setTile(x, mapHeight-1, 1);
+        setTile(x, 0, TILES.WALL, false);
+        setTile(x, mapHeight-1, TILES.WALL, false);
     }
     for(let y=0; y<mapHeight; y++) {
-        setTile(0, y, 1);
-        setTile(mapWidth-1, y, 1);
+        setTile(0, y, TILES.WALL, false);
+        setTile(mapWidth-1, y, TILES.WALL, false);
     }
-    setTile(10, 10, 2); // Spawn
+    setTile(10, 10, TILES.SPAWN, false);
     respawn();
-
-    // Update UI inputs
     document.getElementById('map-w').value = mapWidth;
     document.getElementById('map-h').value = mapHeight;
 }
 
 /**
- * NETWORKING (PeerJS P2P)
+ * NETWORKING (Trystero)
  */
 async function startGame() {
+    audio.init(); // Start Audio Context on user gesture
+
     const nameInput = document.getElementById('username').value.trim() || "Racer";
     const roomInput = document.getElementById('room-name').value.trim().toLowerCase() || "lobby";
     const colorInput = document.getElementById('car-color').value;
@@ -478,175 +599,98 @@ async function startGame() {
     myCar.name = nameInput;
     myCar.color = colorInput;
 
-    document.getElementById('connection-status').innerText = "Hashing Room Name...";
+    document.getElementById('connection-status').innerText = "Hashing Room...";
 
-    // Hash Room Name to create a consistent Peer ID for the Host
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(roomInput));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    // PeerJS IDs allow alphanumerics. Hex is safe.
-    roomHash = "drift_v2_" + hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substr(0, 16);
+    roomHash = "drift_v5_" + hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substr(0, 16);
 
     document.getElementById('room-display').innerText = roomInput;
-    document.getElementById('connection-status').innerText = "Connecting to P2P Cloud...";
+    document.getElementById('connection-status').innerText = "Joining Mesh...";
 
-    // Attempt to be the Host (claim the Room ID)
-    initPeer(true);
+    initTrystero(roomHash);
 }
 
-function initPeer(attemptHost) {
-    if (peer) peer.destroy(); // Clean up previous instance
+function initTrystero(roomId) {
+    const config = { appId: 'drift_racer_p2p_v5' };
+    room = joinRoom(config, roomId);
 
-    const config = {
-        debug: 1,
-        config: {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19305' },
-                { urls: 'stun:stun1.l.google.com:19305' },
-                { urls: 'stun:stun2.l.google.com:19305' }
-            ]
-        }
-    };
+    const [sndUp, getUp] = room.makeAction('pos');
+    const [sndMap, getMap] = room.makeAction('map');
+    const [sndChat, getChat] = room.makeAction('chat');
+    const [sndKick, getKick] = room.makeAction('kick');
+    const [sndTile, getTile] = room.makeAction('tile');
 
-    if (attemptHost) {
-        // Try to create peer with the specific Room Hash ID
-        peer = new Peer(roomHash, config);
-    } else {
-        // Create peer with random ID (as Client)
-        peer = new Peer(config);
-    }
+    sendUpdate = sndUp;
+    sendMap = sndMap;
+    sendChat = sndChat;
+    sendKick = sndKick;
+    sendTile = sndTile;
 
-    peer.on('open', (id) => {
-        if (id === roomHash) {
-            setupHostMode();
+    getUp((data, peerId) => {
+        if (!players[peerId]) {
+            players[peerId] = { ...data, id: peerId, lastSeen: Date.now() };
+            addSystemMessage(`${data.name} detected.`);
         } else {
-            setupClientMode();
+            const p = players[peerId];
+            p.x = data.x; // Direct sync for simplicity, could lerp
+            p.y = data.y;
+            p.angle = data.angle;
+            p.speed = data.speed; // Visual only
+            p.lastSeen = Date.now();
+            if (p.color !== data.color) p.color = data.color;
+            if (p.name !== data.name) p.name = data.name;
         }
     });
 
-    peer.on('error', (err) => {
-        if (err.type === 'unavailable-id') {
-            // ID taken, meaning Host exists. Switch to Client mode.
-            console.log("Room Host exists, joining as Client...");
-            if(peer) peer.destroy(); // Important: cleanup failed peer
-            initPeer(false);
-        } else {
-            document.getElementById('connection-status').innerText = "Error: " + err.type;
-            console.error(err);
+    getMap((data, peerId) => {
+        addSystemMessage("Received map data.");
+        if(data.w && data.h) {
+            mapWidth = data.w;
+            mapHeight = data.h;
         }
+        loadMapData(data.data);
     });
 
-    peer.on('disconnected', () => {
-        if(isConnected) addSystemMessage("Disconnected from signaling server.");
-    });
-}
-
-function setupHostMode() {
-    isHost = true;
-    isConnected = true;
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('role-display').innerText = "HOST (Server)";
-    addSystemMessage("You are the HOST of this room.");
-    addSystemMessage("Waiting for challengers...");
-
-    peer.on('connection', (conn) => {
-        handleIncomingConnection(conn);
+    getChat((data, peerId) => {
+        if (chatMuted.includes(data.name)) return;
+        addChatMessage(data.name, data.text, data.color);
     });
 
-    // Start tick
-    setInterval(sendUpdate, 50); // 20Hz
-}
-
-function setupClientMode() {
-    isHost = false;
-    document.getElementById('role-display').innerText = "CLIENT";
-    document.getElementById('connection-status').innerText = "Joining Host...";
-
-    // Connect to Host
-    hostConn = peer.connect(roomHash, { reliable: true });
-
-    let connTimeout = setTimeout(() => {
-        if (!isConnected) {
-            alert("Failed to join Host. The room ID might be 'ghosted' (host closed tab improperly) or a firewall is blocking the P2P connection. Try a different room name.");
+    getKick((data, peerId) => {
+        if (data.targetName === myCar.name) {
+            alert("You have been kicked by the room.");
+            room.leave();
             location.reload();
         }
-    }, 5000);
-
-    hostConn.on('open', () => {
-        clearTimeout(connTimeout);
-        isConnected = true;
-        document.getElementById('main-menu').style.display = 'none';
-        addSystemMessage("Connected to Host!");
-
-        // Send Join Packet
-        sendData({ type: 'join', name: myCar.name, color: myCar.color, id: myCar.id });
-
-        // Start tick
-        setInterval(sendUpdate, 50); // 20Hz
     });
 
-    hostConn.on('data', (data) => {
-        handleNetworkMessage(data);
+    getTile((data, peerId) => {
+        setTile(data.x, data.y, data.val, false);
     });
 
-    hostConn.on('close', () => {
-        alert("Host disconnected. Room closed.");
-        location.reload();
-    });
-}
-
-function handleIncomingConnection(conn) {
-    clientConns.push(conn);
-    conn.on('open', () => {
-        // Send current map to new player
-        conn.send({ type: 'map', sender: 'Host', data: mapData, w: mapWidth, h: mapHeight });
-
-        // Send existing players to new player (host state)
-        // (Actually, the next update loop will sync positions, but 'join' events are nice)
+    room.onPeerJoin(peerId => {
+        addSystemMessage("Peer joined.");
+        sendMap({ data: mapData, w: mapWidth, h: mapHeight }, peerId);
     });
 
-    conn.on('data', (data) => {
-        // Host Logic:
-        // 1. Process message locally
-        handleNetworkMessage(data);
-
-        // 2. Relay to ALL other clients (Broadcasting)
-        broadcast(data, conn.peer); // Don't send back to sender
-    });
-
-    conn.on('close', () => {
-        clientConns = clientConns.filter(c => c !== conn);
-        // Maybe broadcast a leave message?
-    });
-}
-
-function broadcast(data, excludePeerId) {
-    // Used by Host to relay data
-    clientConns.forEach(c => {
-        if (c.peer !== excludePeerId && c.open) {
-            c.send(data);
+    room.onPeerLeave(peerId => {
+        if(players[peerId]) {
+            addSystemMessage(`${players[peerId].name} left.`);
+            delete players[peerId];
         }
     });
+
+    isConnected = true;
+    document.getElementById('main-menu').style.display = 'none';
+    addSystemMessage(`Joined room! Welcome, ${myCar.name}.`);
+
+    setInterval(broadcastUpdate, 50); // 20Hz update
 }
 
-function sendData(payload) {
-    if (!isConnected) return;
-
-    // Always include ID for convenience
-    payload.id = myCar.id;
-
-    if (isHost) {
-        // Host broadcasts to everyone
-        broadcast(payload, null);
-    } else if (hostConn && hostConn.open) {
-        // Client sends to Host
-        hostConn.send(payload);
-    }
-}
-
-function sendUpdate() {
-    if (!isConnected) return;
-    sendData({
-        type: 'update',
+function broadcastUpdate() {
+    if (!isConnected || !sendUpdate) return;
+    sendUpdate({
         name: myCar.name,
         color: myCar.color,
         x: Math.round(myCar.x),
@@ -657,59 +701,46 @@ function sendUpdate() {
 }
 
 /**
- * MESSAGE HANDLING
+ * PARTICLE SYSTEM
  */
-function handleNetworkMessage(payload) {
-    // Ignore self (shouldn't happen with correct relay logic, but safety first)
-    if (payload.id === myCar.id) return;
+class Particle {
+    constructor(x, y, color, life, speed) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.life = life;
+        this.maxLife = life;
+        const angle = Math.random() * Math.PI * 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+    }
+    draw(ctx) {
+        ctx.globalAlpha = this.life / this.maxLife;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, 3, 3);
+        ctx.globalAlpha = 1.0;
+    }
+}
 
-    if (payload.type === 'update') {
-        if (!players[payload.id]) {
-            players[payload.id] = { ...payload, lastSeen: Date.now() };
-            addSystemMessage(`${payload.name} detected.`);
-        } else {
-            // Interpolation target
-            const p = players[payload.id];
-            p.targetX = payload.x;
-            p.targetY = payload.y;
-            p.targetAngle = payload.angle;
-            p.speed = payload.speed;
-            p.lastSeen = Date.now();
-            // Update metadata if changed
-            if (p.color !== payload.color) p.color = payload.color;
-        }
-    } else if (payload.type === 'join') {
-        players[payload.id] = {
-            x: 0, y: 0, angle: 0,
-            name: payload.name,
-            color: payload.color,
-            id: payload.id,
-            lastSeen: Date.now()
-        };
-        addSystemMessage(`${payload.name} joined.`);
-    } else if (payload.type === 'chat') {
-        if (chatMuted.includes(payload.name)) return;
-        addChatMessage(payload.name, payload.text, payload.color);
-    } else if (payload.type === 'map') {
-        addSystemMessage(`${payload.sender} shared a map!`);
-        if(payload.w && payload.h) {
-            mapWidth = payload.w;
-            mapHeight = payload.h;
-        }
-        loadMapData(payload.data);
-    } else if (payload.type === 'tile_change') {
-        // Live editor sync
-        setTile(payload.x, payload.y, payload.val, false); // false = don't re-emit
-    } else if (payload.type === 'kick') {
-        if (payload.targetName === myCar.name) {
-            alert("You have been kicked by the host.");
-            location.reload();
-        }
+function emitParticles(x, y, type) {
+    let color = '#fff';
+    let count = 1;
+    if (type === 'smoke') { color = '#ddd'; count = 2; }
+    if (type === 'dirt') { color = '#864'; count = 2; }
+    if (type === 'grass') { color = '#484'; count = 2; }
+
+    for(let i=0; i<count; i++) {
+        particles.push(new Particle(x + (Math.random()*10-5), y + (Math.random()*10-5), color, 20 + Math.random()*20, 0.5));
     }
 }
 
 /**
- * GAME LOGIC
+ * GAME LOGIC & PHYSICS REWRITE
  */
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -726,19 +757,19 @@ function gameLoop() {
 
     drawMap();
 
-    // Draw Remote Players
+    // Draw Particles (behind cars)
+    particles.forEach((p, i) => {
+        p.update();
+        p.draw(ctx);
+        if(p.life <= 0) particles.splice(i, 1);
+    });
+
+    // Draw Players
     for (let id in players) {
         const p = players[id];
-        if(p.targetX !== undefined) {
-            // Simple Lerp
-            p.x += (p.targetX - p.x) * 0.2;
-            p.y += (p.targetY - p.y) * 0.2;
-            p.angle = p.targetAngle;
-        }
+        // Simple interpolation
         drawCar(p);
-
-        // Remove stale players (> 10 sec)
-        if (Date.now() - p.lastSeen > 10000) delete players[id];
+        if (Date.now() - p.lastSeen > 15000) delete players[id];
     }
 
     drawCar(myCar);
@@ -746,42 +777,100 @@ function gameLoop() {
     if(isEditorOpen) drawEditorCursor();
 
     ctx.restore();
-
     drawMinimap();
 
     requestAnimationFrame(gameLoop);
 }
 
 function updatePhysics() {
-    if (keys.w) myCar.speed += ACCEL;
-    if (keys.s) myCar.speed -= ACCEL;
-    myCar.speed *= FRICTION;
+    // 1. Determine Surface
+    const centerTile = getTile(Math.floor(myCar.x / TILE_SIZE), Math.floor(myCar.y / TILE_SIZE));
+    let grip = 0.96; // Normal Grip (High)
+    let drag = 0.98; // Rolling Resistance
+    let surfaceType = 'pavement';
 
-    if (Math.abs(myCar.speed) > 0.1) {
-        const dir = myCar.speed > 0 ? 1 : -1;
-        if (keys.a) myCar.angle -= TURN_SPEED * dir;
-        if (keys.d) myCar.angle += TURN_SPEED * dir;
+    switch(centerTile) {
+        case TILES.GRASS: grip = 0.85; drag = 0.92; surfaceType='grass'; break;
+        case TILES.DIRT: grip = 0.60; drag = 0.94; surfaceType='dirt'; break;
+        case TILES.SAND: grip = 0.90; drag = 0.80; surfaceType='dirt'; break;
+        case TILES.RUMBLE: grip = 0.98; drag = 0.97; break;
+        default: break;
     }
 
-    const vx = Math.cos(myCar.angle) * myCar.speed;
-    const vy = Math.sin(myCar.angle) * myCar.speed;
+    // FIX 2: Better Drift Logic
+    if (keys[" "]) {
+        grip = 0.15; // DRASTICALLY reduce grip for drift
+        myCar.drifting = true;
+    } else {
+        myCar.drifting = false;
+    }
 
-    let nextX = myCar.x + vx;
-    let nextY = myCar.y + vy;
+    // 2. Input Forces
+    if (keys.a) myCar.angle -= TURN_SPEED;
+    if (keys.d) myCar.angle += TURN_SPEED;
+
+    let accel = 0;
+    if (keys.w) accel = ENGINE_POWER;
+    if (keys.s) accel = -REVERSE_POWER;
+
+    // Apply Acceleration Vector
+    myCar.vx += Math.cos(myCar.angle) * accel;
+    myCar.vy += Math.sin(myCar.angle) * accel;
+
+    // 3. Apply Physics (Newtonian)
+    const rightAngle = myCar.angle + Math.PI/2;
+    // Velocity magnitude in the "right" direction (slipping)
+    const lateralVelocity = myCar.vx * Math.cos(rightAngle) + myCar.vy * Math.sin(rightAngle);
+
+    // If drifting, we kill LESS lateral velocity (allowing slide)
+    // If not drifting, we kill MOST lateral velocity (grip)
+    const lateralDamping = grip;
+
+    // Apply friction to slide
+    myCar.vx -= Math.cos(rightAngle) * lateralVelocity * lateralDamping;
+    myCar.vy -= Math.sin(rightAngle) * lateralVelocity * lateralDamping;
+
+    // Apply Drag (Forward Resistance)
+    myCar.vx *= drag * DRAG_AIR;
+    myCar.vy *= drag * DRAG_AIR;
+
+    // 4. Update Position & Collision
+    let nextX = myCar.x + myCar.vx;
+    let nextY = myCar.y + myCar.vy;
 
     if (checkCollision(nextX, nextY)) {
-        myCar.speed *= -0.5;
+        // Simple bounce
+        myCar.vx *= -0.5;
+        myCar.vy *= -0.5;
+        nextX = myCar.x + myCar.vx;
+        nextY = myCar.y + myCar.vy;
+        audio.playCrash();
     } else {
         myCar.x = nextX;
         myCar.y = nextY;
     }
 
-    document.getElementById('speed-display').innerText = Math.abs(Math.round(myCar.speed * 10));
+    // 5. Update State for Network/Audio/HUD
+    myCar.speed = Math.sqrt(myCar.vx*myCar.vx + myCar.vy*myCar.vy);
+
+    // FIX 3: Update HUD explicitly
+    document.getElementById('speed-display').innerText = Math.floor(myCar.speed * 10);
     document.getElementById('pos-display').innerText = `${Math.floor(myCar.x)},${Math.floor(myCar.y)}`;
+
+    // Audio Update
+    const isSliding = Math.abs(lateralVelocity) > 2.0;
+    audio.update(myCar.speed, myCar.drifting || isSliding, surfaceType !== 'pavement');
+
+    // Particles
+    if ((myCar.drifting || isSliding) && (Date.now() % 3 === 0)) {
+        emitParticles(myCar.x, myCar.y, surfaceType === 'pavement' ? 'smoke' : surfaceType);
+    } else if (myCar.speed > 2 && surfaceType !== 'pavement' && (Date.now() % 5 === 0)) {
+        emitParticles(myCar.x, myCar.y, surfaceType);
+    }
 }
 
 function checkCollision(x, y) {
-    const r = 15;
+    const r = 12; // Car radius
     const checks = [
         {x: x - r, y: y - r}, {x: x + r, y: y - r},
         {x: x - r, y: y + r}, {x: x + r, y: y + r}
@@ -790,7 +879,7 @@ function checkCollision(x, y) {
     for (let p of checks) {
         const tx = Math.floor(p.x / TILE_SIZE);
         const ty = Math.floor(p.y / TILE_SIZE);
-        if (getTile(tx, ty) === 1) return true;
+        if (getTile(tx, ty) === TILES.WALL) return true;
     }
     return false;
 }
@@ -803,82 +892,45 @@ function drawCar(c) {
     ctx.fillStyle = c.color;
     ctx.shadowBlur = 10;
     ctx.shadowColor = c.color;
-    ctx.fillRect(-20, -10, 40, 20);
+    ctx.fillRect(-15, -10, 30, 20); // Smaller body
 
+    // Spoiler
+    ctx.fillStyle = "#222";
+    ctx.fillRect(-18, -11, 5, 22);
+
+    // Windshield
     ctx.fillStyle = "#000";
-    ctx.fillRect(-5, -8, 10, 16);
+    ctx.fillRect(-2, -8, 8, 16);
 
+    // Headlights
     ctx.fillStyle = "#fff";
     ctx.shadowColor = "#fff";
-    ctx.fillRect(18, -9, 4, 4);
-    ctx.fillRect(18, 5, 4, 4);
+    ctx.fillRect(14, -8, 2, 4);
+    ctx.fillRect(14, 4, 2, 4);
 
     ctx.restore();
 
     ctx.fillStyle = "white";
-    ctx.font = "12px Roboto";
+    ctx.font = "10px Orbitron";
     ctx.textAlign = "center";
     ctx.shadowBlur = 0;
     ctx.fillText(c.name, c.x, c.y - 25);
-}
-
-function drawMinimap() {
-    miniCtx.fillStyle = '#000';
-    miniCtx.fillRect(0, 0, 200, 200);
-
-    // Scaling factors
-    const scaleX = 200 / mapWidth;
-    const scaleY = 200 / mapHeight;
-
-    // Draw Walls (optimization: only redraw if dirty? for now brute force is fine for 10k items)
-    // Actually iterating 10000 items at 60fps is fine in modern JS engines
-    miniCtx.fillStyle = '#666';
-    for(let y=0; y<mapHeight; y++) {
-        for(let x=0; x<mapWidth; x++) {
-            if(getTile(x, y) === 1) {
-                miniCtx.fillRect(x * scaleX, y * scaleY, scaleX, scaleY);
-            }
-        }
-    }
-
-    // Draw Me
-    miniCtx.fillStyle = '#00f3ff';
-    const myMX = (myCar.x / TILE_SIZE) * scaleX;
-    const myMY = (myCar.y / TILE_SIZE) * scaleY;
-    miniCtx.beginPath();
-    miniCtx.arc(myMX, myMY, 3, 0, Math.PI*2);
-    miniCtx.fill();
-
-    // Draw Others
-    miniCtx.fillStyle = '#ff0055';
-    for(let id in players) {
-        const p = players[id];
-        const px = (p.x / TILE_SIZE) * scaleX;
-        const py = (p.y / TILE_SIZE) * scaleY;
-        miniCtx.beginPath();
-        miniCtx.arc(px, py, 2, 0, Math.PI*2);
-        miniCtx.fill();
-    }
 }
 
 /**
  * MAP SYSTEM
  */
 function getTile(x, y) {
-    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return 1;
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return TILES.WALL;
     return mapData[y * mapWidth + x];
 }
 
 function setTile(x, y, val, emit = true) {
     if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
-
     const idx = y * mapWidth + x;
-    if(mapData[idx] === val) return; // No change
-
     mapData[idx] = val;
-
-    if (emit && isConnected) {
-        sendData({ type: 'tile_change', x: x, y: y, val: val });
+    if (emit && isConnected && sendTile) {
+        sendTile({ x: x, y: y, val: val });
     }
 }
 
@@ -891,26 +943,78 @@ function drawMap() {
     for (let y = startY; y < endY; y++) {
         for (let x = startX; x < endX; x++) {
             const t = getTile(x, y);
-            if (t === 1) {
-                ctx.fillStyle = "#444";
-                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            const px = x * TILE_SIZE;
+            const py = y * TILE_SIZE;
+
+            // Draw Ground/Base
+            if (t === TILES.PAVEMENT) {
+                ctx.fillStyle = "#222"; // Asphalt
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                ctx.strokeStyle = "#333";
+                ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+            } else if (t === TILES.WALL) {
+                ctx.fillStyle = "#445";
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                ctx.fillStyle = "#000"; // Fake 3D top
+                ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
                 ctx.strokeStyle = "var(--neon-blue)";
                 ctx.lineWidth = 1;
-                ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            } else if (t === 2) {
+                ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+            } else if (t === TILES.GRASS) {
+                ctx.fillStyle = "#262";
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                // Detail
+                ctx.fillStyle = "#383";
+                ctx.fillRect(px+5, py+5, 5, 5);
+                ctx.fillRect(px+20, py+25, 5, 5);
+            } else if (t === TILES.DIRT) {
+                ctx.fillStyle = "#642";
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            } else if (t === TILES.SAND) {
+                ctx.fillStyle = "#da8";
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            } else if (t === TILES.RUMBLE) {
+                ctx.fillStyle = (x + y) % 2 === 0 ? "#e22" : "#eee"; // Red/White
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            } else if (t === TILES.SPAWN) {
                 ctx.fillStyle = ((x + y) % 2 === 0) ? "#fff" : "#000";
-                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            } else {
-                ctx.strokeStyle = "#222";
-                ctx.lineWidth = 1;
-                ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
             }
         }
     }
 }
 
+function drawMinimap() {
+    miniCtx.fillStyle = '#000';
+    miniCtx.fillRect(0, 0, 200, 200);
+    const scaleX = 200 / mapWidth;
+    const scaleY = 200 / mapHeight;
+
+    miniCtx.fillStyle = '#666';
+    for(let i=0; i<mapData.length; i++) {
+        if(mapData[i] === TILES.WALL) {
+            const x = i % mapWidth;
+            const y = Math.floor(i / mapWidth);
+            miniCtx.fillRect(x * scaleX, y * scaleY, scaleX, scaleY);
+        }
+    }
+
+    miniCtx.fillStyle = '#00f3ff';
+    miniCtx.beginPath();
+    miniCtx.arc((myCar.x/TILE_SIZE)*scaleX, (myCar.y/TILE_SIZE)*scaleY, 3, 0, Math.PI*2);
+    miniCtx.fill();
+
+    miniCtx.fillStyle = '#ff0055';
+    for(let id in players) {
+        const p = players[id];
+        miniCtx.beginPath();
+        miniCtx.arc((p.x/TILE_SIZE)*scaleX, (p.y/TILE_SIZE)*scaleY, 2, 0, Math.PI*2);
+        miniCtx.fill();
+    }
+}
+
 /**
- * EDITOR & GENERATOR
+ * EDITOR TOOLS
  */
 function toggleEditor() {
     isEditorOpen = !isEditorOpen;
@@ -920,8 +1024,7 @@ function toggleEditor() {
 function setTool(t) {
     currentTool = t;
     document.querySelectorAll('.tool-btn').forEach((b, i) => {
-        // Simple index match for visual toggle
-        if(i < 3) b.classList.toggle('active', i === (t === 0 ? 1 : t === 1 ? 0 : 2));
+        b.classList.toggle('active', i === t || (t===0 && i===1)); // Correct index map
     });
 }
 
@@ -930,9 +1033,8 @@ function handleEditorInput(e) {
     const worldY = mouse.y + camera.y;
     const tx = Math.floor(worldX / TILE_SIZE);
     const ty = Math.floor(worldY / TILE_SIZE);
-
     if (mouse.leftDown) setTile(tx, ty, currentTool);
-    if (mouse.rightDown) setTile(tx, ty, 0);
+    if (mouse.rightDown) setTile(tx, ty, TILES.PAVEMENT);
 }
 
 function drawEditorCursor() {
@@ -940,7 +1042,6 @@ function drawEditorCursor() {
     const worldY = mouse.y + camera.y;
     const tx = Math.floor(worldX / TILE_SIZE);
     const ty = Math.floor(worldY / TILE_SIZE);
-
     ctx.strokeStyle = "yellow";
     ctx.lineWidth = 2;
     ctx.strokeRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -949,7 +1050,7 @@ function drawEditorCursor() {
 function clearMap() {
     if(confirm("Clear map?")) {
         mapData.fill(0);
-        shareMap(); // Sync clear
+        shareMap();
     }
 }
 
@@ -957,32 +1058,22 @@ function applyMapSize() {
     const w = parseInt(document.getElementById('map-w').value);
     const h = parseInt(document.getElementById('map-h').value);
     if (w < 20 || h < 20 || w > 300 || h > 300) {
-        alert("Size must be between 20 and 300");
-        return;
+        alert("Size must be between 20 and 300"); return;
     }
-    if(confirm("Resize map? This will clear current data.")) {
+    if(confirm("Resize? Clears data.")) {
         initMap(w, h);
         shareMap();
     }
 }
 
 function generateTerrain() {
-    if(!confirm("Generate new terrain? Overwrites current map.")) return;
-
-    // Cellular Automata
-    // 1. Fill random
+    if(!confirm("Generate? Overwrites map.")) return;
     for(let i=0; i<mapData.length; i++) {
-        // Leave borders
         let x = i % mapWidth;
         let y = Math.floor(i / mapWidth);
-        if (x===0 || y===0 || x===mapWidth-1 || y===mapHeight-1) {
-            mapData[i] = 1;
-        } else {
-            mapData[i] = Math.random() < 0.45 ? 1 : 0;
-        }
+        if (x===0 || y===0 || x===mapWidth-1 || y===mapHeight-1) mapData[i] = TILES.WALL;
+        else mapData[i] = Math.random() < 0.45 ? TILES.WALL : TILES.PAVEMENT;
     }
-
-    // 2. Smooth (Simulation Steps)
     for(let k=0; k<5; k++) {
         let newData = [...mapData];
         for(let y=1; y<mapHeight-1; y++) {
@@ -991,71 +1082,55 @@ function generateTerrain() {
                 for(let dy=-1; dy<=1; dy++) {
                     for(let dx=-1; dx<=1; dx++) {
                         if(dx===0 && dy===0) continue;
-                        if(getTile(x+dx, y+dy) === 1) neighbors++;
+                        if(getTile(x+dx, y+dy) === TILES.WALL) neighbors++;
                     }
                 }
-
-                // Rules
-                if (neighbors > 4) newData[y*mapWidth+x] = 1;
-                else if (neighbors < 4) newData[y*mapWidth+x] = 0;
+                if (neighbors > 4) newData[y*mapWidth+x] = TILES.WALL;
+                else if (neighbors < 4) newData[y*mapWidth+x] = TILES.PAVEMENT;
             }
         }
         mapData = newData;
     }
-
-    // 3. Ensure Spawn is clear
-    setTile(10, 10, 2, false);
-    for(let y=9; y<=11; y++) {
-        for(let x=9; x<=11; x++) {
-            if(y!==10 || x!==10) setTile(x, y, 0, false);
-        }
+    // Grass patches
+    for(let i=0; i<mapData.length; i++) {
+        if(mapData[i] === TILES.PAVEMENT && Math.random() < 0.1) mapData[i] = TILES.GRASS;
     }
-
+    setTile(10, 10, TILES.SPAWN, false);
     respawn();
     shareMap();
 }
 
 function respawn() {
     let spawnFound = false;
+    myCar.vx = 0; myCar.vy = 0; myCar.speed = 0;
     for(let y=0; y<mapHeight; y++) {
         for(let x=0; x<mapWidth; x++) {
-            if(getTile(x, y) === 2) {
+            if(getTile(x, y) === TILES.SPAWN) {
                 myCar.x = x * TILE_SIZE + TILE_SIZE/2;
                 myCar.y = y * TILE_SIZE + TILE_SIZE/2;
-                myCar.speed = 0;
-                myCar.angle = 0;
-                spawnFound = true;
-                break;
+                spawnFound = true; break;
             }
         }
         if(spawnFound) break;
     }
-    if(!spawnFound) {
-        myCar.x = 200; myCar.y = 200;
-        myCar.speed = 0;
-    }
+    if(!spawnFound) { myCar.x = 200; myCar.y = 200; }
 }
 
 /**
- * SAVE/LOAD/SHARE
+ * SAVE/LOAD/SHARE/CHAT
  */
 function openSaveMenu() {
     document.getElementById('maps-modal').style.display = 'flex';
     loadSavedMapsList();
 }
-
-function closeSaveMenu() {
-    document.getElementById('maps-modal').style.display = 'none';
-}
+function closeSaveMenu() { document.getElementById('maps-modal').style.display = 'none'; }
 
 function saveCurrentMap() {
     const name = document.getElementById('map-save-name').value || "Untitled";
     const saveObj = {
         name: name,
         date: new Date().toLocaleDateString(),
-        data: mapData,
-        w: mapWidth,
-        h: mapHeight
+        data: mapData, w: mapWidth, h: mapHeight
     };
     localStorage.setItem('drift_map_' + name, JSON.stringify(saveObj));
     loadSavedMapsList();
@@ -1071,17 +1146,13 @@ function loadSavedMapsList() {
             const div = document.createElement('div');
             div.className = "flex justify-between items-center bg-gray-800 p-2 rounded";
             div.innerHTML = `<span>${val.name}</span>`;
-
             const btnLoad = document.createElement('button');
             btnLoad.innerText = "Load";
             btnLoad.className = "text-xs px-2 py-1 w-auto ml-2";
             btnLoad.onclick = () => {
                 if (val.w) { mapWidth = val.w; mapHeight = val.h; }
-                loadMapData(val.data);
-                shareMap(); // Auto share on load
-                closeSaveMenu();
+                loadMapData(val.data); shareMap(); closeSaveMenu();
             };
-
             div.appendChild(btnLoad);
             list.appendChild(div);
         }
@@ -1089,32 +1160,22 @@ function loadSavedMapsList() {
 }
 
 function loadMapData(newData) {
-    if(newData) {
-        mapData = newData;
-        // Re-validate UI
-        document.getElementById('map-w').value = mapWidth;
-        document.getElementById('map-h').value = mapHeight;
-        respawn();
-    }
+    if(newData) { mapData = newData; respawn(); }
 }
-
 function shareMap() {
     if(!isConnected) { alert("Connect first!"); return; }
-    sendData({ type: 'map', sender: myCar.name, data: mapData, w: mapWidth, h: mapHeight });
+    if(sendMap) sendMap({ data: mapData, w: mapWidth, h: mapHeight });
 }
 
-/**
- * CHAT & ADMIN
- */
-function sendChat() {
+function sendChatFunc() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if (!text) return;
-
-    if (text.startsWith('/')) {
-        handleCommand(text);
-    } else {
-        sendData({ type: 'chat', name: myCar.name, text: text, color: myCar.color });
+    if (text.startsWith('/')) { handleCommand(text); }
+    else {
+        if(sendChat) sendChat({ name: myCar.name, text: text, color: myCar.color });
+        // Local Echo
+        addChatMessage(myCar.name, text, myCar.color);
     }
     input.value = "";
 }
@@ -1123,19 +1184,10 @@ function handleCommand(cmd) {
     const parts = cmd.split(' ');
     const action = parts[0];
     const target = parts[1];
-
     if (action === '/kick') {
-        if (!isHost) {
-            addSystemMessage("Only the Host can kick players.");
-            return;
-        }
-        sendData({ type: 'kick', targetName: target });
-        addSystemMessage(`Attempting to kick ${target}...`);
+        if(sendKick) { sendKick({ targetName: target }); addSystemMessage(`Kick vote: ${target}`); }
     } else if (action === '/mute') {
-        chatMuted.push(target);
-        addSystemMessage(`Muted ${target} locally.`);
-    } else {
-        addSystemMessage("Unknown command. Try /kick [name] or /mute [name]");
+        chatMuted.push(target); addSystemMessage(`Muted ${target}.`);
     }
 }
 
@@ -1147,7 +1199,6 @@ function addChatMessage(name, text, color) {
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
 }
-
 function addSystemMessage(text) {
     const div = document.createElement('div');
     div.className = 'chat-msg sys-msg';
@@ -1156,7 +1207,6 @@ function addSystemMessage(text) {
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
 }
-
 </script>
 </body>
 </html>
