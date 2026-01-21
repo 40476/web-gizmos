@@ -834,8 +834,9 @@ function gameLoop() {
     for (let id in players) {
         const p = players[id];
         drawCar(p);
-        if (Date.now() - p.lastSeen > 10000) {
+        if (Date.now() - p.lastSeen > 5000) {
             audio.playLeave();
+            addSystemMessage(`${players[id].name} rage quit.`);
             delete players[id];
         }
     }
@@ -1145,7 +1146,7 @@ function sendChatFunc() {
     if (text.startsWith('/')) { handleCommand(text); }
     else {
         publish('chat', { name: myCar.name, text: text, color: myCar.color });
-        addChatMessage(myCar.name, text, myCar.color);
+        // addChatMessage(myCar.name, text, myCar.color);
         audio.playChat();
     }
     input.value = "";
