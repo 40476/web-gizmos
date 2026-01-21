@@ -1,0 +1,2790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Turtles!</title>
+  <style>
+    html {
+      user-select: none;
+      -moz-user-select: none;
+      -khtml-user-select: none;
+      -webkit-user-select: none;
+      -o-user-select: none;
+      overflow: hidden;
+    }
+
+    body {
+      width: 100dvw; height: 100dvh; overflow: hidden;
+      margin: 0; padding: 0; cursor: crosshair; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* --- TURTLE CSS (Original + Variables) --- */
+    .turtle {
+      width: 500px;
+      height: 500px;
+      position: absolute;
+      transform-origin: center center;
+      z-index: 10;
+      pointer-events: none; /* Let clicks pass to wrapper/elements */
+      will-change: transform;
+    }
+
+    .turtle__head {
+      width: 75px; height: 85px; border-radius: 50%;
+
+      background-color: var(--skin-color, #82C49F); position: relative;
+      top: 22%; left: 50%; transform: translate(-50%, -50%);
+      cursor: pointer; transition: top 0.2s ease-in-out; z-index: 4;
+      pointer-events: auto;
+    }
+    .turtle__head::before, .turtle__head::after {
+      top: 20px; width: 8px; height: 8px; border-radius: 50%;
+      background-color: #6A757A; content: ""; position: absolute;
+    }
+    .turtle__head::before { left: 13px; }
+    .turtle__head::after  { right: 13px; }
+
+    /* Added neck element */
+    .turtle__neck {
+      width: 60px;
+      height: 120px;
+      background-color: var(--skin-color, #82C49F);
+      position: absolute;
+      bottom: -70px; /* Extends downward from head */
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      border-radius: 0 0 5px 5px; /* Rounded only at bottom */
+      /* Optional: Add a slight shadow to create depth */
+      box-shadow: 0 2px 2px rgba(0,0,0,0.1);
+    }
+
+    .turtle__shell {
+      --shell-base: #6A757A; --shell-inner: #5D666B; --shell-plate: #636E72;
+      width: 220px; height: 250px; background-color: var(--shell-base);
+      border-radius: 50%; overflow: hidden; position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; cursor: grab;
+      pointer-events: auto;
+    }
+    .turtle__shell::before, .turtle__shell::after {
+      content: ""; position: absolute; top: 50%; left: 50%;
+    }
+    .turtle__shell::before {
+      width: 200px; height: 235px; background-color: var(--shell-inner);
+      transform: translate(-50%, -50%); border-radius: 50%;
+    }
+    .turtle__shell::after {
+      width: 50%; height: 100%; background-color: white; opacity: 0.1; top: 0;
+    }
+    .turtle__shell div {
+      width: 120px; height: 80px; background: var(--shell-plate);
+      position: relative; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .turtle__shell div::before, .turtle__shell div::after {
+      content: ""; position: absolute; left: 0;
+    }
+    .turtle__shell div::before {
+      top: -30px; border-left: 60px solid transparent; border-right: 60px solid transparent;
+      border-bottom: 30px solid var(--shell-plate);
+    }
+    .turtle__shell div::after {
+      bottom: -30px; border-left: 60px solid transparent; border-right: 60px solid transparent;
+      border-top: 30px solid var(--shell-plate);
+    }
+
+    @keyframes rainbowCycle {
+      0% { filter: hue-rotate(0deg) saturate(2) contrast(1.5); }
+      100% { filter: hue-rotate(360deg) saturate(2) contrast(1.5); }
+    }
+    .rainbow .turtle__shell { animation: rainbowCycle 8s linear infinite; }
+
+    .turtle__tail {
+      width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent;
+      border-top: 35px solid var(--skin-color, #84C3A0); position: absolute; bottom: 18%; left: 50%;
+      transform: translate(-50%, -50%); z-index: 3;
+    }
+    .turtle__legs {
+      width: 30px; height: 300px; border-radius: 20%; background-color: var(--skin-color, #82C49F);
+      position: absolute; top: 50%; left: 50%; z-index: 3;
+    }
+    .turtle__legs.-left  { transform: translate(-50%, -50%) rotate(-45deg); }
+    .turtle__legs.-right { transform: translate(-50%, -50%) rotate(45deg); }
+
+    .turtle.is-moving .turtle__legs.-left  { animation: walking-turtle-01 1.5s ease-in-out infinite alternate; }
+    .turtle.is-moving .turtle__legs.-right { animation: walking-turtle-02 1.5s ease-in-out infinite alternate; }
+
+    .turtle.is-retracted .turtle__head { top: 28%; }
+    .turtle.neck-extend .turtle__head { top: 14%; }
+    .turtle.is-dragging { z-index: 100; }
+    .turtle.is-dragging .turtle__shell { cursor: grabbing; }
+
+    .turtle-name {
+      position: absolute; font-size: 14px; font-family: 'Segoe UI', sans-serif;
+      font-weight: bold; color: #333;
+      background: rgba(255,255,255,0.85); padding: 4px 8px; border-radius: 12px;
+      transform: translate(-50%, -100%); pointer-events: auto; white-space: nowrap;
+      top: 10%; left: 50%;
+      border: 1px solid rgba(0,0,0,0.1);
+      cursor: text;
+    }
+
+    /* --- FOOD TYPES --- */
+    .food {
+      position: absolute; z-index: 2; transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: popIn 0.3s ease-out;
+    }
+    .food-pellet {
+      width: 12px; height: 12px; background: radial-gradient(#d35400, #a04000);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-leaf {
+      width: 16px; height: 16px; background: linear-gradient(135deg, #2ecc71, #27ae60);
+      border-radius: 0 50% 0 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-fruit {
+      width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-fruit::after {
+      content: ''; position: absolute; top: -2px; left: 50%; width: 3px; height: 5px;
+      background: #27ae60; border-radius: 2px;
+    }
+
+    /* New food types */
+    .food-purple {
+      width: 14px; height: 14px; background: radial-gradient(circle at 30% 30%, #8e44ad, #6c3483);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .food-purple::after {
+      content: ''; position: absolute; top: -1px; left: 50%; width: 4px; height: 3px;
+      background: #c0392b; border-radius: 1px;
+    }
+
+    /* --- OBSTACLES --- */
+    .obstacle {
+      position: absolute; z-index: 3; transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .obstacle-rock {
+      width: 40px; height: 40px; background: radial-gradient(#7f8c8d, #34495e);
+      border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .obstacle-rock::before {
+      content: ''; position: absolute; top: 5px; left: 5px; width: 30px; height: 30px;
+      background: radial-gradient(#5d6d7e, #2c3e50); border-radius: 50%;
+    }
+
+    /* --- LILYPAD --- */
+    .lilypad-canvas {
+      pointer-events: auto;
+      z-index:9;
+      transition: transform 0.1s;
+    }
+
+    /* --- SPECIAL EFFECTS --- */
+    .effect {
+      position: absolute; z-index: 15; pointer-events: none;
+    }
+    .effect-eat {
+      width: 30px; height: 30px; background: radial-gradient(circle, rgba(255,215,0,0.8), transparent);
+      border-radius: 50%; animation: puff 0.5s ease-out forwards;
+    }
+    @keyframes puff {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+    }
+
+    @keyframes walking-turtle-01 {
+      0%   { transform: translate(-50%, -50%) rotate(-40deg); }
+      100% { transform: translate(-50%, -50%) rotate(-30deg); }
+    }
+    @keyframes walking-turtle-02 {
+      0%   { transform: translate(-50%, -50%) rotate(40deg); }
+      100% { transform: translate(-50%, -50%) rotate(30deg); }
+    }
+    @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+
+    /* Grid overlay */
+    #grid {
+      position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    }
+    .grid-cell {
+      position: absolute; box-sizing: border-box;
+      border: var(--gridLineWidth) solid rgba(0,0,0,0.08); background: rgba(0,0,0,0.0);
+      transition: background-color 0.1s;
+    }
+    .grid-cell:hover { background-color: rgba(0,0,0,0.05); }
+
+    /* Wall (State 1) */
+    .grid-cell.is-blocked { background: #2c3e50; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+
+    /* Glass (State 2) */
+    .grid-cell.is-glass {
+      background: rgba(200, 200, 235, 0.4);
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 255, 0);
+      backdrop-filter: blur(2px);
+    }
+
+    /* Water (State 3) */
+    .grid-cell.is-water {
+      background: rgba(0, 191, 255, 0.6);
+      box-shadow: inset 0 0 10px rgba(0, 191, 255, 0.8);
+      border: 1px solid rgba(0, 191, 255, 0.3);
+    }
+
+    /* Grass (State 4) */
+    .grid-cell.is-grass {
+      background: rgba(124, 252, 0, 0.3);
+      box-shadow: inset 0 0 10px rgba(124, 252, 0, 0.5);
+      border: 1px solid rgba(124, 252, 0, 0.2);
+    }
+
+    /* Sand (State 5) */
+    .grid-cell.is-sand {
+      background: rgba(255, 218, 185, 0.4);
+      box-shadow: inset 0 0 10px rgba(255, 218, 185, 0.6);
+      border: 1px solid rgba(255, 218, 185, 0.3);
+    }
+
+    /* Debug Canvas */
+    #debug-canvas {
+      position: absolute; inset: 0; pointer-events: none; z-index: 20;
+    }
+
+    /* Settings panel */
+    #settings-panel {
+      position: fixed; top: 10px; right: 10px; z-index: 999;
+      background: rgba(255,255,255,0.95); border-radius: 12px;
+      padding: 15px; font-size: 13px; color: #222;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px;
+      backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.8);
+      cursor: grab; max-height: 90vh; overflow-y: auto;
+      width: 80vw;
+    }
+    #settings-panel.dragging { cursor: grabbing; opacity: 0.9; }
+    #settings-panel h2 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    #settings-panel .row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; gap: 8px; }
+    #settings-panel label { flex: 1; font-weight: 500; color: #444; }
+    #settings-panel input[type="number"], #settings-panel input[type="range"], #settings-panel select { flex: 1; padding: 4px; border-radius: 4px; border: 1px solid #ccc; }
+    #settings-panel input[type="color"] {
+      -webkit-appearance: none; /* Safari/Chrome */
+      -moz-appearance: none;    /* Firefox */
+      appearance: none;
+      width: 50px;
+      height: 50px;
+      border: 2px solid #ccc;
+      border-radius: 0px;
+      cursor: pointer;
+      background: none;
+      box-sizing: border-box; /* Ensures consistent sizing [10] */
+    }
+    /* Specific styling for WebKit/Blink (Safari/Chrome) */
+    #settings-panel input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    #settings-panel input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 0px;
+    }
+    /* Specific styling for Firefox */
+    #settings-panel input[type="color"]::-moz-color-swatch {
+      border: none;
+      border-radius: 0px;
+    }
+    #settings-panel small { opacity: 0.7; font-size: 11px; display: block; margin-top: 10px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 5px; }
+
+    button.btn {
+      width: 100%; padding: 6px; background: #3498db; color: white; border: none;
+      border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 5px;
+    }
+    button.btn:hover { background: #2980b9; }
+    button.btn.secondary { background: #95a5a6; }
+    button.btn.danger { background: #e74c3c; }
+
+    /* Stats panel */
+    #stats-panel {
+      position: fixed; bottom: 10px; left: 10px; z-index: 999;
+      background: rgba(255,255,255,0.9); border-radius: 8px;
+      padding: 10px; font-size: 12px; color: #222;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(5px);
+      max-width: 500px;
+      transition: all 0.3s ease;
+    }
+    #stats-panel.mobile {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 400px;
+    }
+    #stats-panel h3 { margin: 0 0 8px 0; font-size: 14px; }
+    #stats-panel .stat-row { display: flex; justify-content: space-between; margin: 4px 0; }
+    #stats-panel .stat-label { font-weight: 500; }
+    #stats-panel .stat-value { color: #3498db; }
+
+    /* Notification system */
+    .notification {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+      border-radius: 20px; z-index: 1000; font-size: 14px;
+      animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 2.5s forwards;
+      pointer-events: none;
+    }
+    @keyframes slideIn {
+      from { transform: translate(-50%, -50px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* Instructions modal */
+    #instructions-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #instructions-content {
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    #instructions-content h2 {
+      color: #2c3e50;
+      margin-top: 0;
+    }
+
+    #instructions-content h3 {
+      color: #3498db;
+      margin-top: 20px;
+    }
+
+    #instructions-content ul {
+      padding-left: 20px;
+    }
+
+    #instructions-content li {
+      margin-bottom: 8px;
+    }
+
+    #close-instructions {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    #close-instructions:hover {
+      background: #2980b9;
+    }
+
+    /* Mobile UI adjustments */
+  @media (max-width: 768px) {
+    #settings-panel {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      /* Override desktop positioning */
+      top: auto !important;
+
+      /* Override desktop sizing */
+      width: auto !important;
+      max-width: none !important;
+      max-height: calc(100dvh - 20px) !important
+      height: auto !important;
+
+      border-radius: 16px 16px 0 0;
+
+      /* Hide except for handle */
+      transform: translateY(calc(100% - 40px));
+      transition: transform 0.3s ease;
+
+      padding-left: calc(env(safe-area-inset-left) + 10px);
+      padding-right: calc(env(safe-area-inset-right) + 10px);
+
+      will-change: transform;
+    }
+
+    #settings-panel.open {
+      transform: translateY(0);
+      overflow: auto;
+    }
+
+    #settings-handle-wrapper {
+      width: 100%;
+      padding: 0 0 16px 0; /* big tap zone */
+      cursor: pointer;
+    }
+
+    #settings-handle {
+      width: 50px;
+      height: 6px;
+      background: #ccc;
+      border-radius: 3px;
+      margin: 6px auto;
+    }
+  }
+
+  #world {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  </style>
+</head>
+<body id="world" style="background-color: #d1e7ff;">
+
+<div id="grid"></div>
+<canvas id="debug-canvas"></canvas>
+<div id="stats-panel">
+  <div style="display: flex;">
+    <div style="flex: 1">
+      <h3>Simulation Stats</h3>
+      <div class="stat-row"><span class="stat-label">Turtles: </span><span class="stat-value" id="turtle-count">0</span></div>
+      <div class="stat-row"><span class="stat-label">Food Eaten: </span><span class="stat-value" id="food-eaten">0</span></div>
+      <div class="stat-row"><span class="stat-label">Time Elapsed:&nbsp;</span><span class="stat-value" id="time-elapsed">0s</span></div>
+      <div class="stat-row"><span class="stat-label">Avg Speed: </span><span class="stat-value" id="avg-speed">0</span></div>
+    </div>
+    <div style="flex: 1">
+        <canvas id="foodGraph" width="300" height="225"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="settings-panel">
+  <div id="settings-handle-wrapper"> <div id="settings-handle"></div> </div>
+  <h2>Turtle Lab</h2>
+
+  <div class="row">
+    <label for="numTurtles">Turtles</label>
+    <input id="numTurtles" type="range" min="1" max="30" value="6">
+    <span id="numDisplay" style="font-size:0.9em; width: 20px;">6</span>
+  </div>
+
+  <div class="row">
+    <label for="gridSize">Grid Size</label>
+    <input id="gridSize" type="range" min="20" max="80" step="5" value="40">
+    <span id="gridDisplay" style="font-size:0.9em; width: 20px;">40</span>
+  </div>
+
+  <div class="row">
+    <label for="globalPersonality">Personality bias</label>
+    <select id="globalPersonality">
+      <option value="mixed" selected>Mixed</option>
+      <option value="default">Default</option>
+      <option value="shy">Shy</option>
+      <option value="aggressive">Aggressive</option>
+      <option value="lazy">Lazy</option>
+      <option value="scout">Scout</option>
+      <option value="social">Social</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="rainbowChance">Rainbow shells</label>
+    <input id="rainbowChance" type="range" min="0" max="1" step="0.1" value="0.2">
+  </div>
+
+  <div class="row">
+    <label for="speedScale">Speed scale</label>
+    <input id="speedScale" type="range" min="0.5" max="3" step="0.1" value="1">
+  </div>
+
+  <div class="row">
+    <label><input id="namesEnabled" type="checkbox" checked> Names</label>
+  </div>
+
+  <div class="row">
+    <label><input id="editGrid" type="checkbox"> ✏️ Edit</label>
+    <select id="brushType" style="flex: 0.6;">
+        <option value="1">🧱 Wall</option>
+        <option value="2">🪟 Glass</option>
+        <option value="3">💧 Water</option>
+        <option value="4">🌿 Grass</option>
+        <option value="5">🏖️ Sand</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="lilypadSize">Lilypad Size</label>
+    <input id="lilypadSize" type="range" min="1" max="3" value="1">
+  </div>
+
+  <div class="row">
+    <label><input id="toggleDebug" type="checkbox"> 🛠️ Debug (D)</label>
+  </div>
+
+  <div class="row">
+    <label><input id="autoSpawnFood" type="checkbox"> 🍽️ Auto-spawn food</label>
+  </div>
+
+  <div class="row">
+    <label for="autoSpawnDelay">Auto-Spawn Interval</label>
+    <input id="autoSpawnDelay" type="range" min="50" max="10000" value="3000">
+  </div>
+
+  <div class="row">
+    <label><input id="showStats" type="checkbox"> 📊 Show stats</label>
+  </div>
+
+  <div class="row">
+    <label for="bgColorPicker">Background color</label>
+    <input id="bgColorPicker" type="color" value="#d1e7ff" style="width:100%">
+  </div>
+
+
+
+  <button class="btn" id="genMazeBtn" style="background: #9b59b6; margin-top: 10px;">🧩 Generate Maze</button>
+  <button class="btn secondary" id="resetGridBtn">Reset Grid</button>
+  <button class="btn secondary" id="clearFoodBtn">Clear Food</button>
+  <button class="btn secondary" id="addLilypadBtn">Add Lilypad</button>
+  <button class="btn secondary" id="removeLilypadBtn">Remove Lilypad</button>
+  <button class="btn secondary" id="genTerrainBtn">Generate Terrain</button>
+  <button class="btn secondary" id="showInstructionsBtn">Show Instructions</button>
+  <button class="btn danger" id="nukeBtn">💥 Nuke All</button>
+
+  <small>
+    Click empty space to add food.<br>
+    Right-click to add obstacles.<br>
+    Drag shells to move turtles.<br>
+    Click names to rename.<br>
+    (H) to hide menu<br>
+    Paint walls when "Edit" is checked.
+  </small>
+</div>
+
+<!-- Instructions Modal -->
+<div id="instructions-modal" style="display:none">
+  <div id="instructions-content">
+    <h2>🐢 Floating Turtles - Instructions</h2>
+
+    <h3>Basic Controls</h3>
+    <ul>
+      <li><strong>Click on empty space</strong> - Add food for turtles</li>
+      <li><strong>Right-click on empty space</strong> - Add obstacles (rocks)</li>
+      <li><strong>Click on turtle's head</strong> - Make it retract its head</li>
+      <li><strong>Click on turtle's name</strong> - Rename the turtle</li>
+      <li><strong>Drag turtle's shell</strong> - Move the turtle around</li>
+    </ul>
+
+    <h3>Mobile Controls</h3>
+    <ul>
+      <li><strong>Double-tap on empty space</strong> - Add food</li>
+      <li><strong>Tap and hold on empty space</strong> - Add obstacles (rocks)</li>
+      <li><strong>tap on turtle's head</strong> - Make it retract its head</li>
+      <li><strong>Tap on turtle's name</strong> - Rename the turtle</li>
+      <li><strong>Drag turtle's shell</strong> - Move the turtle around</li>
+    </ul>
+
+    <h3>Keyboard Shortcuts</h3>
+    <ul>
+      <li><strong>D</strong> - Toggle debug mode</li>
+      <li><strong>H</strong> - Hide/show settings panel</li>
+      <li><strong>S</strong> - Toggle stats display</li>
+      <li><strong>A</strong> - Toggle auto-spawn food</li>
+    </ul>
+
+    <h3>Settings Panel</h3>
+    <ul>
+      <li><strong>Turtles</strong> - Adjust the number of turtles in the simulation</li>
+      <li><strong>Grid Size</strong> - Change the size of the grid cells</li>
+      <li><strong>Personality bias</strong> - Set the default personality type for new turtles</li>
+      <li><strong>Rainbow shells</strong> - Chance for turtles to have rainbow shells</li>
+      <li><strong>Speed scale</strong> - Adjust the overall speed of all turtles</li>
+      <li><strong>Names</strong> - Toggle turtle name visibility</li>
+      <li><strong>Edit</strong> - Enable grid editing mode</li>
+      <li><strong>Lilypad Size</strong> - Set the size of new lily pads</li>
+      <li><strong>Debug</strong> - Show debug information (pathfinding, vision cones)</li>
+      <li><strong>Auto-spawn food</strong> - Automatically spawn food at regular intervals</li>
+      <li><strong>Show stats</strong> - Display the statistics panel</li>
+    </ul>
+
+    <h3>Buttons</h3>
+    <ul>
+      <li><strong>Generate Maze</strong> - Create a random maze using the current brush type</li>
+      <li><strong>Reset Grid</strong> - Clear all grid modifications</li>
+      <li><strong>Clear Food</strong> - Remove all food items</li>
+      <li><strong>Add Lilypad</strong> - Enter lily pad placement mode</li>
+      <li><strong>Remove Lilypad</strong> - Enter lily pad removal mode</li>
+      <li><strong>Generate Terrain</strong> - Create random terrain with water, grass, and sand</li>
+      <li><strong>Nuke All</strong> - Reset the entire simulation to default</li>
+    </ul>
+
+    <h3>Turtle Personalities</h3>
+    <ul>
+      <li><strong>Default</strong> - Balanced personality</li>
+      <li><strong>Shy</strong> - Slow, cautious, wide field of view</li>
+      <li><strong>Aggressive</strong> - Fast, narrow field of view, long detection range</li>
+      <li><strong>Lazy</strong> - Very slow, short detection range</li>
+      <li><strong>Scout</strong> - Fast, 360° vision, very long detection range</li>
+      <li><strong>Social</strong> - Moderate speed, average detection</li>
+    </ul>
+
+    <button id="close-instructions">Close Instructions</button>
+  </div>
+</div>
+
+<script>
+document.getElementById("settings-handle-wrapper").addEventListener("click", () => {
+  document.getElementById("settings-panel").classList.toggle("open");
+});
+
+  // -------------------------
+  // Configuration
+  // -------------------------
+  let GRID_SIZE = 40;
+  let gridCols = 0;
+  let gridRows = 0;
+  let grid = []; // 0=free, 1=wall, 2=glass, 3=water, 4=grass, 5=sand
+  let resetWithNoConfirm = false
+
+  let foodItems = [];
+  let foodCounts=[];
+  let turtles = [];
+  let obstacles = [];
+  let effects = [];
+  let lilyPads = [];
+  let turtleSafeFoods = [
+    // Vegetables and Leafy Greens (staples of the diet)
+    "🥬", // Leafy greens
+    "🥦", // Broccoli (in moderation)
+    "🥕", // Carrots
+    "🌽", // Corn (in moderation)
+    "🥒", // Cucumber
+    "🍆", // Eggplant (aubergine) (in moderation)
+    "🥗", // Salad greens (representing various safe greens like collard, mustard, dandelion)
+    "🌶️", // Bell peppers (red, yellow, orange - rich in vitamin A)
+    "🥔", // Potato/Sweet potato (cooked, in moderation)
+    "🎃", // Pumpkin (in moderation)
+    "🍅", // Tomato (ripe, in moderation)
+
+    // Fruits (offer as occasional treats)
+    "🍎", // Apple (seeds removed)
+    "🍌", // Banana
+    "🫐", // Blueberries
+    "🍒", // Cherries (pits removed, in moderation)
+    "🍇", // Grapes (in moderation)
+    "🥝", // Kiwi (in moderation)
+    "🥭", // Mango
+    "🍈", // Melon (cantaloupe, watermelon)
+    "🍑", // Peach/Apricot (pits removed, in moderation)
+    "🍐", // Pear (in moderation)
+    "🍍", // Pineapple (in moderation)
+    "🍓", // Strawberries
+
+    // Silly
+    "food?",
+  ];
+
+  // Simulation stats
+  let stats = {
+    foodEaten: 0,
+    startTime: Date.now(),
+    totalSpeed: 0,
+    speedSamples: 0
+  };
+
+  // DOM Elements
+  const gridRoot = document.getElementById('grid');
+  const canvas = document.getElementById('debug-canvas');
+  const ctx = canvas.getContext('2d');
+  const foodEatenDisplay = document.getElementById('food-eaten');
+  const timeElapsedDisplay = document.getElementById('time-elapsed');
+  const avgSpeedDisplay = document.getElementById('avg-speed');
+  const statsPanel = document.getElementById('stats-panel');
+  const turtleCountDisplay = document.getElementById('turtle-count');
+  const instructionsModal = document.getElementById('instructions-modal');
+  const closeInstructionsBtn = document.getElementById('close-instructions');
+  const showInstructionsBtn = document.getElementById('showInstructionsBtn');
+
+  // State
+  let isPainting = false;
+  let paintValue = 1;
+  let draggingPanel = false;
+  let panelOffset = {x:0, y:0};
+  let lastDebugToggle = false;
+  let autoSpawnInterval = null;
+  let placingLilypad = false;
+  let removingLilypad = false;
+  let isMobile = false;
+  let lastTapTime = 0;
+  let lastTapTarget = null;
+
+  // Settings UI
+  const ui = {
+    numTurtles: document.getElementById('numTurtles'),
+    numDisplay: document.getElementById('numDisplay'),
+    gridSize: document.getElementById('gridSize'),
+    gridDisplay: document.getElementById('gridDisplay'),
+    personality: document.getElementById('globalPersonality'),
+    rainbow: document.getElementById('rainbowChance'),
+    speed: document.getElementById('speedScale'),
+    names: document.getElementById('namesEnabled'),
+    edit: document.getElementById('editGrid'),
+    brush: document.getElementById('brushType'),
+    debug: document.getElementById('toggleDebug'),
+    panel: document.getElementById('settings-panel'),
+    maze: document.getElementById('genMazeBtn'),
+    reset: document.getElementById('resetGridBtn'),
+    clearFood: document.getElementById('clearFoodBtn'),
+    addLilypad: document.getElementById('addLilypadBtn'),
+    removeLilypad: document.getElementById('removeLilypadBtn'),
+    genTerrain: document.getElementById('genTerrainBtn'),
+    nuke: document.getElementById('nukeBtn'),
+    autoSpawn: document.getElementById('autoSpawnFood'),
+    autoSpawnDelay: document.getElementById('autoSpawnDelay'),
+    showStats: document.getElementById('showStats'),
+    lilypadSize: document.getElementById('lilypadSize'),
+    bgColorPicker: document.getElementById('bgColorPicker')
+
+  };
+
+  // Personalities
+  const PERSONALITIES = {
+    default:    { minSpeed: 0.5, maxSpeed: 1.5, viewDist: 300, fov: 120, skin: '#82C49F', shell: '#6A757A' },
+    shy:        { minSpeed: 0.3, maxSpeed: 0.8, viewDist: 200, fov: 180, skin: '#e67e22', shell: '#5d4037' },
+    aggressive: { minSpeed: 0.8, maxSpeed: 2.5, viewDist: 450, fov: 90,  skin: '#7f8c8d', shell: '#2c3e50' },
+    lazy:       { minSpeed: 0.1, maxSpeed: 0.6, viewDist: 150, fov: 60,  skin: '#95a5a6', shell: '#7f8c8d' },
+    scout:      { minSpeed: 1.2, maxSpeed: 2.0, viewDist: 600, fov: 360, skin: '#48dbfb', shell: '#2980b9' },
+    social:     { minSpeed: 0.5, maxSpeed: 1.2, viewDist: 250, fov: 100, skin: '#f1c40f', shell: '#d35400' }
+  };
+
+  // -------------------------
+  // Helpers
+  // -------------------------
+  const dist = (x1, y1, x2, y2) => Math.hypot(x1-x2, y1-y2);
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+  const random = (min, max) => Math.random() * (max - min) + min;
+  const toRad = deg => deg * Math.PI / 180;
+  const lerp = (start, end, amt) => (1-amt)*start + amt*end;
+
+  function drawLineGraph(ctx, values, options = {}) {
+    const width  = ctx.canvas.width;
+    const height = ctx.canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (!values || values.length === 0) return;
+
+    const padding   = options.padding   || 40;
+    const lineColor = options.lineColor || "blue";
+    const axisColor = options.axisColor || "#444";
+    const title     = options.title     || "";
+    const xLabel    = options.xLabel    || "";
+    const yLabel    = options.yLabel    || "";
+
+    // AUTO or LOCKED SCALE
+    const autoMin = Math.min(...values);
+    const autoMax = Math.max(...values);
+
+    const yMin = (options.yMin !== undefined) ? options.yMin : autoMin;
+    const yMax = (options.yMax !== undefined) ? options.yMax : autoMax;
+
+    const range = yMax - yMin || 1;
+
+    const innerWidth  = width  - padding * 2;
+    const innerHeight = height - padding * 2;
+
+    function getX(i) {
+      if (values.length === 1) return padding + innerWidth / 2;
+      return padding + (i / (values.length - 1)) * innerWidth;
+    }
+
+    function getY(v) {
+      const normalized = (v - yMin) / range;
+      return padding + innerHeight - normalized * innerHeight;
+    }
+
+    // Draw title
+    if (title) {
+      ctx.font = "18px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#000";
+      ctx.fillText(title, width / 2, padding - 15);
+    }
+
+    // Draw axes
+    ctx.strokeStyle = axisColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+
+    // Draw Y-axis label
+    if (yLabel) {
+      ctx.save();
+      ctx.translate(padding - 30, height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(yLabel, 0, 0);
+      ctx.restore();
+    }
+
+    // Draw X-axis label
+    if (xLabel) {
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(xLabel, width / 2, height - padding + 30);
+    }
+
+    // Draw Y-axis ticks + labels
+    const ticks = 5;
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "right";
+
+    for (let i = 0; i <= ticks; i++) {
+      const t = i / ticks;
+      const value = yMin + t * range;
+      const y = padding + innerHeight - t * innerHeight;
+
+      // Tick mark
+      ctx.beginPath();
+      ctx.moveTo(padding - 5, y);
+      ctx.lineTo(padding, y);
+      ctx.stroke();
+
+      // Label
+      ctx.fillText(value.toFixed(0), padding - 8, y + 3);
+    }
+
+    // Draw line
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(getX(0), getY(values[0]));
+    for (let i = 1; i < values.length; i++) {
+      ctx.lineTo(getX(i), getY(values[i]));
+    }
+    ctx.stroke();
+  }
+
+
+  function showNotification(message) {
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+  }
+
+  function formatTime(ms) {
+    const seconds = Math.floor(ms / 1000) % 60;
+    const minutes = Math.floor(ms / 60000) % 60;
+    const hours = Math.floor(ms / 3600000);
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  // -------------------------
+  // Grid System & A*
+  // -------------------------
+  function initGrid(skipClear = false) {
+    if(!skipClear) gridRoot.innerHTML = '';
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    GRID_SIZE = parseInt(ui.gridSize.value);
+    ui.gridDisplay.innerText = GRID_SIZE;
+
+    gridCols = Math.ceil(w / GRID_SIZE);
+    gridRows = Math.ceil(h / GRID_SIZE);
+
+    // Logic Grid
+    // If not restored from save later, it will be fresh 0s
+    grid = new Array(gridCols).fill(0).map(() => new Array(gridRows).fill(0));
+
+    // Visual Grid
+    if(!skipClear) {
+        for(let y=0; y<gridRows; y++) {
+          for(let x=0; x<gridCols; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.style.width = GRID_SIZE + 'px';
+            cell.style.height = GRID_SIZE + 'px';
+            cell.style.left = (x * GRID_SIZE) + 'px';
+            cell.style.top = (y * GRID_SIZE) + 'px';
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+            gridRoot.appendChild(cell);
+          }
+        }
+    }
+    document.querySelectorAll('.grid-cell').forEach(element => {
+      element.style.setProperty('--gridLineWidth', ui.debug.checked ? '2px' : '0px');
+    });
+    resizeCanvas();
+    updateGridVisibility();
+  }
+
+  function toggleCell(gx, gy, forceValue=null) {
+    if(gx < 0 || gx >= gridCols || gy < 0 || gy >= gridRows) return;
+
+    let val = 0;
+    if (forceValue !== null) {
+        val = forceValue;
+    } else {
+        const current = grid[gx][gy];
+        const brush = parseInt(ui.brush.value);
+        val = (current === brush) ? 0 : brush;
+    }
+
+    grid[gx][gy] = val;
+
+    const idx = gy * gridCols + gx;
+    const cell = gridRoot.children[idx];
+    if(cell) {
+      cell.className = 'grid-cell';
+      if(val === 1) cell.classList.add('is-blocked');
+      else if(val === 2) cell.classList.add('is-glass');
+      else if(val === 3) cell.classList.add('is-water');
+      else if(val === 4) cell.classList.add('is-grass');
+      else if(val === 5) cell.classList.add('is-sand');
+    }
+    saveData(); // Save on modification
+  }
+
+  function worldToGrid(x, y) {
+    return { x: Math.floor(x/GRID_SIZE), y: Math.floor(y/GRID_SIZE) };
+  }
+
+  function gridToWorld(gx, gy) {
+    return { x: gx*GRID_SIZE + GRID_SIZE/2, y: gy*GRID_SIZE + GRID_SIZE/2 };
+  }
+
+  function isBlocked(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return true;
+    return grid[g.x][g.y] === 1 || grid[g.x][g.y] === 2; // Only walls & glass block movement
+  }
+
+  function isWater(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return false;
+    return grid[g.x][g.y] === 3;
+  }
+
+  function isGrass(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return false;
+    return grid[g.x][g.y] === 4;
+  }
+
+  function isSand(x, y) {
+    const g = worldToGrid(x, y);
+    if (g.x < 0 || g.x >= gridCols || g.y < 0 || g.y >= gridRows) return false;
+    return grid[g.x][g.y] === 5;
+  }
+
+  function findNearestFree(gx, gy) {
+    const queue = [{x:gx, y:gy}];
+    const visited = new Set([`${gx},${gy}`]);
+
+    while(queue.length) {
+      const current = queue.shift();
+      const {x, y} = current;
+      if (x < 0 || x >= gridCols || y < 0 || y >= gridRows) continue;
+      if (grid[x][y] === 0 || grid[x][y] === 4 || grid[x][y] === 5) return {x, y};
+
+      const neighbors = [{x:x+1, y:y}, {x:x-1, y:y}, {x:x, y:y+1}, {x:x, y:y-1}];
+      for(let n of neighbors) {
+        const key = `${n.x},${n.y}`;
+        if(!visited.has(key)) {
+          visited.add(key);
+          queue.push(n);
+        }
+      }
+    }
+    return {x:gx, y:gy};
+  }
+
+  // Improved A* algorithm with better obstacle handling
+  function findPath(sx, sy, ex, ey) {
+    const start = worldToGrid(sx, sy);
+    const end = worldToGrid(ex, ey);
+
+    // Validate positions
+    if (start.x < 0 || start.x >= gridCols || start.y < 0 || start.y >= gridRows) return null;
+    if (end.x < 0 || end.x >= gridCols || end.y < 0 || end.y >= gridRows) return null;
+    if (grid[end.x][end.y] === 1) return null; // Can't pathfind to a wall
+
+    const openSet = [];
+    const closedSet = new Set();
+    const gScore = Array(gridCols).fill().map(() => Array(gridRows).fill(Infinity));
+    const fScore = Array(gridCols).fill().map(() => Array(gridRows).fill(Infinity));
+    const cameFrom = Array(gridCols).fill().map(() => Array(gridRows).fill(null));
+
+    openSet.push(start);
+    gScore[start.x][start.y] = 0;
+    fScore[start.x][start.y] = heuristic(start.x, start.y, end.x, end.y);
+
+    while (openSet.length > 0) {
+        // Find node with lowest fScore
+        let current = openSet.reduce((a, b) =>
+            fScore[a.x][a.y] < fScore[b.x][b.y] ? a : b);
+
+        // Check if we've reached the goal
+        if (current.x === end.x && current.y === end.y) {
+            return reconstructPath(cameFrom, current);
+        }
+
+        openSet.splice(openSet.indexOf(current), 1);
+        closedSet.add(`${current.x},${current.y}`);
+
+        // Generate neighbors (8-directional)
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0) continue; // Skip current node
+
+                const nx = current.x + dx;
+                const ny = current.y + dy;
+
+                // Check bounds
+                if (nx < 0 || nx >= gridCols || ny < 0 || ny >= gridRows) continue;
+
+                // Check if blocked (walls only)
+                if (grid[nx][ny] === 1 || grid[nx][ny] === 2) continue;
+
+                // Check for diagonal movement through corners
+                if (dx !== 0 && dy !== 0) {
+                    if (grid[current.x + dx][current.y] === 1 ||
+                        grid[current.x][current.y + dy] === 1) {
+                        continue;
+                    }
+                }
+
+                const neighbor = {x: nx, y: ny};
+
+                // Skip if already evaluated
+                if (closedSet.has(`${nx},${ny}`)) continue;
+
+                // Calculate tentative gScore
+                const tentativeG = gScore[current.x][current.y] +
+                                  (dx !== 0 && dy !== 0 ? 1.414 : 1); // Diagonal cost
+
+                // Check if this path is better
+                if (!openSet.some(n => n.x === nx && n.y === ny)) {
+                    openSet.push(neighbor);
+                } else if (tentativeG >= gScore[nx][ny]) {
+                    continue; // Not a better path
+                }
+
+                // This path is the best so far
+                cameFrom[nx][ny] = current;
+                gScore[nx][ny] = tentativeG;
+                fScore[nx][ny] = tentativeG + heuristic(nx, ny, end.x, end.y);
+            }
+        }
+    }
+
+    return null; // No path found
+  }
+
+  // Helper function for A*
+  function heuristic(x1, y1, x2, y2) {
+    // Octile distance for 8-directional movement
+    const dx = Math.abs(x1 - x2);
+    const dy = Math.abs(y1 - y2);
+    return (dx + dy) + (1.414 - 2) * Math.min(dx, dy);
+  }
+
+  // Reconstruct path from cameFrom
+  function reconstructPath(cameFrom, current) {
+    const path = [];
+    while (current) {
+        path.push(gridToWorld(current.x, current.y));
+        current = cameFrom[current.x][current.y];
+    }
+    return path.reverse();
+  }
+
+  function generateMaze() {
+    const wallType = parseInt(ui.brush.value) || 1;
+
+    // Fill with selected wall type
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            grid[x][y] = wallType;
+        }
+    }
+
+    // Iterative Recursive Backtracking
+    const stack = [];
+    const startX = 1;
+    const startY = 1;
+
+    if(startX < gridCols && startY < gridRows) {
+        grid[startX][startY] = 0;
+        stack.push({x: startX, y: startY});
+    }
+
+    const dirs = [
+        {x: 0, y: -2}, {x: 0, y: 2}, {x: -2, y: 0}, {x: 2, y: 0}
+    ];
+
+    while(stack.length > 0) {
+        const current = stack[stack.length - 1];
+        const {x, y} = current;
+
+        const neighbors = [];
+        for(let d of dirs) {
+            const nx = x + d.x;
+            const ny = y + d.y;
+            // Check if neighbor is valid and not yet visited (still a wall)
+            if(nx > 0 && nx < gridCols-1 && ny > 0 && ny < gridRows-1 && grid[nx][ny] !== 0) {
+                neighbors.push({x: nx, y: ny, mx: x + d.x/2, my: y + d.y/2});
+            }
+        }
+
+        if(neighbors.length > 0) {
+            const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            grid[next.mx][next.my] = 0;
+            grid[next.x][next.y] = 0;
+            stack.push({x: next.x, y: next.y});
+        } else {
+            stack.pop();
+        }
+    }
+
+    // Sync Visuals
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            const idx = y * gridCols + x;
+            const cell = gridRoot.children[idx];
+            if(cell) {
+                cell.className = 'grid-cell';
+                if(grid[x][y]===1) cell.classList.add('is-blocked');
+                else if(grid[x][y]===2) cell.classList.add('is-glass');
+                else if(grid[x][y]===3) cell.classList.add('is-water');
+                else if(grid[x][y]===4) cell.classList.add('is-grass');
+                else if(grid[x][y]===5) cell.classList.add('is-sand');
+            }
+        }
+    }
+
+    // Teleport stuck turtles
+    turtles.forEach(t => {
+        if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+           t.path = [];
+        }
+    });
+    saveData();
+  }
+
+  // Terrain Generator
+  function generateTerrain() {
+    // Clear existing terrain
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            grid[x][y] = 0;
+        }
+    }
+
+    // Create water areas (ponds, rivers)
+    createWaterAreas();
+
+    // Create grass areas
+    createGrassAreas();
+
+    // Create sand areas (beaches)
+    createSandAreas();
+
+    // Create structures (glass and walls)
+    createStructures();
+
+    // Sync Visuals
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            const idx = y * gridCols + x;
+            const cell = gridRoot.children[idx];
+            if(cell) {
+                cell.className = 'grid-cell';
+                if(grid[x][y]===1) cell.classList.add('is-blocked');
+                else if(grid[x][y]===2) cell.classList.add('is-glass');
+                else if(grid[x][y]===3) cell.classList.add('is-water');
+                else if(grid[x][y]===4) cell.classList.add('is-grass');
+                else if(grid[x][y]===5) cell.classList.add('is-sand');
+            }
+        }
+    }
+
+    // Teleport stuck turtles
+    turtles.forEach(t => {
+        if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+           t.path = [];
+        }
+    });
+
+    saveData();
+    showNotification("Terrain generated!");
+  }
+
+  function createWaterAreas() {
+    // Create a large central pond
+    const centerX = Math.floor(gridCols / 2);
+    const centerY = Math.floor(gridRows / 2);
+    const pondRadius = Math.min(gridCols, gridRows) * 0.2;
+
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            const distToCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+            if(distToCenter < pondRadius) {
+                grid[x][y] = 3; // Water
+            }
+        }
+    }
+
+    // Create a river
+    const riverWidth = 3;
+    const riverStartX = Math.floor(random(0, gridCols));
+    const riverStartY = Math.floor(random(0, gridRows));
+    const riverEndX = Math.floor(random(0, gridCols));
+    const riverEndY = Math.floor(random(0, gridRows));
+
+    const riverSteps = 20;
+    for(let i=0; i<riverSteps; i++) {
+        const t = i / riverSteps;
+        const x = Math.floor(lerp(riverStartX, riverEndX, t));
+        const y = Math.floor(lerp(riverStartY, riverEndY, t));
+
+        for(let dx=-riverWidth; dx<=riverWidth; dx++) {
+            for(let dy=-riverWidth; dy<=riverWidth; dy++) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows) {
+                    grid[nx][ny] = 3; // Water
+                }
+            }
+        }
+    }
+  }
+
+  function createGrassAreas() {
+    // Create grass patches
+    const grassPatchCount = 10;
+    const grassPatchSize = Math.min(gridCols, gridRows) * 0.1;
+
+    for(let i=0; i<grassPatchCount; i++) {
+        const centerX = Math.floor(random(0, gridCols));
+        const centerY = Math.floor(random(0, gridRows));
+
+        for(let x=0; x<gridCols; x++) {
+            for(let y=0; y<gridRows; y++) {
+                const distToCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                if(distToCenter < grassPatchSize && grid[x][y] === 0) {
+                    grid[x][y] = 4; // Grass
+                }
+            }
+        }
+    }
+  }
+
+  function createSandAreas() {
+    // Create sand areas around water
+    for(let x=0; x<gridCols; x++) {
+        for(let y=0; y<gridRows; y++) {
+            if(grid[x][y] === 3) { // If it's water
+                // Check neighbors
+                for(let dx=-1; dx<=1; dx++) {
+                    for(let dy=-1; dy<=1; dy++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows && grid[nx][ny] === 0) {
+                            grid[nx][ny] = 5; // Sand
+                        }
+                    }
+                }
+            }
+        }
+    }
+  }
+
+  function createStructures() {
+    // Create glass structures
+    const glassStructureCount = 5;
+    const glassStructureSize = 5;
+
+    for(let i=0; i<glassStructureCount; i++) {
+        const centerX = Math.floor(random(0, gridCols));
+        const centerY = Math.floor(random(0, gridRows));
+
+        for(let x=0; x<glassStructureSize; x++) {
+            for(let y=0; y<glassStructureSize; y++) {
+                const nx = centerX - Math.floor(glassStructureSize/2) + x;
+                const ny = centerY - Math.floor(glassStructureSize/2) + y;
+                if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows && grid[nx][ny] === 0) {
+                    grid[nx][ny] = 2; // Glass
+                }
+            }
+        }
+    }
+
+    // Create wall structures
+    const wallStructureCount = 3;
+    const wallStructureSize = 4;
+
+    for(let i=0; i<wallStructureCount; i++) {
+        const centerX = Math.floor(random(0, gridCols));
+        const centerY = Math.floor(random(0, gridRows));
+
+        for(let x=0; x<wallStructureSize; x++) {
+            for(let y=0; y<wallStructureSize; y++) {
+                const nx = centerX - Math.floor(wallStructureSize/2) + x;
+                const ny = centerY - Math.floor(wallStructureSize/2) + y;
+                if(nx >= 0 && nx < gridCols && ny >= 0 && ny < gridRows && grid[nx][ny] === 0) {
+                    grid[nx][ny] = 1; // Wall
+                }
+            }
+        }
+    }
+  }
+
+  // -------------------------
+  // Entities
+  // -------------------------
+  class Food {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.type = turtleSafeFoods[Math.floor(Math.random() * turtleSafeFoods.length)];
+
+      this.el = document.createElement('div');
+      this.el.textContent=this.type;
+      this.el.className = `food`;
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+      document.body.appendChild(this.el);
+      foodItems.push(this);
+    }
+    remove() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+      foodItems = foodItems.filter(f => f !== this);
+    }
+  }
+
+  class Obstacle {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+
+      this.el = document.createElement('div');
+      this.el.className = 'obstacle obstacle-rock';
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+      document.body.appendChild(this.el);
+      obstacles.push(this);
+    }
+    remove() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+      obstacles = obstacles.filter(o => o !== this);
+    }
+  }
+
+  class Effect {
+    constructor(x, y, type = 'eat') {
+      this.x = x;
+      this.y = y;
+      this.type = type;
+
+      this.el = document.createElement('div');
+      this.el.className = `effect effect-${type}`;
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+      document.body.appendChild(this.el);
+      effects.push(this);
+
+      // Auto-remove after animation
+      setTimeout(() => this.remove(), 500);
+    }
+    remove() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+      effects = effects.filter(e => e !== this);
+    }
+  }
+
+  class Lilypad {
+    constructor(x, y, size = 1) {
+      this.x = x;
+      this.y = y;
+
+      this.size = size;
+      this.radius = 50 * size;
+      this.turtlesOnPad = [];
+      this.flowerColor = this.getRandomFlowerColor();
+
+      // Create canvas element
+      this.canvas = document.createElement('canvas');
+      this.canvas.width = this.radius * 2;
+      this.canvas.height = this.radius * 2;
+      this.canvas.style.position = 'absolute';
+      this.canvas.style.left = (x - this.radius) + 'px';
+      this.canvas.style.top = (y - this.radius) + 'px';
+      this.canvas.style.cursor = 'pointer';
+      this.canvas.className = 'lilypad-canvas';
+
+      // Draw the lily pad
+      this.draw();
+
+      // Add click event
+      this.canvas.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (removingLilypad) {
+          this.remove();
+          showNotification("Lily pad removed");
+          removingLilypad = false;
+        }
+      });
+
+      document.body.appendChild(this.canvas);
+      lilyPads.push(this);
+    }
+
+    getRandomFlowerColor() {
+      const colors = [
+        '#FFFF00', // Yellow
+        '#FFD700', // Gold
+        '#FFA500', // Orange
+        '#FF6347', // Tomato
+        '#FF4500', // OrangeRed
+        '#FF0000'  // Red
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    draw() {
+      const ctx = this.canvas.getContext('2d');
+      const centerX = this.radius;
+      const centerY = this.radius;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      // Draw lily pad base (with transparency)
+      ctx.fillStyle = 'rgba(34, 139, 34,1)'; // Forest green
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Add some texture/variegation
+      this.addTexture(ctx, centerX, centerY);
+
+      // Draw random cutout
+      this.drawCutout(ctx, centerX, centerY);
+
+      // Draw creases
+      this.drawCreases(ctx, centerX, centerY);
+
+      // Draw flower (with random chance)
+      if (Math.random() > 0.3) { // 70% chance of having a flower
+        this.drawFlower(ctx, centerX, centerY);
+      }
+    }
+
+    addTexture(ctx, centerX, centerY) {
+      // Add some lighter/darker spots for realism
+      for (let i = 0; i < 10; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * this.radius * 0.8;
+        const x = centerX + Math.cos(angle) * distance;
+        const y = centerY + Math.sin(angle) * distance;
+        const size = Math.random() * 10 + 5;
+
+        ctx.fillStyle = `rgba(${Math.floor(Math.random() * 50) + 20},
+                              ${Math.floor(Math.random() * 50) + 100},
+                              ${Math.floor(Math.random() * 20) + 20},
+                              0.3)`;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    drawCutout(ctx, centerX, centerY) {
+      // Random cutout shape
+      const cutoutSize = this.radius * (0.3 + Math.random() * 0.3);
+      const cutoutAngle = Math.random() * Math.PI * 2;
+      const cutoutX = centerX + Math.cos(cutoutAngle) * (this.radius * 0.6);
+      const cutoutY = centerY + Math.sin(cutoutAngle) * (this.radius * 0.6);
+
+      // Draw the cutout (using composite operation)
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(cutoutX, cutoutY, cutoutSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    drawCreases(ctx, centerX, centerY) {
+      // Draw 3-5 main creases from center to edge
+      const creaseCount = 3 + Math.floor(Math.random() * 3);
+      const creaseWidth = this.radius * 0.02;
+
+      for (let i = 0; i < creaseCount; i++) {
+        const angle = (i / creaseCount) * Math.PI * 2 + (Math.random() * 0.2 - 0.1);
+        const endX = centerX + Math.cos(angle) * this.radius;
+        const endY = centerY + Math.sin(angle) * this.radius;
+
+        // Draw main crease
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.lineWidth = creaseWidth * 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // Add 1-2 branches near the edge
+        const branchCount = 1 + Math.floor(Math.random() * 2);
+        for (let j = 0; j < branchCount; j++) {
+          const branchAngle = angle + (Math.random() * 0.5 - 0.25);
+          const branchLength = this.radius * (0.2 + Math.random() * 0.3);
+          const branchX = centerX + Math.cos(branchAngle) * branchLength;
+          const branchY = centerY + Math.sin(branchAngle) * branchLength;
+
+          ctx.lineWidth = creaseWidth;
+          ctx.beginPath();
+          ctx.moveTo(endX, endY);
+          ctx.lineTo(branchX, branchY);
+          ctx.stroke();
+        }
+      }
+    }
+
+    drawFlower(ctx, centerX, centerY) {
+      // Draw flower center
+      const flowerSize = this.radius * 0.2;
+      ctx.fillStyle = this.flowerColor;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, flowerSize * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw petals
+      const petalCount = 5 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < petalCount; i++) {
+        const angle = (i / petalCount) * Math.PI;
+        const petalLength = flowerSize * (0.7 + Math.random() * 0.3);
+        const petalWidth = flowerSize * 0.2;
+
+        ctx.fillStyle = this.flowerColor;
+        ctx.beginPath();
+        ctx.ellipse(
+          centerX + Math.cos(angle) * petalLength * 0.5,
+          centerY + Math.sin(angle) * petalLength * 0.5,
+          petalWidth,
+          petalLength * 0.5,
+          angle,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      // Add some highlights
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.beginPath();
+      ctx.arc(centerX - flowerSize * 0.1, centerY - flowerSize * 0.1, flowerSize * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    remove() {
+      if (this.canvas.parentNode) {
+        this.canvas.parentNode.removeChild(this.canvas);
+      }
+      lilyPads = lilyPads.filter(l => l !== this);
+    }
+
+    checkTurtleCollision(turtle) {
+      const dx = turtle.x - this.x;
+      const dy = turtle.y - this.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= this.radius) {
+        if (!this.turtlesOnPad.includes(turtle)) {
+          this.turtlesOnPad.push(turtle);
+          turtle.originalIdleTime = turtle.idleTimer;
+          turtle.idleTimer *= 3;
+        }
+        return true;
+      } else {
+        if (this.turtlesOnPad.includes(turtle)) {
+          this.turtlesOnPad = this.turtlesOnPad.filter(t => t !== turtle);
+          if (turtle.originalIdleTime !== undefined) {
+            turtle.idleTimer = turtle.originalIdleTime;
+            delete turtle.originalIdleTime;
+          }
+        }
+        return false;
+      }
+    }
+  }
+
+  class Turtle {
+    constructor(id, data = null) {
+      this.id = id;
+
+      if(data) {
+        // Restore from data
+        this.x = data.x;
+        this.y = data.y;
+        this.pKey = data.pKey;
+        this.angle = data.angle || random(0, 360);
+      } else {
+        // New turtle
+        this.x = random(100, window.innerWidth-100);
+        this.y = random(100, window.innerHeight-100);
+        this.angle = random(0, 360);
+        // Personality
+        let pKey = ui.personality.value;
+        if(pKey === 'mixed') pKey = Object.keys(PERSONALITIES)[Math.floor(Math.random()*Object.keys(PERSONALITIES).length)];
+        this.pKey = pKey;
+      }
+
+      this.p = PERSONALITIES[this.pKey];
+
+      this.wanderTarget = this.angle;
+      this.speed = 0;
+      this.state = 'IDLE';
+      this.targetFood = null;
+      this.path = [];
+      this.pathIndex = 0;
+      this.idleTimer = 0;
+      this.isDragging = false;
+      this.dragOffset = {x:0, y:0};
+      this.inWater = false;
+      this.onLilypad = false;
+      this.lilypadSpeedMultiplier = 1;
+
+      this.el = document.createElement('div');
+      this.el.className = 'turtle';
+
+      this.el.style.setProperty('--skin-color', this.p.skin);
+      this.el.style.setProperty('--shell-base', this.p.shell);
+
+      // Restore or generate rainbow
+      const isRainbow = data ? data.isRainbow : (Math.random() < parseFloat(ui.rainbow.value));
+      if(isRainbow) this.el.classList.add('rainbow');
+
+      const nameText = data ? data.name : `Turtle ${id+1} (${this.pKey})`;
+
+      this.el.innerHTML = `
+        <div class="turtle__head"><div class="turtle__neck"></div></div>
+        <div class="turtle__legs -left"></div>
+        <div class="turtle__legs -right"></div>
+        <div class="turtle__tail"></div>
+        <div class="turtle__shell"><div></div></div>
+        <div class="turtle-name">${nameText}</div>
+      `;
+
+      document.body.appendChild(this.el);
+
+      this.head = this.el.querySelector('.turtle__head');
+      this.shell = this.el.querySelector('.turtle__shell');
+      this.nameEl = this.el.querySelector('.turtle-name');
+
+      this.attachEvents();
+      this.updateVisuals();
+    }
+
+    attachEvents() {
+      this.head.addEventListener('click', e => {
+        e.stopPropagation();
+        this.el.classList.add('is-retracted');
+        setTimeout(() => this.el.classList.remove('is-retracted'), 2000);
+      });
+
+      this.nameEl.addEventListener('click', e => {
+        e.stopPropagation();
+        const currentName = this.nameEl.innerText;
+        const newName = prompt("Rename Turtle:", currentName);
+        if(newName) {
+            this.nameEl.innerText = newName;
+            saveData();
+        }
+      });
+
+      this.shell.addEventListener('mousedown', e => {
+        e.stopPropagation();
+        this.isDragging = true;
+        this.el.classList.add('is-dragging');
+        this.targetFood = null;
+        this.path = [];
+        this.dragOffset.x = e.clientX - this.x;
+        this.dragOffset.y = e.clientY - this.y;
+      });
+
+      this.shell.addEventListener('touchstart', e => {
+        e.stopPropagation();
+        this.isDragging = true;
+        this.el.classList.add('is-dragging');
+        this.targetFood = null;
+        this.path = [];
+        this.dragOffset.x = e.clientX - this.x;
+        this.dragOffset.y = e.clientY - this.y;
+      });
+    }
+
+    destroy() {
+      if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+    }
+
+    update() {
+      // Check if in water
+      this.inWater = isWater(this.x, this.y);
+
+      // Check lily pad collisions
+      this.onLilypad = false;
+      for (let pad of lilyPads) {
+        if (pad.checkTurtleCollision(this)) {
+          this.onLilypad = true;
+          break;
+        }
+      }
+
+      this.updateVisuals();
+      if(this.isDragging) return;
+
+      const spdMult = parseFloat(ui.speed.value);
+      let desiredSpeed = 0;
+
+      // --- BRAIN ---
+      if(this.state === 'IDLE') {
+        this.scanForFood();
+
+        desiredSpeed = this.p.minSpeed * spdMult;
+
+        if(Math.random() < 0.05) {
+            this.wanderTarget += random(-40, 40);
+        }
+        // REDUCED ROTATION SPEED for natural wandering
+        // Use smoothRotate with a small coefficient for gentle wandering
+        this.smoothRotate(this.wanderTarget, 0.05, true);
+
+        // ** CRITICAL FIX **
+        // If scanForFood found food, immediately stop running IDLE logic
+        if (this.state !== 'IDLE') return;
+
+        if(Math.random() < 0.005) {
+          this.idleTimer = random(50, 150);
+          this.state = 'WAIT';
+        }
+
+        const lookX = this.x + Math.cos(toRad(this.angle)) * 60;
+        const lookY = this.y + Math.sin(toRad(this.angle)) * 60;
+        if(isBlocked(lookX, lookY)) {
+          this.wanderTarget = this.angle + 160 + random(-20, 20);
+        }
+      }
+      else if (this.state === 'WAIT') {
+      this.scanForFood();
+        desiredSpeed = 0;
+
+        // ** CRITICAL FIX: Allow waking up if food appears **
+
+        if (this.state !== 'WAIT') return;
+
+        this.idleTimer--;
+        if(this.idleTimer <= 0) this.state = 'IDLE';
+      }
+      else if (this.state === 'SEEK') {
+        if(!this.targetFood || !foodItems.includes(this.targetFood)) {
+          this.state = 'IDLE';
+          this.targetFood = null;
+          this.path = [];
+        } else {
+          const distToFood = dist(this.x, this.y, this.targetFood.x, this.targetFood.y);
+
+          if (distToFood < GRID_SIZE * 1 && !this.physicalRaycast(this.targetFood.x, this.targetFood.y)) {
+             const angleToFood = Math.atan2(this.targetFood.y - this.y, this.targetFood.x - this.x) * 180 / Math.PI;
+             this.smoothRotate(angleToFood, 0.2, true);
+             this.speed = Math.min(this.p.maxSpeed * spdMult, distToFood * 0.2 + 0.5);
+             if(distToFood < 20) this.eat();
+             desiredSpeed = this.speed;
+          } else {
+            if(this.path.length === 0) {
+              this.path = findPath(this.x, this.y, this.targetFood.x, this.targetFood.y);
+              this.pathIndex = 0;
+              if(!this.path) {
+                this.state = 'IDLE';
+                this.targetFood = null;
+              }
+            } else {
+              if (this.pathIndex >= this.path.length) {
+                  this.path = [];
+                  return;
+              }
+
+              const target = this.path[this.pathIndex];
+              const distToNode = dist(this.x, this.y, target.x, target.y);
+              const isFinalTarget = (this.pathIndex === this.path.length - 1);
+
+              const angleToNode = Math.atan2(target.y - this.y, target.x - this.x) * 180 / Math.PI;
+              const angleDiff = Math.abs(((angleToNode - this.angle + 540) % 360) - 180);
+
+              // Use smoothed rotation with higher factor for seeking
+              let turnFactor = 0.1;
+              if (distToNode < 60) turnFactor = 0.2;
+              if (angleDiff > 90) turnFactor = 0.3;
+
+              this.smoothRotate(angleToNode, turnFactor, true);
+
+              desiredSpeed = this.p.maxSpeed * spdMult;
+
+              if (angleDiff > 45) desiredSpeed *= 0.2;
+              else if (angleDiff > 20) desiredSpeed *= 0.6;
+
+              if (!isFinalTarget && distToNode < 80) {
+                  const nextNode = this.path[this.pathIndex + 1];
+                  const angleToNext = Math.atan2(nextNode.y - target.y, nextNode.x - target.x) * 180 / Math.PI;
+                  const turnSeverity = Math.abs(((angleToNext - angleToNode + 540) % 360) - 180);
+                  if (turnSeverity > 45) desiredSpeed *= 0.4;
+              }
+
+              if (isFinalTarget && distToNode < 120) {
+                  desiredSpeed *= (distToNode / 120);
+                  if (desiredSpeed < 0.3) desiredSpeed = 0.3;
+              }
+
+              if(distToNode < 15) {
+                this.pathIndex++;
+                if(this.pathIndex >= this.path.length) {
+                  const foodD = dist(this.x, this.y, this.targetFood.x, this.targetFood.y);
+                  if(foodD < 20) this.eat();
+                  else this.path = [];
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Apply water resistance
+      if(this.inWater) {
+        desiredSpeed *= 0.6;
+      }
+
+      // Apply water resistance
+      if(isGrass(this.x,this.y) || isSand(this.x,this.y)) {
+        desiredSpeed *= 0.3;
+      }
+
+      // Apply lily pad speed multiplier
+      if(this.onLilypad) {
+        // If moving fast enough, allow jumping on lily pad
+        if(this.speed > 1.5) {
+          desiredSpeed *= 1.2; // Slight speed boost when jumping on pad
+        }
+      }
+
+      this.speed = lerp(this.speed, desiredSpeed, 0.05);
+
+      // Update stats
+      stats.totalSpeed += this.speed;
+      stats.speedSamples++;
+
+      const rad = toRad(this.angle);
+      const vx = Math.cos(rad) * this.speed;
+      const vy = Math.sin(rad) * this.speed;
+
+      let nextX = this.x + vx;
+      let nextY = this.y + vy;
+
+      if(isBlocked(nextX, nextY)) {
+        if(!isBlocked(nextX, this.y)) nextY = this.y;
+        else if(!isBlocked(this.x, nextY)) nextX = this.x;
+        else {
+          nextX = this.x;
+          nextY = this.y;
+          this.wanderTarget = this.angle + 180;
+        }
+      }
+
+      for(let t of turtles) {
+        if(t !== this) {
+          const d = dist(this.x, this.y, t.x, t.y);
+          if(d < 50) {
+            const a = Math.atan2(this.y - t.y, this.x - t.x);
+            nextX += Math.cos(a) * 1.0;
+            nextY += Math.sin(a) * 1.0;
+          }
+        }
+      }
+
+      this.x = clamp(nextX, 0, window.innerWidth);
+      this.y = clamp(nextY, 0, window.innerHeight);
+    }
+
+    scanForFood() {
+      let best = null;
+      let minDist = Infinity;
+
+      for(let f of foodItems) {
+        const d = dist(this.x, this.y, f.x, f.y);
+        if (d >= minDist) continue;
+
+        let detected = false;
+
+        // Check obstructions FIRST.
+        // raycastBlocked returns TRUE if a Wall (1) intersects.
+        // It returns FALSE if Air (0) or Glass (2) intersects.
+        // This ensures the "smell" (150px detection) is still blocked by walls.
+        const blocked = this.raycastBlocked(f.x, f.y);
+
+        if (!blocked) {
+            // 1. Close Range (Smell) - 360 detection
+            if (d < 150) {
+                detected = true;
+            }
+            // 2. Long Range (Sight) - FOV restricted
+            else if (d < this.p.viewDist) {
+                const angleTo = Math.atan2(f.y - this.y, f.x - this.x) * 180 / Math.PI;
+                let diff = ((angleTo - this.angle + 360) % 360);
+                if (diff > 180) diff -= 360;
+                diff = Math.abs(diff);
+                if (diff < this.p.fov/2) {
+                    detected = true;
+                }
+            }
+        }
+
+        if (detected) {
+            best = f;
+            minDist = d;
+        }
+      }
+
+      if(best) {
+        this.targetFood = best;
+        this.state = 'SEEK';
+        this.path = []; // Reset old path
+        this.pathIndex = 0;
+      }
+    }
+
+    raycastBlocked(tx, ty) {
+      const d = dist(this.x, this.y, tx, ty);
+      const steps = Math.max(5, Math.floor(d / (GRID_SIZE/2)));
+
+      for(let i = 1; i < steps; i++) {
+        const r = i / steps;
+        const cx = this.x + (tx - this.x) * r;
+        const cy = this.y + (ty - this.y) * r;
+
+        // Check if this point is in a wall
+        const g = worldToGrid(cx, cy);
+        if (g.x >= 0 && g.x < gridCols && g.y >= 0 && g.y < gridRows) {
+            if (grid[g.x][g.y] === 1) {
+                return true;
+            }
+        }
+      }
+      return false;
+    }
+    physicalRaycast(tx, ty) {
+      const d = dist(this.x, this.y, tx, ty);
+      const steps = Math.floor(d / (GRID_SIZE/2));
+      for(let i=1; i<steps; i++) {
+        const r = i/steps;
+        const cx = this.x + (tx-this.x)*r;
+        const cy = this.y + (ty-this.y)*r;
+        const g = worldToGrid(cx, cy);
+        if(g.x>=0 && g.x<gridCols && g.y>=0 && g.y<gridRows && grid[g.x][g.y] === 1) return true;
+      }
+      return false;
+    }
+
+    // New smoothed rotation function using Lerp
+    // factor: 0.0 to 1.0 (smaller = smoother/slower)
+    smoothRotate(target, factor = 0.1, useLerp = false) {
+      let diff = ((target - this.angle + 540) % 360) - 180;
+
+      if (useLerp) {
+          // Proportional smoothing
+          this.angle += diff * factor;
+      } else {
+          // Linear smoothing (old way, kept as fallback if needed)
+          if(Math.abs(diff) < factor) this.angle = target;
+          else this.angle += Math.sign(diff) * factor;
+      }
+    }
+
+    eat() {
+      this.el.classList.add('neck-extend');
+      setTimeout(() => this.el.classList.remove('neck-extend'), 200);
+      new Effect(this.x, this.y);
+      this.targetFood.remove();
+      this.targetFood = null;
+      this.path = []; // Reset path to prevent ghost walking
+      this.pathIndex = 0;
+      this.state = 'IDLE';
+
+      // Update stats
+      stats.foodEaten++;
+      foodEatenDisplay.textContent = stats.foodEaten;
+    }
+
+    updateVisuals() {
+      const visualAngle = this.angle + 90;
+      this.el.style.transform = `translate(${this.x - 250}px, ${this.y - 250}px) scale(0.2) rotate(${visualAngle}deg)`;
+
+      if(this.speed > 0.1) this.el.classList.add('is-moving');
+      else this.el.classList.remove('is-moving');
+
+      this.nameEl.style.display = ui.names.checked ? 'block' : 'none';
+      this.nameEl.style.transform = `translate(-50%, -100%) rotate(${-visualAngle}deg) scale(5)`;
+
+      // Change color when in water
+      if(this.inWater) {
+        this.el.style.setProperty('--skin-color', '#48dbfb');
+        this.el.style.setProperty('--shell-base', '#2980b9');
+      } else {
+        this.el.style.setProperty('--skin-color', this.p.skin);
+        this.el.style.setProperty('--shell-base', this.p.shell);
+      }
+    }
+  }
+
+  // -------------------------
+  // Storage & State
+  // -------------------------
+
+  function saveData() {
+    const settings = {
+        numTurtles: ui.numTurtles.value,
+        gridSize: ui.gridSize.value,
+        personality: ui.personality.value,
+        rainbow: ui.rainbow.value,
+        speed: ui.speed.value,
+        names: ui.names.checked,
+        editMode: ui.edit.checked,
+        brush: ui.brush.value,
+        autoSpawn: ui.autoSpawn.checked,
+        autoSpawnDelay: ui.autoSpawnDelay.value,
+        showStats: ui.showStats.checked,
+        bgColorPicker: ui.bgColorPicker.value
+    };
+    localStorage.setItem('ts_settings', JSON.stringify(settings));
+    localStorage.setItem('ts_grid', JSON.stringify(grid));
+
+    // Save Turtle State
+    const turtleData = turtles.map(t => ({
+        id: t.id,
+        x: t.x,
+        y: t.y,
+        angle: t.angle,
+        pKey: t.pKey,
+        name: t.nameEl.innerText,
+        isRainbow: t.el.classList.contains('rainbow')
+    }));
+    localStorage.setItem('ts_turtles', JSON.stringify(turtleData));
+
+    // Save Lily Pads
+    const lilypadData = lilyPads.map(p => ({
+        x: p.x,
+        y: p.y,
+        size: p.size
+    }));
+    localStorage.setItem('ts_lilypads', JSON.stringify(lilypadData));
+  }
+
+  function loadData() {
+    try {
+        if(localStorage.ts_settings===undefined){
+            resetWithNoConfirm=true;
+            ui.nuke.click()
+        }
+        const s = JSON.parse(localStorage.getItem('ts_settings'));
+        if(s) {
+            ui.numTurtles.value = s.numTurtles;
+            ui.numDisplay.innerText = s.numTurtles;
+            ui.gridSize.value = s.gridSize;
+            ui.gridDisplay.innerText = s.gridSize;
+            ui.personality.value = s.personality;
+            ui.rainbow.value = s.rainbow;
+            ui.speed.value = s.speed;
+            ui.names.checked = s.names;
+            ui.edit.checked = s.editMode;
+            ui.brush.value = s.brush;
+            ui.autoSpawn.checked = s.autoSpawn;
+            ui.autoSpawnDelay.value = s.autoSpawnDelay;
+            ui.showStats.checked = s.showStats;
+            ui.bgColorPicker.value = s.bgColorPicker;
+
+        }
+
+        // Init logic based on (potentially restored) settings
+        initGrid(false);
+
+        const g = JSON.parse(localStorage.getItem('ts_grid'));
+        // Only restore grid if dimensions match to prevent crash on resize
+        if(g && g.length === gridCols && g[0].length === gridRows) {
+            grid = g;
+            // Restore visual grid classes
+            for(let x=0; x<gridCols; x++) {
+                for(let y=0; y<gridRows; y++) {
+                    if(grid[x][y] !== 0) {
+                        const idx = y * gridCols + x;
+                        const cell = gridRoot.children[idx];
+                        if(cell) {
+                            if(grid[x][y]===1) cell.classList.add('is-blocked');
+                            else if(grid[x][y]===2) cell.classList.add('is-glass');
+                            else if(grid[x][y]===3) cell.classList.add('is-water');
+                            else if(grid[x][y]===4) cell.classList.add('is-grass');
+                            else if(grid[x][y]===5) cell.classList.add('is-sand');
+                        }
+                    }
+                }
+            }
+        }
+
+        const t = JSON.parse(localStorage.getItem('ts_turtles'));
+        if(t && Array.isArray(t) && t.length > 0) {
+            // Restore turtles
+            turtles.forEach(x => x.destroy());
+            turtles = [];
+            t.forEach(data => {
+                const nt = new Turtle(data.id, data);
+                turtles.push(nt);
+            });
+            // Update slider if count mismatches saved data
+            if(turtles.length !== parseInt(ui.numTurtles.value)) {
+                ui.numTurtles.value = turtles.length;
+                ui.numDisplay.innerText = turtles.length;
+            }
+        } else {
+            updatePopulation();
+        }
+
+        // Restore lily pads
+        const l = JSON.parse(localStorage.getItem('ts_lilypads'));
+        if(l && Array.isArray(l) && l.length > 0) {
+            lilyPads.forEach(p => p.remove());
+            lilyPads = [];
+            l.forEach(data => {
+                const np = new Lilypad(data.x, data.y, data.size);
+            });
+        }
+    } catch(e) {
+        prompt("Save data invalid! (Application will reset)", e);
+        localStorage.removeItem('ts_grid');
+        localStorage.removeItem('ts_lilypads');
+        localStorage.removeItem('ts_settings');
+        localStorage.removeItem('ts_turtles');
+        localStorage.removeItem('ts_intro');
+        location.reload();
+    }
+    updateGridVisibility();
+    updatePopulation();
+    updateStatsVisibility();
+  }
+
+  // -------------------------
+  // Loop & Events
+  // -------------------------
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function updateGridVisibility() {
+    gridRoot.style.pointerEvents = ui.edit.checked ? 'auto' : 'none';
+  }
+
+  function updateStatsVisibility() {
+    statsPanel.style.display = ui.showStats.checked ? 'block' : 'none';
+  }
+
+  function updatePopulation() {
+    const count = parseInt(ui.numTurtles.value);
+    ui.numDisplay.innerText = count;
+    turtleCountDisplay.textContent = count;
+
+    while(turtles.length > count) {
+      turtles.pop().destroy();
+    }
+    while(turtles.length < count) {
+      turtles.push(new Turtle(turtles.length));
+    }
+    saveData();
+  }
+
+  function drawDebug() {
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+    ctx.lineWidth = 2;
+
+    turtles.forEach(t => {
+      // Vision Cone
+      const rad = toRad(t.angle);
+      const halfFov = toRad(t.p.fov/2);
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.beginPath();
+      ctx.moveTo(t.x, t.y);
+      ctx.arc(t.x, t.y, t.p.viewDist, rad - halfFov, rad + halfFov);
+      ctx.lineTo(t.x, t.y);
+      ctx.stroke();
+
+      // Path
+      if(t.path && t.path.length > 0) {
+        ctx.strokeStyle = 'rgba(0, 255, 100, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y);
+        for(let i=t.pathIndex; i<t.path.length; i++) {
+          ctx.lineTo(t.path[i].x, t.path[i].y);
+        }
+        ctx.stroke();
+
+        // Highlight current target node
+        if(t.pathIndex < t.path.length) {
+          const target = t.path[t.pathIndex];
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+          ctx.beginPath();
+          ctx.arc(target.x, target.y, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Target Line
+      if(t.targetFood) {
+        ctx.strokeStyle = 'rgba(255, 100, 0, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y);
+        ctx.lineTo(t.targetFood.x, t.targetFood.y);
+        ctx.stroke();
+      }
+    });
+
+    // Draw lily pads
+    lilyPads.forEach(pad => {
+      ctx.strokeStyle = 'rgba(0, 100, 0, 0.5)';
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, pad.radius, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+  }
+
+  function updateStats() {
+    if(ui.showStats.checked){
+      const elapsed = Date.now() - stats.startTime;
+      timeElapsedDisplay.textContent = formatTime(elapsed);
+
+      if(stats.speedSamples > 0) {
+        const avg = (stats.totalSpeed / stats.speedSamples).toFixed(2);
+        avgSpeedDisplay.textContent = avg;
+      }
+
+      // Reset counters periodically
+      if(elapsed > 1000) {
+        stats.totalSpeed = 0;
+        stats.speedSamples = 0;
+        stats.startTime = Date.now();
+        if(ui.showStats.checked){
+          foodCounts.push(foodItems.length);
+          if (foodCounts.length > 100) {foodCounts.shift();}
+          // Redraw graph
+          drawLineGraph(
+            document.getElementById("foodGraph").getContext("2d"), foodCounts, {
+              padding: 50,
+              lineColor: "green",
+              axisColor: "#333",
+              title: "Food Over Time",
+              xLabel: "updated every 1000 ms",
+              yLabel: "Count"
+            }
+          );
+        }
+      }
+    }
+  }
+
+  function loop() {
+    turtles.forEach(t => t.update());
+    updateStats();
+
+    if(ui.debug.checked){drawDebug();}else ctx.clearRect(0,0, canvas.width, canvas.height);
+    if(lastDebugToggle!==ui.debug.checked){
+      document.querySelectorAll('.grid-cell').forEach(element => {
+        element.style.setProperty('--gridLineWidth', ui.debug.checked ? '2px' : '0px');
+      });
+      lastDebugToggle=ui.debug.checked;
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function startAutoSpawn() {
+    if(autoSpawnInterval) clearInterval(autoSpawnInterval);
+    if(ui.autoSpawn.checked) {
+      autoSpawnInterval = setInterval(() => {
+        if (foodItems.length < 50) {
+          const x = random(50, window.innerWidth - 50);
+          const y = random(50, window.innerHeight - 50);
+          if (!isBlocked(x, y)) {
+            new Food(x, y);
+          }
+        }
+      }, ui.autoSpawnDelay.value);
+    }
+  }
+
+  // Check if device is mobile
+  function checkMobile() {
+    isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(new URLSearchParams(window.location.search).get('ua') || navigator.userAgent);
+    if (isMobile) {
+      statsPanel.classList.add('mobile');
+      showNotification("Mobile mode activated");
+    }
+  }
+
+  // Handle double tap for mobile
+  function handleTap(e) {
+    const now = Date.now();
+    const target = e.target;
+
+    // Check if it's a double tap on empty space (for food)
+    if (target === document.body || target === gridRoot) {
+      if (now - lastTapTime < 300 && lastTapTarget === target) {
+        // Double tap - add food
+        if (!isBlocked(e.touches[0].clientX, e.touches[0].clientY)) {
+          new Food(e.touches[0].clientX, e.touches[0].clientY);
+        }
+        lastTapTime = 0;
+        lastTapTarget = null;
+
+      } else {
+        // First tap
+        lastTapTime = now;
+        lastTapTarget = target;
+      }
+    }
+
+    // Check if it's a double tap on turtle head
+    if (target.classList.contains('turtle__head')) {
+      // Double tap - retract head
+      const turtleEl = target.closest('.turtle');
+      if (turtleEl) {
+        turtleEl.classList.add('is-retracted');
+        setTimeout(() => turtleEl.classList.remove('is-retracted'), 2000);
+      }
+      lastTapTime = 0;
+      lastTapTarget = null;
+      e.preventDefault();
+    }
+  }
+
+  // Handle long press for mobile (for rocks)
+  function handleLongPress(e) {
+    if (isMobile && (e.target === document.body || e.target === gridRoot)) {
+      // Long press - add obstacle
+      if (!isBlocked(e.touches[0].clientX, e.touches[0].clientY)) {
+        new Obstacle(e.touches[0].clientX, e.touches[0].clientY);
+      }
+      e.preventDefault();
+    }
+  }
+
+  // -------------------------
+  // Event Listeners
+  // -------------------------
+
+  // Grid Painting
+  gridRoot.addEventListener('mousedown', e => {
+    if(!ui.edit.checked) return;
+    isPainting = true;
+    const cell = e.target.closest('.grid-cell');
+    if(cell) {
+      const gx = parseInt(cell.dataset.x);
+      const gy = parseInt(cell.dataset.y);
+
+      const brush = parseInt(ui.brush.value);
+      const current = grid[gx][gy];
+      paintValue = (current === brush) ? 0 : brush;
+
+      toggleCell(gx, gy, paintValue);
+    }
+  });
+
+  window.addEventListener('mousemove', e => {
+    // Grid Paint
+    if(isPainting && ui.edit.checked) {
+      const cell = document.elementFromPoint(e.clientX, e.clientY);
+      if(cell && cell.classList.contains('grid-cell')) {
+        toggleCell(parseInt(cell.dataset.x), parseInt(cell.dataset.y), paintValue);
+      }
+    }
+    // Turtle Drag
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.x = e.clientX - t.dragOffset.x;
+        t.y = e.clientY - t.dragOffset.y;
+      }
+    });
+    // Panel Drag
+    if(draggingPanel) {
+      ui.panel.style.left = (e.clientX - panelOffset.x) + 'px';
+      ui.panel.style.top = (e.clientY - panelOffset.y) + 'px';
+    }
+  });
+
+  window.addEventListener('touchmove', e => {
+    // Grid Paint
+
+    if(isPainting && ui.edit.checked) {
+
+      const cell = document.elementFromPoint(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
+      if(cell && cell.classList.contains('grid-cell')) {
+        toggleCell(parseInt(cell.dataset.x), parseInt(cell.dataset.y), paintValue);
+      }
+    }
+
+    // Turtle Drag
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.x = e.targetTouches[0].clientX;
+        t.y = e.targetTouches[0].clientY;
+      }
+    });
+    // Panel Drag
+    if(draggingPanel) {
+      ui.panel.style.left = (e.targetTouches[0].clientX - panelOffset.x) + 'px';
+      ui.panel.style.top = (e.targetTouches[0].clientY - panelOffset.y) + 'px';
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    isPainting = false;
+    draggingPanel = false;
+    ui.panel.classList.remove('dragging');
+    let dragged = false;
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.isDragging = false;
+        t.el.classList.remove('is-dragging');
+        dragged = true;
+
+        // Safety: If dropped in a wall, push to nearest free space
+        if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+        }
+      }
+    });
+    if(dragged) saveData();
+  });
+
+  window.addEventListener('touchend', () => {
+    isPainting = false;
+    draggingPanel = false;
+    ui.panel.classList.remove('dragging');
+    let dragged = false;
+    turtles.forEach(t => {
+      if(t.isDragging) {
+        t.isDragging = false;
+        t.el.classList.remove('is-dragging');
+        dragged = true;
+
+        // Safety: If dropped in a wall, push to nearest free space
+        try{if(isBlocked(t.x, t.y)) {
+           const g = worldToGrid(t.x, t.y);
+           const safe = findNearestFree(g.x, g.y);
+           const safeWorld = gridToWorld(safe.x, safe.y);
+           t.x = safeWorld.x;
+           t.y = safeWorld.y;
+        }}catch(e){console.log(e)}
+      }
+    });
+    if(dragged) saveData();
+  });
+
+  // Food Click
+  document.addEventListener('click', e => {
+    if(e.target.closest('#settings-panel') || e.target.closest('.turtle') || ui.edit.checked) return;
+
+    // Safety: Don't spawn food in walls
+    if(isBlocked(e.clientX, e.clientY)) return;
+
+    // On desktop, single click adds food
+    if (!isMobile) {
+      new Food(e.clientX, e.clientY);
+    }
+  });
+
+  // Right click for obstacles
+  document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if(e.target.closest('#settings-panel') || e.target.closest('.turtle') || ui.edit.checked) return;
+
+    if(isBlocked(e.clientX, e.clientY)) return;
+
+    // On desktop, right click adds obstacles
+    if (!isMobile) {
+      new Obstacle(e.clientX, e.clientY);
+    }
+  });
+
+  // Mobile touch events
+  document.addEventListener('touchstart', handleTap);
+  document.addEventListener('touchend', e => {
+    // Reset long press detection
+    if (e.target === document.body || e.target === gridRoot) {
+      setTimeout(() => {
+        if (lastTapTarget === e.target) {
+          lastTapTarget = null;
+        }
+      }, 500);
+    }
+  });
+
+  // Long press detection
+  let longPressTimer;
+  document.addEventListener('touchstart', e => {
+    if (isMobile && (e.target === document.body || e.target === gridRoot)) {
+      longPressTimer = setTimeout(() => {
+        handleLongPress(e);
+      }, 500);
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    clearTimeout(longPressTimer);
+  });
+
+  document.addEventListener('touchmove', e => {
+    clearTimeout(longPressTimer);
+  });
+
+  // Settings Panel Dragging
+  ui.panel.querySelector('h2').addEventListener('mousedown', e => {
+    draggingPanel = true;
+    ui.panel.classList.add('dragging');
+    panelOffset.x = e.clientX - ui.panel.offsetLeft;
+    panelOffset.y = e.clientY - ui.panel.offsetTop;
+  });
+
+  // Controls - Add saveData to all interactive elements
+  const changeHandlers = ['numTurtles', 'gridSize', 'personality', 'rainbow',
+                          'speed', 'names', 'edit', 'brush', 'autoSpawn',
+                          'autoSpawnDelay', 'showStats', 'lilypadSize',
+                          'bgColorPicker'];
+  changeHandlers.forEach(id => {
+      ui[id].addEventListener('change', () => {
+        saveData();
+        if(id === 'bgColorPicker') document.getElementById('world').style.backgroundColor = ui.bgColorPicker.value;
+        if(id === 'autoSpawn' || id === 'autoSpawnDelay') startAutoSpawn();
+        if(id === 'showStats') updateStatsVisibility();
+      });
+  });
+
+  // Maze Generator Event
+  ui.maze.addEventListener('click', generateMaze);
+
+  // Terrain Generator Event
+  ui.genTerrain.addEventListener('click', generateTerrain);
+
+  ui.numTurtles.addEventListener('input', updatePopulation);
+  ui.personality.addEventListener('change', () => {
+    while(turtles.length > 0) turtles.pop().destroy();
+    updatePopulation();
+  });
+  ui.gridSize.addEventListener('change', () => initGrid(false));
+  ui.edit.addEventListener('change', updateGridVisibility);
+  ui.reset.addEventListener('click', () => {
+      grid = grid.map(col => col.fill(0));
+      Array.from(gridRoot.children).forEach(c => {
+          c.className = 'grid-cell';
+          c.classList.remove('is-blocked', 'is-glass', 'is-water', 'is-grass', 'is-sand');
+      });
+      saveData();
+  });
+  ui.clearFood.addEventListener('click', () => {
+    foodItems.forEach(f => f.remove());
+    foodItems = [];
+    turtles.forEach(t => { t.targetFood = null; t.path = []; t.state='IDLE'; });
+  });
+
+  ui.addLilypad.addEventListener('click', () => {
+    setTimeout(()=>{
+      placingLilypad = true;
+      removingLilypad = false;
+      showNotification("Click to place lily pad");
+    },200)
+  });
+
+  ui.removeLilypad.addEventListener('click', () => {
+    setTimeout(()=>{
+      removingLilypad = true;
+      placingLilypad = false;
+      showNotification("Click on a lily pad to remove it");
+    },200)
+  });
+
+  ui.nuke.addEventListener('click', () => {
+    if(resetWithNoConfirm || confirm("NUKE EVERYTHING? This will reset the entire simulation!")) {
+      // Clear everything
+      turtles.forEach(t => t.destroy());
+      turtles = [];
+      foodItems.forEach(f => f.remove());
+      foodItems = [];
+      obstacles.forEach(o => o.remove());
+      obstacles = [];
+      effects.forEach(e => e.remove());
+      effects = [];
+      lilyPads.forEach(p => p.remove());
+      lilyPads = [];
+
+      // Reset grid
+      grid = grid.map(col => col.fill(0));
+      Array.from(gridRoot.children).forEach(c => {
+        c.className = 'grid-cell';
+        c.classList.remove('is-blocked', 'is-glass', 'is-water', 'is-grass', 'is-sand');
+      });
+
+      // Reset stats
+      stats.foodEaten = 0;
+      stats.startTime = Date.now();
+      stats.totalSpeed = 0;
+      stats.speedSamples = 0;
+      foodEatenDisplay.textContent = '0';
+      timeElapsedDisplay.textContent = '0s';
+      avgSpeedDisplay.textContent = '0';
+
+      // Reset to default settings
+      ui.numTurtles.value = 6;
+      ui.numDisplay.innerText = '6';
+      ui.gridSize.value = 40;
+      ui.gridDisplay.innerText = '40';
+      ui.personality.value = 'mixed';
+      ui.rainbow.value = 0.2;
+      ui.speed.value = 1;
+      ui.names.checked = true;
+      ui.edit.checked = false;
+      ui.brush.value = '1';
+      ui.autoSpawn.checked = false;
+      ui.autoSpawnDelay.value = 3000;
+      ui.showStats.checked = true;
+      ui.lilypadSize.value = 1;
+      ui.bgColorPicker.value = '#d1e7ff';
+      document.getElementById('world').style.backgroundColor = ui.bgColorPicker.value;
+
+      updatePopulation();
+      updateStatsVisibility();
+      saveData();
+      showNotification(resetWithNoConfirm ? "Defaults Loaded!" : "Simulation reset!");
+      resetWithNoConfirm=false;
+    }
+  });
+
+  // Instructions modal
+  showInstructionsBtn.addEventListener('click', () => {
+    instructionsModal.style.display = 'flex';
+  });
+
+  closeInstructionsBtn.addEventListener('click', () => {
+    instructionsModal.style.display = 'none';
+  });
+
+  // Close instructions when clicking outside the content
+  instructionsModal.addEventListener('click', (e) => {
+    if (e.target === instructionsModal) {
+      instructionsModal.style.display = 'none';
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    // Re-init grid visual but don't clear logic if possible,
+    // though safe approach for now is full reset if size changes
+    initGrid(false);
+
+    // Adjust panel positions to stay on screen
+    const panelRect = ui.panel.getBoundingClientRect();
+    if (panelRect.right > window.innerWidth) {
+      ui.panel.style.left = (window.innerWidth - panelRect.width - 10) + 'px';
+    }
+    if (panelRect.bottom > window.innerHeight) {
+      ui.panel.style.top = (window.innerHeight - panelRect.height - 10) + 'px';
+    }
+  });
+
+  window.addEventListener('keydown', e => {
+    if(e.key.toLowerCase() === 'd') ui.debug.checked = !ui.debug.checked;
+    if(e.key.toLowerCase() === 'h') ui.panel.hidden = !ui.panel.hidden;
+    if(e.key.toLowerCase() === 's') ui.showStats.checked = !ui.showStats.checked;
+    if(e.key.toLowerCase() === 'a') ui.autoSpawn.checked = !ui.autoSpawn.checked;
+
+    // Update UI elements that were toggled by keyboard
+    if(e.key.toLowerCase() === 'd' || e.key.toLowerCase() === 's') {
+      updateStatsVisibility();
+    }
+    if(e.key.toLowerCase() === 'a') {
+      startAutoSpawn();
+    }
+  });
+
+  // Handle lily pad placement
+  document.addEventListener('click', e => {
+    if(placingLilypad) {
+      placingLilypad = false;
+      const size = parseInt(ui.lilypadSize.value);
+      new Lilypad(e.clientX, e.clientY, size);
+      saveData();
+    }
+  });
+
+  // Init sequence: Load data, build grid, spawn turtles
+  checkMobile();
+  loadData();
+  startAutoSpawn();
+  loop();
+  stats.startTime = Date.now();
+</script>
+</body>
+</html>
