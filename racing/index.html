@@ -25,7 +25,7 @@
             font-family: 'Roboto', sans-serif;
             color: white;
             user-select: none;
-            touch-action: none; /* Prevent browser zoom/scroll on mobile */
+            touch-action: none;
         }
 
         canvas {
@@ -57,7 +57,7 @@
 
         /* Mobile Controls */
         #mobile-controls {
-            display: none; /* Hidden on desktop */
+            display: none;
             position: absolute;
             bottom: 20px;
             width: 100%;
@@ -70,7 +70,7 @@
         
         @media (hover: none) and (pointer: coarse) {
             #mobile-controls { display: flex; }
-            #chat-container { bottom: 180px; width: 200px; height: 150px; } /* Move chat up on mobile */
+            #chat-container { bottom: 180px; width: 200px; height: 150px; }
         }
 
         .touch-btn {
@@ -112,6 +112,8 @@
             width: 400px;
             max-width: 90%;
             text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         h1 {
@@ -170,6 +172,27 @@
         button:hover { transform: translateY(-2px); box-shadow: 0 0 15px var(--neon-blue); }
         button.secondary { background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink); margin-top: 10px; }
         button.secondary:hover { box-shadow: 0 0 15px var(--neon-pink); background: rgba(255, 0, 255, 0.1); }
+
+        /* Keybind Grid */
+        .keybind-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .keybind-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: var(--neon-blue);
+            padding: 5px;
+            font-size: 0.8rem;
+            text-align: center;
+            cursor: pointer;
+        }
+        .keybind-btn:hover { background: #333; border-color: var(--neon-blue); }
+        .keybind-btn.recording { background: var(--neon-pink); color: black; border-color: white; animation: pulse 0.5s infinite alternate; }
+        @keyframes pulse { from { opacity: 1; } to { opacity: 0.7; } }
 
         #hud {
             padding: 20px;
@@ -274,8 +297,8 @@
             <div class="text-right">
                 <div class="text-xl" style="color: var(--neon-pink)">ROOM: <span id="room-display">--</span></div>
                 <div id="role-display" class="text-xs text-gray-400 font-mono mb-1">MQTT</div>
-                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="toggleEditor()">Map Editor (M)</button>
-                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="openSaveMenu()">Maps (S)</button>
+                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="toggleEditor()">Map Editor</button>
+                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="openSaveMenu()">Maps</button>
             </div>
         </div>
 
@@ -328,13 +351,13 @@
         <!-- Mobile Controls -->
         <div id="mobile-controls">
             <div class="touch-group">
-                <div class="touch-btn" ontouchstart="keys.a=true" ontouchend="keys.a=false">◄</div>
-                <div class="touch-btn" ontouchstart="keys.d=true" ontouchend="keys.d=false">►</div>
+                <div class="touch-btn" ontouchstart="inputs.left=true" ontouchend="inputs.left=false">◄</div>
+                <div class="touch-btn" ontouchstart="inputs.right=true" ontouchend="inputs.right=false">►</div>
             </div>
             <div class="touch-group">
-                <div class="touch-btn" style="border-color:var(--neon-blue)" ontouchstart="keys[' ']=true" ontouchend="keys[' ']=false">💨</div>
-                <div class="touch-btn touch-rect" style="border-color:#f44" ontouchstart="keys.s=true" ontouchend="keys.s=false">B</div>
-                <div class="touch-btn touch-rect" style="border-color:#4f4" ontouchstart="keys.w=true" ontouchend="keys.w=false">G</div>
+                <div class="touch-btn" style="border-color:var(--neon-blue)" ontouchstart="inputs.drift=true" ontouchend="inputs.drift=false">💨</div>
+                <div class="touch-btn touch-rect" style="border-color:#f44" ontouchstart="inputs.down=true" ontouchend="inputs.down=false">B</div>
+                <div class="touch-btn touch-rect" style="border-color:#4f4" ontouchstart="inputs.up=true" ontouchend="inputs.up=false">G</div>
             </div>
         </div>
     </div>
@@ -357,26 +380,37 @@
         <div class="panel w-96 text-left">
             <h2 class="text-xl mb-4 text-white font-bold text-center">Settings</h2>
             
-            <label class="text-xs text-gray-400">Master Volume (<span id="vol-master-val">100</span>%)</label>
-            <input type="range" id="vol-master" min="0" max="200" value="100" oninput="updateVolumes()">
-            
-            <label class="text-xs text-gray-400">Engine Volume (<span id="vol-engine-val">100</span>%)</label>
-            <input type="range" id="vol-engine" min="0" max="200" value="100" oninput="updateVolumes()">
-            
-            <label class="text-xs text-gray-400">Tire Volume (<span id="vol-tires-val">100</span>%)</label>
-            <input type="range" id="vol-tires" min="0" max="200" value="100" oninput="updateVolumes()">
-            
-            <label class="text-xs text-gray-400">SFX Volume (<span id="vol-sfx-val">100</span>%)</label>
-            <input type="range" id="vol-sfx" min="0" max="200" value="100" oninput="updateVolumes()">
+            <div class="mb-4">
+                <h3 class="text-sm font-bold text-gray-400 mb-2">Audio</h3>
+                <label class="text-xs text-gray-400">Master Volume (<span id="vol-master-val">100</span>%)</label>
+                <input type="range" id="vol-master" min="0" max="200" value="100" oninput="updateVolumes()">
+                
+                <label class="text-xs text-gray-400">Engine Volume (<span id="vol-engine-val">100</span>%)</label>
+                <input type="range" id="vol-engine" min="0" max="200" value="100" oninput="updateVolumes()">
+                
+                <label class="text-xs text-gray-400">Tire Volume (<span id="vol-tires-val">100</span>%)</label>
+                <input type="range" id="vol-tires" min="0" max="200" value="100" oninput="updateVolumes()">
+                
+                <label class="text-xs text-gray-400">SFX Volume (<span id="vol-sfx-val">100</span>%)</label>
+                <input type="range" id="vol-sfx" min="0" max="200" value="100" oninput="updateVolumes()">
+            </div>
 
-            <div class="border-t border-gray-700 my-4"></div>
+            <div class="mb-4 border-t border-gray-700 pt-4">
+                <h3 class="text-sm font-bold text-gray-400 mb-2">Controls (Click to bind)</h3>
+                <div class="keybind-grid" id="keybind-list">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
 
-            <label class="block text-left text-sm mb-1">MQTT Broker URL (WSS)</label>
-            <select id="broker-select" class="text-xs mb-4">
-                <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public (Recommended)</option>
-                <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public</option>
-                <option value="wss://test.mosquitto.org:8081">Mosquitto Public</option>
-            </select>
+            <div class="mb-4 border-t border-gray-700 pt-4">
+                <h3 class="text-sm font-bold text-gray-400 mb-2">Network</h3>
+                <label class="block text-left text-sm mb-1">MQTT Broker URL (WSS)</label>
+                <select id="broker-select" class="text-xs mb-4">
+                    <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public (Recommended)</option>
+                    <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public</option>
+                    <option value="wss://test.mosquitto.org:8081">Mosquitto Public</option>
+                </select>
+            </div>
             
             <div class="flex gap-2">
                 <button onclick="saveSettings()">Save & Close</button>
@@ -400,6 +434,20 @@ let isEditorOpen = false;
 let particles = []; 
 let quitTimer = null;
 
+// Controls
+let bindings = {
+    up: 'w',
+    down: 's',
+    left: 'a',
+    right: 'd',
+    drift: ' ',
+    editor: 'm',
+    save: 's', // User requested 'S' for save, despite overlap with default down. System handles both.
+    quit: 'q'
+};
+let inputs = { up: false, down: false, left: false, right: false, drift: false };
+let remappingAction = null;
+
 let myCar = {
     x: 0, y: 0, 
     vx: 0, vy: 0, 
@@ -420,15 +468,7 @@ let mapWidth = 100;
 let mapHeight = 100;
 
 // Tile Definitions
-const TILES = {
-    PAVEMENT: 0,
-    WALL: 1,
-    SPAWN: 2, // Start/Finish Line
-    GRASS: 3,
-    DIRT: 4,
-    SAND: 5,
-    RUMBLE: 6
-};
+const TILES = { PAVEMENT: 0, WALL: 1, SPAWN: 2, GRASS: 3, DIRT: 4, SAND: 5, RUMBLE: 6 };
 
 // Physics Constants
 const ENGINE_POWER = 0.5;
@@ -442,10 +482,7 @@ let camera = { x: 0, y: 0, zoom: 1 };
 // MQTT State
 let mqttClient;
 let roomTopicBase = "";
-let currentBroker = "wss://broker.hivemq.com:8884/mqtt"; // Default to Hive
-
-// Inputs
-const keys = { w: false, a: false, s: false, d: false, Shift: false, " ": false };
+let currentBroker = "wss://broker.hivemq.com:8884/mqtt"; 
 
 // Editor
 let currentTool = 1;
@@ -457,55 +494,34 @@ let mouse = { x: 0, y: 0, leftDown: false, rightDown: false };
 class SoundManager {
     constructor() {
         this.ctx = null;
-        this.engineOsc = null;
-        this.engineGain = null;
-        this.noiseNode = null;
-        this.noiseGain = null;
+        this.engineOsc = null; this.engineGain = null;
+        this.noiseNode = null; this.noiseGain = null;
         this.vols = { master: 1, engine: 1, tires: 1, sfx: 1 };
     }
-
     init() {
         if (this.ctx) return;
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.ctx = new AudioContext();
-
-        this.engineOsc = this.ctx.createOscillator();
-        this.engineOsc.type = 'square';
-        this.engineGain = this.ctx.createGain();
-        this.engineGain.gain.value = 0;
-        this.engineOsc.connect(this.engineGain);
-        this.engineGain.connect(this.ctx.destination);
+        this.engineOsc = this.ctx.createOscillator(); this.engineOsc.type = 'square';
+        this.engineGain = this.ctx.createGain(); this.engineGain.gain.value = 0;
+        this.engineOsc.connect(this.engineGain); this.engineGain.connect(this.ctx.destination);
         this.engineOsc.start();
-
         const bufferSize = this.ctx.sampleRate * 2;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-        this.noiseNode = this.ctx.createBufferSource();
-        this.noiseNode.buffer = buffer;
-        this.noiseNode.loop = true;
-        this.noiseGain = this.ctx.createGain();
-        this.noiseGain.gain.value = 0;
-        
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 800;
-
-        this.noiseNode.connect(filter);
-        filter.connect(this.noiseGain);
-        this.noiseGain.connect(this.ctx.destination);
+        this.noiseNode = this.ctx.createBufferSource(); this.noiseNode.buffer = buffer; this.noiseNode.loop = true;
+        this.noiseGain = this.ctx.createGain(); this.noiseGain.gain.value = 0;
+        const filter = this.ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+        this.noiseNode.connect(filter); filter.connect(this.noiseGain); this.noiseGain.connect(this.ctx.destination);
         this.noiseNode.start();
     }
-
     update(speed, isDrifting, isSlipSurface) {
         if (!this.ctx) return;
         const baseFreq = 80;
         this.engineOsc.frequency.setTargetAtTime(baseFreq + (Math.abs(speed) * 20), this.ctx.currentTime, 0.1);
-        
         let engVol = 0.1 * this.vols.master * this.vols.engine;
         this.engineGain.gain.setTargetAtTime(engVol, this.ctx.currentTime, 0.1);
-
         let skidVol = 0;
         if (Math.abs(speed) > 2) {
             if (isDrifting) skidVol = 0.3;
@@ -514,38 +530,21 @@ class SoundManager {
         skidVol = skidVol * this.vols.master * this.vols.tires;
         this.noiseGain.gain.setTargetAtTime(skidVol, this.ctx.currentTime, 0.1);
     }
-
     playTone(freq, type, duration, volMod = 1) {
         if (!this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        osc.type = type;
-        osc.frequency.value = freq;
-        const gain = this.ctx.createGain();
-        gain.gain.value = 0.3 * this.vols.master * this.vols.sfx * volMod;
-        
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        const osc = this.ctx.createOscillator(); osc.type = type; osc.frequency.value = freq;
+        const gain = this.ctx.createGain(); gain.gain.value = 0.3 * this.vols.master * this.vols.sfx * volMod;
+        osc.connect(gain); gain.connect(this.ctx.destination);
         osc.start();
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
         osc.stop(this.ctx.currentTime + duration);
     }
-
     playCrash() { this.playTone(100, 'sawtooth', 0.3); }
     playChat() { this.playTone(800, 'sine', 0.1); }
-    playJoin() { 
-        this.playTone(400, 'triangle', 0.1, 0.5); 
-        setTimeout(() => this.playTone(600, 'triangle', 0.2, 0.5), 100);
-    }
-    playLeave() {
-        this.playTone(600, 'triangle', 0.1, 0.5); 
-        setTimeout(() => this.playTone(400, 'triangle', 0.2, 0.5), 100);
-    }
-    playLap() {
-        this.playTone(880, 'square', 0.1, 0.7);
-        setTimeout(() => this.playTone(1100, 'square', 0.3, 0.7), 100);
-    }
+    playJoin() { this.playTone(400, 'triangle', 0.1, 0.5); setTimeout(() => this.playTone(600, 'triangle', 0.2, 0.5), 100); }
+    playLeave() { this.playTone(600, 'triangle', 0.1, 0.5); setTimeout(() => this.playTone(400, 'triangle', 0.2, 0.5), 100); }
+    playLap() { this.playTone(880, 'square', 0.1, 0.7); setTimeout(() => this.playTone(1100, 'square', 0.3, 0.7), 100); }
 }
-
 const audio = new SoundManager();
 
 /**
@@ -553,64 +552,66 @@ const audio = new SoundManager();
  */
 window.onload = () => {
     loadLocalSettings();
-
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
     miniCanvas = document.getElementById('minimap-canvas');
     miniCtx = miniCanvas.getContext('2d');
-
     resize();
     window.addEventListener('resize', resize);
-    
     initMap(100, 100);
     loadSavedMapsList();
 
-    // Inputs
+    // Key Listeners
     window.addEventListener('keydown', e => {
-        if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
-        const k = e.key.toLowerCase();
-        if(keys.hasOwnProperty(k)) keys[k] = true;
-        if(e.key === 'Shift') keys.Shift = true;
-        if(e.key === ' ') keys[" "] = true;
+        if(remappingAction) { // Remap Mode
+            e.preventDefault();
+            bindings[remappingAction] = e.key.toLowerCase();
+            remappingAction = null;
+            saveLocalInputs();
+            renderKeybinds();
+            return;
+        }
 
-        // Hotkeys
-        if(k === 'm') toggleEditor();
-        if(k === 'l') openSaveMenu();
+        if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
+        
+        const k = e.key.toLowerCase();
+        
+        // Map Keys to Actions
+        // Allow multiple keys to trigger same action, or multiple actions per key
+        for (let action in bindings) {
+            if (bindings[action] === k) {
+                if (action === 'editor') toggleEditor();
+                else if (action === 'save') openSaveMenu();
+                else if (action === 'quit') {
+                    if(!quitTimer) {
+                        document.getElementById('quit-overlay').style.display = 'flex';
+                        quitTimer = setTimeout(() => { location.reload(); }, 1000);
+                    }
+                }
+                else if (inputs.hasOwnProperty(action)) inputs[action] = true;
+            }
+        }
+
         if(k === 'escape') { closeSaveMenu(); closeSettings(); }
-        // Tools 1-7
-        if(parseInt(k) >= 1 && parseInt(k) <= 7) {
-            // Map 1-7 to tool IDs: 1=Wall(1), 2=Pave(0), 3=Spawn(2), 4=Grass(3)...
-            const map = [null, 1, 0, 2, 3, 4, 5, 6];
-            setTool(map[parseInt(k)]);
-        }
-        // Quit
-        if(k === 'q' && !quitTimer) {
-            document.getElementById('quit-overlay').style.display = 'flex';
-            quitTimer = setTimeout(() => { location.reload(); }, 1000);
-        }
+        // Tools 1-7 (Hardcoded for simplicity)
+        if(parseInt(k) >= 1 && parseInt(k) <= 7) setTool([null, 1, 0, 2, 3, 4, 5, 6][parseInt(k)]);
     });
     
     window.addEventListener('keyup', e => {
         const k = e.key.toLowerCase();
-        if(keys.hasOwnProperty(k)) keys[k] = false;
-        if(e.key === 'Shift') keys.Shift = false;
-        if(e.key === ' ') keys[" "] = false;
+        for (let action in bindings) {
+            if (bindings[action] === k && inputs.hasOwnProperty(action)) inputs[action] = false;
+        }
         
-        if(k === 'q') {
-            clearTimeout(quitTimer);
-            quitTimer = null;
+        if (bindings['quit'] === k) {
+            clearTimeout(quitTimer); quitTimer = null;
             document.getElementById('quit-overlay').style.display = 'none';
         }
     });
 
-    document.getElementById('chat-input').addEventListener('keydown', e => {
-        if (e.key === 'Enter') sendChatFunc();
-    });
+    document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendChatFunc(); });
 
     canvas.addEventListener('mousedown', e => {
-        // Removed !isEditorOpen check to allow interaction if needed, 
-        // but typically editor handles its own input. 
-        // Keeping checks inside handleEditorInput allows movement while editor is OPEN.
         if(e.button === 0) mouse.leftDown = true;
         if(e.button === 2) mouse.rightDown = true;
         handleEditorInput(e);
@@ -618,8 +619,7 @@ window.onload = () => {
     window.addEventListener('mouseup', () => { mouse.leftDown = false; mouse.rightDown = false; });
     canvas.addEventListener('mousemove', e => {
         const rect = canvas.getBoundingClientRect();
-        mouse.x = e.clientX - rect.left;
-        mouse.y = e.clientY - rect.top;
+        mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
         handleEditorInput(e);
     });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -635,6 +635,11 @@ function loadLocalSettings() {
         currentBroker = localStorage.getItem('drift_broker');
         document.getElementById('broker-select').value = currentBroker;
     }
+    // Bindings
+    const storedBindings = localStorage.getItem('drift_bindings');
+    if(storedBindings) bindings = JSON.parse(storedBindings);
+
+    // Audio
     ['master', 'engine', 'tires', 'sfx'].forEach(v => {
         const val = localStorage.getItem('drift_vol_'+v);
         if(val) {
@@ -649,6 +654,32 @@ function saveLocalInputs() {
     localStorage.setItem('drift_username', document.getElementById('username').value);
     localStorage.setItem('drift_room', document.getElementById('room-name').value);
     localStorage.setItem('drift_color', document.getElementById('car-color').value);
+    localStorage.setItem('drift_bindings', JSON.stringify(bindings));
+}
+
+function startRemap(action) {
+    remappingAction = action;
+    renderKeybinds();
+}
+
+function renderKeybinds() {
+    const list = document.getElementById('keybind-list');
+    list.innerHTML = '';
+    const labels = { up: "Throttle", down: "Brake", left: "Left", right: "Right", drift: "Handbrake", editor: "Toggle Editor", save: "Maps Menu", quit: "Hold to Quit" };
+    
+    for (let action in bindings) {
+        const row = document.createElement('div');
+        row.innerHTML = `<span class="text-xs text-gray-400 self-center">${labels[action] || action}</span>`;
+        
+        const btn = document.createElement('button');
+        btn.className = `keybind-btn ${remappingAction === action ? 'recording' : ''}`;
+        btn.innerText = remappingAction === action ? 'Press Key...' : bindings[action].toUpperCase();
+        if(bindings[action] === ' ') btn.innerText = 'SPACE';
+        btn.onclick = () => startRemap(action);
+        
+        row.appendChild(btn);
+        list.appendChild(row);
+    }
 }
 
 function resize() {
@@ -677,58 +708,37 @@ async function startGame() {
 
     const nameInput = document.getElementById('username').value.trim() || "Racer";
     const roomInput = document.getElementById('room-name').value.trim().toLowerCase() || "lobby";
-    const colorInput = document.getElementById('car-color').value;
-
     myCar.name = nameInput;
-    myCar.color = colorInput;
+    myCar.color = document.getElementById('car-color').value;
 
     document.getElementById('connection-status').innerText = "Hashing Room...";
-    
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(roomInput));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substr(0, 16);
-    
     roomTopicBase = `drift_v8/${hashHex}`;
     
     document.getElementById('room-display').innerText = roomInput;
-    document.getElementById('connection-status').innerText = `Connecting to ${currentBroker}...`;
+    document.getElementById('connection-status').innerText = `Connecting...`;
 
     if (mqttClient) mqttClient.end();
 
     try {
-        mqttClient = mqtt.connect(currentBroker, {
-            clientId: CLIENT_ID,
-            clean: true,
-            connectTimeout: 5000,
-        });
-
+        mqttClient = mqtt.connect(currentBroker, { clientId: CLIENT_ID, clean: true, connectTimeout: 5000 });
         mqttClient.on('connect', () => {
             isConnected = true;
             document.getElementById('main-menu').style.display = 'none';
-            addSystemMessage("Connected to Broker.");
+            addSystemMessage("Connected.");
             mqttClient.subscribe(`${roomTopicBase}/#`);
             publish('join', { name: myCar.name, color: myCar.color, id: myCar.id });
             setInterval(sendUpdate, 50); // 20Hz
         });
-
-        mqttClient.on('error', (err) => {
-            console.error("MQTT Error:", err);
-            document.getElementById('connection-status').innerText = "Conn Error. Try Settings.";
-        });
-
-        mqttClient.on('offline', () => {
-            document.getElementById('connection-status').innerText = "Broker Offline/Blocked.";
-        });
-
+        mqttClient.on('error', (err) => document.getElementById('connection-status').innerText = "Conn Error.");
         mqttClient.on('message', (topic, message) => {
             const payload = JSON.parse(message.toString());
             const subTopic = topic.replace(roomTopicBase + '/', '');
             handleNetworkMessage(subTopic, payload);
         });
-
-    } catch (e) {
-        alert("Connection Error: " + e.message);
-    }
+    } catch (e) { alert("Connection Error: " + e.message); }
 }
 
 function publish(subTopic, data) {
@@ -738,14 +748,9 @@ function publish(subTopic, data) {
 
 function sendUpdate() {
     publish('pos', {
-        id: myCar.id,
-        name: myCar.name,
-        color: myCar.color,
-        x: Math.round(myCar.x),
-        y: Math.round(myCar.y),
-        angle: parseFloat(myCar.angle.toFixed(2)),
-        speed: Math.round(myCar.speed),
-        laps: myCar.laps
+        id: myCar.id, name: myCar.name, color: myCar.color,
+        x: Math.round(myCar.x), y: Math.round(myCar.y),
+        angle: parseFloat(myCar.angle.toFixed(2)), speed: Math.round(myCar.speed), laps: myCar.laps
     });
 }
 
@@ -757,27 +762,17 @@ function handleNetworkMessage(subTopic, data) {
             players[data.id] = { ...data, lastSeen: Date.now() };
             addSystemMessage(`${data.name} joined.`);
             audio.playJoin();
-            // Send map + MY POS as spawn point
-            publish('map_sync', { 
-                data: mapData, w: mapWidth, h: mapHeight, targetId: data.id,
-                spawnX: myCar.x, spawnY: myCar.y 
-            });
+            publish('map_sync', { data: mapData, w: mapWidth, h: mapHeight, targetId: data.id, spawnX: myCar.x, spawnY: myCar.y });
         } else {
             const p = players[data.id];
-            p.x = data.x; p.y = data.y;
-            p.angle = data.angle; p.speed = data.speed;
-            p.color = data.color; p.name = data.name;
-            p.laps = data.laps || 0;
-            p.lastSeen = Date.now();
+            p.x = data.x; p.y = data.y; p.angle = data.angle; p.speed = data.speed;
+            p.color = data.color; p.name = data.name; p.laps = data.laps || 0; p.lastSeen = Date.now();
         }
     } else if (subTopic === 'join') {
         players[data.id] = { ...data, x:0, y:0, angle:0, laps:0, lastSeen: Date.now() };
         addSystemMessage(`${data.name} joined.`);
         audio.playJoin();
-        publish('map_sync', { 
-            data: mapData, w: mapWidth, h: mapHeight, targetId: data.id,
-            spawnX: myCar.x, spawnY: myCar.y 
-        });
+        publish('map_sync', { data: mapData, w: mapWidth, h: mapHeight, targetId: data.id, spawnX: myCar.x, spawnY: myCar.y });
     } else if (subTopic === 'chat') {
         if (!chatMuted.includes(data.name)) {
             addChatMessage(data.name, data.text, data.color);
@@ -785,28 +780,18 @@ function handleNetworkMessage(subTopic, data) {
         }
     } else if (subTopic === 'map') {
         addSystemMessage(`${data.sender} shared a map.`);
-        // VALIDATION
         if(data.data && data.data.length === data.w * data.h) {
             loadMapData(data.data);
             mapWidth = data.w; mapHeight = data.h;
-            // Teleport to Sharer
-            if(data.spawnX && data.spawnY) {
-                myCar.x = data.spawnX;
-                myCar.y = data.spawnY;
-                myCar.vx = 0; myCar.vy = 0;
-            }
+            if(data.spawnX && data.spawnY) { myCar.x = data.spawnX; myCar.y = data.spawnY; myCar.vx = 0; myCar.vy = 0; }
         }
     } else if (subTopic === 'map_sync') {
         if (!data.targetId || data.targetId === myCar.id) {
-            // Only sync if local map is default/empty to prevent overwriting edits
-            // or if it's the initial join
             if (mapData.every(t => t === 0 || t === 1)) {
                 if(data.data && data.data.length === data.w * data.h) {
                     loadMapData(data.data);
                     mapWidth = data.w; mapHeight = data.h;
-                    if(data.spawnX && data.spawnY) {
-                        myCar.x = data.spawnX; myCar.y = data.spawnY;
-                    }
+                    if(data.spawnX && data.spawnY) { myCar.x = data.spawnX; myCar.y = data.spawnY; }
                 }
             }
         }
@@ -816,86 +801,77 @@ function handleNetworkMessage(subTopic, data) {
 /**
  * GAME LOGIC
  */
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    updatePhysics();
+let lastFrameTime = 0;
+const TARGET_FPS = 60;
+const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
-    camera.x = myCar.x - canvas.width / 2;
-    camera.y = myCar.y - canvas.height / 2;
-
-    ctx.save();
-    ctx.translate(-camera.x, -camera.y);
-
-    drawMap();
-
-    particles.forEach((p, i) => {
-        p.update();
-        p.draw(ctx);
-        if(p.life <= 0) particles.splice(i, 1);
-    });
-
-    for (let id in players) {
-        const p = players[id];
-        drawCar(p);
-        if (Date.now() - p.lastSeen > 5000) {
-            audio.playLeave();
-            addSystemMessage(`${players[id].name} rage quit.`);
-            delete players[id];
-        }
-    }
-
-    drawCar(myCar);
-    if(isEditorOpen) drawEditorCursor();
-
-    ctx.restore();
-    drawMinimap();
-    updateLeaderboard();
-
+function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
+    if (!lastFrameTime) { lastFrameTime = timestamp; return; }
+    const elapsed = timestamp - lastFrameTime;
+    if (elapsed > FRAME_INTERVAL) {
+        lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updatePhysics();
+
+        camera.x = myCar.x - canvas.width / 2;
+        camera.y = myCar.y - canvas.height / 2;
+
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+
+        drawMap();
+
+        particles.forEach((p, i) => {
+            p.update(); p.draw(ctx);
+            if(p.life <= 0) particles.splice(i, 1);
+        });
+
+        for (let id in players) {
+            const p = players[id];
+            drawCar(p);
+            if (Date.now() - p.lastSeen > 5000) {
+                audio.playLeave();
+                addSystemMessage(`${players[id].name} rage quit.`);
+                delete players[id];
+            }
+        }
+
+        drawCar(myCar);
+        if(isEditorOpen) drawEditorCursor();
+
+        ctx.restore();
+        drawMinimap();
+        updateLeaderboard();
+    }
 }
 
 function updatePhysics() {
     const centerTile = getTile(Math.floor(myCar.x / TILE_SIZE), Math.floor(myCar.y / TILE_SIZE));
-    
     if (centerTile === TILES.SPAWN) {
         if (!myCar.onFinishLine) {
-            myCar.laps++;
-            myCar.onFinishLine = true;
-            audio.playLap();
-            addSystemMessage(`Lap ${myCar.laps}!`);
+            myCar.laps++; myCar.onFinishLine = true; audio.playLap(); addSystemMessage(`Lap ${myCar.laps}!`);
         }
-    } else {
-        myCar.onFinishLine = false;
-    }
+    } else { myCar.onFinishLine = false; }
 
-    let grip = 0.96; 
-    let drag = 0.98;
-    let surfaceType = 'pavement';
-
+    let grip = 0.96; let drag = 0.98; let surfaceType = 'pavement';
     switch(centerTile) {
         case TILES.GRASS: grip = 0.85; drag = 0.92; surfaceType='grass'; break;
         case TILES.DIRT: grip = 0.60; drag = 0.94; surfaceType='dirt'; break;
         case TILES.SAND: grip = 0.90; drag = 0.80; surfaceType='dirt'; break;
         case TILES.RUMBLE: grip = 0.98; drag = 0.97; break;
-        default: break;
     }
 
-    if (keys[" "]) {
-        // AGGRESSIVE DRIFT
-        grip = 0.05; 
-        myCar.drifting = true;
-    } else {
-        myCar.drifting = false;
-    }
+    if (inputs.drift) { grip = 0.05; myCar.drifting = true; } else { myCar.drifting = false; }
 
     const effectiveTurnSpeed = myCar.drifting ? TURN_SPEED * 1.3 : TURN_SPEED;
-
-    if (keys.a) myCar.angle -= effectiveTurnSpeed;
-    if (keys.d) myCar.angle += effectiveTurnSpeed;
+    if (inputs.left) myCar.angle -= effectiveTurnSpeed;
+    if (inputs.right) myCar.angle += effectiveTurnSpeed;
 
     let accel = 0;
-    if (keys.w) accel = ENGINE_POWER;
-    if (keys.s) accel = -REVERSE_POWER;
+    if (inputs.up) accel = ENGINE_POWER;
+    if (inputs.down) accel = -REVERSE_POWER;
 
     myCar.vx += Math.cos(myCar.angle) * accel;
     myCar.vy += Math.sin(myCar.angle) * accel;
@@ -906,22 +882,12 @@ function updatePhysics() {
     myCar.vx -= Math.cos(rightAngle) * lateralVelocity * grip;
     myCar.vy -= Math.sin(rightAngle) * lateralVelocity * grip;
 
-    myCar.vx *= drag * DRAG_AIR;
-    myCar.vy *= drag * DRAG_AIR;
+    myCar.vx *= drag * DRAG_AIR; myCar.vy *= drag * DRAG_AIR;
 
-    let nextX = myCar.x + myCar.vx;
-    let nextY = myCar.y + myCar.vy;
-
+    let nextX = myCar.x + myCar.vx; let nextY = myCar.y + myCar.vy;
     if (checkCollision(nextX, nextY)) {
-        myCar.vx *= -0.5;
-        myCar.vy *= -0.5;
-        nextX = myCar.x + myCar.vx;
-        nextY = myCar.y + myCar.vy;
-        audio.playCrash();
-    } else {
-        myCar.x = nextX;
-        myCar.y = nextY;
-    }
+        myCar.vx *= -0.5; myCar.vy *= -0.5; nextX = myCar.x + myCar.vx; nextY = myCar.y + myCar.vy; audio.playCrash();
+    } else { myCar.x = nextX; myCar.y = nextY; }
 
     myCar.speed = Math.sqrt(myCar.vx*myCar.vx + myCar.vy*myCar.vy);
     document.getElementById('speed-display').innerText = Math.floor(myCar.speed * 10);
@@ -930,31 +896,23 @@ function updatePhysics() {
     const isSliding = Math.abs(lateralVelocity) > 2.0;
     audio.update(myCar.speed, myCar.drifting || isSliding, surfaceType !== 'pavement');
 
-    if ((myCar.drifting || isSliding) && (Date.now() % 3 === 0)) {
-        emitParticles(myCar.x, myCar.y, surfaceType === 'pavement' ? 'smoke' : surfaceType);
-    } else if (myCar.speed > 2 && surfaceType !== 'pavement' && (Date.now() % 5 === 0)) {
-        emitParticles(myCar.x, myCar.y, surfaceType);
-    }
+    if ((myCar.drifting || isSliding) && (Date.now() % 3 === 0)) emitParticles(myCar.x, myCar.y, surfaceType === 'pavement' ? 'smoke' : surfaceType);
+    else if (myCar.speed > 2 && surfaceType !== 'pavement' && (Date.now() % 5 === 0)) emitParticles(myCar.x, myCar.y, surfaceType);
 }
 
 function checkCollision(x, y) {
     const r = 12; 
     const checks = [ {x: x-r, y: y-r}, {x: x+r, y: y-r}, {x: x-r, y: y+r}, {x: x+r, y: y+r} ];
     for (let p of checks) {
-        const tx = Math.floor(p.x / TILE_SIZE);
-        const ty = Math.floor(p.y / TILE_SIZE);
+        const tx = Math.floor(p.x / TILE_SIZE); const ty = Math.floor(p.y / TILE_SIZE);
         if (getTile(tx, ty) === TILES.WALL) return true;
     }
     return false;
 }
 
 function drawCar(c) {
-    ctx.save();
-    ctx.translate(c.x, c.y);
-    ctx.rotate(c.angle);
-    ctx.fillStyle = c.color;
-    ctx.shadowBlur = 10; ctx.shadowColor = c.color;
-    ctx.fillRect(-15, -10, 30, 20);
+    ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.angle);
+    ctx.fillStyle = c.color; ctx.shadowBlur = 10; ctx.shadowColor = c.color; ctx.fillRect(-15, -10, 30, 20);
     ctx.fillStyle = "#222"; ctx.fillRect(-18, -11, 5, 22);
     ctx.fillStyle = "#000"; ctx.fillRect(-2, -8, 8, 16);
     ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.fillRect(14, -8, 2, 4); ctx.fillRect(14, 4, 2, 4);
@@ -966,9 +924,7 @@ function drawCar(c) {
 function updateLeaderboard() {
     const all = [{name: myCar.name, laps: myCar.laps, color: myCar.color}, ...Object.values(players)];
     all.sort((a,b) => (b.laps || 0) - (a.laps || 0));
-    document.getElementById('lb-content').innerHTML = all.map(p => 
-        `<div class="lb-row"><span class="lb-name" style="color:${p.color}">${p.name}</span><span class="lb-laps">${p.laps||0}</span></div>`
-    ).join('');
+    document.getElementById('lb-content').innerHTML = all.map(p => `<div class="lb-row"><span class="lb-name" style="color:${p.color}">${p.name}</span><span class="lb-laps">${p.laps||0}</span></div>`).join('');
 }
 
 /**
@@ -980,62 +936,32 @@ function getTile(x, y) {
 }
 function setTile(x, y, val) {
     if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return;
-    const idx = y * mapWidth + x;
-    mapData[idx] = val;
+    mapData[y * mapWidth + x] = val;
 }
-
 function drawMap() {
-    const startX = Math.floor(camera.x / TILE_SIZE);
-    const startY = Math.floor(camera.y / TILE_SIZE);
-    const endX = startX + Math.ceil(canvas.width / TILE_SIZE) + 1;
-    const endY = startY + Math.ceil(canvas.height / TILE_SIZE) + 1;
-
+    const startX = Math.floor(camera.x / TILE_SIZE); const startY = Math.floor(camera.y / TILE_SIZE);
+    const endX = startX + Math.ceil(canvas.width / TILE_SIZE) + 1; const endY = startY + Math.ceil(canvas.height / TILE_SIZE) + 1;
     for (let y = startY; y < endY; y++) {
         for (let x = startX; x < endX; x++) {
-            const t = getTile(x, y);
-            const px = x * TILE_SIZE; const py = y * TILE_SIZE;
-            
-            if (t === TILES.PAVEMENT) {
-                ctx.fillStyle = "#222"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-                ctx.strokeStyle = "#333"; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
-            } else if (t === TILES.WALL) {
-                ctx.fillStyle = "#445"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-                ctx.fillStyle = "#000"; ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
-                ctx.strokeStyle = "var(--neon-blue)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
-            } else if (t === TILES.GRASS) {
-                ctx.fillStyle = "#262"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-                ctx.fillStyle = "#383"; ctx.fillRect(px+5, py+5, 5, 5); ctx.fillRect(px+20, py+25, 5, 5);
-            } else if (t === TILES.DIRT) {
-                ctx.fillStyle = "#642"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-            } else if (t === TILES.SAND) {
-                ctx.fillStyle = "#da8"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-            } else if (t === TILES.RUMBLE) {
-                ctx.fillStyle = (x + y) % 2 === 0 ? "#e22" : "#eee"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-            } else if (t === TILES.SPAWN) {
-                ctx.fillStyle = ((x + y) % 2 === 0) ? "#fff" : "#000"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-                ctx.strokeStyle = "white"; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
-            }
+            const t = getTile(x, y); const px = x * TILE_SIZE; const py = y * TILE_SIZE;
+            if (t === TILES.PAVEMENT) { ctx.fillStyle = "#222"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE); ctx.strokeStyle = "#333"; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE); }
+            else if (t === TILES.WALL) { ctx.fillStyle = "#445"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE); ctx.fillStyle = "#000"; ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8); ctx.strokeStyle = "var(--neon-blue)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE); }
+            else if (t === TILES.GRASS) { ctx.fillStyle = "#262"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE); ctx.fillStyle = "#383"; ctx.fillRect(px+5, py+5, 5, 5); ctx.fillRect(px+20, py+25, 5, 5); }
+            else if (t === TILES.DIRT) { ctx.fillStyle = "#642"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE); }
+            else if (t === TILES.SAND) { ctx.fillStyle = "#da8"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE); }
+            else if (t === TILES.RUMBLE) { ctx.fillStyle = (x + y) % 2 === 0 ? "#e22" : "#eee"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE); }
+            else if (t === TILES.SPAWN) { ctx.fillStyle = ((x + y) % 2 === 0) ? "#fff" : "#000"; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE); ctx.strokeStyle = "white"; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE); }
         }
     }
 }
-
 function drawMinimap() {
     miniCtx.fillStyle = '#000'; miniCtx.fillRect(0, 0, 200, 200);
     const scaleX = 200 / mapWidth; const scaleY = 200 / mapHeight;
     miniCtx.fillStyle = '#666';
-    for(let i=0; i<mapData.length; i++) {
-        if(mapData[i] === TILES.WALL) {
-            const x = i % mapWidth; const y = Math.floor(i / mapWidth);
-            miniCtx.fillRect(x * scaleX, y * scaleY, scaleX, scaleY);
-        }
-    }
-    miniCtx.fillStyle = '#00f3ff'; miniCtx.beginPath();
-    miniCtx.arc((myCar.x/TILE_SIZE)*scaleX, (myCar.y/TILE_SIZE)*scaleY, 3, 0, Math.PI*2); miniCtx.fill();
+    for(let i=0; i<mapData.length; i++) { if(mapData[i] === TILES.WALL) { const x = i % mapWidth; const y = Math.floor(i / mapWidth); miniCtx.fillRect(x * scaleX, y * scaleY, scaleX, scaleY); } }
+    miniCtx.fillStyle = '#00f3ff'; miniCtx.beginPath(); miniCtx.arc((myCar.x/TILE_SIZE)*scaleX, (myCar.y/TILE_SIZE)*scaleY, 3, 0, Math.PI*2); miniCtx.fill();
     miniCtx.fillStyle = '#ff0055';
-    for(let id in players) {
-        const p = players[id];
-        miniCtx.beginPath(); miniCtx.arc((p.x/TILE_SIZE)*scaleX, (p.y/TILE_SIZE)*scaleY, 2, 0, Math.PI*2); miniCtx.fill();
-    }
+    for(let id in players) { const p = players[id]; miniCtx.beginPath(); miniCtx.arc((p.x/TILE_SIZE)*scaleX, (p.y/TILE_SIZE)*scaleY, 2, 0, Math.PI*2); miniCtx.fill(); }
 }
 
 /**
@@ -1044,11 +970,10 @@ function drawMinimap() {
 function toggleEditor() { isEditorOpen = !isEditorOpen; document.getElementById('editor-ui').style.display = isEditorOpen ? 'flex' : 'none'; }
 function setTool(t) { currentTool = t; document.querySelectorAll('.tool-btn').forEach((b, i) => b.classList.toggle('active', i === t || (t===0 && i===1))); }
 function handleEditorInput(e) {
-    if(!isEditorOpen) return; // Only edit when editor is open
+    if(!isEditorOpen) return; 
     const worldX = mouse.x + camera.x; const worldY = mouse.y + camera.y;
     const tx = Math.floor(worldX / TILE_SIZE); const ty = Math.floor(worldY / TILE_SIZE);
-    if (mouse.leftDown) setTile(tx, ty, currentTool);
-    if (mouse.rightDown) setTile(tx, ty, TILES.PAVEMENT);
+    if (mouse.leftDown) setTile(tx, ty, currentTool); if (mouse.rightDown) setTile(tx, ty, TILES.PAVEMENT);
 }
 function drawEditorCursor() {
     const worldX = mouse.x + camera.x; const worldY = mouse.y + camera.y;
@@ -1065,15 +990,13 @@ function generateTerrain() {
     if(!confirm("Generate?")) return;
     for(let i=0; i<mapData.length; i++) {
         let x = i % mapWidth; let y = Math.floor(i / mapWidth);
-        if (x===0 || y===0 || x===mapWidth-1 || y===mapHeight-1) mapData[i] = TILES.WALL;
-        else mapData[i] = Math.random() < 0.45 ? TILES.WALL : TILES.PAVEMENT;
+        if (x===0 || y===0 || x===mapWidth-1 || y===mapHeight-1) mapData[i] = TILES.WALL; else mapData[i] = Math.random() < 0.45 ? TILES.WALL : TILES.PAVEMENT;
     }
     for(let k=0; k<5; k++) {
         let newData = [...mapData];
         for(let y=1; y<mapHeight-1; y++) {
             for(let x=1; x<mapWidth-1; x++) {
-                let n = 0;
-                for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) if(getTile(x+dx, y+dy) === TILES.WALL) n++;
+                let n = 0; for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) if(getTile(x+dx, y+dy) === TILES.WALL) n++;
                 if (n > 4) newData[y*mapWidth+x] = TILES.WALL; else if (n < 4) newData[y*mapWidth+x] = TILES.PAVEMENT;
             }
         }
@@ -1081,144 +1004,69 @@ function generateTerrain() {
     }
     setTile(10, 10, TILES.SPAWN); respawn();
 }
-
 function respawn() {
-    let spawnFound = false;
-    myCar.vx = 0; myCar.vy = 0; myCar.speed = 0;
-    for(let y=0; y<mapHeight; y++) {
-        for(let x=0; x<mapWidth; x++) {
-            if(getTile(x, y) === TILES.SPAWN) {
-                myCar.x = x * TILE_SIZE + TILE_SIZE/2;
-                myCar.y = y * TILE_SIZE + TILE_SIZE/2;
-                spawnFound = true; break;
-            }
-        }
-        if(spawnFound) break;
-    }
+    let spawnFound = false; myCar.vx = 0; myCar.vy = 0; myCar.speed = 0;
+    for(let y=0; y<mapHeight; y++) { for(let x=0; x<mapWidth; x++) { if(getTile(x, y) === TILES.SPAWN) { myCar.x = x * TILE_SIZE + TILE_SIZE/2; myCar.y = y * TILE_SIZE + TILE_SIZE/2; spawnFound = true; break; } } if(spawnFound) break; }
     if(!spawnFound) { myCar.x = 200; myCar.y = 200; }
 }
-
 function openSaveMenu() { document.getElementById('maps-modal').style.display = 'flex'; loadSavedMapsList(); }
 function closeSaveMenu() { document.getElementById('maps-modal').style.display = 'none'; }
 function saveCurrentMap() {
     const name = document.getElementById('map-save-name').value || "Untitled";
-    const saveObj = {
-        name: name,
-        date: new Date().toLocaleDateString(),
-        data: mapData, w: mapWidth, h: mapHeight
-    };
-    localStorage.setItem('drift_map_' + name, JSON.stringify(saveObj));
-    loadSavedMapsList();
+    const saveObj = { name: name, date: new Date().toLocaleDateString(), data: mapData, w: mapWidth, h: mapHeight };
+    localStorage.setItem('drift_map_' + name, JSON.stringify(saveObj)); loadSavedMapsList();
 }
 function loadSavedMapsList() {
-    const list = document.getElementById('maps-list');
-    list.innerHTML = "";
+    const list = document.getElementById('maps-list'); list.innerHTML = "";
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key.startsWith('drift_map_')) {
             const val = JSON.parse(localStorage.getItem(key));
-            const div = document.createElement('div');
-            div.className = "flex justify-between items-center bg-gray-800 p-2 rounded";
+            const div = document.createElement('div'); div.className = "flex justify-between items-center bg-gray-800 p-2 rounded";
             div.innerHTML = `<span>${val.name}</span>`;
-            const btnLoad = document.createElement('button');
-            btnLoad.innerText = "Load";
-            btnLoad.className = "text-xs px-2 py-1 w-auto ml-2";
-            btnLoad.onclick = () => { 
-                if (val.w) { mapWidth = val.w; mapHeight = val.h; }
-                loadMapData(val.data); shareMap(); closeSaveMenu(); 
-            };
-            div.appendChild(btnLoad);
-            list.appendChild(div);
+            const btnLoad = document.createElement('button'); btnLoad.innerText = "Load"; btnLoad.className = "text-xs px-2 py-1 w-auto ml-2";
+            btnLoad.onclick = () => { if (val.w) { mapWidth = val.w; mapHeight = val.h; } loadMapData(val.data); shareMap(); closeSaveMenu(); };
+            div.appendChild(btnLoad); list.appendChild(div);
         }
     }
 }
-function loadMapData(newData) { 
-    if(newData && newData.length === mapWidth * mapHeight) { 
-        mapData = newData; respawn(); 
-    } else {
-        console.warn("Invalid map data loaded");
-    }
-}
-function shareMap() {
-    if(!isConnected) { alert("Connect first!"); return; }
-    publish('map', { sender: myCar.name, data: mapData, w: mapWidth, h: mapHeight, spawnX: myCar.x, spawnY: myCar.y });
-}
-
+function loadMapData(newData) { if(newData && newData.length === mapWidth * mapHeight) { mapData = newData; respawn(); } else { console.warn("Invalid map data loaded"); } }
+function shareMap() { if(!isConnected) { alert("Connect first!"); return; } publish('map', { sender: myCar.name, data: mapData, w: mapWidth, h: mapHeight, spawnX: myCar.x, spawnY: myCar.y }); }
 function sendChatFunc() {
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
+    const input = document.getElementById('chat-input'); const text = input.value.trim();
     if (!text) return;
-    if (text.startsWith('/')) { handleCommand(text); }
-    else {
-        publish('chat', { name: myCar.name, text: text, color: myCar.color });
-        // Local echo removed as requested
-    }
+    if (text.startsWith('/')) { handleCommand(text); } else { publish('chat', { name: myCar.name, text: text, color: myCar.color }); }
     input.value = "";
 }
-
 function handleCommand(cmd) {
     const parts = cmd.split(' ');
     if (parts[0] === '/kick') addSystemMessage("Kick requires admin (Disabled in Public Mode)");
     else if (parts[0] === '/mute') { chatMuted.push(parts[1]); addSystemMessage(`Muted ${parts[1]}.`); }
 }
-
 function addChatMessage(name, text, color) {
-    const div = document.createElement('div');
-    div.className = 'chat-msg';
+    const div = document.createElement('div'); div.className = 'chat-msg';
     div.innerHTML = `<span style="color:${color}; font-weight:bold">${name}:</span> ${text}`;
-    const container = document.getElementById('chat-messages');
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    const container = document.getElementById('chat-messages'); container.appendChild(div); container.scrollTop = container.scrollHeight;
 }
 function addSystemMessage(text) {
-    const div = document.createElement('div');
-    div.className = 'chat-msg sys-msg';
-    div.innerText = `[SYS] ${text}`;
-    const container = document.getElementById('chat-messages');
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    const div = document.createElement('div'); div.className = 'chat-msg sys-msg'; div.innerText = `[SYS] ${text}`;
+    const container = document.getElementById('chat-messages'); container.appendChild(div); container.scrollTop = container.scrollHeight;
 }
-
-// Network Settings UI
-function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
-function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
-function saveSettings() {
-    currentBroker = document.getElementById('broker-select').value;
-    localStorage.setItem('drift_broker', currentBroker);
-    closeSettings();
-    if (isConnected) {
-        alert("Broker changed. Please reconnect.");
-        location.reload();
-    }
-}
+function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; renderKeybinds(); }
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; remappingAction = null; }
+function saveSettings() { currentBroker = document.getElementById('broker-select').value; localStorage.setItem('drift_broker', currentBroker); closeSettings(); if (isConnected) { alert("Broker changed. Please reconnect."); location.reload(); } }
 function updateVolumes() {
-    const vols = ['master', 'engine', 'tires', 'sfx'];
-    vols.forEach(v => {
-        const val = document.getElementById('vol-'+v).value;
-        audio.vols[v] = parseInt(val) / 100;
-        document.getElementById(`vol-${v}-val`).innerText = val;
-        localStorage.setItem('drift_vol_'+v, val);
+    ['master', 'engine', 'tires', 'sfx'].forEach(v => {
+        const val = document.getElementById('vol-'+v).value; audio.vols[v] = parseInt(val) / 100; document.getElementById(`vol-${v}-val`).innerText = val; localStorage.setItem('drift_vol_'+v, val);
     });
 }
-
-// Particle Class
 class Particle {
-    constructor(x, y, color, life, speed) {
-        this.x = x; this.y = y; this.color = color; this.life = life; this.maxLife = life;
-        const angle = Math.random() * Math.PI * 2;
-        this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
-    }
+    constructor(x, y, color, life, speed) { this.x = x; this.y = y; this.color = color; this.life = life; this.maxLife = life; const angle = Math.random() * Math.PI * 2; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; }
     update() { this.x += this.vx; this.y += this.vy; this.life--; }
-    draw(ctx) {
-        ctx.globalAlpha = this.life / this.maxLife; ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, 3, 3); ctx.globalAlpha = 1.0;
-    }
+    draw(ctx) { ctx.globalAlpha = this.life / this.maxLife; ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, 3, 3); ctx.globalAlpha = 1.0; }
 }
 function emitParticles(x, y, type) {
-    let color = '#fff'; let count = 1;
-    if (type === 'smoke') { color = '#ddd'; count = 2; }
-    if (type === 'dirt') { color = '#864'; count = 2; }
-    if (type === 'grass') { color = '#484'; count = 2; }
+    let color = '#fff'; let count = 1; if (type === 'smoke') { color = '#ddd'; count = 2; } if (type === 'dirt') { color = '#864'; count = 2; } if (type === 'grass') { color = '#484'; count = 2; }
     for(let i=0; i<count; i++) particles.push(new Particle(x + (Math.random()*10-5), y + (Math.random()*10-5), color, 20 + Math.random()*20, 0.5));
 }
 </script>
