@@ -494,12 +494,25 @@ async function startGame() {
 }
 
 function initPeer(attemptHost) {
+    if (peer) peer.destroy(); // Clean up previous instance
+
+    const config = {
+        debug: 1,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19305' },
+                { urls: 'stun:stun1.l.google.com:19305' },
+                { urls: 'stun:stun2.l.google.com:19305' }
+            ]
+        }
+    };
+
     if (attemptHost) {
         // Try to create peer with the specific Room Hash ID
-        peer = new Peer(roomHash, { debug: 1 });
+        peer = new Peer(roomHash, config);
     } else {
         // Create peer with random ID (as Client)
-        peer = new Peer({ debug: 1 });
+        peer = new Peer(config);
     }
 
     peer.on('open', (id) => {
@@ -514,6 +527,7 @@ function initPeer(attemptHost) {
         if (err.type === 'unavailable-id') {
             // ID taken, meaning Host exists. Switch to Client mode.
             console.log("Room Host exists, joining as Client...");
+            if(peer) peer.destroy(); // Important: cleanup failed peer
             initPeer(false);
         } else {
             document.getElementById('connection-status').innerText = "Error: " + err.type;
@@ -548,9 +562,17 @@ function setupClientMode() {
     document.getElementById('connection-status').innerText = "Joining Host...";
 
     // Connect to Host
-    hostConn = peer.connect(roomHash);
+    hostConn = peer.connect(roomHash, { reliable: true });
+
+    let connTimeout = setTimeout(() => {
+        if (!isConnected) {
+            alert("Failed to join Host. The room ID might be 'ghosted' (host closed tab improperly) or a firewall is blocking the P2P connection. Try a different room name.");
+            location.reload();
+        }
+    }, 5000);
 
     hostConn.on('open', () => {
+        clearTimeout(connTimeout);
         isConnected = true;
         document.getElementById('main-menu').style.display = 'none';
         addSystemMessage("Connected to Host!");
