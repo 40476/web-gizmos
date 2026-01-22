@@ -4,7 +4,7 @@ import subprocess
 import requests
 from jinja2 import Template
 
-MODEL = "qwen3-coder:free"   # Hardcoded model
+MODEL = "qwen/qwen3-coder:free"   # Hardcoded model
 SUMMARY_DIR = ".github/summaries"
 TEMPLATE_FILE = "index.html.template"
 OUTPUT_FILE = "index.html"
