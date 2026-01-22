@@ -442,7 +442,7 @@ let bindings = {
     right: 'd',
     drift: ' ',
     editor: 'm',
-    save: 'l',
+    save: 'l', // Updated to L
     quit: 'q'
 };
 let inputs = { up: false, down: false, left: false, right: false, drift: false };
@@ -560,10 +560,11 @@ window.onload = () => {
     window.addEventListener('resize', resize);
     initMap(100, 100);
     loadSavedMapsList();
+    checkMobile(); // Check for mobile immediately
 
     // Key Listeners
     window.addEventListener('keydown', e => {
-        if(remappingAction) { // Remap Mode
+        if(remappingAction) { 
             e.preventDefault();
             bindings[remappingAction] = e.key.toLowerCase();
             remappingAction = null;
@@ -576,8 +577,6 @@ window.onload = () => {
         
         const k = e.key.toLowerCase();
         
-        // Map Keys to Actions
-        // Allow multiple keys to trigger same action, or multiple actions per key
         for (let action in bindings) {
             if (bindings[action] === k) {
                 if (action === 'editor') toggleEditor();
@@ -593,7 +592,6 @@ window.onload = () => {
         }
 
         if(k === 'escape') { closeSaveMenu(); closeSettings(); }
-        // Tools 1-7 (Hardcoded for simplicity)
         if(parseInt(k) >= 1 && parseInt(k) <= 7) setTool([null, 1, 0, 2, 3, 4, 5, 6][parseInt(k)]);
     });
     
@@ -626,6 +624,19 @@ window.onload = () => {
 
     requestAnimationFrame(gameLoop);
 };
+
+// Check Mobile Function
+function checkMobile() {
+    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(new URLSearchParams(window.location.search).get('ua') || navigator.userAgent);
+    if (isMobile) {
+        document.getElementById('mobile-controls').style.display = 'flex';
+        // Adjust chat position to not overlap controls
+        const chat = document.getElementById('chat-container');
+        chat.style.bottom = '180px';
+        chat.style.width = '200px';
+        chat.style.height = '150px';
+    }
+}
 
 function loadLocalSettings() {
     if(localStorage.getItem('drift_username')) document.getElementById('username').value = localStorage.getItem('drift_username');
@@ -699,22 +710,6 @@ function initMap(w, h) {
     document.getElementById('map-h').value = mapHeight;
 }
 
-/**
- * MOBILE UI
- */
- 
-  // Check if device is mobile
-  function checkMobile() {
-    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(new URLSearchParams(window.location.search).get('ua') || navigator.userAgent);
-    if (isMobile) {
-      document.getElementById('mobile-controls').style.display="flex";
-      
-      document.getElementById('mobile-controls').style.bottom="180px";
-      document.getElementById('mobile-controls').style.width="200px";
-      document.getElementById('mobile-controls').style.height="150px";
-    }
-  }
- checkMobile()
 /**
  * NETWORKING (MQTT)
  */
