@@ -589,6 +589,12 @@ window.onload = () => {
     // Auto-check for updates
     checkForUpdates();
     setInterval(checkForUpdates, 60000);
+    
+    // Auto-update leaderboard interval (Fixes lag)
+    setInterval(updateLeaderboard, 500);
+
+    // Initial resize fix for some browsers
+    setTimeout(resize, 100);
 
     // Key Listeners
     window.addEventListener('keydown', e => {
@@ -667,7 +673,7 @@ async function checkForUpdates() {
         } else if (initialCommitHash !== latestHash) {
             document.getElementById('update-notification').style.display = 'block';
         }
-    } catch (e) { console.log('Update check skipped due to error: '+e); }
+    } catch (e) { console.log('Update check skipped'); }
 }
 
 // Check Mobile Function
@@ -741,6 +747,8 @@ function renderKeybinds() {
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    // Resetting context state is important after resize
+    if(ctx) ctx.imageSmoothingEnabled = false;
 }
 
 function initMap(w, h) {
@@ -865,10 +873,16 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
     if (!lastFrameTime) { lastFrameTime = timestamp; return; }
     const elapsed = timestamp - lastFrameTime;
+    
+    // FPS Limiter
     if (elapsed > FRAME_INTERVAL) {
         lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Ensure pixel art look
+        ctx.imageSmoothingEnabled = false;
+        
         updatePhysics();
 
         camera.x = myCar.x - canvas.width / 2;
@@ -879,10 +893,13 @@ function gameLoop(timestamp) {
 
         drawMap();
 
-        particles.forEach((p, i) => {
-            p.update(); p.draw(ctx);
+        // Optimized Particle Loop (Reverse)
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.update();
+            p.draw(ctx);
             if(p.life <= 0) particles.splice(i, 1);
-        });
+        }
 
         for (let id in players) {
             const p = players[id];
@@ -899,7 +916,7 @@ function gameLoop(timestamp) {
 
         ctx.restore();
         drawMinimap();
-        updateLeaderboard();
+        // Leaderboard is now updated via setInterval, not here.
     }
 }
 
