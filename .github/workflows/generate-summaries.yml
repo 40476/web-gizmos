@@ -1,4 +1,4 @@
-name: Generate Summaries
+=name: Generate Summaries
 
 permissions:
   contents: write
@@ -7,14 +7,17 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 jobs:
   summarize:
     if: github.actor != 'github-actions'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,6 +40,6 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add .
           if ! git diff --cached --quiet; then
-            git commit -m "Update summaries and index.html"
+            git commit -m "[bot] Update summaries and index.html"
             git push
           fi
