@@ -439,9 +439,9 @@
                 </div>
                 <div class="mb-4 border-t border-gray-700 pt-4">
                     <h3 class="text-sm font-bold text-gray-400 mb-2">Network</h3>
-                    <label class="block text-left text-sm mb-1">MQTT Broker</label>
+                    <label class="block text-left text-sm mb-1">MQTT Broker URL (WSS)</label>
                     <select id="broker-select" class="text-xs mb-4">
-                        <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public</option>
+                        <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public (Recommended)</option>
                         <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public</option>
                         <option value="wss://test.mosquitto.org:8081">Mosquitto Public</option>
                     </select>
@@ -688,15 +688,43 @@ window.onload = () => {
 
 // Update Checker
 let initialCommitHash = null;
+let initialETag = null;
+let apiUpdateDetected = false;
+
 async function checkForUpdates() {
     try {
+        // 1. Get Baseline ETag (once)
+        if (!initialETag) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('_t', Date.now());
+            const headRes = await fetch(url.toString(), { method: 'HEAD' });
+            initialETag = headRes.headers.get('ETag');
+        }
+
+        // 2. Check API for Commits
         const res = await fetch('https://api.github.com/repos/40476/web-gizmos/commits?path=racing/index.html&per_page=1');
         if (!res.ok) return;
         const data = await res.json();
         const latestHash = data[0]?.sha;
-        if (!initialCommitHash) { initialCommitHash = latestHash; } 
-        else if (initialCommitHash !== latestHash) { document.getElementById('update-notification').style.display = 'block'; }
-    } catch (e) {}
+        
+        if (!initialCommitHash) {
+            initialCommitHash = latestHash;
+        } else if (initialCommitHash !== latestHash) {
+            apiUpdateDetected = true;
+        }
+
+        // 3. If API says update, check if Live Page ETag has changed
+        if (apiUpdateDetected && initialETag) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('_t', Date.now());
+            const headRes = await fetch(url.toString(), { method: 'HEAD' });
+            const currentETag = headRes.headers.get('ETag');
+            
+            if (currentETag && currentETag !== initialETag) {
+                document.getElementById('update-notification').style.display = 'block';
+            }
+        }
+    } catch (e) { console.log('Update check skipped', e); }
 }
 
 function checkMobile() {
@@ -921,6 +949,7 @@ function gameLoop(timestamp) {
     if (!lastFrameTime) { lastFrameTime = timestamp; return; }
     const elapsed = timestamp - lastFrameTime;
     
+    // FPS Limiter
     if (elapsed > FRAME_INTERVAL) {
         lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
         
