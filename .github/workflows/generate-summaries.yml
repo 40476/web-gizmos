@@ -1,4 +1,4 @@
-=name: Generate Summaries
+name: Generate Summaries
 
 permissions:
   contents: write
