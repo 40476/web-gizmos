@@ -1,0 +1,14 @@
+<section>
+  <ul>
+    <li>Degrades resolution linearly over time with user-defined final scale</li>
+    <li>Applies audio degradation via low-pass filtering and bitcrushing for videos</li>
+    <li>Outputs GIFs for images and WebM videos for clips with preview/download</li>
+  </ul>
+
+  <pre>
+    <code>bits = 16 - Math.floor(15 * tNorm * crushAmount);</code>
+    <code>ctx.drawImage(tmp, 0, 0, w, h, 0, 0, width, height);</code>
+  </pre>
+
+  <p>The Go Go Gadget Pixel Reducer processes images and videos through controlled degradation sequences. For videos, it dynamically reduces resolution while applying audio filtering and bit-depth reduction during playback. Users can export GIF animations from images or degraded WebM videos with custom quality settings.</p>
+</section>
