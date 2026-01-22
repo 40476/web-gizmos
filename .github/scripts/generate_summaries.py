@@ -33,7 +33,11 @@ SYSTEM_PROMPT = (
     "- Do NOT rewrite or restyle the original HTML.\n"
     "- Do NOT include full code blocks or long excerpts.\n"
     "- Code lines must be short (max 80 chars) and taken from the input.\n"
-    "- Keep the summary stable; only change it when the meaning must change."
+    "- Keep the summary stable; only change it when the meaning must change.\n"
+    "- Do NOT include any non-English words or characters.\n"
+    "- Do NOT include stray Unicode symbols.\n"
+    "- Output must contain ONLY standard ASCII characters."
+    
 )
 
 
