@@ -4,8 +4,8 @@ import subprocess
 import requests
 from jinja2 import Template
 
-MODEL = "openai/gpt-4o-mini"   # Hardcoded model
-SUMMARY_DIR = "summaries"
+MODEL = "qwen3-coder:free"   # Hardcoded model
+SUMMARY_DIR = ".github/summaries"
 TEMPLATE_FILE = "index.html.template"
 OUTPUT_FILE = "index.html"
 
