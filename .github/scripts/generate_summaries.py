@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import subprocess
 import requests
 from jinja2 import Template
@@ -20,15 +21,21 @@ def dir_changed(path):
     )
     return bool(result.stdout.strip())
 
+import time
+import json
+import requests
+
 def generate_summary(content):
-    """Call OpenRouter API to summarize content."""
+    content = content.encode("utf-8", "replace").decode("utf-8")
+
     headers = {
         "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-Title": "summary-generator"
     }
 
     payload = {
-        "model": MODEL,
+        "model": "openai/gpt-4o-mini",  # or your full model ID
         "messages": [
             {
                 "role": "system",
@@ -45,10 +52,27 @@ def generate_summary(content):
         ]
     }
 
-    r = requests.post("https://openrouter.ai/api/v1/chat/completions",
-                      headers=headers, data=json.dumps(payload))
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    # Retry up to 5 times with exponential backoff
+    for attempt in range(5):
+        r = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            data=json.dumps(payload)
+        )
+
+        if r.status_code == 429:
+            wait = 2 ** attempt
+            print(f"Rate limited. Waiting {wait} seconds...")
+            time.sleep(wait)
+            continue
+
+        if r.status_code >= 400:
+            print("OpenRouter error:", r.text)
+            r.raise_for_status()
+
+        return r.json()["choices"][0]["message"]["content"]
+
+    raise RuntimeError("Failed after multiple retries due to rate limits.")
 
 def load_template():
     with open(TEMPLATE_FILE, "r", encoding="utf-8") as f:
