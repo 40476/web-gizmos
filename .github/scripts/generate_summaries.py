@@ -6,7 +6,7 @@ import requests
 import re
 from jinja2 import Template
 
-MODEL = "qwen/qwen3-coder:free"  # your chosen model
+MODEL = "deepseek/deepseek-r1-0528:free"  # your chosen model
 SUMMARY_DIR = ".github/summaries"
 TEMPLATE_FILE = "index.html.template"
 OUTPUT_FILE = "index.html"
