@@ -1255,7 +1255,7 @@ function openSettings() {
     document.getElementById('host-allow-paint').checked = hostSettings.allowPaint;
 }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; remappingAction = null; }
-function saveSettings() { currentBroker = document.getElementById('broker-select').value; localStorage.setItem('drift_broker', currentBroker); closeSettings(); if (isConnected) { alert("Broker changed. Please reconnect."); location.reload(); } }
+function saveSettings() { currentBroker = document.getElementById('broker-select').value; localStorage.setItem('drift_broker', currentBroker); closeSettings();}
 function updateVolumes() {
     ['master', 'engine', 'tires', 'sfx'].forEach(v => {
         const val = document.getElementById('vol-'+v).value; audio.vols[v] = parseInt(val) / 100; document.getElementById(`vol-${v}-val`).innerText = val; localStorage.setItem('drift_vol_'+v, val);
