@@ -35,14 +35,31 @@ def generate_summary(content):
     }
 
     payload = {
-        "model": "openai/gpt-4o-mini",  # or your full model ID
+        "model": MODEL,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You generate stable summaries. "
-                    "Only change the summary if the meaning must change. "
-                    "Output a short HTML snippet suitable for insertion into a template."
+                    "You generate stable, minimal summaries for small web applications.\n"
+                    "Follow this format exactly, using ONLY HTML:\n\n"
+                    "<section>\n"
+                    "  <ul>\n"
+                    "    <li>[bullet point 1]</li>\n"
+                    "    <li>[bullet point 2]</li>\n"
+                    "    <li>[bullet point 3]</li>\n"
+                    "  </ul>\n\n"
+                    "  <pre>\n"
+                    "    <code>[short code line 1]</code>\n"
+                    "    <code>[short code line 2]</code>\n"
+                    "  </pre>\n\n"
+                    "  <p>[Three-sentence summary here.]</p>\n"
+                    "</section>\n\n"
+                    "Rules:\n"
+                    "- Do NOT include Markdown.\n"
+                    "- Do NOT rewrite or restyle the original HTML.\n"
+                    "- Do NOT include full code blocks or long excerpts.\n"
+                    "- Code lines must be short (max 80 chars) and taken from the input.\n"
+                    "- Keep the summary stable; only change it when the meaning must change."
                 )
             },
             {
@@ -51,6 +68,7 @@ def generate_summary(content):
             }
         ]
     }
+    
 
     # Retry up to 5 times with exponential backoff
     for attempt in range(5):
