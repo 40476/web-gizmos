@@ -55,6 +55,26 @@
             pointer-events: auto;
         }
 
+        /* Update Notification */
+        #update-notification {
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            z-index: 100;
+            text-shadow: 0 0 5px #0f0;
+            animation: pulse-green 2s infinite;
+        }
+        #update-notification:hover { background: rgba(0, 255, 0, 0.4); }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 5px #0f0; } 50% { box-shadow: 0 0 20px #0f0; } 100% { box-shadow: 0 0 5px #0f0; } }
+
         /* Mobile Controls */
         #mobile-controls {
             display: none;
@@ -286,6 +306,10 @@
                 <button class="secondary text-xs" onclick="openSettings()">Settings & Network</button>
                 <div id="connection-status" class="mt-2 text-xs text-gray-500">Public MQTT (HiveMQ Default)</div>
             </div>
+        </div>
+
+        <div id="update-notification" class="interactive" onclick="location.reload()">
+            New Update Available! Click to Reload.
         </div>
 
         <!-- HUD -->
@@ -561,6 +585,10 @@ window.onload = () => {
     initMap(100, 100);
     loadSavedMapsList();
     checkMobile(); // Check for mobile immediately
+    
+    // Auto-check for updates
+    checkForUpdates();
+    setInterval(checkForUpdates, 60000);
 
     // Key Listeners
     window.addEventListener('keydown', e => {
@@ -624,6 +652,23 @@ window.onload = () => {
 
     requestAnimationFrame(gameLoop);
 };
+
+// Update Checker
+let initialCommitHash = null;
+async function checkForUpdates() {
+    try {
+        const res = await fetch('https://api.github.com/repos/40476/web-gizmos/commits?path=racing/index.html&per_page=1');
+        if (!res.ok) return;
+        const data = await res.json();
+        const latestHash = data[0]?.sha;
+        
+        if (!initialCommitHash) {
+            initialCommitHash = latestHash;
+        } else if (initialCommitHash !== latestHash) {
+            document.getElementById('update-notification').style.display = 'block';
+        }
+    } catch (e) { console.log('Update check skipped due to error: '+e); }
+}
 
 // Check Mobile Function
 function checkMobile() {
