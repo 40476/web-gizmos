@@ -275,6 +275,7 @@
         .lb-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
         .lb-name { color: #ddd; }
         .lb-laps { color: var(--neon-blue); font-weight: bold; }
+        .lb-admin { color: gold; margin-left: 4px; }
         #minimap-container { border: 2px solid var(--neon-blue); background: rgba(0,0,0,0.8); width: 200px; height: 200px; }
         #minimap-canvas { width: 100%; height: 100%; display: block; }
 
@@ -358,7 +359,7 @@
         <!-- Chat -->
         <div id="chat-container" class="interactive">
             <div id="chat-messages"></div>
-            <input type="text" id="chat-input" placeholder="Chat... (/kick name, /mute name)">
+            <input type="text" id="chat-input" placeholder="Chat... (/ban name, /mute name)">
         </div>
         
         <!-- Right Panel -->
@@ -449,7 +450,9 @@
 /**
  * CONFIG & GLOBALS
  */
-const CLIENT_ID = "racer_" + Math.random().toString(16).substr(2, 8);
+// Persistent User ID for Ban System
+const CLIENT_ID = localStorage.getItem('drift_pid') || crypto.randomUUID();
+if(!localStorage.getItem('drift_pid')) localStorage.setItem('drift_pid', CLIENT_ID);
 
 // Game State
 let canvas, ctx, miniCanvas, miniCtx;
@@ -457,6 +460,8 @@ let isConnected = false;
 let isEditorOpen = false;
 let particles = []; 
 let quitTimer = null;
+let drawings = []; // For paint feature: {x1, y1, x2, y2, color}
+let bannedIds = JSON.parse(localStorage.getItem('drift_banned_ids') || '[]');
 
 // Controls
 let bindings = {
@@ -465,11 +470,12 @@ let bindings = {
     left: 'a',
     right: 'd',
     drift: ' ',
+    paint: 't', // Added Paint
     editor: 'm',
-    save: 'l', // Updated to L
+    save: 'l',
     quit: 'q'
 };
-let inputs = { up: false, down: false, left: false, right: false, drift: false };
+let inputs = { up: false, down: false, left: false, right: false, drift: false, paint: false };
 let remappingAction = null;
 
 let myCar = {
@@ -480,6 +486,7 @@ let myCar = {
     color: '#00f3ff', 
     name: 'Player',
     id: CLIENT_ID,
+    joinedAt: 0, // Timestamp for Admin logic
     accel: 0, steer: 0, drifting: false,
     laps: 0,
     onFinishLine: false
@@ -511,6 +518,10 @@ let currentBroker = "wss://broker.hivemq.com:8884/mqtt";
 // Editor
 let currentTool = 1;
 let mouse = { x: 0, y: 0, leftDown: false, rightDown: false };
+
+// Paint vars
+let lastPaintX = 0;
+let lastPaintY = 0;
 
 /**
  * AUDIO SYSTEM
@@ -727,7 +738,10 @@ function startRemap(action) {
 function renderKeybinds() {
     const list = document.getElementById('keybind-list');
     list.innerHTML = '';
-    const labels = { up: "Throttle", down: "Brake", left: "Left", right: "Right", drift: "Handbrake", editor: "Toggle Editor", save: "Maps Menu", quit: "Hold to Quit" };
+    const labels = { 
+        up: "Throttle", down: "Brake", left: "Left", right: "Right", drift: "Handbrake", 
+        paint: "Paint Line", editor: "Toggle Editor", save: "Maps Menu", quit: "Hold to Quit" 
+    };
     
     for (let action in bindings) {
         const row = document.createElement('div');
@@ -774,6 +788,7 @@ async function startGame() {
     const roomInput = document.getElementById('room-name').value.trim().toLowerCase() || "lobby";
     myCar.name = nameInput;
     myCar.color = document.getElementById('car-color').value;
+    myCar.joinedAt = Date.now(); // Set join time for admin logic
 
     document.getElementById('connection-status').innerText = "Hashing Room...";
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(roomInput));
@@ -793,7 +808,7 @@ async function startGame() {
             document.getElementById('main-menu').style.display = 'none';
             addSystemMessage("Connected.");
             mqttClient.subscribe(`${roomTopicBase}/#`);
-            publish('join', { name: myCar.name, color: myCar.color, id: myCar.id });
+            publish('join', { name: myCar.name, color: myCar.color, id: myCar.id, joinedAt: myCar.joinedAt });
             setInterval(sendUpdate, 50); // 20Hz
         });
         mqttClient.on('error', (err) => document.getElementById('connection-status').innerText = "Conn Error.");
@@ -814,8 +829,15 @@ function sendUpdate() {
     publish('pos', {
         id: myCar.id, name: myCar.name, color: myCar.color,
         x: Math.round(myCar.x), y: Math.round(myCar.y),
-        angle: parseFloat(myCar.angle.toFixed(2)), speed: Math.round(myCar.speed), laps: myCar.laps
+        angle: parseFloat(myCar.angle.toFixed(2)), speed: Math.round(myCar.speed), laps: myCar.laps,
+        joinedAt: myCar.joinedAt // Continuously broadcast seniority
     });
+}
+
+function getAdminId() {
+    let all = Object.values(players).concat(myCar);
+    all.sort((a,b) => a.joinedAt - b.joinedAt);
+    return all[0] ? all[0].id : myCar.id;
 }
 
 function handleNetworkMessage(subTopic, data) {
@@ -823,6 +845,10 @@ function handleNetworkMessage(subTopic, data) {
 
     if (subTopic === 'pos') {
         if (!players[data.id]) {
+            // Check Ban on Discovery
+            if(bannedIds.includes(data.id) && getAdminId() === myCar.id) {
+                publish('kick', { targetId: data.id });
+            }
             players[data.id] = { ...data, lastSeen: Date.now() };
             addSystemMessage(`${data.name} joined.`);
             audio.playJoin();
@@ -830,23 +856,41 @@ function handleNetworkMessage(subTopic, data) {
         } else {
             const p = players[data.id];
             p.x = data.x; p.y = data.y; p.angle = data.angle; p.speed = data.speed;
-            p.color = data.color; p.name = data.name; p.laps = data.laps || 0; p.lastSeen = Date.now();
+            p.color = data.color; p.name = data.name; p.laps = data.laps || 0;
+            p.joinedAt = data.joinedAt || Date.now();
+            p.lastSeen = Date.now();
         }
     } else if (subTopic === 'join') {
+        // Check Ban on Join
+        if(bannedIds.includes(data.id) && getAdminId() === myCar.id) {
+            publish('kick', { targetId: data.id });
+            return;
+        }
         players[data.id] = { ...data, x:0, y:0, angle:0, laps:0, lastSeen: Date.now() };
         addSystemMessage(`${data.name} joined.`);
         audio.playJoin();
         publish('map_sync', { data: mapData, w: mapWidth, h: mapHeight, targetId: data.id, spawnX: myCar.x, spawnY: myCar.y });
+    } else if (subTopic === 'kick') {
+        if(data.targetId === myCar.id) {
+            alert("You have been banned from this room.");
+            location.reload();
+        }
     } else if (subTopic === 'chat') {
         if (!chatMuted.includes(data.name)) {
             addChatMessage(data.name, data.text, data.color);
             audio.playChat();
+        }
+    } else if (subTopic === 'paint') {
+        if(data.x1 && data.y1 && data.x2 && data.y2) {
+            drawings.push(data);
         }
     } else if (subTopic === 'map') {
         addSystemMessage(`${data.sender} shared a map.`);
         if(data.data && data.data.length === data.w * data.h) {
             loadMapData(data.data);
             mapWidth = data.w; mapHeight = data.h;
+            // Clear drawings on map load? Yes, usually desired
+            drawings = [];
             if(data.spawnX && data.spawnY) { myCar.x = data.spawnX; myCar.y = data.spawnY; myCar.vx = 0; myCar.vy = 0; }
         }
     } else if (subTopic === 'map_sync') {
@@ -879,8 +923,6 @@ function gameLoop(timestamp) {
         lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Ensure pixel art look
         ctx.imageSmoothingEnabled = false;
         
         updatePhysics();
@@ -892,14 +934,12 @@ function gameLoop(timestamp) {
         ctx.translate(-camera.x, -camera.y);
 
         drawMap();
+        drawPaintings(); // Render lines
 
-        // Optimized Particle Loop (Reverse)
-        for (let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
-            p.update();
-            p.draw(ctx);
+        particles.forEach((p, i) => {
+            p.update(); p.draw(ctx);
             if(p.life <= 0) particles.splice(i, 1);
-        }
+        });
 
         for (let id in players) {
             const p = players[id];
@@ -916,7 +956,6 @@ function gameLoop(timestamp) {
 
         ctx.restore();
         drawMinimap();
-        // Leaderboard is now updated via setInterval, not here.
     }
 }
 
@@ -971,6 +1010,20 @@ function updatePhysics() {
 
     if ((myCar.drifting || isSliding) && (Date.now() % 3 === 0)) emitParticles(myCar.x, myCar.y, surfaceType === 'pavement' ? 'smoke' : surfaceType);
     else if (myCar.speed > 2 && surfaceType !== 'pavement' && (Date.now() % 5 === 0)) emitParticles(myCar.x, myCar.y, surfaceType);
+
+    // Painting Logic
+    if (inputs.paint) {
+        if (!lastPaintX) { lastPaintX = myCar.x; lastPaintY = myCar.y; }
+        const dist = Math.hypot(myCar.x - lastPaintX, myCar.y - lastPaintY);
+        if (dist > 10) { // Throttle paint points
+            const line = { x1: lastPaintX, y1: lastPaintY, x2: myCar.x, y2: myCar.y, color: myCar.color };
+            drawings.push(line);
+            publish('paint', line);
+            lastPaintX = myCar.x; lastPaintY = myCar.y;
+        }
+    } else {
+        lastPaintX = 0; lastPaintY = 0;
+    }
 }
 
 function checkCollision(x, y) {
@@ -994,10 +1047,27 @@ function drawCar(c) {
     ctx.fillText(c.name, c.x, c.y - 25);
 }
 
+function drawPaintings() {
+    ctx.lineWidth = 2;
+    for(let l of drawings) {
+        ctx.strokeStyle = l.color;
+        ctx.beginPath();
+        ctx.moveTo(l.x1, l.y1);
+        ctx.lineTo(l.x2, l.y2);
+        ctx.stroke();
+    }
+}
+
 function updateLeaderboard() {
-    const all = [{name: myCar.name, laps: myCar.laps, color: myCar.color}, ...Object.values(players)];
+    const adminId = getAdminId();
+    const all = [{id: myCar.id, name: myCar.name, laps: myCar.laps, color: myCar.color}, ...Object.values(players)];
     all.sort((a,b) => (b.laps || 0) - (a.laps || 0));
-    document.getElementById('lb-content').innerHTML = all.map(p => `<div class="lb-row"><span class="lb-name" style="color:${p.color}">${p.name}</span><span class="lb-laps">${p.laps||0}</span></div>`).join('');
+    document.getElementById('lb-content').innerHTML = all.map(p => 
+        `<div class="lb-row">
+            <span class="lb-name" style="color:${p.color}">${p.name} ${p.id === adminId ? '<span class="lb-admin">★</span>' : ''}</span>
+            <span class="lb-laps">${p.laps||0}</span>
+        </div>`
+    ).join('');
 }
 
 /**
@@ -1053,7 +1123,7 @@ function drawEditorCursor() {
     const tx = Math.floor(worldX / TILE_SIZE); const ty = Math.floor(worldY / TILE_SIZE);
     ctx.strokeStyle = "yellow"; ctx.lineWidth = 2; ctx.strokeRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 }
-function clearMap() { if(confirm("Clear map?")) { mapData.fill(0); } }
+function clearMap() { if(confirm("Clear map?")) { mapData.fill(0); drawings = []; shareMap(); } }
 function applyMapSize() {
     const w = parseInt(document.getElementById('map-w').value); const h = parseInt(document.getElementById('map-h').value);
     if (w < 20 || h < 20 || w > 300 || h > 300) { alert("Size limit"); return; }
@@ -1113,7 +1183,24 @@ function sendChatFunc() {
 }
 function handleCommand(cmd) {
     const parts = cmd.split(' ');
-    if (parts[0] === '/kick') addSystemMessage("Kick requires admin (Disabled in Public Mode)");
+    if (parts[0] === '/ban') {
+        if(getAdminId() === myCar.id) {
+            // Find target by name
+            const targetName = parts[1];
+            let targetId = null;
+            for(let id in players) { if(players[id].name === targetName) targetId = id; }
+            if(targetId) {
+                bannedIds.push(targetId);
+                localStorage.setItem('drift_banned_ids', JSON.stringify(bannedIds));
+                publish('kick', { targetId: targetId });
+                addSystemMessage(`Banning ${targetName}...`);
+            } else {
+                addSystemMessage("User not found.");
+            }
+        } else {
+            addSystemMessage("Only Admin (Oldest player) can ban.");
+        }
+    }
     else if (parts[0] === '/mute') { chatMuted.push(parts[1]); addSystemMessage(`Muted ${parts[1]}.`); }
 }
 function addChatMessage(name, text, color) {
