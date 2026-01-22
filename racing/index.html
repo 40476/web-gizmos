@@ -287,6 +287,13 @@
             align-items: center; justify-content: center; z-index: 200;
             font-family: 'Orbitron', sans-serif; font-size: 2rem; color: white; text-shadow: 0 0 10px red;
         }
+
+        /* Tabs */
+        .tabs { display: flex; border-bottom: 1px solid #444; margin-bottom: 10px; }
+        .tab { flex: 1; padding: 10px; cursor: pointer; text-align: center; font-size: 0.8rem; background: #222; color: #888; }
+        .tab.active { background: #333; color: var(--neon-blue); border-bottom: 2px solid var(--neon-blue); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
@@ -324,6 +331,7 @@
                 <div id="role-display" class="text-xs text-gray-400 font-mono mb-1">MQTT</div>
                 <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="toggleEditor()">Map Editor</button>
                 <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="openSaveMenu()">Maps</button>
+                <button class="interactive text-xs bg-gray-800 border border-gray-600 px-2 py-1 mt-1" onclick="openSettings()">⚙️</button>
             </div>
         </div>
 
@@ -402,42 +410,79 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="interactive fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
-        <div class="panel w-96 text-left">
+        <div class="panel w-96 text-left" style="max-height: 95vh; overflow-y: auto;">
             <h2 class="text-xl mb-4 text-white font-bold text-center">Settings</h2>
             
-            <div class="mb-4">
-                <h3 class="text-sm font-bold text-gray-400 mb-2">Audio</h3>
-                <label class="text-xs text-gray-400">Master Volume (<span id="vol-master-val">100</span>%)</label>
-                <input type="range" id="vol-master" min="0" max="200" value="100" oninput="updateVolumes()">
-                
-                <label class="text-xs text-gray-400">Engine Volume (<span id="vol-engine-val">100</span>%)</label>
-                <input type="range" id="vol-engine" min="0" max="200" value="100" oninput="updateVolumes()">
-                
-                <label class="text-xs text-gray-400">Tire Volume (<span id="vol-tires-val">100</span>%)</label>
-                <input type="range" id="vol-tires" min="0" max="200" value="100" oninput="updateVolumes()">
-                
-                <label class="text-xs text-gray-400">SFX Volume (<span id="vol-sfx-val">100</span>%)</label>
-                <input type="range" id="vol-sfx" min="0" max="200" value="100" oninput="updateVolumes()">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('general')">General</div>
+                <div class="tab" onclick="switchTab('controls')">Controls</div>
+                <div class="tab" onclick="switchTab('host')">Host/Map</div>
             </div>
 
-            <div class="mb-4 border-t border-gray-700 pt-4">
-                <h3 class="text-sm font-bold text-gray-400 mb-2">Controls (Click to bind)</h3>
-                <div class="keybind-grid" id="keybind-list">
-                    <!-- Injected by JS -->
+            <!-- General Tab -->
+            <div id="tab-general" class="tab-content active">
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold text-gray-400 mb-2">Audio</h3>
+                    <label class="text-xs text-gray-400">Master Volume (<span id="vol-master-val">100</span>%)</label>
+                    <input type="range" id="vol-master" min="0" max="200" value="100" oninput="updateVolumes()">
+                    <label class="text-xs text-gray-400">Engine Volume (<span id="vol-engine-val">100</span>%)</label>
+                    <input type="range" id="vol-engine" min="0" max="200" value="100" oninput="updateVolumes()">
+                    <label class="text-xs text-gray-400">Tire Volume (<span id="vol-tires-val">100</span>%)</label>
+                    <input type="range" id="vol-tires" min="0" max="200" value="100" oninput="updateVolumes()">
+                    <label class="text-xs text-gray-400">SFX Volume (<span id="vol-sfx-val">100</span>%)</label>
+                    <input type="range" id="vol-sfx" min="0" max="200" value="100" oninput="updateVolumes()">
+                </div>
+                <div class="mb-4 border-t border-gray-700 pt-4">
+                    <h3 class="text-sm font-bold text-gray-400 mb-2">Graphics</h3>
+                    <label class="text-xs text-gray-400">Paint Detail (<span id="paint-dist-val">10</span>px)</label>
+                    <input type="range" id="paint-dist" min="5" max="50" value="10" oninput="updateGraphics()">
+                </div>
+                <div class="mb-4 border-t border-gray-700 pt-4">
+                    <h3 class="text-sm font-bold text-gray-400 mb-2">Network</h3>
+                    <label class="block text-left text-sm mb-1">MQTT Broker</label>
+                    <select id="broker-select" class="text-xs mb-4">
+                        <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public</option>
+                        <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public</option>
+                        <option value="wss://test.mosquitto.org:8081">Mosquitto Public</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="mb-4 border-t border-gray-700 pt-4">
-                <h3 class="text-sm font-bold text-gray-400 mb-2">Network</h3>
-                <label class="block text-left text-sm mb-1">MQTT Broker URL (WSS)</label>
-                <select id="broker-select" class="text-xs mb-4">
-                    <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public (Recommended)</option>
-                    <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public</option>
-                    <option value="wss://test.mosquitto.org:8081">Mosquitto Public</option>
-                </select>
+            <!-- Controls Tab -->
+            <div id="tab-controls" class="tab-content">
+                <h3 class="text-sm font-bold text-gray-400 mb-2">Keybinds (Click to bind)</h3>
+                <div class="keybind-grid" id="keybind-list"></div>
+                <button class="secondary text-xs mt-2" onclick="resetKeybinds()">Reset to Default</button>
+            </div>
+
+            <!-- Host/Map Tab -->
+            <div id="tab-host" class="tab-content">
+                <div id="host-controls-overlay" class="text-center text-gray-500 py-4 hidden">
+                    Only the Host (Oldest Player) can edit physics.
+                </div>
+                <div id="host-controls-area">
+                    <h3 class="text-sm font-bold text-neon-blue mb-2">Physics Tuner (Syncs to Room)</h3>
+                    <label class="text-xs text-gray-400">Engine Power (<span id="phy-engine-val">0.5</span>)</label>
+                    <input type="range" id="phy-engine" min="0.1" max="2.0" step="0.1" value="0.5" onchange="updateHostPhysics()">
+                    
+                    <label class="text-xs text-gray-400">Turn Speed (<span id="phy-turn-val">0.08</span>)</label>
+                    <input type="range" id="phy-turn" min="0.01" max="0.3" step="0.01" value="0.08" onchange="updateHostPhysics()">
+                    
+                    <label class="text-xs text-gray-400">Drift Grip (<span id="phy-grip-val">0.05</span>)</label>
+                    <input type="range" id="phy-grip" min="0.01" max="0.5" step="0.01" value="0.05" onchange="updateHostPhysics()">
+                    
+                    <label class="text-xs text-gray-400">Air Drag (<span id="phy-drag-val">0.98</span>)</label>
+                    <input type="range" id="phy-drag" min="0.90" max="0.999" step="0.001" value="0.98" onchange="updateHostPhysics()">
+
+                    <div class="mt-4 pt-2 border-t border-gray-700">
+                        <label class="flex items-center gap-2 text-xs">
+                            <input type="checkbox" id="host-allow-paint" checked onchange="updateHostSettings()"> Allow Client Painting
+                        </label>
+                    </div>
+                </div>
             </div>
             
-            <div class="flex gap-2">
+            <div class="flex gap-2 mt-4 pt-4 border-t border-gray-700">
                 <button onclick="saveSettings()">Save & Close</button>
                 <button onclick="closeSettings()" class="secondary">Cancel</button>
             </div>
@@ -460,36 +505,32 @@ let isConnected = false;
 let isEditorOpen = false;
 let particles = []; 
 let quitTimer = null;
-let drawings = []; // For paint feature: {x1, y1, x2, y2, color}
+let drawings = []; 
 let bannedIds = JSON.parse(localStorage.getItem('drift_banned_ids') || '[]');
 
-// Controls
-let bindings = {
-    up: 'w',
-    down: 's',
-    left: 'a',
-    right: 'd',
-    drift: ' ',
-    paint: 't', // Added Paint
-    editor: 'm',
-    save: 'l',
-    quit: 'q'
+// Default Configs
+const DEFAULT_BINDINGS = {
+    up: 'w', down: 's', left: 'a', right: 'd', drift: ' ',
+    paint: 't', editor: 'm', save: 'l', quit: 'q'
 };
+let bindings = { ...DEFAULT_BINDINGS };
 let inputs = { up: false, down: false, left: false, right: false, drift: false, paint: false };
 let remappingAction = null;
+
+// Physics Defaults
+const DEFAULT_PHYSICS = { engine: 0.5, turn: 0.08, grip: 0.05, drag: 0.98 };
+let currentPhysics = { ...DEFAULT_PHYSICS };
+let hostSettings = { allowPaint: true };
+
+// Graphics
+let paintDistThreshold = 10;
 
 let myCar = {
     x: 0, y: 0, 
     vx: 0, vy: 0, 
-    angle: 0, 
-    speed: 0, 
-    color: '#00f3ff', 
-    name: 'Player',
-    id: CLIENT_ID,
-    joinedAt: 0, // Timestamp for Admin logic
-    accel: 0, steer: 0, drifting: false,
-    laps: 0,
-    onFinishLine: false
+    angle: 0, speed: 0, color: '#00f3ff', 
+    name: 'Player', id: CLIENT_ID, joinedAt: 0,
+    accel: 0, steer: 0, drifting: false, laps: 0, onFinishLine: false
 };
 let players = {}; 
 let chatMuted = []; 
@@ -498,30 +539,16 @@ const TILE_SIZE = 40;
 let mapWidth = 100;
 let mapHeight = 100;
 
-// Tile Definitions
 const TILES = { PAVEMENT: 0, WALL: 1, SPAWN: 2, GRASS: 3, DIRT: 4, SAND: 5, RUMBLE: 6 };
+const REVERSE_POWER = 0.2; // Fixed reverse for simplicity
 
-// Physics Constants
-const ENGINE_POWER = 0.5;
-const REVERSE_POWER = 0.2;
-const TURN_SPEED = 0.08;
-const DRAG_AIR = 0.98;
-
-// Camera
 let camera = { x: 0, y: 0, zoom: 1 };
-
-// MQTT State
 let mqttClient;
 let roomTopicBase = "";
 let currentBroker = "wss://broker.hivemq.com:8884/mqtt"; 
-
-// Editor
 let currentTool = 1;
 let mouse = { x: 0, y: 0, leftDown: false, rightDown: false };
-
-// Paint vars
-let lastPaintX = 0;
-let lastPaintY = 0;
+let lastPaintX = 0; let lastPaintY = 0;
 
 /**
  * AUDIO SYSTEM
@@ -595,16 +622,10 @@ window.onload = () => {
     window.addEventListener('resize', resize);
     initMap(100, 100);
     loadSavedMapsList();
-    checkMobile(); // Check for mobile immediately
-    
-    // Auto-check for updates
+    checkMobile(); 
     checkForUpdates();
     setInterval(checkForUpdates, 60000);
-    
-    // Auto-update leaderboard interval (Fixes lag)
     setInterval(updateLeaderboard, 500);
-
-    // Initial resize fix for some browsers
     setTimeout(resize, 100);
 
     // Key Listeners
@@ -617,11 +638,8 @@ window.onload = () => {
             renderKeybinds();
             return;
         }
-
         if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
-        
         const k = e.key.toLowerCase();
-        
         for (let action in bindings) {
             if (bindings[action] === k) {
                 if (action === 'editor') toggleEditor();
@@ -635,7 +653,6 @@ window.onload = () => {
                 else if (inputs.hasOwnProperty(action)) inputs[action] = true;
             }
         }
-
         if(k === 'escape') { closeSaveMenu(); closeSettings(); }
         if(parseInt(k) >= 1 && parseInt(k) <= 7) setTool([null, 1, 0, 2, 3, 4, 5, 6][parseInt(k)]);
     });
@@ -645,7 +662,6 @@ window.onload = () => {
         for (let action in bindings) {
             if (bindings[action] === k && inputs.hasOwnProperty(action)) inputs[action] = false;
         }
-        
         if (bindings['quit'] === k) {
             clearTimeout(quitTimer); quitTimer = null;
             document.getElementById('quit-overlay').style.display = 'none';
@@ -678,25 +694,17 @@ async function checkForUpdates() {
         if (!res.ok) return;
         const data = await res.json();
         const latestHash = data[0]?.sha;
-        
-        if (!initialCommitHash) {
-            initialCommitHash = latestHash;
-        } else if (initialCommitHash !== latestHash) {
-            document.getElementById('update-notification').style.display = 'block';
-        }
-    } catch (e) { console.log('Update check skipped'); }
+        if (!initialCommitHash) { initialCommitHash = latestHash; } 
+        else if (initialCommitHash !== latestHash) { document.getElementById('update-notification').style.display = 'block'; }
+    } catch (e) {}
 }
 
-// Check Mobile Function
 function checkMobile() {
     var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(new URLSearchParams(window.location.search).get('ua') || navigator.userAgent);
     if (isMobile) {
         document.getElementById('mobile-controls').style.display = 'flex';
-        // Adjust chat position to not overlap controls
         const chat = document.getElementById('chat-container');
-        chat.style.bottom = '180px';
-        chat.style.width = '200px';
-        chat.style.height = '150px';
+        chat.style.bottom = '180px'; chat.style.width = '200px'; chat.style.height = '150px';
     }
 }
 
@@ -708,11 +716,13 @@ function loadLocalSettings() {
         currentBroker = localStorage.getItem('drift_broker');
         document.getElementById('broker-select').value = currentBroker;
     }
-    // Bindings
+    // Safe Keybind Loading (Merge with defaults to fix missing keys)
     const storedBindings = localStorage.getItem('drift_bindings');
-    if(storedBindings) bindings = JSON.parse(storedBindings);
+    if(storedBindings) {
+        const parsed = JSON.parse(storedBindings);
+        bindings = { ...DEFAULT_BINDINGS, ...parsed };
+    }
 
-    // Audio
     ['master', 'engine', 'tires', 'sfx'].forEach(v => {
         const val = localStorage.getItem('drift_vol_'+v);
         if(val) {
@@ -730,44 +740,26 @@ function saveLocalInputs() {
     localStorage.setItem('drift_bindings', JSON.stringify(bindings));
 }
 
-function startRemap(action) {
-    remappingAction = action;
-    renderKeybinds();
-}
-
+function startRemap(action) { remappingAction = action; renderKeybinds(); }
 function renderKeybinds() {
-    const list = document.getElementById('keybind-list');
-    list.innerHTML = '';
-    const labels = { 
-        up: "Throttle", down: "Brake", left: "Left", right: "Right", drift: "Handbrake", 
-        paint: "Paint Line", editor: "Toggle Editor", save: "Maps Menu", quit: "Hold to Quit" 
-    };
-    
+    const list = document.getElementById('keybind-list'); list.innerHTML = '';
+    const labels = { up: "Throttle", down: "Brake", left: "Left", right: "Right", drift: "Handbrake", paint: "Paint Line", editor: "Toggle Editor", save: "Maps Menu", quit: "Hold to Quit" };
     for (let action in bindings) {
         const row = document.createElement('div');
         row.innerHTML = `<span class="text-xs text-gray-400 self-center">${labels[action] || action}</span>`;
-        
         const btn = document.createElement('button');
         btn.className = `keybind-btn ${remappingAction === action ? 'recording' : ''}`;
         btn.innerText = remappingAction === action ? 'Press Key...' : bindings[action].toUpperCase();
         if(bindings[action] === ' ') btn.innerText = 'SPACE';
         btn.onclick = () => startRemap(action);
-        
-        row.appendChild(btn);
-        list.appendChild(row);
+        row.appendChild(btn); list.appendChild(row);
     }
 }
 
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    // Resetting context state is important after resize
-    if(ctx) ctx.imageSmoothingEnabled = false;
-}
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; if(ctx) ctx.imageSmoothingEnabled = false; }
 
 function initMap(w, h) {
-    mapWidth = w;
-    mapHeight = h;
+    mapWidth = w; mapHeight = h;
     mapData = new Array(mapWidth * mapHeight).fill(0);
     for(let x=0; x<mapWidth; x++) { setTile(x, 0, TILES.WALL, false); setTile(x, mapHeight-1, TILES.WALL, false); }
     for(let y=0; y<mapHeight; y++) { setTile(0, y, TILES.WALL, false); setTile(mapWidth-1, y, TILES.WALL, false); }
@@ -788,7 +780,7 @@ async function startGame() {
     const roomInput = document.getElementById('room-name').value.trim().toLowerCase() || "lobby";
     myCar.name = nameInput;
     myCar.color = document.getElementById('car-color').value;
-    myCar.joinedAt = Date.now(); // Set join time for admin logic
+    myCar.joinedAt = Date.now(); 
 
     document.getElementById('connection-status').innerText = "Hashing Room...";
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(roomInput));
@@ -830,7 +822,7 @@ function sendUpdate() {
         id: myCar.id, name: myCar.name, color: myCar.color,
         x: Math.round(myCar.x), y: Math.round(myCar.y),
         angle: parseFloat(myCar.angle.toFixed(2)), speed: Math.round(myCar.speed), laps: myCar.laps,
-        joinedAt: myCar.joinedAt // Continuously broadcast seniority
+        joinedAt: myCar.joinedAt
     });
 }
 
@@ -845,14 +837,20 @@ function handleNetworkMessage(subTopic, data) {
 
     if (subTopic === 'pos') {
         if (!players[data.id]) {
-            // Check Ban on Discovery
-            if(bannedIds.includes(data.id) && getAdminId() === myCar.id) {
-                publish('kick', { targetId: data.id });
-            }
+            if(bannedIds.includes(data.id) && getAdminId() === myCar.id) { publish('kick', { targetId: data.id }); }
             players[data.id] = { ...data, lastSeen: Date.now() };
             addSystemMessage(`${data.name} joined.`);
             audio.playJoin();
-            publish('map_sync', { data: mapData, w: mapWidth, h: mapHeight, targetId: data.id, spawnX: myCar.x, spawnY: myCar.y });
+            // Host sends state to NEW player
+            if (getAdminId() === myCar.id) {
+                publish('map_sync', { 
+                    data: mapData, w: mapWidth, h: mapHeight, targetId: data.id,
+                    spawnX: myCar.x, spawnY: myCar.y,
+                    drawings: drawings,
+                    physics: currentPhysics,
+                    hostSettings: hostSettings
+                });
+            }
         } else {
             const p = players[data.id];
             p.x = data.x; p.y = data.y; p.angle = data.angle; p.speed = data.speed;
@@ -861,48 +859,53 @@ function handleNetworkMessage(subTopic, data) {
             p.lastSeen = Date.now();
         }
     } else if (subTopic === 'join') {
-        // Check Ban on Join
-        if(bannedIds.includes(data.id) && getAdminId() === myCar.id) {
-            publish('kick', { targetId: data.id });
-            return;
-        }
+        if(bannedIds.includes(data.id) && getAdminId() === myCar.id) { publish('kick', { targetId: data.id }); return; }
         players[data.id] = { ...data, x:0, y:0, angle:0, laps:0, lastSeen: Date.now() };
         addSystemMessage(`${data.name} joined.`);
         audio.playJoin();
-        publish('map_sync', { data: mapData, w: mapWidth, h: mapHeight, targetId: data.id, spawnX: myCar.x, spawnY: myCar.y });
+        // Host Syncs state to NEW player
+        if (getAdminId() === myCar.id) {
+            publish('map_sync', { 
+                data: mapData, w: mapWidth, h: mapHeight, targetId: data.id,
+                spawnX: myCar.x, spawnY: myCar.y,
+                drawings: drawings,
+                physics: currentPhysics,
+                hostSettings: hostSettings
+            });
+        }
     } else if (subTopic === 'kick') {
-        if(data.targetId === myCar.id) {
-            alert("You have been banned from this room.");
-            location.reload();
-        }
+        if(data.targetId === myCar.id) { alert("You have been banned from this room."); location.reload(); }
     } else if (subTopic === 'chat') {
-        if (!chatMuted.includes(data.name)) {
-            addChatMessage(data.name, data.text, data.color);
-            audio.playChat();
-        }
+        if (!chatMuted.includes(data.name)) { addChatMessage(data.name, data.text, data.color); audio.playChat(); }
     } else if (subTopic === 'paint') {
-        if(data.x1 && data.y1 && data.x2 && data.y2) {
-            drawings.push(data);
-        }
+        if(data.x1 && data.y1 && data.x2 && data.y2) drawings.push(data);
     } else if (subTopic === 'map') {
         addSystemMessage(`${data.sender} shared a map.`);
         if(data.data && data.data.length === data.w * data.h) {
-            loadMapData(data.data);
-            mapWidth = data.w; mapHeight = data.h;
-            // Clear drawings on map load? Yes, usually desired
-            drawings = [];
+            loadMapData(data.data); mapWidth = data.w; mapHeight = data.h; drawings = data.drawings || [];
+            if(data.physics) currentPhysics = data.physics;
             if(data.spawnX && data.spawnY) { myCar.x = data.spawnX; myCar.y = data.spawnY; myCar.vx = 0; myCar.vy = 0; }
         }
     } else if (subTopic === 'map_sync') {
+        // Sync Logic: If targeted to me OR broadcast (no ID)
         if (!data.targetId || data.targetId === myCar.id) {
-            if (mapData.every(t => t === 0 || t === 1)) {
+            if(data.physics) currentPhysics = data.physics;
+            if(data.hostSettings) hostSettings = data.hostSettings;
+            if(data.drawings) drawings = data.drawings; // Sync drawings
+            
+            // Only overwrite map if local is default/empty OR if it's targeted sync (join)
+            if (mapData.every(t => t === 0 || t === 1) || data.targetId === myCar.id) {
                 if(data.data && data.data.length === data.w * data.h) {
                     loadMapData(data.data);
                     mapWidth = data.w; mapHeight = data.h;
-                    if(data.spawnX && data.spawnY) { myCar.x = data.spawnX; myCar.y = data.spawnY; }
+                    // Force Respawn on Join Sync
+                    respawn(); 
                 }
             }
         }
+    } else if (subTopic === 'physics_sync') {
+        if(data.physics) currentPhysics = data.physics;
+        if(data.hostSettings) hostSettings = data.hostSettings;
     }
 }
 
@@ -918,7 +921,6 @@ function gameLoop(timestamp) {
     if (!lastFrameTime) { lastFrameTime = timestamp; return; }
     const elapsed = timestamp - lastFrameTime;
     
-    // FPS Limiter
     if (elapsed > FRAME_INTERVAL) {
         lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
         
@@ -934,7 +936,7 @@ function gameLoop(timestamp) {
         ctx.translate(-camera.x, -camera.y);
 
         drawMap();
-        drawPaintings(); // Render lines
+        drawPaintings();
 
         particles.forEach((p, i) => {
             p.update(); p.draw(ctx);
@@ -975,14 +977,14 @@ function updatePhysics() {
         case TILES.RUMBLE: grip = 0.98; drag = 0.97; break;
     }
 
-    if (inputs.drift) { grip = 0.05; myCar.drifting = true; } else { myCar.drifting = false; }
+    if (inputs.drift) { grip = parseFloat(currentPhysics.grip); myCar.drifting = true; } else { myCar.drifting = false; }
 
-    const effectiveTurnSpeed = myCar.drifting ? TURN_SPEED * 1.3 : TURN_SPEED;
+    const effectiveTurnSpeed = myCar.drifting ? parseFloat(currentPhysics.turn) * 1.3 : parseFloat(currentPhysics.turn);
     if (inputs.left) myCar.angle -= effectiveTurnSpeed;
     if (inputs.right) myCar.angle += effectiveTurnSpeed;
 
     let accel = 0;
-    if (inputs.up) accel = ENGINE_POWER;
+    if (inputs.up) accel = parseFloat(currentPhysics.engine);
     if (inputs.down) accel = -REVERSE_POWER;
 
     myCar.vx += Math.cos(myCar.angle) * accel;
@@ -994,7 +996,7 @@ function updatePhysics() {
     myCar.vx -= Math.cos(rightAngle) * lateralVelocity * grip;
     myCar.vy -= Math.sin(rightAngle) * lateralVelocity * grip;
 
-    myCar.vx *= drag * DRAG_AIR; myCar.vy *= drag * DRAG_AIR;
+    myCar.vx *= drag * parseFloat(currentPhysics.drag); myCar.vy *= drag * parseFloat(currentPhysics.drag);
 
     let nextX = myCar.x + myCar.vx; let nextY = myCar.y + myCar.vy;
     if (checkCollision(nextX, nextY)) {
@@ -1012,10 +1014,10 @@ function updatePhysics() {
     else if (myCar.speed > 2 && surfaceType !== 'pavement' && (Date.now() % 5 === 0)) emitParticles(myCar.x, myCar.y, surfaceType);
 
     // Painting Logic
-    if (inputs.paint) {
+    if (inputs.paint && (hostSettings.allowPaint || getAdminId() === myCar.id)) {
         if (!lastPaintX) { lastPaintX = myCar.x; lastPaintY = myCar.y; }
         const dist = Math.hypot(myCar.x - lastPaintX, myCar.y - lastPaintY);
-        if (dist > 10) { // Throttle paint points
+        if (dist > paintDistThreshold) { 
             const line = { x1: lastPaintX, y1: lastPaintY, x2: myCar.x, y2: myCar.y, color: myCar.color };
             drawings.push(line);
             publish('paint', line);
@@ -1050,11 +1052,7 @@ function drawCar(c) {
 function drawPaintings() {
     ctx.lineWidth = 2;
     for(let l of drawings) {
-        ctx.strokeStyle = l.color;
-        ctx.beginPath();
-        ctx.moveTo(l.x1, l.y1);
-        ctx.lineTo(l.x2, l.y2);
-        ctx.stroke();
+        ctx.strokeStyle = l.color; ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke();
     }
 }
 
@@ -1063,10 +1061,7 @@ function updateLeaderboard() {
     const all = [{id: myCar.id, name: myCar.name, laps: myCar.laps, color: myCar.color}, ...Object.values(players)];
     all.sort((a,b) => (b.laps || 0) - (a.laps || 0));
     document.getElementById('lb-content').innerHTML = all.map(p => 
-        `<div class="lb-row">
-            <span class="lb-name" style="color:${p.color}">${p.name} ${p.id === adminId ? '<span class="lb-admin">★</span>' : ''}</span>
-            <span class="lb-laps">${p.laps||0}</span>
-        </div>`
+        `<div class="lb-row"><span class="lb-name" style="color:${p.color}">${p.name} ${p.id === adminId ? '<span class="lb-admin">★</span>' : ''}</span><span class="lb-laps">${p.laps||0}</span></div>`
     ).join('');
 }
 
@@ -1156,7 +1151,7 @@ function openSaveMenu() { document.getElementById('maps-modal').style.display = 
 function closeSaveMenu() { document.getElementById('maps-modal').style.display = 'none'; }
 function saveCurrentMap() {
     const name = document.getElementById('map-save-name').value || "Untitled";
-    const saveObj = { name: name, date: new Date().toLocaleDateString(), data: mapData, w: mapWidth, h: mapHeight };
+    const saveObj = { name: name, date: new Date().toLocaleDateString(), data: mapData, w: mapWidth, h: mapHeight, physics: currentPhysics, drawings: drawings };
     localStorage.setItem('drift_map_' + name, JSON.stringify(saveObj)); loadSavedMapsList();
 }
 function loadSavedMapsList() {
@@ -1168,13 +1163,19 @@ function loadSavedMapsList() {
             const div = document.createElement('div'); div.className = "flex justify-between items-center bg-gray-800 p-2 rounded";
             div.innerHTML = `<span>${val.name}</span>`;
             const btnLoad = document.createElement('button'); btnLoad.innerText = "Load"; btnLoad.className = "text-xs px-2 py-1 w-auto ml-2";
-            btnLoad.onclick = () => { if (val.w) { mapWidth = val.w; mapHeight = val.h; } loadMapData(val.data); shareMap(); closeSaveMenu(); };
+            btnLoad.onclick = () => { 
+                if (val.w) { mapWidth = val.w; mapHeight = val.h; } 
+                loadMapData(val.data);
+                if(val.physics) currentPhysics = val.physics;
+                if(val.drawings) drawings = val.drawings;
+                shareMap(); closeSaveMenu(); 
+            };
             div.appendChild(btnLoad); list.appendChild(div);
         }
     }
 }
 function loadMapData(newData) { if(newData && newData.length === mapWidth * mapHeight) { mapData = newData; respawn(); } else { console.warn("Invalid map data loaded"); } }
-function shareMap() { if(!isConnected) { alert("Connect first!"); return; } publish('map', { sender: myCar.name, data: mapData, w: mapWidth, h: mapHeight, spawnX: myCar.x, spawnY: myCar.y }); }
+function shareMap() { if(!isConnected) { alert("Connect first!"); return; } publish('map', { sender: myCar.name, data: mapData, w: mapWidth, h: mapHeight, spawnX: myCar.x, spawnY: myCar.y, drawings: drawings, physics: currentPhysics }); }
 function sendChatFunc() {
     const input = document.getElementById('chat-input'); const text = input.value.trim();
     if (!text) return;
@@ -1183,23 +1184,16 @@ function sendChatFunc() {
 }
 function handleCommand(cmd) {
     const parts = cmd.split(' ');
-    if (parts[0] === '/ban') {
+    if (parts[0] === '/kick') addSystemMessage("Kick requires admin (Disabled in Public Mode)");
+    else if (parts[0] === '/ban') {
         if(getAdminId() === myCar.id) {
-            // Find target by name
-            const targetName = parts[1];
-            let targetId = null;
+            const targetName = parts[1]; let targetId = null;
             for(let id in players) { if(players[id].name === targetName) targetId = id; }
             if(targetId) {
-                bannedIds.push(targetId);
-                localStorage.setItem('drift_banned_ids', JSON.stringify(bannedIds));
-                publish('kick', { targetId: targetId });
-                addSystemMessage(`Banning ${targetName}...`);
-            } else {
-                addSystemMessage("User not found.");
-            }
-        } else {
-            addSystemMessage("Only Admin (Oldest player) can ban.");
-        }
+                bannedIds.push(targetId); localStorage.setItem('drift_banned_ids', JSON.stringify(bannedIds));
+                publish('kick', { targetId: targetId }); addSystemMessage(`Banning ${targetName}...`);
+            } else { addSystemMessage("User not found."); }
+        } else { addSystemMessage("Only Admin (Oldest player) can ban."); }
     }
     else if (parts[0] === '/mute') { chatMuted.push(parts[1]); addSystemMessage(`Muted ${parts[1]}.`); }
 }
@@ -1212,7 +1206,25 @@ function addSystemMessage(text) {
     const div = document.createElement('div'); div.className = 'chat-msg sys-msg'; div.innerText = `[SYS] ${text}`;
     const container = document.getElementById('chat-messages'); container.appendChild(div); container.scrollTop = container.scrollHeight;
 }
-function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; renderKeybinds(); }
+
+// SETTINGS UI
+function openSettings() { 
+    document.getElementById('settings-modal').style.display = 'flex'; 
+    renderKeybinds(); 
+    switchTab('general');
+    
+    // Admin check for Host Tab
+    const isAdmin = getAdminId() === myCar.id;
+    document.getElementById('host-controls-area').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('host-controls-overlay').style.display = isAdmin ? 'none' : 'block';
+    
+    // Sync Inputs
+    document.getElementById('phy-engine').value = currentPhysics.engine || 0.5;
+    document.getElementById('phy-turn').value = currentPhysics.turn || 0.08;
+    document.getElementById('phy-grip').value = currentPhysics.grip || 0.05;
+    document.getElementById('phy-drag').value = currentPhysics.drag || 0.98;
+    document.getElementById('host-allow-paint').checked = hostSettings.allowPaint;
+}
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; remappingAction = null; }
 function saveSettings() { currentBroker = document.getElementById('broker-select').value; localStorage.setItem('drift_broker', currentBroker); closeSettings(); if (isConnected) { alert("Broker changed. Please reconnect."); location.reload(); } }
 function updateVolumes() {
@@ -1220,6 +1232,39 @@ function updateVolumes() {
         const val = document.getElementById('vol-'+v).value; audio.vols[v] = parseInt(val) / 100; document.getElementById(`vol-${v}-val`).innerText = val; localStorage.setItem('drift_vol_'+v, val);
     });
 }
+function updateGraphics() {
+    paintDistThreshold = parseInt(document.getElementById('paint-dist').value);
+    document.getElementById('paint-dist-val').innerText = paintDistThreshold;
+}
+function updateHostPhysics() {
+    if(getAdminId() !== myCar.id) return;
+    currentPhysics.engine = document.getElementById('phy-engine').value;
+    document.getElementById('phy-engine-val').innerText = currentPhysics.engine;
+    currentPhysics.turn = document.getElementById('phy-turn').value;
+    document.getElementById('phy-turn-val').innerText = currentPhysics.turn;
+    currentPhysics.grip = document.getElementById('phy-grip').value;
+    document.getElementById('phy-grip-val').innerText = currentPhysics.grip;
+    currentPhysics.drag = document.getElementById('phy-drag').value;
+    document.getElementById('phy-drag-val').innerText = currentPhysics.drag;
+    publish('physics_sync', { physics: currentPhysics, hostSettings: hostSettings });
+}
+function updateHostSettings() {
+    if(getAdminId() !== myCar.id) return;
+    hostSettings.allowPaint = document.getElementById('host-allow-paint').checked;
+    publish('physics_sync', { physics: currentPhysics, hostSettings: hostSettings });
+}
+function resetKeybinds() {
+    bindings = { ...DEFAULT_BINDINGS };
+    saveLocalInputs();
+    renderKeybinds();
+}
+function switchTab(tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+}
+
 class Particle {
     constructor(x, y, color, life, speed) { this.x = x; this.y = y; this.color = color; this.life = life; this.maxLife = life; const angle = Math.random() * Math.PI * 2; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; }
     update() { this.x += this.vx; this.y += this.vy; this.life--; }
