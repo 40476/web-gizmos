@@ -700,6 +700,22 @@ function initMap(w, h) {
 }
 
 /**
+ * MOBILE UI
+ */
+ 
+  // Check if device is mobile
+  function checkMobile() {
+    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(new URLSearchParams(window.location.search).get('ua') || navigator.userAgent);
+    if (isMobile) {
+      document.getElementById('mobile-controls').style.display="flex";
+      
+      document.getElementById('mobile-controls').style.bottom="180px";
+      document.getElementById('mobile-controls').style.width="200px";
+      document.getElementById('mobile-controls').style.height="150px";
+    }
+  }
+ checkMobile()
+/**
  * NETWORKING (MQTT)
  */
 async function startGame() {
