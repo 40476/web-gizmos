@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Applications</title>
+
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --text: #222;
+      --card-bg: #fff;
+      --card-shadow: rgba(0,0,0,0.1);
+      --link: #0077cc;
+      --sidebar-bg: #222;
+      --sidebar-text: #eee;
+      --sidebar-hover: #fff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111;
+        --text: #eee;
+        --card-bg: #1c1c1c;
+        --card-shadow: rgba(255,255,255,0.05);
+        --link: #4da3ff;
+        --sidebar-bg: #000;
+        --sidebar-text: #ccc;
+        --sidebar-hover: #fff;
+      }
+    }
+
+    body.dark {
+      --bg: #111;
+      --text: #eee;
+      --card-bg: #1c1c1c;
+      --card-shadow: rgba(255,255,255,0.05);
+      --link: #4da3ff;
+      --sidebar-bg: #000;
+      --sidebar-text: #ccc;
+      --sidebar-hover: #fff;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* Sidebar */
+    nav {
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 20px;
+      box-sizing: border-box;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    nav h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0.5px;
+    }
+
+    nav a {
+      display: block;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      padding: 6px 0;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--sidebar-hover);
+    }
+
+    /* Search bar */
+    #search {
+      width: 100%;
+      padding: 8px 10px;
+      margin: 15px 0 20px 0;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.95rem;
+    }
+
+    /* Main content */
+    main {
+      flex: 1;
+      padding: 40px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+
+    section {
+      background: var(--card-bg);
+      padding: 20px;
+      margin-bottom: 25px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px var(--card-shadow);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    section h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+    }
+
+    .app-link {
+      display: inline-block;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    .app-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Theme toggle button */
+    #themeToggle {
+      margin-top: 20px;
+      padding: 8px 12px;
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.3s, color 0.3s, border 0.3s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <h2>Applications</h2>
+
+    <input id="search" type="text" placeholder="Search applications..." />
+
+    
+      <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
+    
+      <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
+    
+      <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
+    
+      <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
+    
+      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
+    
+      <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
+    
+      <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
+    
+      <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
+    
+      <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
+    
+
+    <button id="themeToggle">Toggle Theme</button>
+  </nav>
+
+  <main>
+    <h1>Applications Overview</h1>
+
+    
+      <section class="app-section" data-name="matrix">
+        <a class="app-link" href="matrix/index.html">Open matrix</a>
+        <h2>matrix</h2>
+        ```html
+<div>
+  <h1>Matrix Animation</h1>
+  <p>This is a canvas-based Matrix animation displaying random characters with customizable features such as color, speed, font size, and text evaluation.</p>
+</div>
+```
+      </section>
+    
+      <section class="app-section" data-name="fonttester">
+        <a class="app-link" href="fonttester/index.html">Open fonttester</a>
+        <h2>fonttester</h2>
+        ```html
+<div>
+    <header>
+        <h1>Custom Font Tester</h1>
+        <p>Upload a font file, adjust its size, and test your custom text.</p>
+    </header>
+</div>
+```
+      </section>
+    
+      <section class="app-section" data-name="pattern">
+        <a class="app-link" href="pattern/index.html">Open pattern</a>
+        <h2>pattern</h2>
+        ```html
+<div class="layout">
+  <aside class="panel">
+    <h1>Seeded SVG Pattern Generator</h1>
+
+    <div class="control">
+      <label for="seed">Seed</label>
+      <input id="seed" type="text" placeholder="e.g. memphis-42" />
+    </div>
+
+    <div class="control row">
+      <div>
+        <label for="width">Width (px)</label>
+        <input id="width" type="number" min="128" max="4096" value="1280" />
+      </div>
+      <div>
+        <label for="height">Height (px)</label>
+        <input id="height" type="number" min="128" max="4096" value="800" />
+      </div>
+    </div>
+
+    <div class="control">
+      <label for="style">Pattern style</label>
+      <select id="style">
+        <option value="memphis">Memphis playful</option>
+        <option value="bauhaus">Bauhaus geometry</option>
+        <option value="isometric">Isometric cubes</option>
+        <option value="voronoi">Cellular / Voronoi-like</option>
+        <option value="waves">Wavy minimalism</option>
+        <option value="opart">Op-art stripes</option>
+      </select>
+    </div>
+
+    <div class="control">
+      <label for="density">Complexity / density</label>
+      <input id="density" type="range" min="0" max="100" value="60" />
+    </div>
+
+    <div class="control">
+      <label>Palette</label>
+      <select id="palette">
+        <option value="solar">Solar pop</option>
+        <option value="nocturne">Nocturne</option>
+        <option value="retro">Retro warm</option>
+        <option value="pastel">Soft pastel</option>
+        <option value="marine">Marine</option>
+        <option value="mono">Monochrome</option>
+      </select>
+      <div id="palettePreview" class="palette-preview"></div>
+    </div>
+
+    <div class="control row">
+      <div>
+        <label for="bgColor">Background</label>
+        <input id="bgColor" type="color" value="#0a0c11" />
+      </div>
+      <div>
+        <label for="strokeWidth">Stroke width</label>
+        <input id="strokeWidth" type="number" min="0" max="12" step="0.5" value="2" />
+      </div>
+    </div>
+
+    <div class="control">
+      <label for="noise">Subtle texture noise</label>
+      <select id="noise">
+        <option value="none">None</option>
+        <option value="grain">Grain</option>
+        <option value="marble">Marble</option>
+      </select>
+    </div>
+
+    <div class="buttons">
+      <button id="randomize">Randomize seed</button>
+      <button id="generate">Generate</button>
+    </div>
+
+    <div class="export">
+      <button id="downloadSVG">Download SVG</button>
+      <button id="downloadPNG">Download PNG</button>
+    </div>
+
+    <div class="footer">
+      Tip: Patterns are fully deterministic per seed, style, size, and settings. Change any knob and re-generate.
+    </div>
+  </aside>
+
+  <main class="canvas-wrap">
+    <svg id="svgRoot" xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" preserveAspectRatio="xMidYMid slice"></svg>
+  </main>
+</div>
+```
+      </section>
+    
+      <section class="app-section" data-name="asl">
+        <a class="app-link" href="asl/index.html">Open asl</a>
+        <h2>asl</h2>
+        ```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ASL Sequence Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ASL Sequence Player</h1>
+  
+  <div class="input-container">
+    <input id="userText" placeholder="Enter text..." autocomplete="off"/>
+    <div id="suggestions"></div>
+  </div>
+  
+  <button onclick="fetchSequence()">Play</button>
+  <br>
+  <video id="aslVideo" width="500" controls></video>
+
+  <script src="script.js"></script>
+</body>
+</html>
+```
+      </section>
+    
+      <section class="app-section" data-name="pixelreducer">
+        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
+        <h2>pixelreducer</h2>
+        ```html
+<div class="summary">
+  <h2>Go Go Gadget Pixel Reducer</h2>
+  <p>This web application allows users to degrade the resolution and audio quality of images and videos over time, transforming them into GIFs or degraded clips. Upload a source file, adjust settings for clip selection, degradation controls, and output options, and then process the selected media.</p>
+</div>
+```
+      </section>
+    
+      <section class="app-section" data-name="animeboydownloader">
+        <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
+        <h2>animeboydownloader</h2>
+        ```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nekos API Boy Viewer</title>
+  <style>
+    body {
+      font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #ffe6f0, #e6f7ff);
+      text-align: center;
+      padding: 30px;
+      color: #444;
+    }
+    h1 {
+      color: #ff66a3;
+      text-shadow: 1px 1px #fff;
+    }
+    button {
+      background: #ffb3d9;
+      border: none;
+      border-radius: 20px;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ff66a3;
+      color: #fff;
+    }
+    img {
+      max-width: 400px;
+      border-radius: 15px;
+      margin: 20px 0;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .card {
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 0 auto;
+      display: inline-block;
+      text-align: left;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .info p {
+      margin: 6px 0;
+    }
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin: 5px;
+      border: 2px solid #eee;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>🐾 Nekos API Boy Viewer 🐾</h1>
+  <button onclick="loadImage()">✨ Fetch New Image ✨</button>
+  <div id="content"></div>
+
+  <script>
+    const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe,suggestive&without_tags=girl,pussy,exposed_girl_breasts";
+    const apiUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
+    
+    async function loadImage() {
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        const image = data[0];
+
+        // Build color palette swatches
+        const paletteHTML = image.color_palette.map(
+          rgb => `<div class="swatch" style="background: rgb(${rgb.join(",")});"></div>`
+        ).join("");
+
+        document.getElementById("content").innerHTML = `
+          <img src="${image.url}" alt="Neko Image">
+          <div class="card">
+            <div class="info">
+              <p><strong>ID:</strong> ${image.id}</p>
+              <p><strong>Rating:</strong> ${image.rating}</p>
+              <p><strong>Tags:</strong> ${image.tags.join(", ")}</p>
+              <p><strong>Source:</strong> <a href="${image.source_url}" target="_blank">Pixiv Link</a></p>
+              <p><strong>Palette:</strong></p>
+              <div class="palette">${paletteHTML}</div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        document.getElementById("content").innerHTML = "<p>Oops! Couldn’t fetch image 🥺</p>";
+        console.error(error);
+      }
+    }
+
+    // Load one image on startup
+    loadImage();
+  </script>
+</body>
+</html>
+```
+      </section>
+    
+      <section class="app-section" data-name="racing">
+        <a class="app-link" href="racing/index.html">Open racing</a>
+        <h2>racing</h2>
+        ```html
+<div>
+    <h1>DRiFT.js</h1>
+    <p>Experience the thrill of racing with DRiFT.js, a multiplayer racing game built using MQTT for real-time communication.</p>
+    <p><strong>Features:</strong></p>
+    <ul>
+        <li>Connect with friends in custom rooms.</li>
+        <li>Customizable car colors and names.</li>
+        <li>Map editor for creative track designs.</li>
+        <li>Interactive HUD displays speed, position, and more.</li>
+        <li>Chat system for player communication.</li>
+    </ul>
+</div>
+```
+      </section>
+    
+      <section class="app-section" data-name="microviz">
+        <a class="app-link" href="microviz/index.html">Open microviz</a>
+        <h2>microviz</h2>
+        ```html
+<div class="summary">
+    <h2>microViz Overview</h2>
+    <p>microViz is an advanced audio visualization tool utilizing Web Audio API for real-time audio analysis. It supports multiple visualizers, user-uploaded audio files, and interactive controls including sensitivity adjustments and smoothing settings. Users can visualize audio data in a dynamic 2D or 3D format while also displaying metadata such as title, artist, and album art.</p>
+</div>
+```
+      </section>
+    
+      <section class="app-section" data-name="turtle">
+        <a class="app-link" href="turtle/index.html">Open turtle</a>
+        <h2>turtle</h2>
+        ```html
+<div>
+  <h1>Turtles Simulation</h1>
+  <p>Engage in an interactive simulation featuring turtles. Customize the settings, add food and obstacles, and observe how turtles behave in their environment. Click to add food, right-click to place obstacles, and drag turtles around to explore the grid!</p>
+</div>
+```
+      </section>
+    
+  </main>
+
+  <script>
+    // --- Search Filtering ---
+    const search = document.getElementById("search");
+    const navItems = document.querySelectorAll(".nav-item");
+    const sections = document.querySelectorAll(".app-section");
+
+    search.addEventListener("input", () => {
+      const q = search.value.toLowerCase();
+
+      navItems.forEach(item => {
+        const name = item.dataset.name.toLowerCase();
+        item.style.display = name.includes(q) ? "block" : "none";
+      });
+
+      sections.forEach(sec => {
+        const name = sec.dataset.name.toLowerCase();
+        sec.style.display = name.includes(q) ? "block" : "none";
+      });
+    });
+
+    // --- Theme Toggle ---
+    const toggle = document.getElementById("themeToggle");
+    toggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+    });
+  </script>
+
+</body>
+</html>

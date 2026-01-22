@@ -1,0 +1,91 @@
+```html
+<div class="layout">
+  <aside class="panel">
+    <h1>Seeded SVG Pattern Generator</h1>
+
+    <div class="control">
+      <label for="seed">Seed</label>
+      <input id="seed" type="text" placeholder="e.g. memphis-42" />
+    </div>
+
+    <div class="control row">
+      <div>
+        <label for="width">Width (px)</label>
+        <input id="width" type="number" min="128" max="4096" value="1280" />
+      </div>
+      <div>
+        <label for="height">Height (px)</label>
+        <input id="height" type="number" min="128" max="4096" value="800" />
+      </div>
+    </div>
+
+    <div class="control">
+      <label for="style">Pattern style</label>
+      <select id="style">
+        <option value="memphis">Memphis playful</option>
+        <option value="bauhaus">Bauhaus geometry</option>
+        <option value="isometric">Isometric cubes</option>
+        <option value="voronoi">Cellular / Voronoi-like</option>
+        <option value="waves">Wavy minimalism</option>
+        <option value="opart">Op-art stripes</option>
+      </select>
+    </div>
+
+    <div class="control">
+      <label for="density">Complexity / density</label>
+      <input id="density" type="range" min="0" max="100" value="60" />
+    </div>
+
+    <div class="control">
+      <label>Palette</label>
+      <select id="palette">
+        <option value="solar">Solar pop</option>
+        <option value="nocturne">Nocturne</option>
+        <option value="retro">Retro warm</option>
+        <option value="pastel">Soft pastel</option>
+        <option value="marine">Marine</option>
+        <option value="mono">Monochrome</option>
+      </select>
+      <div id="palettePreview" class="palette-preview"></div>
+    </div>
+
+    <div class="control row">
+      <div>
+        <label for="bgColor">Background</label>
+        <input id="bgColor" type="color" value="#0a0c11" />
+      </div>
+      <div>
+        <label for="strokeWidth">Stroke width</label>
+        <input id="strokeWidth" type="number" min="0" max="12" step="0.5" value="2" />
+      </div>
+    </div>
+
+    <div class="control">
+      <label for="noise">Subtle texture noise</label>
+      <select id="noise">
+        <option value="none">None</option>
+        <option value="grain">Grain</option>
+        <option value="marble">Marble</option>
+      </select>
+    </div>
+
+    <div class="buttons">
+      <button id="randomize">Randomize seed</button>
+      <button id="generate">Generate</button>
+    </div>
+
+    <div class="export">
+      <button id="downloadSVG">Download SVG</button>
+      <button id="downloadPNG">Download PNG</button>
+    </div>
+
+    <div class="footer">
+      Tip: Patterns are fully deterministic per seed, style, size, and settings. Change any knob and re-generate.
+    </div>
+  </aside>
+
+  <main class="canvas-wrap">
+    <svg id="svgRoot" xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" preserveAspectRatio="xMidYMid slice"></svg>
+  </main>
+</div>
+```
