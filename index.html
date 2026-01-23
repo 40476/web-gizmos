@@ -197,15 +197,17 @@
         <h2>fonttester</h2>
         <section>
   <ul>
-    <li>Font upload capability with file type restrictions</li>
-    <li>Dynamic font size control via slider visualization</li>
-    <li>Comprehensive typography preview sections</li>
+    <li>Upload fonts in TTF, OTF, WOFF, or WOFF2 format for testing</li>
+    <li>Adjust font size dynamically with range slider from 8px to 72px</li>
+    <li>Preview fonts in headings, paragraphs, UI elements, forms, and special characters</li>
   </ul>
+
   <pre>
-    <code><input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2"></code>
-    <code>fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', ... ใน`;</code>
+    <code>reader.onload = (e) => { const fontDataUrl = e.target.result;</code>
+    <code>fontTestArea.style.fontSize = `${newSize}px`;</code>
   </pre>
-  <p>This tool enables real-time font testing through custom uploads and adjustments. Users can preview typography across headings, paragraphs, lists, and UI components. Interactive controls allow customization of font size and test text while preserving layout CFO integrity.</p>
+
+  <p>This web application allows designers to test custom typography implementations. Users can upload font files, modify font sizes dynamically, and preview rendering across various content formats including UI components. Real-time feedback is provided for headings, paragraphs, form elements, and special character sets.</p>
 </section>
       </section>
     
@@ -328,17 +330,17 @@
         <h2>turtle</h2>
         <section>
   <ul>
-    <li>Turtle simulation with customizable personalities社会学 affecting movement and behavior</li>
-    <li>Interactive grid editing with terrain types (water/grass/sand) and obstacle placement</li>
-    <li>Pathfinding system for turtle navigation around obstacles toward food</li>
+    <li>A turtle ecosystem simulation where turtles exhibit behaviors like seeking food, wandering, and interacting with environment elements.</li>
+    <li>Grid-based terrain system with configurable cell types including walls, water, grass and sand, editable via painting interface.</li>
+    <li>Customizable settings panel for adjusting turtle personalities, population density, speed parameters, and visual effects.</li>
   </ul>
 
   <pre>
-    <code>this.path = findPath(this.x, this.y, this.targetFood.x, this.targetFood.y);</code>
-    <code>ctx.arc(t.x, t.y, t.p.viewDist, rad - halfFov, rad + halfFov);</code>
+    <code>grid[gx][gy ACTION_WIDTH val;</code>
+    <code>this.state = 'SEEK';</code>
   </pre>
 
-  <p>A web-based turtle ecosystem simulator where procedural-generated turtles interact with dynamically placed food and obstacles. Users can customize turtle behaviors through personality settings while editing environments with terrain brushes and lily pads. The simulation includes collision detection, pathfinding algorithms, and real-time statistics tracking for observing emergent behaviors.</p>
+  <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
 </section>
       </section>
     
