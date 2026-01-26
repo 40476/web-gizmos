@@ -424,7 +424,7 @@ const MSGS = {
 };
 
 let initialTimestamp = null;
-
+let currentSaveId = 0;
 // --- SOUND ENGINE ---
 class SoundManager {
     constructor() {
@@ -954,7 +954,7 @@ class GameEngine {
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000) {
-            SaveSystem.saveToSlot(0,/*, true*/); 
+            SaveSystem.saveToSlot(currentSaveId,/*, true*/); 
             this.lastAutosave = now();
             
             // dirty but it works
@@ -1894,7 +1894,7 @@ class SaveSystem {
     }
     
     static saveAndReload() {
-        this.saveToSlot(0/*, true*/);
+        this.saveToSlot(currentSaveId/*, true*/);
         location.reload();
     }
 
@@ -1913,10 +1913,11 @@ class SaveSystem {
             this.slots[i] = meta;
             localStorage.setItem(`mm_save_meta_${i}`, JSON.stringify(meta));
             if(!isAuto) { UI.renderSaveSlots(); UI.showToast(`Saved to Slot ${i+1}`, "success"); }
-        } catch(e) { if(!isAuto) UI.showToast("Save Failed (Storage Full?)", "error"); }
+        } catch(e) { if(!isAuto) UI.showToast("Save Failed (Storage Full?)", "error"); console.error(e);}
     }
 
     static loadFromSlot(i) {
+        currentSaveId=i;
         const json = localStorage.getItem(`mm_save_data_${i}`);
         if(!json) return;
         try {
