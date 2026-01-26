@@ -303,7 +303,7 @@
                     <select id="server-list" onchange="$('setting-broker').value = this.value" style="flex:1;">
                         <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (WSS)</option>
                         <option value="ws://broker.emqx.io:8083/mqtt">EMQX Public (WS)</option>
-                        <option value="wss://broker.hivemq.com:8000/mqtt">HiveMQ Public (WSS)</option>
+                        <option value="wss://broker.hivemq.com:8000">HiveMQ Public (WSS)</option>
                         <option value="wss://mqtt.eclipseprojects.io:443/mqtt">Eclipse (WSS)</option>
                         <option value="wss://test.mosquitto.org:8081">Mosquitto (WSS)</option>
                         <option value="wss://cloud.mqtt.cool/mqtt">MQTT.cool (WSS)</option>
@@ -854,11 +854,12 @@ class GameEngine {
             isMoving = true;
         } else {
             p.x = targetX; p.y = targetY; p.isDrilling = false;
-
-            if (this.fallHeight > 1 && !isMoving) {
-                Sound.playThud();
-                this.fallHeight = 0;
-            }
+            
+            // broken -- dont use yet
+            // if (this.fallHeight > 1 && !isMoving) {
+            //     Sound.playThud();
+            //     this.fallHeight = 0;
+            // }
 
             let ix = 0, iy = 0;
             if (Input.keys[this.settings.keys.up]) iy = -1;
