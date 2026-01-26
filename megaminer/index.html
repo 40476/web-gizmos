@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mega Miner Online - MQTT Multiplayer</title>
+    <!-- MQTT.js Library -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --panel-bg: rgba(20, 25, 40, 0.95);
+            --text-color: #eee;
+            --accent: #2980b9;
+            --highlight: #f39c12;
+            --danger: #c0392b;
+            --success: #27ae60;
+        }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', monospace; color: var(--text-color); user-select: none; }
+        canvas { display: block; }
+
+        /* UI Overlay */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .pointer-events-auto { pointer-events: auto; }
+
+        /* Gear Icon */
+        #gear-btn { position: absolute; top: 10px; left: 10px; font-size: 30px; color: rgba(255,255,255,0.5); cursor: pointer; pointer-events: auto; z-index: 50; transition: all 0.3s; }
+        #gear-btn:hover { color: #fff; transform: rotate(90deg); }
+
+        /* Chat */
+        #chat-container { position: absolute; bottom: 120px; left: 10px; width: 300px; height: 150px; display: flex; flex-direction: column; pointer-events: auto; opacity: 0.8; transition: opacity 0.3s; z-index: 10; }
+        #chat-container:hover { opacity: 1; }
+        #chat-messages { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.6); padding: 5px; font-size: 12px; scrollbar-width: thin; text-shadow: 1px 1px 0 #000; border: 1px solid #444; }
+        #chat-input { background: rgba(0,0,0,0.8); border: 1px solid #444; color: white; padding: 5px; width: 100%; box-sizing: border-box; }
+
+        /* Minimap */
+        #minimap-container { position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; border: 2px solid #555; background: #000; z-index: 20; overflow: hidden; }
+        #minimap { display: block; }
+
+        /* Interaction Prompts */
+        #prompt-msg { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); color: var(--highlight); font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px #000; display: none; pointer-events: none; text-align: center; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 500px; max-height: 85vh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
+        .modal.active { display: block; }
+        .modal h2 { margin-top: 0; color: var(--highlight); border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaa; text-transform: uppercase; }
+        .form-group input[type="text"], .form-group select { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: white; box-sizing: border-box; }
+        .form-group input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Shop Grid */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-item { background: rgba(0,0,0,0.3); padding: 10px; border: 1px solid #444; display: flex; flex-direction: column; justify-content: space-between; }
+        .shop-item h4 { margin: 0 0 5px 0; color: var(--accent); }
+        .shop-item p { font-size: 12px; color: #ccc; margin: 0 0 5px 0; }
+        .shop-item .cost { color: var(--highlight); font-weight: bold; font-size: 14px; }
+
+        .btn { background: var(--accent); color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; }
+        .btn:hover { background: #3498db; filter: brightness(1.2); }
+        .btn:disabled { background: #555; cursor: not-allowed; filter: none; }
+        .btn-small { width: auto; padding: 4px 8px; font-size: 12px; margin-right: 5px; }
+        .btn-bind { background: #444; border: 1px solid #666; color: #fff; text-align: left; position: relative; }
+        .btn-bind.binding { background: #c0392b; border-color: #e74c3c; animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        /* Save Slots */
+        .save-slot { background: rgba(0,0,0,0.4); padding: 10px; border: 1px solid #555; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .save-slot-info { font-size: 12px; color: #ccc; }
+        .save-slot-actions button { margin-left: 5px; padding: 5px 10px; font-size: 11px; }
+
+        /* Start Screen */
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,10,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; pointer-events: auto; }
+        #start-screen h1 { font-size: 48px; color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight); }
+
+        /* Notification/Error Popup */
+        #notification-area { position: absolute; top: 20px; right: 180px; width: 300px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 200; }
+        .toast { background: rgba(30, 30, 30, 0.95); border-left: 4px solid var(--accent); padding: 12px; color: white; pointer-events: auto; animation: slideIn 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 14px; }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.success { border-left-color: var(--success); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Admin Panel */
+        #admin-panel { position: absolute; top: 165px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; display: none; pointer-events: auto; width: 150px; border: 1px solid #555; }
+        .player-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+
+        <!-- Gear Icon -->
+        <div id="gear-btn" onclick="UI.openSettings()">&#9881;</div>
+
+        <!-- Minimap -->
+        <div id="minimap-container">
+            <canvas id="minimap"></canvas>
+        </div>
+
+        <!-- Chat -->
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Press CHAT key to type...">
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-panel">
+            <h4 style="margin:0 0 10px 0; color:gold; font-size:12px;">ADMIN PANEL</h4>
+            <div id="player-list"></div>
+        </div>
+
+        <!-- Prompt -->
+        <div id="prompt-msg"></div>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>Mega Miner</h1>
+            <div style="background: var(--panel-bg); padding: 30px; border-radius: 10px; width: 300px; border: 1px solid #444;">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="start-username" value="Miner1" maxlength="12">
+                </div>
+                <div class="form-group">
+                    <label>Room ID</label>
+                    <input type="text" id="start-room" value="public-mine-1">
+                </div>
+                <div class="form-group">
+                    <label>Vehicle Color</label>
+                    <input type="color" id="start-color" value="#3498db" style="height:40px;">
+                </div>
+                <button class="btn" onclick="Game.init()">LAUNCH MISSION</button>
+                <button class="btn" style="margin-top:10px; background:#444;" onclick="UI.openSettings()">SETTINGS / IMPORT</button>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="shop-modal" class="modal">
+            <h2>Service Station</h2>
+            <div style="text-align:center; margin-bottom:15px; font-size:18px;">
+                Wallet: <span id="shop-money" style="color:gold; font-weight:bold;">$0</span>
+            </div>
+
+            <div class="shop-grid">
+                <div class="shop-item">
+                    <h4>Diamond Drill</h4>
+                    <p>Increases Mining Tier. Required for deeper ores.</p>
+                    <div class="cost" id="cost-drill"></div>
+                    <button class="btn" id="btn-drill" onclick="Shop.buy('drill')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Nanite Hull</h4>
+                    <p>Increases Max HP.</p>
+                    <div class="cost" id="cost-hull"></div>
+                    <button class="btn" id="btn-hull" onclick="Shop.buy('hull')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Fuel Compactor</h4>
+                    <p>Increases Fuel Capacity.</p>
+                    <div class="cost" id="cost-fuel"></div>
+                    <button class="btn" id="btn-fuel" onclick="Shop.buy('fuel')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Cargo Bay</h4>
+                    <p>Increases Carrying Capacity.</p>
+                    <div class="cost" id="cost-cargo"></div>
+                    <button class="btn" id="btn-cargo" onclick="Shop.buy('cargo')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Heat Shield</h4>
+                    <p>Resist high temperatures at depth.</p>
+                    <div class="cost" id="cost-cool"></div>
+                    <button class="btn" id="btn-cool" onclick="Shop.buy('cool')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>X-Ray Optics</h4>
+                    <p>See minerals through walls.</p>
+                    <div class="cost" id="cost-xray"></div>
+                    <button class="btn" id="btn-xray" onclick="Shop.buy('xray')">Upgrade</button>
+                </div>
+                 <div class="shop-item">
+                    <h4>Vehicle Paint</h4>
+                    <p>Change your look.</p>
+                    <input type="color" id="shop-color-picker" style="width:100%; height:30px; margin-bottom:5px;">
+                    <button class="btn" onclick="Shop.buy('paint')">Repaint ($100)</button>
+                </div>
+            </div>
+            <button class="btn" style="background:#555; margin-top:20px;" onclick="Shop.close()">Exit Station</button>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal">
+            <h2>Settings</h2>
+
+            <div class="form-group">
+                <label>Multiplayer Broker</label>
+                <select id="server-list" onchange="$('setting-broker').value = this.value" style="margin-bottom:5px;">
+                    <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (WSS)</option>
+                    <option value="ws://broker.emqx.io:8083/mqtt">EMQX Public (WS)</option>
+                    <option value="wss://broker.hivemq.com:8000/mqtt">HiveMQ Public (WSS)</option>
+                    <option value="wss://mqtt.eclipseprojects.io:443/mqtt">Eclipse (WSS)</option>
+                    <option value="wss://test.mosquitto.org:8081">Mosquitto (WSS)</option>
+                    <option value="wss://cloud.mqtt.cool/mqtt">MQTT.cool (WSS)</option>
+                    <option value="ws://localhost:8083/mqtt">Localhost (WS)</option>
+                </select>
+                <input type="text" id="setting-broker" value="wss://broker.emqx.io:8084/mqtt">
+                <small style="color:#777;">Grayed out while playing. Reload to change.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Save Games (LocalStorage)</label>
+                <div style="margin-bottom:5px; display:flex; align-items:center;">
+                    <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)">
+                    <span style="margin-left:5px; font-size:13px; color:#ccc;">Enable Autosave (60s)</span>
+                </div>
+                <div id="save-slots-container">
+                    <!-- Slots generated by JS -->
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Controls</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:12px;">
+                    <button id="btn-bind-up" class="btn btn-bind" onclick="Input.startBind('up')">UP</button>
+                    <button id="btn-bind-left" class="btn btn-bind" onclick="Input.startBind('left')">LEFT</button>
+                    <button id="btn-bind-down" class="btn btn-bind" onclick="Input.startBind('down')">DOWN</button>
+                    <button id="btn-bind-right" class="btn btn-bind" onclick="Input.startBind('right')">RIGHT</button>
+                    <button id="btn-bind-build" class="btn btn-bind" onclick="Input.startBind('build')">BUILD</button>
+                    <button id="btn-bind-interact" class="btn btn-bind" onclick="Input.startBind('interact')">INTERACT</button>
+                    <button id="btn-bind-transfer" class="btn btn-bind" onclick="Input.startBind('transfer')">TRANSFER</button>
+                    <button id="btn-bind-chat" class="btn btn-bind" onclick="Input.startBind('chat')">CHAT</button>
+                </div>
+                <small>Hold BUILD + Arrow to place blocks. Mouse Wheel to Zoom.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Backup Data (File)</label>
+                <button class="btn" onclick="SaveSystem.exportSave()">Export to .JSON</button>
+                <input type="file" id="import-file" style="margin-top:5px;" onchange="SaveSystem.importSave(this)">
+            </div>
+
+            <button class="btn" onclick="UI.closeSettings()">Close</button>
+        </div>
+    </div>
+
+    <!-- Notification Area -->
+    <div id="notification-area"></div>
+
+<script>
+/**
+ * MEGA MINER ONLINE v2.3
+ * Features: Optimized Sync, Sarcastic msgs, Fuel Transfer, Scaling Minimap
+ */
+
+// --- UTILS ---
+const $ = id => document.getElementById(id);
+const uuid = () => Math.random().toString(36).substr(2, 9);
+const now = () => Date.now();
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
+// --- CONFIG & STATE ---
+const CONSTANTS = {
+    TILE_SIZE: 32,
+    CHUNK_SIZE: 16,
+    SPEED_NORMAL: 2,
+    SPEED_DRILL: 1,
+    FUEL_CONSUMPTION: 0.5,
+    MAP_WIDTH: 200,
+    MAP_HEIGHT: 600,
+    MIN_ZOOM: 0.5,
+    MAX_ZOOM: 3.0
+};
+
+const TILE_TYPES = {
+    EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, DEEP_SLATE: 5,
+    COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11,
+    CASING: 20, BEDROCK: 99
+};
+
+const TILE_PROPS = {
+    [TILE_TYPES.EMPTY]: { name: "Empty" },
+    [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 1, value: 0, tier: 0 },
+    [TILE_TYPES.GRASS]: { name: "Grass", color: '#388e3c', hardness: 1, value: 0, tier: 0 },
+    [TILE_TYPES.STONE]: { name: "Stone", color: '#7f8c8d', hardness: 3, value: 0, tier: 1 },
+    [TILE_TYPES.HARD_STONE]: { name: "Dense Stone", color: '#525a5b', hardness: 6, value: 0, tier: 2 },
+    [TILE_TYPES.DEEP_SLATE]: { name: "Deep Slate", color: '#2c3e50', hardness: 10, value: 0, tier: 3 },
+    [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 },
+    [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 4, value: 50, tier: 1 },
+    [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 6, value: 150, tier: 2 },
+    [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 10, value: 500, tier: 3 },
+    [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 12, value: 800, tier: 3 },
+    [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 15, value: 1200, tier: 4 },
+    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 2, value: 0, tier: 0 },
+    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 0, tier: 99 }
+};
+
+const MSGS = {
+    join: ["spawned in.", "is here to steal your ores.", "slid into the server.", "woke up.", "has entered the chat."],
+    leave: ["rage quit.", "went to touch grass.", "timed out (RIP).", "vanished.", "was consumed by the void."],
+    kick: ["was yeeted.", "read the TOS wrong.", "was shown the door."],
+    ban: ["has been banished to the shadow realm.", "caught the ban hammer."],
+    death: ["forgot to breathe.", "became bedrock.", "was crushed by capitalism.", "needs a tutorial."],
+    rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
+};
+
+// --- GAME LOGIC ---
+
+class GameEngine {
+    constructor() {
+        this.canvas = $('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.minimapCanvas = $('minimap');
+        this.minimapCtx = this.minimapCanvas.getContext('2d');
+
+        this.running = false;
+
+        this.settings = {
+            username: 'Miner',
+            color: '#3498db',
+            broker: 'wss://broker.emqx.io:8084/mqtt',
+            room: 'public',
+            keys: {
+                up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown',
+                build: 'b', interact: 'e', chat: 'Enter', transfer: 'f'
+            }
+        };
+
+        this.localPlayer = {
+            id: uuid(),
+            gridX: 100, gridY: 4,
+            x: 0, y: 0,
+            fuel: 100, maxFuel: 100,
+            hull: 100, maxHull: 100,
+            cargo: 0, maxCargo: 50,
+            money: 0,
+            temp: 0, maxTemp: 100,
+            rotation: 0,
+            isDrilling: false,
+            drillTier: 0, heatResist: 0, xrayRange: 0,
+            joinedAt: now()
+        };
+
+        this.map = [];
+        this.discovered = [];
+        this.remotePlayers = {};
+        this.camera = { x: 0, y: 0 };
+        this.zoom = 1.0;
+        this.particles = [];
+        this.isAdmin = false;
+        this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
+        this.lastActionTime = 0;
+        this.lastAutosave = 0;
+
+        this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
+        this.stationGridY = 4;
+    }
+
+    init() {
+        this.settings.username = $('start-username').value || 'Miner';
+        this.settings.room = $('start-room').value || 'public';
+        this.settings.color = $('start-color').value;
+        this.settings.broker = $('setting-broker').value;
+
+        $('start-screen').style.display = 'none';
+        $('setting-broker').disabled = true;
+        $('server-list').disabled = true;
+
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('wheel', (e) => {
+            if (e.target.id === 'gameCanvas') {
+                this.zoom = clamp(this.zoom - Math.sign(e.deltaY) * 0.1, CONSTANTS.MIN_ZOOM, CONSTANTS.MAX_ZOOM);
+            }
+        });
+
+        this.minimapCanvas.width = 150;
+        this.minimapCanvas.height = 150;
+
+        this.generateMap();
+        Input.init();
+        Network.connect();
+        UI.refreshKeybindLabels();
+
+        this.running = true;
+        this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
+        this.localPlayer.gridY = 4;
+        this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
+        this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+
+        this.loop();
+        UI.addMessage("System", "Welcome. Arrows to move. E to Shop. F to Transfer Fuel.", "#FFFF00");
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    generateMap() {
+        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+            this.map[y] = [];
+            this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
+            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
+                if (y < 5) this.map[y][x] = TILE_TYPES.EMPTY;
+                else if (y === 5) this.map[y][x] = TILE_TYPES.GRASS;
+                else if (y === CONSTANTS.MAP_HEIGHT - 1) this.map[y][x] = TILE_TYPES.BEDROCK;
+                else {
+                    let r = Math.random();
+                    let type = TILE_TYPES.DIRT;
+                    if (y > 300) type = TILE_TYPES.DEEP_SLATE;
+                    else if (y > 100) type = TILE_TYPES.HARD_STONE;
+                    else if (y > 30) type = TILE_TYPES.STONE;
+
+                    if (r > 0.985) {
+                        if (y > 400) type = TILE_TYPES.RUBY;
+                        else if (y > 250) type = TILE_TYPES.EMERALD;
+                        else if (y > 150) type = TILE_TYPES.DIAMOND;
+                    } else if (r > 0.96) {
+                        if (y > 100) type = TILE_TYPES.GOLD;
+                    } else if (r > 0.92) {
+                        if (y > 50) type = TILE_TYPES.IRON;
+                    } else if (r > 0.88) {
+                        type = TILE_TYPES.COAL;
+                    }
+                    this.map[y][x] = type;
+                }
+            }
+        }
+    }
+
+    update() {
+        if (!this.running) return;
+
+        const p = this.localPlayer;
+        const TS = CONSTANTS.TILE_SIZE;
+
+        // --- LOCAL MOVEMENT ---
+        let targetX = p.gridX * TS;
+        let targetY = p.gridY * TS;
+        let dx = targetX - p.x;
+        let dy = targetY - p.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        let speed = p.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
+
+        if (dist > speed) {
+            let angle = Math.atan2(dy, dx);
+            p.x += Math.cos(angle) * speed;
+            p.y += Math.sin(angle) * speed;
+        } else {
+            p.x = targetX; p.y = targetY; p.isDrilling = false;
+
+            let ix = 0, iy = 0;
+            if (Input.keys[this.settings.keys.up]) iy = -1;
+            else if (Input.keys[this.settings.keys.down]) iy = 1;
+            else if (Input.keys[this.settings.keys.left]) ix = -1;
+            else if (Input.keys[this.settings.keys.right]) ix = 1;
+
+            if (Input.keys[this.settings.keys.build] && (ix || iy)) {
+                if (now() - this.lastActionTime > 200) {
+                    this.tryBuild(p.gridX + ix, p.gridY + iy);
+                    this.lastActionTime = now();
+                }
+            } else if (ix || iy) {
+                if (ix === 1) p.rotation = -90 * (Math.PI/180);
+                if (ix === -1) p.rotation = 90 * (Math.PI/180);
+                if (iy === 1) p.rotation = 0;
+                if (iy === -1) p.rotation = 180 * (Math.PI/180);
+
+                let nx = p.gridX + ix;
+                let ny = p.gridY + iy;
+
+                if (nx >= 0 && nx < CONSTANTS.MAP_WIDTH && ny >= 4 && ny < CONSTANTS.MAP_HEIGHT) {
+                    let tile = (ny < 0) ? TILE_TYPES.EMPTY : this.map[ny][nx];
+                    if (tile === TILE_TYPES.EMPTY) {
+                        p.gridX = nx; p.gridY = ny;
+                        if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
+                        Network.broadcastMove(); // Send Move Update
+                    } else if (tile !== TILE_TYPES.BEDROCK) {
+                        if (now() - this.lastActionTime > 150) {
+                             if (this.tryMine(nx, ny)) {
+                                 p.gridX = nx; p.gridY = ny;
+                                 p.isDrilling = true;
+                                 if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
+                                 Network.broadcastMove(); // Send Move Update
+                             }
+                             this.lastActionTime = now();
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- REMOTE INTERPOLATION ---
+        Object.values(this.remotePlayers).forEach(rp => {
+            if (rp.targetX !== undefined) {
+                let rdx = rp.targetX - rp.x;
+                let rdy = rp.targetY - rp.y;
+                let rDist = Math.sqrt(rdx*rdx + rdy*rdy);
+                let rSpeed = rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
+
+                if (rDist > rSpeed) {
+                    let rAngle = Math.atan2(rdy, rdx);
+                    rp.x += Math.cos(rAngle) * rSpeed;
+                    rp.y += Math.sin(rAngle) * rSpeed;
+                } else {
+                    rp.x = rp.targetX;
+                    rp.y = rp.targetY;
+                }
+            }
+        });
+
+        // Temperature
+        let depth = Math.max(0, p.gridY - 5);
+        if (depth > 200 + (p.heatResist * 50)) {
+            p.temp += 0.05;
+            if (p.temp > 100) { p.temp = 100; p.hull -= 0.1; }
+        } else p.temp = Math.max(0, p.temp - 0.2);
+
+        // Station & Fuel Transfer Prompts
+        let promptText = "";
+
+        // Station
+        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 2) {
+             promptText = "PRESS E TO ENTER STATION";
+             if (Input.keys[this.settings.keys.interact]) {
+                if (p.cargo > 0) { p.money += p.cargo * 10; UI.addMessage("Station", `Sold minerals: $${p.cargo*10}`, "#0f0"); p.cargo = 0; }
+                if (p.fuel < p.maxFuel) p.fuel = p.maxFuel;
+                if (p.hull < p.maxHull && p.money > 0) { p.hull = p.maxHull; p.money -= 10; }
+                p.temp = 0;
+                Shop.open();
+             }
+        }
+
+        // Fuel Transfer
+        if (!promptText) {
+            let nearby = Object.values(this.remotePlayers).find(rp =>
+                Math.abs(rp.gridX - p.gridX) < 2 && Math.abs(rp.gridY - p.gridY) < 2
+            );
+            if (nearby) {
+                promptText = `PRESS F TO GIVE FUEL TO ${nearby.username}`;
+                if (Input.keys[this.settings.keys.transfer]) {
+                     if (now() - this.lastActionTime > 1000) {
+                        this.tryTransferFuel(nearby.id);
+                        this.lastActionTime = now();
+                     }
+                }
+            }
+        }
+
+        $('prompt-msg').style.display = promptText ? 'block' : 'none';
+        $('prompt-msg').innerText = promptText;
+
+        p.fuel = clamp(p.fuel, 0, p.maxFuel);
+        p.hull = clamp(p.hull, 0, p.maxHull);
+        if (p.hull <= 0) this.respawn();
+
+        this.camera.x += (p.x - this.camera.x) * 0.1;
+        this.camera.y += (p.y - this.camera.y) * 0.1;
+
+        // Autosave Logic (Every 60s if moved)
+        if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000) {
+            SaveSystem.saveToSlot(0, true); // Autosave to slot 1 (index 0) silently
+            this.lastAutosave = now();
+        }
+
+        Network.update();
+        if(document.getElementById('shop-modal').style.display === 'block') Shop.updateUI();
+    }
+
+    tryTransferFuel(targetId) {
+        if (this.localPlayer.fuel > 10) {
+            this.localPlayer.fuel -= 10;
+            Network.sendFuel(targetId, 10);
+            UI.showToast("Sent 10 Fuel!", "success");
+        } else {
+            UI.showToast("Not enough fuel!", "error");
+        }
+    }
+
+    tryBuild(tx, ty) {
+        if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 0 || ty >= CONSTANTS.MAP_HEIGHT) return;
+        if (this.map[ty][tx] === TILE_TYPES.EMPTY) {
+            if (this.localPlayer.cargo >= 1) {
+                this.localPlayer.cargo--;
+                this.map[ty][tx] = TILE_TYPES.CASING;
+                Network.sendTileUpdate(tx, ty, TILE_TYPES.CASING);
+                this.spawnParticle(tx * 32 + 16, ty * 32 + 16, '#95a5a6', 5);
+                UI.showToast("Structure Built", "success");
+            } else { UI.showToast("No Cargo!", "error"); }
+        }
+    }
+
+    tryMine(tx, ty) {
+        let tile = this.map[ty][tx];
+        if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK) {
+            let props = TILE_PROPS[tile];
+            if (this.localPlayer.drillTier < props.tier) { UI.showToast(`Need Tier ${props.tier} Drill`, "error"); return false; }
+            if (this.localPlayer.cargo < this.localPlayer.maxCargo) {
+                if (props.value > 0) this.localPlayer.cargo++;
+                else if (Math.random() > 0.5) this.localPlayer.cargo++;
+                this.map[ty][tx] = TILE_TYPES.EMPTY;
+                this.discovered[ty][tx] = 1;
+                this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);
+                Network.sendTileUpdate(tx, ty, TILE_TYPES.EMPTY);
+                return true;
+            } else { UI.showToast("Cargo Full!", "error"); return false; }
+        }
+        return false;
+    }
+
+    spawnParticle(x, y, color, count) {
+        for(let i=0; i<count; i++) {
+            this.particles.push({x, y, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 1.0, color});
+        }
+    }
+
+    respawn() {
+        this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
+        this.localPlayer.gridY = 4;
+        this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
+        this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+        this.localPlayer.hull = this.localPlayer.maxHull;
+        this.localPlayer.fuel = this.localPlayer.maxFuel;
+        this.localPlayer.cargo = 0;
+        this.localPlayer.money = Math.floor(this.localPlayer.money * 0.7);
+        UI.addMessage("System", UI.rndMsg('death'), "#ff0000");
+        Network.broadcastDeath();
+    }
+
+    draw() {
+        if (!this.running) return;
+        this.ctx.resetTransform();
+        this.ctx.fillStyle = '#050505';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        let cx = this.canvas.width / 2;
+        let cy = this.canvas.height / 2;
+        this.ctx.translate(cx, cy);
+        this.ctx.scale(this.zoom, this.zoom);
+        this.ctx.translate(-Math.floor(this.camera.x), -Math.floor(this.camera.y));
+
+        const viewW = (this.canvas.width / this.zoom);
+        const viewH = (this.canvas.height / this.zoom);
+        const startCol = Math.floor((this.camera.x - viewW/2) / CONSTANTS.TILE_SIZE) - 1;
+        const endCol = Math.floor((this.camera.x + viewW/2) / CONSTANTS.TILE_SIZE) + 1;
+        const startRow = Math.floor((this.camera.y - viewH/2) / CONSTANTS.TILE_SIZE) - 1;
+        const endRow = Math.floor((this.camera.y + viewH/2) / CONSTANTS.TILE_SIZE) + 1;
+
+        const pcx = this.localPlayer.gridX;
+        const pcy = this.localPlayer.gridY;
+        const visionRad = 6;
+        const xrayRad = 2 + this.localPlayer.xrayRange;
+
+        this.ctx.fillStyle = '#87CEEB';
+        this.ctx.fillRect(this.camera.x - viewW, -1000, viewW*2, 1000 + 5 * CONSTANTS.TILE_SIZE);
+        this.drawStation();
+
+        for (let y = Math.max(0, startRow); y <= Math.min(CONSTANTS.MAP_HEIGHT-1, endRow); y++) {
+            for (let x = Math.max(0, startCol); x <= Math.min(CONSTANTS.MAP_WIDTH-1, endCol); x++) {
+                let dx = x - pcx; let dy = y - pcy;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                let visible = dist <= visionRad;
+                let xray = dist <= xrayRad;
+
+                if (visible) this.discovered[y][x] = 1;
+                let tile = this.map[y][x];
+
+                if (tile !== TILE_TYPES.EMPTY) {
+                    if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
+                    else if (this.discovered[y][x]) {
+                         this.ctx.globalAlpha = 0.3;
+                         this.drawProceduralTile(x, y, tile, false);
+                         this.ctx.globalAlpha = 1.0;
+                    }
+                }
+            }
+        }
+
+        Object.values(this.remotePlayers).forEach(p => this.drawPlayer(p, false));
+        this.drawPlayer(this.localPlayer, true);
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+            this.ctx.globalAlpha = p.life; this.ctx.fillStyle = p.color;
+            this.ctx.fillRect(p.x, p.y, 4, 4); this.ctx.globalAlpha = 1.0;
+            if (p.life <= 0) this.particles.splice(i, 1);
+        }
+
+        this.drawLocalMinimap();
+        this.ctx.resetTransform();
+        this.drawHUD();
+    }
+
+    drawStation() {
+        let ts = CONSTANTS.TILE_SIZE;
+        let x = this.stationGridX * ts;
+        let y = this.stationGridY * ts;
+        this.ctx.fillStyle = '#7f8c8d'; this.ctx.fillRect(x - 40, y - 40, 80, 72);
+        this.ctx.fillStyle = '#c0392b'; this.ctx.beginPath(); this.ctx.moveTo(x - 50, y - 40); this.ctx.lineTo(x, y - 70); this.ctx.lineTo(x + 50, y - 40); this.ctx.fill();
+        this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(x - 20, y - 10, 40, 42);
+        this.ctx.fillStyle = '#f1c40f'; this.ctx.font = 'bold 12px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText("SHOP", x, y - 50);
+    }
+
+    drawProceduralTile(x, y, type, isXray) {
+        let ts = CONSTANTS.TILE_SIZE;
+        let px = x * ts; let py = y * ts;
+        let prop = TILE_PROPS[type];
+        if (isXray) { this.ctx.strokeStyle = prop.color; this.ctx.lineWidth = 2; this.ctx.strokeRect(px+4, py+4, ts-8, ts-8); return; }
+        this.ctx.fillStyle = prop.color; this.ctx.fillRect(px, py, ts, ts);
+        if (type === TILE_TYPES.CASING) {
+            this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
+            this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
+            this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
+            return;
+        }
+        this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-4, ts, 4); this.ctx.fillRect(px+ts-4, py, 4, ts);
+        this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 4); this.ctx.fillRect(px, py, 4, ts);
+        if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
+            this.ctx.fillStyle = Qt.lighter(prop.color, 1.5);
+            this.ctx.beginPath(); this.ctx.arc(px + ts/2, py + ts/2, 6, 0, Math.PI*2); this.ctx.fill();
+        }
+    }
+
+    drawPlayer(p, isLocal) {
+        let size = CONSTANTS.TILE_SIZE;
+        let cx = p.x + size/2; let cy = p.y + size/2;
+        this.ctx.save(); this.ctx.translate(cx, cy); this.ctx.rotate(p.rotation || 0);
+        let color = isLocal ? this.settings.color : (p.color || '#fff');
+
+        this.ctx.fillStyle = color; this.ctx.fillRect(-12, -12, 24, 24);
+        this.ctx.strokeStyle = '#111'; this.ctx.lineWidth = 2; this.ctx.strokeRect(-12, -12, 24, 24);
+        this.ctx.fillStyle = '#bdc3c7';
+        let drillOffset = (p.isDrilling && now() % 200 > 100) ? 2 : 0;
+        this.ctx.beginPath(); this.ctx.moveTo(-6, 12); this.ctx.lineTo(0, 20 + drillOffset); this.ctx.lineTo(6, 12); this.ctx.fill();
+        this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
+        this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
+        if (!isLocal) {
+            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '8px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText(p.username, 0, -20);
+        }
+        this.ctx.restore();
+    }
+
+    drawLocalMinimap() {
+        this.minimapCtx.fillStyle = '#000'; this.minimapCtx.fillRect(0, 0, 150, 150);
+        const range = Math.floor(25 / this.zoom);
+        const center = 75;
+        const pX = this.localPlayer.gridX; const pY = this.localPlayer.gridY;
+        const pixelSize = Math.max(1, 3 * this.zoom);
+
+        for (let dy = -range; dy <= range; dy++) {
+            for (let dx = -range; dx <= range; dx++) {
+                let mx = pX + dx; let my = pY + dy;
+                if (mx >= 0 && mx < CONSTANTS.MAP_WIDTH && my >= 0 && my < CONSTANTS.MAP_HEIGHT) {
+                    if (this.discovered[my][mx]) {
+                        let tile = this.map[my][mx];
+                        this.minimapCtx.fillStyle = tile === TILE_TYPES.EMPTY ? '#111' : TILE_PROPS[tile].color;
+                        this.minimapCtx.fillRect(center + dx*pixelSize, center + dy*pixelSize, pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+        this.minimapCtx.fillStyle = '#e74c3c'; this.minimapCtx.fillRect(center-2, center-2, 5, 5);
+    }
+
+    drawHUD() {
+        const p = this.localPlayer;
+        const w = this.canvas.width; const h = this.canvas.height;
+        this.drawGauge(60, h - 60, 40, p.fuel, p.maxFuel, "FUEL", "#d35400");
+        this.drawGauge(160, h - 60, 40, p.hull, p.maxHull, "HULL", "#c0392b");
+        this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
+        this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
+
+        this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 20px monospace"; this.ctx.textAlign = "center"; this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
+        let depth = Math.floor(Math.max(0, p.gridY - 5));
+        this.ctx.fillStyle = "#aaa"; this.ctx.font = "14px monospace"; this.ctx.fillText(`Depth: ${depth}m | Drill Tier: ${p.drillTier}`, w/2, h - 55);
+    }
+
+    drawGauge(x, y, r, val, max, label, color) {
+        const ctx = this.ctx;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = "#444"; ctx.stroke();
+        const start = Math.PI * 0.7; const end = Math.PI * 2.3;
+        const pct = clamp(val / max, 0, 1);
+        const current = start + (end - start) * pct;
+        ctx.beginPath(); ctx.arc(x, y, r - 5, start, current); ctx.strokeStyle = color; ctx.lineWidth = 6; ctx.stroke();
+        ctx.fillStyle = "#fff"; ctx.font = "bold 10px Arial"; ctx.textAlign = "center";
+        ctx.fillText(label, x, y + 15); ctx.fillText(Math.floor(val), x, y - 5);
+    }
+
+    loop() {
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+    }
+}
+
+// --- HELPER FOR COLORS ---
+const Qt = { lighter: (hex, factor) => hex };
+
+// --- SHOP SYSTEM ---
+class ShopSystem {
+    constructor() {
+        this.prices = {
+            drill: [500, 2000, 10000, 50000],
+            hull: 200, fuel: 200, cargo: 300, cool: 1000, xray: 2000
+        };
+    }
+    open() { $('shop-modal').classList.add('active'); this.updateUI(); }
+    close() { $('shop-modal').classList.remove('active'); }
+
+    updateUI() {
+        const p = Game.localPlayer;
+        $('shop-money').innerText = "$" + Math.floor(p.money);
+        $('shop-color-picker').value = Game.settings.color;
+        const check = (type, level) => {
+            let cost = this.prices[type];
+            if(Array.isArray(cost)) cost = cost[level] || 999999;
+            else cost = Math.floor(cost * (1 + level));
+            $(`cost-${type}`).innerText = "$" + cost;
+            $(`btn-${type}`).disabled = p.money < cost;
+            if(Array.isArray(this.prices[type]) && !this.prices[type][level]) {
+                 $(`cost-${type}`).innerText = "MAX";
+                 $(`btn-${type}`).disabled = true;
+            }
+        };
+        check('drill', p.drillTier);
+        check('hull', (p.maxHull-100)/20);
+        check('fuel', (p.maxFuel-100)/20);
+        check('cargo', (p.maxCargo-50)/10);
+        check('cool', p.heatResist);
+        check('xray', p.xrayRange);
+    }
+
+    buy(item) {
+        const p = Game.localPlayer;
+        let cost = 0;
+        if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); } }
+        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); } }
+        else {
+            let level = 0;
+            if (item === 'hull') level = (p.maxHull-100)/20;
+            if (item === 'fuel') level = (p.maxFuel-100)/20;
+            if (item === 'cargo') level = (p.maxCargo-50)/10;
+            if (item === 'cool') level = p.heatResist;
+            if (item === 'xray') level = p.xrayRange;
+            cost = Math.floor(this.prices[item] * (1 + level));
+            if (p.money >= cost) {
+                p.money -= cost;
+                if (item === 'hull') { p.maxHull += 20; p.hull = p.maxHull; }
+                if (item === 'fuel') { p.maxFuel += 20; p.fuel = p.maxFuel; }
+                if (item === 'cargo') p.maxCargo += 10;
+                if (item === 'cool') p.heatResist++;
+                if (item === 'xray') p.xrayRange++;
+                UI.showToast("Upgraded!", "success");
+            }
+        }
+        this.updateUI();
+    }
+}
+
+// --- NETWORK (MQTT) ---
+class NetworkManager {
+    constructor() {
+        this.client = null;
+        this.baseTopic = 'mm_online/';
+        this.lastHeartbeat = 0;
+    }
+
+    connect() {
+        const broker = Game.settings.broker;
+        const options = { clientId: 'mm_' + Game.localPlayer.id, keepalive: 60, clean: true, reconnectPeriod: 1000 };
+        try { this.client = mqtt.connect(broker, options); } catch (e) {}
+
+        this.client.on('connect', () => {
+            UI.showToast("Online!", "success");
+            this.client.subscribe(`${this.baseTopic}${Game.settings.room}/#`);
+            this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt });
+        });
+        this.client.on('message', (topic, message) => this.handleMessage(topic, message));
+    }
+
+    update() {
+        // Disconnect logic (10s timeout)
+        let n = now();
+        Object.keys(Game.remotePlayers).forEach(id => {
+            if (n - Game.remotePlayers[id].lastSeen > 10000) {
+                UI.addMessage("System", `${Game.remotePlayers[id].username} ${UI.rndMsg('leave')}`, "#888");
+                delete Game.remotePlayers[id];
+                UI.updatePlayerList();
+            }
+        });
+
+        // Heartbeat
+        if (n - this.lastHeartbeat > 2000) {
+            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id });
+            this.lastHeartbeat = n;
+        }
+    }
+
+    broadcastMove() {
+        const p = Game.localPlayer;
+        // Optimization: Send START and TARGET so clients interpolate.
+        this.publish('pos', {
+            type: 'move', id: p.id,
+            sx: p.x, sy: p.y, // Start Visual (mostly for correction)
+            tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE, // Target Visual
+            gx: p.gridX, gy: p.gridY, // Grid
+            r: p.rotation, col: Game.settings.color, drill: p.isDrilling
+        });
+        this.lastHeartbeat = now();
+    }
+
+    broadcastDeath() {
+        this.publish('chat', { type: 'death', id: Game.localPlayer.id, name: Game.settings.username });
+    }
+
+    sendFuel(targetId, amount) {
+        this.publish('ctrl', { type: 'fuel', to: targetId, from: Game.settings.username, amt: amount });
+    }
+
+    sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
+    sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
+    kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
+
+    publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
+
+    handleMessage(topic, message) {
+        let msg;
+        try { msg = JSON.parse(message.toString()); } catch(e) { return; }
+        if (msg.id === Game.localPlayer.id && msg.type !== 'kick') return;
+
+        // Remote Player Update
+        if (msg.type === 'move' || msg.type === 'heartbeat') {
+            if (!Game.remotePlayers[msg.id]) {
+                // New player discovered passively
+                Game.remotePlayers[msg.id] = {
+                    id: msg.id, x: msg.sx || 0, y: msg.sy || 0,
+                    targetX: msg.tx, targetY: msg.ty,
+                    username: "Unknown", color: msg.col || '#fff', lastSeen: now()
+                };
+                // We ask for identification if username is unknown? simpler: wait for heartbeat/join
+            }
+            let rp = Game.remotePlayers[msg.id];
+            rp.lastSeen = now();
+            if (msg.type === 'move') {
+                rp.color = msg.col;
+                rp.rotation = msg.r;
+                rp.isDrilling = msg.drill;
+                rp.gridX = msg.gx;
+                rp.gridY = msg.gy;
+                // Interpolation Targets
+                rp.targetX = msg.tx;
+                rp.targetY = msg.ty;
+                // If extremely desynced, snap
+                if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) {
+                    rp.x = rp.targetX; rp.y = rp.targetY;
+                }
+            }
+        }
+        else if (msg.type === 'join') {
+            if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
+            else {
+                if(!Game.remotePlayers[msg.id]) UI.addMessage("System", `${msg.username} ${UI.rndMsg('join')}`, "#aaa");
+                Game.remotePlayers[msg.id] = {
+                    id: msg.id, username: msg.username, color: msg.color,
+                    x: 0, y: 0, targetX: 0, targetY: 0,
+                    joinedAt: msg.joinedAt, lastSeen: now()
+                };
+                UI.updatePlayerList();
+                this.checkAdmin();
+            }
+        }
+        else if (msg.type === 'tile') {
+             if (Game.map[msg.y]) {
+                 Game.map[msg.y][msg.x] = msg.val;
+                 Game.discovered[msg.y][msg.x] = 1;
+             }
+        }
+        else if (msg.type === 'chat') UI.addMessage(msg.name, msg.msg);
+        else if (msg.type === 'death') UI.addMessage("System", `${msg.name} ${UI.rndMsg('death')}`, "#f55");
+        else if (msg.type === 'kick') {
+            if (msg.target === Game.localPlayer.id) { alert(UI.rndMsg('kick')); location.reload(); }
+            else {
+                if(Game.remotePlayers[msg.target]) UI.addMessage("System", `${Game.remotePlayers[msg.target].username} ${UI.rndMsg('kick')}`, "red");
+                delete Game.remotePlayers[msg.target];
+            }
+        }
+        else if (msg.type === 'fuel' && msg.to === Game.localPlayer.id) {
+            Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
+            UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
+            if (Game.localPlayer.fuel < 20) UI.addMessage("System", `${Game.settings.username} ${UI.rndMsg('rescue')}`, "orange");
+        }
+    }
+
+    checkAdmin() {
+        let all = Object.values(Game.remotePlayers).concat([Game.localPlayer]);
+        all.sort((a,b) => a.joinedAt - b.joinedAt);
+        if (all[0].id === Game.localPlayer.id && !Game.isAdmin) {
+            Game.isAdmin = true;
+            UI.updateAdminPanel();
+        }
+    }
+}
+
+// --- INPUT ---
+
+class InputManager {
+    constructor() { this.keys = {}; this.bindMode = null; }
+    init() {
+        window.addEventListener('keydown', e => {
+            if (this.bindMode) {
+                Game.settings.keys[this.bindMode] = e.key;
+                UI.showToast(`Bound ${this.bindMode.toUpperCase()} to ${e.key}`, "success");
+                this.bindMode = null;
+                UI.refreshKeybindLabels();
+                return;
+            }
+            this.keys[e.key] = true;
+            if (e.key === Game.settings.keys.chat && document.activeElement !== $('chat-input')) {
+                e.preventDefault();
+                $('chat-input').focus();
+            }
+            if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat) e.preventDefault();
+        });
+        window.addEventListener('keyup', e => this.keys[e.key] = false);
+        $('chat-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                if (e.target.value.trim()) { Network.sendChat(e.target.value); e.target.value = ""; }
+                e.target.blur();
+                $('gameCanvas').focus();
+            }
+            e.stopPropagation();
+        });
+    }
+    startBind(action) { this.bindMode = action; UI.refreshKeybindLabels(); }
+}
+
+// --- UI & SAVES ---
+
+class UIManager {
+    rndMsg(type) { const arr = MSGS[type]; return arr[Math.floor(Math.random() * arr.length)]; }
+    addMessage(name, text, color='#fff') {
+        const div = document.createElement('div');
+        div.innerHTML = `<span style="color:${color}; font-weight:bold;">${name}:</span> ${text}`;
+        $('chat-messages').appendChild(div);
+        $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+    }
+    showToast(msg, type='normal') {
+        const area = $('notification-area');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerText = msg;
+        area.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+    }
+    openSettings() {
+        $('settings-modal').classList.add('active');
+        this.refreshKeybindLabels();
+        this.renderSaveSlots();
+    }
+    closeSettings() { $('settings-modal').classList.remove('active'); }
+    refreshKeybindLabels() {
+        const keys = Game.settings.keys;
+        const map = { up: 'btn-bind-up', down: 'btn-bind-down', left: 'btn-bind-left', right: 'btn-bind-right', build: 'btn-bind-build', interact: 'btn-bind-interact', transfer: 'btn-bind-transfer', chat: 'btn-bind-chat' };
+        for (let action in map) {
+            let btn = $(map[action]);
+            if (Input.bindMode === action) { btn.classList.add('binding'); btn.innerText = `PRESS KEY...`; }
+            else { btn.classList.remove('binding'); btn.innerText = `${action.toUpperCase()}: ${keys[action]}`; }
+        }
+    }
+    updatePlayerList() {
+        if (!Game.isAdmin) return;
+        $('admin-panel').style.display = 'block';
+        const list = $('player-list');
+        list.innerHTML = '';
+        Object.values(Game.remotePlayers).forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'player-row';
+            row.innerHTML = `<span>${p.username}</span><div><button class="btn btn-small btn-danger" onclick="Admin.kick('${p.id}')">K</button></div>`;
+            list.appendChild(row);
+        });
+    }
+    updateAdminPanel() { this.updatePlayerList(); }
+
+    renderSaveSlots() {
+        const container = $('save-slots-container');
+        container.innerHTML = '';
+        SaveSystem.slots.forEach((slot, i) => {
+            const div = document.createElement('div');
+            div.className = 'save-slot';
+            const dateStr = slot ? new Date(slot.timestamp).toLocaleString() : 'Empty';
+            const nameStr = slot ? slot.name : `Slot ${i+1}`;
+            div.innerHTML = `
+                <div class="save-slot-info">
+                    <strong>${nameStr}</strong><br>
+                    <span style="font-size:10px; color:#999">${dateStr}</span>
+                </div>
+                <div class="save-slot-actions">
+                    <button class="btn btn-small" onclick="SaveSystem.saveToSlot(${i})">Save</button>
+                    <button class="btn btn-small" ${!slot ? 'disabled' : ''} onclick="SaveSystem.loadFromSlot(${i})">Load</button>
+                    <button class="btn btn-small btn-danger" ${!slot ? 'disabled' : ''} onclick="SaveSystem.deleteSlot(${i})">Del</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        $('autosave-toggle').checked = SaveSystem.autosaveEnabled;
+    }
+}
+
+class AdminSystem { kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); } }
+
+class SaveSystem {
+    static autosaveEnabled = true;
+    static slots = [null, null, null]; // Metadata
+
+    static init() {
+        // Load Slot Metadata
+        for(let i=0; i<3; i++) {
+            const meta = localStorage.getItem(`mm_save_meta_${i}`);
+            if(meta) this.slots[i] = JSON.parse(meta);
+        }
+        const as = localStorage.getItem('mm_autosave_setting');
+        if(as !== null) this.autosaveEnabled = (as === 'true');
+    }
+
+    static toggleAutosave(val) {
+        this.autosaveEnabled = val;
+        localStorage.setItem('mm_autosave_setting', val);
+    }
+
+    static saveToSlot(i, isAuto = false) {
+        const data = {
+            player: Game.localPlayer,
+            map: Game.map,
+            discovered: Array.from(Game.discovered).map(r => Array.from(r)),
+            banned: Game.bannedIds,
+            timestamp: now()
+        };
+        try {
+            // Check quota roughly
+            const json = JSON.stringify(data);
+            localStorage.setItem(`mm_save_data_${i}`, json);
+
+            const meta = { timestamp: now(), name: isAuto ? `Autosave (Slot ${i+1})` : `Save ${i+1}` };
+            this.slots[i] = meta;
+            localStorage.setItem(`mm_save_meta_${i}`, JSON.stringify(meta));
+
+            if(!isAuto) {
+                UI.renderSaveSlots();
+                UI.showToast(`Saved to Slot ${i+1}`, "success");
+            }
+        } catch(e) {
+            if(!isAuto) UI.showToast("Save Failed (Storage Full?)", "error");
+        }
+    }
+
+    static loadFromSlot(i) {
+        const json = localStorage.getItem(`mm_save_data_${i}`);
+        if(!json) return;
+        try {
+            const data = JSON.parse(json);
+            this.restoreData(data);
+            UI.closeSettings();
+        } catch(e) { UI.showToast("Corrupt Save File", "error"); }
+    }
+
+    static deleteSlot(i) {
+        localStorage.removeItem(`mm_save_data_${i}`);
+        localStorage.removeItem(`mm_save_meta_${i}`);
+        this.slots[i] = null;
+        UI.renderSaveSlots();
+    }
+
+    static exportSave() {
+        const data = { player: Game.localPlayer, map: Game.map, discovered: Array.from(Game.discovered).map(r => Array.from(r)), banned: Game.bannedIds };
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `mm_save.json`; a.click();
+    }
+
+    static importSave(input) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                this.restoreData(data);
+            } catch(e) { UI.showToast("Invalid File", "error"); }
+        };
+        if(input.files[0]) reader.readAsText(input.files[0]);
+    }
+
+    static restoreData(data) {
+        if(data.player) Game.localPlayer = {...Game.localPlayer, ...data.player};
+        if(data.map) Game.map = data.map;
+        if(data.discovered) Game.discovered = data.discovered.map(r => new Uint8Array(r));
+        if(data.banned) Game.bannedIds = data.banned;
+        UI.showToast("Game Loaded!", "success");
+    }
+}
+
+// --- INSTANTIATION ---
+const Game = new GameEngine();
+const Input = new InputManager();
+const Network = new NetworkManager();
+const UI = new UIManager();
+const Admin = new AdminSystem();
+const Shop = new ShopSystem();
+
+// Init Save System
+SaveSystem.init();
+
+// Expose
+window.Game = Game;
+window.UI = UI;
+window.SaveSystem = SaveSystem;
+window.Admin = Admin;
+window.Shop = Shop;
+window.Input = Input;
+
+</script>
+</body>
+</html>
