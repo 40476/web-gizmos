@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Multiplayer mining game with real-time MQTT networking</li>
-    <li>Procedural terrain generation and block-based resource collection</li>
-    <li>Equipment upgrades, player shops, and admin moderation system</li>
+    <li>Multiplayer mining game with real-time MQTT networking integration</li>
+    <li>Procedural tile-based world generation with varied minerals and depth mechanics</li>
+    <li>Robust inventory system with crafting, shop upgrades, and resource management</li>
   </ul>
 
   <pre>
-    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1 };</code>
-    <code>this.map[ty][tx] = TILE_TYPES.EMPTY; this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);</code>
+    <code>this.map[ty][tx] = TILE_TYPES.EMPTY;</code>
+    <code>this.client = mqtt.connect(broker, options);</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated terrain using MQTT for real-time interaction. The core gameplay involves tunneling to collect resources while managing fuel and cargo limits. Players can trade ores at stations, upgrade equipment, and host multiplayer sessions with admin controls.</p>
+  <p>Mego Miner Online features multiplayer mining gameplay using MQTT networking for real-time synchronization between players. Core mechanics include resource gathering via tile excavation, upgradable equipment tiers, and temperature-based survival challenges. The UI includes interactive dashboards for inventory management, player statistics tracking, and a procedural minimap display.</p>
 </section>
