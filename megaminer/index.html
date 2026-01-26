@@ -54,7 +54,7 @@
 
         /* Minimap */
         #minimap-container { position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; border: 2px solid #555; background: #000; z-index: 20; overflow: hidden; }
-        #minimap { display: block; }
+        #minimap { display: block; width: 100%; height: 100%; }
 
         /* Interaction Prompts */
         #prompt-msg { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); color: var(--highlight); font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px #000; display: none; pointer-events: none; text-align: center; }
@@ -290,12 +290,11 @@
             </div>
 
             <div class="form-group">
-                <label>Update Checker (GitHub API)</label>
+                <label>Update Checker</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px;">
-                    <input type="text" id="gh-repo" placeholder="user/repo (e.g. facebook/react)" style="flex:1;">
-                    <button class="btn btn-small" style="width:auto;" onclick="UI.checkGithub()">Check</button>
+                    <button class="btn btn-small" style="width:auto;" onclick="UI.checkForUpdates()">Check For Updates</button>
                 </div>
-                <div id="gh-status" style="font-size:11px; color:#aaa;">Enter repo to check for updates.</div>
+                <div id="gh-status" style="font-size:11px; color:#aaa;">Check official repo for updates.</div>
             </div>
 
             <div class="form-group">
@@ -324,9 +323,13 @@
                         <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)"> Autosave (60s)
                     </label>
                     <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="update-check-toggle" checked> Autocheck Updates (60s)
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
                         <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
                     </label>
                 </div>
+                <button class="btn btn-small" style="margin-top:5px; background:#444;" onclick="Network.requestMap(Game.localPlayer.id)">Force Map Sync</button>
             </div>
 
             <div class="form-group">
@@ -365,8 +368,8 @@
 
 <script>
 /**
- * MEGA MINER ONLINE v3.1
- * Updates: Map Sync, Seeded Gen, Trash, Version Check
+ * MEGA MINER ONLINE v3.4
+ * Updates: Timestamp/Header Update Checker
  */
 
 // --- UTILS ---
@@ -374,11 +377,10 @@ const $ = id => document.getElementById(id);
 const uuid = () => Math.random().toString(36).substr(2, 9);
 const now = () => Date.now();
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-const BUILD_TIMESTAMP = 1716300000000; // Simulated Build Timestamp
+const BUILD_TIMESTAMP = Date.now(); 
 
 // --- SEEDED RNG ---
 const pseudoRandom = (x, y) => {
-    // Deterministic visual noise independent of map logic
     return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
 };
 
@@ -417,9 +419,10 @@ const MSGS = {
     kick: ["was yeeted.", "read the TOS wrong.", "was shown the door."],
     ban: ["has been banished to the shadow realm.", "caught the ban hammer."],
     death: ["forgot to breathe.", "became bedrock.", "was crushed by capitalism.", "needs a tutorial."],
-    rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"],
-    version: ["is using a potato version and was kicked.", "didn't update their client (L).", "is living in the past."]
+    rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
 };
+
+let initialTimestamp = null;
 
 // --- SOUND ENGINE ---
 class SoundManager {
@@ -496,7 +499,6 @@ class SoundManager {
         this.nodes.engineRumbleGain = gain;
         this.nodes.engineFilter = filter;
 
-        // Re-implementing the Drill Grinder Node (Bandpass Noise) for texture
         const grindNoise = this.ctx.createBufferSource();
         grindNoise.buffer = this.noiseBuffer;
         grindNoise.loop = true;
@@ -515,24 +517,20 @@ class SoundManager {
         grindGain.connect(this.nodes.engine);
         grindNoise.start();
 
-        // Map noise nodes to properties used by updateEngine
         this.nodes.drillGain = grindGain;
         this.nodes.drillFilter = grindFilter;
     }
 
     updateEngine(speed, isDrilling) {
-        // Safety check to prevent "undefined" errors
         if (!this.ctx || !this.nodes.engineRumbleGain || !this.nodes.engineFilter || !this.nodes.drillGain || !this.nodes.drillFilter) return;
         
         const t = this.ctx.currentTime;
         let baseVol = (speed > 0.1) ? 0.3 : 0.05;
         let baseFreq = 60 + (speed * 30);
 
-        // Engine Rumble - Smooth transition using setTargetAtTime
         this.nodes.engineRumbleGain.gain.setTargetAtTime(baseVol, t, 0.2);
         this.nodes.engineFilter.frequency.setTargetAtTime(baseFreq, t, 0.2);
 
-        // Drill Grinding
         if (isDrilling) {
             this.nodes.drillGain.gain.setTargetAtTime(0.5, t, 0.05);
             this.nodes.drillFilter.frequency.setTargetAtTime(150 + Math.random()*100, t, 0.1); 
@@ -561,21 +559,21 @@ class SoundManager {
         
         const src = this.ctx.createBufferSource();
         src.buffer = this.noiseBuffer;
-        src.playbackRate.value = 0.8; 
+        src.playbackRate.value = 0.4 + Math.random() * 0.2; 
         
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = 800; 
+        filter.frequency.value = 500; 
 
         const gain = this.ctx.createGain();
         gain.gain.setValueAtTime(0.5, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
 
         src.connect(filter);
         filter.connect(gain);
         gain.connect(this.nodes.sfx);
         src.start();
-        src.stop(t + 0.1);
+        src.stop(t + 0.15);
     }
 
     playChat(type) { 
@@ -688,9 +686,36 @@ class GameEngine {
             try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){}
         }
     }
+    
+    // Helper to get base procedural for syncing
+    getProceduralTile(x, y) {
+        if (y < 5) return TILE_TYPES.EMPTY;
+        if (y === 5) return TILE_TYPES.GRASS;
+        if (y === CONSTANTS.MAP_HEIGHT - 1) return TILE_TYPES.BEDROCK;
 
+        let r = Game.getMapRandom(x, y);
+        let type = TILE_TYPES.DIRT;
+        if (y > 300) type = TILE_TYPES.DEEP_SLATE;
+        else if (y > 100) type = TILE_TYPES.HARD_STONE;
+        else if (y > 30) type = TILE_TYPES.STONE;
+
+        if (r > 0.985) {
+            if (y > 400) return TILE_TYPES.RUBY;
+            else if (y > 250) return TILE_TYPES.EMERALD;
+            else if (y > 150) return TILE_TYPES.DIAMOND;
+        } else if (r > 0.96) {
+            if (y > 100) return TILE_TYPES.GOLD;
+        } else if (r > 0.92) {
+            if (y > 50) return TILE_TYPES.IRON;
+        } else if (r > 0.88) {
+            return TILE_TYPES.COAL;
+        }
+        return type;
+    }
+    
     init() {
         this.settings.username = $('start-username').value || 'Miner';
+        this.localPlayer.username = this.settings.username; 
         this.settings.room = $('start-room').value || 'public';
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
@@ -715,7 +740,6 @@ class GameEngine {
         this.minimapCanvas.width = 150;
         this.minimapCanvas.height = 150;
 
-        // Seed PRNG based on Room Name to ensure all clients have same map
         let seed = 0;
         for (let i = 0; i < this.settings.room.length; i++) seed += this.settings.room.charCodeAt(i);
         this.roomSeed = seed * 12345;
@@ -726,7 +750,8 @@ class GameEngine {
         
         Network.connect(); 
         UI.refreshKeybindLabels();
-        
+        UI.checkForUpdates(); 
+
         this.running = true;
         this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
         this.localPlayer.gridY = 4;
@@ -750,6 +775,7 @@ class GameEngine {
             $('connection-screen').style.display = 'none';
             this.loop();
             UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
+            Network.broadcastMove(); 
         }, 1000);
     }
 
@@ -763,8 +789,14 @@ class GameEngine {
             this.map[y] = [];
             this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH); 
             for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
-                if (y < 5) this.map[y][x] = TILE_TYPES.EMPTY;
-                else if (y === 5) this.map[y][x] = TILE_TYPES.GRASS;
+                if (y < 5) {
+                    this.map[y][x] = TILE_TYPES.EMPTY;
+                    this.discovered[y][x] = 1; 
+                }
+                else if (y === 5) {
+                     this.map[y][x] = TILE_TYPES.GRASS;
+                     this.discovered[y][x] = 1; 
+                }
                 else if (y === CONSTANTS.MAP_HEIGHT - 1) this.map[y][x] = TILE_TYPES.BEDROCK;
                 else {
                     let r = Game.getMapRandom(x, y);
@@ -806,7 +838,6 @@ class GameEngine {
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
 
-        // --- LOCAL MOVEMENT ---
         let targetX = p.gridX * TS;
         let targetY = p.gridY * TS;
         let dx = targetX - p.x;
@@ -922,6 +953,11 @@ class GameEngine {
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000) {
             SaveSystem.saveToSlot(0, true); 
             this.lastAutosave = now();
+            
+            // dirty but it works
+            if(document.getElementById('update-check-toggle').checked){
+                UI.checkForUpdates();
+            }
         }
 
         Network.update(); 
@@ -1020,7 +1056,7 @@ class GameEngine {
         this.localPlayer.cargo = 0;
         this.localPlayer.inventory = {}; 
         this.localPlayer.money = Math.floor(this.localPlayer.money * 0.7);
-        Network.broadcastDeath(); // Send packet first so message is synced
+        Network.broadcastDeath(); 
         Sound.playChat('death');
         $('heat-overlay').style.opacity = 0;
         UI.updateDashboard();
@@ -1106,19 +1142,43 @@ class GameEngine {
         let px = x * ts; let py = y * ts;
         let prop = TILE_PROPS[type];
         if (isXray) { this.ctx.strokeStyle = prop.color; this.ctx.lineWidth = 2; this.ctx.strokeRect(px+4, py+4, ts-8, ts-8); return; }
-        this.ctx.fillStyle = prop.color; this.ctx.fillRect(px, py, ts, ts);
-        if (type === TILE_TYPES.CASING) {
+        
+        // Detailed Texture Patterns
+        this.ctx.fillStyle = prop.color; 
+        this.ctx.fillRect(px, py, ts, ts);
+        const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        const n1 = (seed % 1); 
+        const n2 = ((seed * 10) % 1);
+
+        if (type === TILE_TYPES.DIRT) {
+             this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
+             if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
+             if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
+             if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
+        } else if (type === TILE_TYPES.GRASS) {
+             this.ctx.fillStyle = '#2ecc71'; this.ctx.fillRect(px, py, ts, 6);
+             this.ctx.fillStyle = 'rgba(0,0,0,0.1)'; this.ctx.fillRect(px, py+6, ts, ts-6);
+        } else if (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE) {
+             this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
+             if(n1 > 0.3) { this.ctx.fillRect(px+5, py+5, 10, 6); this.ctx.fillRect(px+18, py+18, 10, 6); }
+             this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+             this.ctx.beginPath(); this.ctx.moveTo(px, py+ts); this.ctx.lineTo(px+ts, py); this.ctx.stroke();
+        } else if (type === TILE_TYPES.CASING) {
             this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
             this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
             this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
             return;
+        } else if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
+            this.ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            // Sparkle
+            if (now() % 1000 < 500) {
+                this.ctx.fillRect(px + 8 + (n1*16), py + 8 + (n2*16), 2, 2);
+            }
         }
-        this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-4, ts, 4); this.ctx.fillRect(px+ts-4, py, 4, ts); 
-        this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 4); this.ctx.fillRect(px, py, 4, ts);
-        if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
-            this.ctx.fillStyle = Qt.lighter(prop.color, 1.5);
-            this.ctx.beginPath(); this.ctx.arc(px + ts/2, py + ts/2, 6, 0, Math.PI*2); this.ctx.fill();
-        }
+        
+        // Bevel for all
+        this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts); 
+        this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
     }
 
     drawPlayer(p, isLocal) {
@@ -1135,17 +1195,20 @@ class GameEngine {
         this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
         this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
         if (!isLocal) {
-            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '8px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText(p.username, 0, -20);
+            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '10px Arial'; this.ctx.textAlign = 'center'; 
+            this.ctx.shadowColor="black"; this.ctx.shadowBlur=2;
+            this.ctx.fillText(p.username || "Unknown", 0, -20);
+            this.ctx.shadowBlur=0;
         }
         this.ctx.restore();
     }
     
     drawLocalMinimap() {
         this.minimapCtx.fillStyle = '#000'; this.minimapCtx.fillRect(0, 0, 150, 150);
-        const range = Math.floor(25 / this.zoom); 
+        const range = Math.floor(30 / this.zoom); 
         const center = 75; 
         const pX = this.localPlayer.gridX; const pY = this.localPlayer.gridY;
-        const pixelSize = Math.max(1, 3 * this.zoom);
+        const pixelSize = Math.max(2, 2 * this.zoom); // Better visibility
 
         for (let dy = -range; dy <= range; dy++) {
             for (let dx = -range; dx <= range; dx++) {
@@ -1159,7 +1222,28 @@ class GameEngine {
                 }
             }
         }
-        this.minimapCtx.fillStyle = '#e74c3c'; this.minimapCtx.fillRect(center-2, center-2, 5, 5);
+        // Viewport Border
+        this.minimapCtx.strokeStyle = "rgba(255,255,255,0.3)";
+        this.minimapCtx.lineWidth = 1;
+        let vw = (this.canvas.width / CONSTANTS.TILE_SIZE / this.zoom) * pixelSize;
+        let vh = (this.canvas.height / CONSTANTS.TILE_SIZE / this.zoom) * pixelSize;
+        this.minimapCtx.strokeRect(center - vw/2, center - vh/2, vw, vh);
+
+        this.minimapCtx.fillStyle = '#e74c3c'; this.minimapCtx.fillRect(center-2, center-2, 5, 5); // Me
+        
+        // Remote Players
+        Object.values(this.remotePlayers).forEach(rp => {
+            let dx = rp.gridX - pX; let dy = rp.gridY - pY;
+            if(Math.abs(dx) <= range && Math.abs(dy) <= range) {
+                this.minimapCtx.fillStyle = '#3498db';
+                this.minimapCtx.fillRect(center + dx*pixelSize -1, center + dy*pixelSize -1, 4, 4);
+                // Draw ID/Name tooltip if needed, but clean dots are better for minimaps
+                if(!rp.username) {
+                     this.minimapCtx.fillStyle = "#fff"; this.minimapCtx.font = "8px Arial"; 
+                     this.minimapCtx.fillText(rp.id.substr(0,4), center + dx*pixelSize, center + dy*pixelSize - 5);
+                }
+            }
+        });
     }
 
     drawHUD() {
@@ -1242,6 +1326,21 @@ class ShopSystem {
             Sound.playSuccess();
             this.updateUI();
             UI.updateDashboard(); 
+        }
+    }
+    
+    refuelRepair() {
+        const p = Game.localPlayer;
+        if(p.money >= 10) {
+            p.money -= 10;
+            p.fuel = p.maxFuel;
+            p.hull = p.maxHull;
+            UI.showToast("Refueled & Repaired!", "success");
+            Sound.playSuccess();
+            this.updateUI();
+        } else {
+            UI.showToast("Not enough money!", "error");
+            Sound.playError();
         }
     }
 
@@ -1347,6 +1446,8 @@ class NetworkManager {
                     this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt, ver: BUILD_TIMESTAMP });
                     Game.finishConnection();
                     Sound.playSuccess();
+                    // BROADCAST MOVE immediately so everyone sees new player
+                    this.broadcastMove();
                 } else {
                     Game.logConnection("Sub Error: " + err);
                 }
@@ -1392,6 +1493,32 @@ class NetworkManager {
     sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
     
+    // Add missing Map Request logic
+    requestMap(fromId) {
+        this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId });
+    }
+    
+    sendMapDiff(toId) {
+        let diffs = [];
+        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
+                let base = Game.getProceduralTile(x, y);
+                // Note: Game.map is the truth. If it differs from procedural base, send it.
+                if (Game.map[y][x] !== base) {
+                    diffs.push({x, y, v: Game.map[y][x]});
+                }
+            }
+        }
+        // Send ALL diffs (simple version)
+        if(diffs.length > 0) {
+            // chunking
+             const CHUNK_SIZE = 100;
+             for (let i=0; i<diffs.length; i+=CHUNK_SIZE) {
+                 this.publish('map', { type: 'sync', data: diffs.slice(i, i+CHUNK_SIZE), to: toId });
+             }
+        }
+    }
+    
     publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
 
     handleMessage(topic, message) {
@@ -1419,16 +1546,42 @@ class NetworkManager {
         else if (msg.type === 'join') {
             if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
             else {
-                if(!Game.remotePlayers[msg.id]) { UI.addMessage("System", `${msg.username} ${UI.rndMsg('join')}`, "#aaa"); Sound.playChat('join'); }
+                // Only show message if we didn't know them before
+                if(!Game.remotePlayers[msg.id]) { 
+                    UI.addMessage("System", `${msg.username} ${UI.rndMsg('join')}`, "#aaa"); 
+                    Sound.playChat('join'); 
+                }
                 Game.remotePlayers[msg.id] = { 
                     id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now() 
                 };
                 UI.updatePlayerList();
                 this.checkAdmin();
+                
+                // If I am admin, SEND MAP
+                if(Game.isAdmin) {
+                    this.sendMapDiff(msg.id);
+                }
+                
+                // Reply with MY position so they see me immediately
+                this.broadcastMove();
             }
         }
         else if (msg.type === 'tile') {
              if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
+        }
+        else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
+            // Apply Map Sync
+            msg.data.forEach(d => {
+                if (Game.map[d.y]) {
+                     Game.map[d.y][d.x] = d.v;
+                     // Auto discover synced changes so we can see them on minimap
+                     Game.discovered[d.y][d.x] = 1;
+                }
+            });
+            UI.showToast("Map Synced with Host", "success");
+        }
+        else if (msg.type === 'map_req' && Game.isAdmin) {
+            this.sendMapDiff(msg.from);
         }
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
         else if (msg.type === 'death') { UI.addMessage("System", `${msg.name} ${UI.rndMsg('death')}`, "#f55"); Sound.playChat('death'); }
@@ -1533,13 +1686,13 @@ class UIManager {
         $('chat-messages').appendChild(div);
         $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
     }
-    showToast(msg, type='normal') {
+    showToast(msg, type='normal',timeout=4000) {
         const area = $('notification-area');
         const el = document.createElement('div');
         el.className = `toast ${type}`;
         el.innerText = msg;
         area.appendChild(el);
-        setTimeout(() => el.remove(), 4000);
+        setTimeout(() => el.remove(), timeout);
     }
     openSettings() { 
         $('settings-modal').classList.add('active'); 
@@ -1587,25 +1740,26 @@ class UIManager {
             });
         });
     }
-    
-    checkGithub() {
-        const repo = $('gh-repo').value.trim();
-        const display = $('gh-status');
-        if(!repo) { display.innerText = "Please enter user/repo"; return; }
-        
-        display.innerText = "Checking...";
-        fetch(`https://api.github.com/repos/${repo}/commits/main`)
-            .then(res => {
-                if(!res.ok) throw new Error(res.status);
-                return res.json();
-            })
-            .then(data => {
-                const date = new Date(data.commit.author.date).toLocaleString();
-                display.innerHTML = `<span style="color:#2ecc71">Latest: ${date}</span>`;
-            })
-            .catch(e => {
-                display.innerHTML = `<span style="color:#e74c3c">Error check repo. Rate limited?</span>`;
-            });
+    async checkForUpdates() {
+        try {
+            if (!initialTimestamp) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('_t', Date.now());
+                const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                initialTimestamp = headRes.headers.get('last-modified');
+                console.log("current version is :", initialTimestamp);
+            }else{
+                const url = new URL(window.location.href);
+                url.searchParams.set('_t', Date.now());
+                const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                const currentTimestamp = headRes.headers.get('last-modified');
+                
+                if (currentTimestamp && currentTimestamp !== initialTimestamp) {
+                    UI.showToast("New Version Available!", "normal");
+                    UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+                }
+            }
+        } catch (e) { console.error('Update check error:', e); }
     }
 
     toggleDashboard() {
@@ -1802,6 +1956,8 @@ class SaveSystem {
     }
 }
 
+
+
 // --- INSTANTIATION ---
 const Game = new GameEngine();
 const Input = new InputManager();
@@ -1822,32 +1978,7 @@ window.Shop = Shop;
 window.Input = Input;
 window.Sound = Sound;
 
-// Helper to get base procedural for syncing
-Game.getProceduralTile = function(x, y) {
-    if (y < 5) return TILE_TYPES.EMPTY;
-    if (y === 5) return TILE_TYPES.GRASS;
-    if (y === CONSTANTS.MAP_HEIGHT - 1) return TILE_TYPES.BEDROCK;
-
-    let r = Game.getMapRandom(x, y);
-    let type = TILE_TYPES.DIRT;
-    if (y > 300) type = TILE_TYPES.DEEP_SLATE;
-    else if (y > 100) type = TILE_TYPES.HARD_STONE;
-    else if (y > 30) type = TILE_TYPES.STONE;
-
-    if (r > 0.985) {
-        if (y > 400) return TILE_TYPES.RUBY;
-        else if (y > 250) return TILE_TYPES.EMERALD;
-        else if (y > 150) return TILE_TYPES.DIAMOND;
-    } else if (r > 0.96) {
-        if (y > 100) return TILE_TYPES.GOLD;
-    } else if (r > 0.92) {
-        if (y > 50) return TILE_TYPES.IRON;
-    } else if (r > 0.88) {
-        return TILE_TYPES.COAL;
-    }
-    return type;
-};
-
 </script>
 </body>
 </html>
+<!-- deez nutz -->
