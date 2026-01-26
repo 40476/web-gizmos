@@ -7,6 +7,9 @@
     <!-- MQTT.js Library -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
+        /* CSS Reset & Normalization */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        
         :root {
             --bg-color: #0d0d0d;
             --panel-bg: rgba(20, 25, 40, 0.95);
@@ -16,16 +19,32 @@
             --danger: #c0392b;
             --success: #27ae60;
         }
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', monospace; color: var(--text-color); user-select: none; }
-        canvas { display: block; }
-
+        body { overflow: hidden; background: #000; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
         /* UI Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .pointer-events-auto { pointer-events: auto; }
-
+        
         /* Gear Icon */
         #gear-btn { position: absolute; top: 10px; left: 10px; font-size: 30px; color: rgba(255,255,255,0.5); cursor: pointer; pointer-events: auto; z-index: 50; transition: all 0.3s; }
         #gear-btn:hover { color: #fff; transform: rotate(90deg); }
+
+        /* Coords Display */
+        #coords-display { position: absolute; top: 10px; left: 60px; font-size: 14px; color: #aaa; font-family: monospace; display: none; text-shadow: 1px 1px 0 #000; }
+
+        /* Overheat Overlay */
+        #heat-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; box-shadow: inset 0 0 0px var(--danger); transition: box-shadow 0.2s; opacity: 0; }
+
+        /* Connection Screens */
+        #connection-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
+        #connection-log { font-family: monospace; color: var(--success); margin-top: 20px; font-size: 14px; text-align: left; width: 300px; height: 100px; overflow-y: auto; border: 1px solid #333; padding: 10px; background: #000; }
+        .log-line { margin: 2px 0; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--highlight); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Connection Lost Overlay */
+        #disconnect-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--danger); font-size: 32px; font-weight: bold; background: rgba(0,0,0,0.8); padding: 20px; border: 2px solid var(--danger); display: none; z-index: 200; text-align: center; }
 
         /* Chat */
         #chat-container { position: absolute; bottom: 120px; left: 10px; width: 300px; height: 150px; display: flex; flex-direction: column; pointer-events: auto; opacity: 0.8; transition: opacity 0.3s; z-index: 10; }
@@ -41,14 +60,15 @@
         #prompt-msg { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); color: var(--highlight); font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px #000; display: none; pointer-events: none; text-align: center; }
 
         /* Modals */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 500px; max-height: 85vh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 600px; max-height: 85vh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
         .modal.active { display: block; }
         .modal h2 { margin-top: 0; color: var(--highlight); border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-
+        
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaa; text-transform: uppercase; }
         .form-group input[type="text"], .form-group select { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: white; box-sizing: border-box; }
         .form-group input:disabled { opacity: 0.5; cursor: not-allowed; }
+        input[type=range] { width: 100%; accent-color: var(--accent); }
 
         /* Shop Grid */
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -56,6 +76,23 @@
         .shop-item h4 { margin: 0 0 5px 0; color: var(--accent); }
         .shop-item p { font-size: 12px; color: #ccc; margin: 0 0 5px 0; }
         .shop-item .cost { color: var(--highlight); font-weight: bold; font-size: 14px; }
+        
+        /* Sell List */
+        .sell-list { max-height: 150px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #444; background: #111; }
+        .sell-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-bottom: 1px solid #333; font-size: 12px; }
+        .sell-row:last-child { border-bottom: none; }
+        .sell-actions button { margin-left: 5px; padding: 2px 8px; font-size: 10px; }
+
+        /* Dashboard (Stats/Inventory) */
+        .dash-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 5px; max-height: 200px; overflow-y: auto; }
+        .inv-item { background: #222; border: 1px solid #444; padding: 5px; text-align: center; cursor: pointer; font-size: 10px; position: relative; transition: all 0.2s; pointer-events: auto; }
+        .inv-item:hover { border-color: #fff; background: #333; }
+        .inv-item.active { border-color: gold; box-shadow: 0 0 8px gold; background: rgba(255, 215, 0, 0.1); transform: scale(1.05); z-index: 10; }
+        .inv-count { position: absolute; bottom: 2px; right: 2px; font-weight: bold; color: #fff; }
+        .inv-trash { position: absolute; top: 0; right: 0; background: #c0392b; color: white; width: 15px; height: 15px; font-size: 10px; line-height: 15px; display: none; }
+        .inv-item:hover .inv-trash { display: block; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid #333; padding: 2px 0; }
 
         .btn { background: var(--accent); color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; }
         .btn:hover { background: #3498db; filter: brightness(1.2); }
@@ -64,6 +101,12 @@
         .btn-bind { background: #444; border: 1px solid #666; color: #fff; text-align: left; position: relative; }
         .btn-bind.binding { background: #c0392b; border-color: #e74c3c; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        /* Server Status */
+        .server-option { display: flex; justify-content: space-between; font-size: 12px; padding: 2px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
+        .status-dot.green { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+        .status-dot.red { background: #e74c3c; }
 
         /* Save Slots */
         .save-slot { background: rgba(0,0,0,0.4); padding: 10px; border: 1px solid #555; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
@@ -89,11 +132,25 @@
 <body>
 
     <canvas id="gameCanvas"></canvas>
-
+    
     <div id="ui-layer">
-
+        <div id="heat-overlay"></div>
+        
         <!-- Gear Icon -->
         <div id="gear-btn" onclick="UI.openSettings()">&#9881;</div>
+        
+        <!-- Coords -->
+        <div id="coords-display">X: 0 Y: 0</div>
+
+        <!-- Connection Lost -->
+        <div id="disconnect-msg">CONNECTION LOST<br><span style="font-size:16px; font-weight:normal; color:#fff;">Trying to reconnect...</span></div>
+
+        <!-- Connection Screen -->
+        <div id="connection-screen">
+            <div class="spinner"></div>
+            <h2 style="color:#fff; margin-top:20px;">ESTABLISHING UPLINK</h2>
+            <div id="connection-log"></div>
+        </div>
 
         <!-- Minimap -->
         <div id="minimap-container">
@@ -136,17 +193,45 @@
             </div>
         </div>
 
+        <!-- Dashboard Modal (Inventory/Stats) -->
+        <div id="dashboard-modal" class="modal">
+            <h2>Pilot Dashboard</h2>
+            <div class="dash-cols">
+                <div>
+                    <h4 style="color:#aaa; border-bottom:1px solid #444;">INVENTORY / BUILD</h4>
+                    <p style="font-size:11px; color:#777;">Click item to Equip for Building (B). Hover to Trash.</p>
+                    <div id="inv-grid" class="inv-grid"></div>
+                    <div id="station-btn-container" style="margin-top:20px; display:none;">
+                        <button class="btn" style="background:var(--success);" onclick="Shop.open()">OPEN STATION SHOP</button>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="color:#aaa; border-bottom:1px solid #444;">STATISTICS</h4>
+                    <div id="stats-container"></div>
+                    
+                    <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">LEADERBOARD (Local)</h4>
+                    <div id="leaderboard-container"></div>
+                </div>
+            </div>
+            <button class="btn" style="background:#555; margin-top:20px;" onclick="$('dashboard-modal').classList.remove('active')">Close</button>
+        </div>
+
         <!-- Shop Modal -->
         <div id="shop-modal" class="modal">
             <h2>Service Station</h2>
             <div style="text-align:center; margin-bottom:15px; font-size:18px;">
                 Wallet: <span id="shop-money" style="color:gold; font-weight:bold;">$0</span>
             </div>
-
+            <button class="btn" style="margin-bottom:10px; background:var(--success);" onclick="Shop.sellAll()">SELL ALL ORES</button>
+            
+            <h4 style="color:#aaa; border-bottom:1px solid #444;">SELL MINERALS</h4>
+            <div id="sell-list" class="sell-list"></div>
+            
+            <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">UPGRADES</h4>
             <div class="shop-grid">
                 <div class="shop-item">
                     <h4>Diamond Drill</h4>
-                    <p>Increases Mining Tier. Required for deeper ores.</p>
+                    <p>Increases Mining Tier.</p>
                     <div class="cost" id="cost-drill"></div>
                     <button class="btn" id="btn-drill" onclick="Shop.buy('drill')">Upgrade</button>
                 </div>
@@ -170,7 +255,7 @@
                 </div>
                 <div class="shop-item">
                     <h4>Heat Shield</h4>
-                    <p>Resist high temperatures at depth.</p>
+                    <p>Resist high temperatures.</p>
                     <div class="cost" id="cost-cool"></div>
                     <button class="btn" id="btn-cool" onclick="Shop.buy('cool')">Upgrade</button>
                 </div>
@@ -193,31 +278,61 @@
         <!-- Settings Modal -->
         <div id="settings-modal" class="modal">
             <h2>Settings</h2>
+            
+            <div class="form-group">
+                <label>Audio Mixer</label>
+                <div style="font-size:12px; display:grid; grid-template-columns: 1fr 3fr 1fr; gap:10px; align-items:center;">
+                    <span>Master</span> <input type="range" id="vol-master" min="0" max="1" step="0.1" value="0.5" oninput="Sound.setVolume('master', this.value)"> <span id="vol-disp-master">50%</span>
+                    <span>Music</span> <input type="range" id="vol-music" min="0" max="1" step="0.1" value="0.5" oninput="Sound.setVolume('music', this.value)"> <span id="vol-disp-music">50%</span>
+                    <span>SFX</span> <input type="range" id="vol-sfx" min="0" max="1" step="0.1" value="0.5" oninput="Sound.setVolume('sfx', this.value)"> <span id="vol-disp-sfx">50%</span>
+                    <span>Engine</span> <input type="range" id="vol-engine" min="0" max="1" step="0.1" value="0.5" oninput="Sound.setVolume('engine', this.value)"> <span id="vol-disp-engine">50%</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Update Checker (GitHub API)</label>
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <input type="text" id="gh-repo" placeholder="user/repo (e.g. facebook/react)" style="flex:1;">
+                    <button class="btn btn-small" style="width:auto;" onclick="UI.checkGithub()">Check</button>
+                </div>
+                <div id="gh-status" style="font-size:11px; color:#aaa;">Enter repo to check for updates.</div>
+            </div>
 
             <div class="form-group">
                 <label>Multiplayer Broker</label>
-                <select id="server-list" onchange="$('setting-broker').value = this.value" style="margin-bottom:5px;">
-                    <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (WSS)</option>
-                    <option value="ws://broker.emqx.io:8083/mqtt">EMQX Public (WS)</option>
-                    <option value="wss://broker.hivemq.com:8000/mqtt">HiveMQ Public (WSS)</option>
-                    <option value="wss://mqtt.eclipseprojects.io:443/mqtt">Eclipse (WSS)</option>
-                    <option value="wss://test.mosquitto.org:8081">Mosquitto (WSS)</option>
-                    <option value="wss://cloud.mqtt.cool/mqtt">MQTT.cool (WSS)</option>
-                    <option value="ws://localhost:8083/mqtt">Localhost (WS)</option>
-                </select>
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <select id="server-list" onchange="$('setting-broker').value = this.value" style="flex:1;">
+                        <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (WSS)</option>
+                        <option value="ws://broker.emqx.io:8083/mqtt">EMQX Public (WS)</option>
+                        <option value="wss://broker.hivemq.com:8000/mqtt">HiveMQ Public (WSS)</option>
+                        <option value="wss://mqtt.eclipseprojects.io:443/mqtt">Eclipse (WSS)</option>
+                        <option value="wss://test.mosquitto.org:8081">Mosquitto (WSS)</option>
+                        <option value="wss://cloud.mqtt.cool/mqtt">MQTT.cool (WSS)</option>
+                        <option value="ws://localhost:8083/mqtt">Localhost (WS)</option>
+                    </select>
+                    <button class="btn btn-small" style="width:auto;" onclick="UI.checkServers()">Check Status</button>
+                </div>
+                <div id="server-status-display" style="margin-bottom:5px; font-size:11px; max-height:60px; overflow-y:auto; background:#222; padding:5px; display:none;"></div>
                 <input type="text" id="setting-broker" value="wss://broker.emqx.io:8084/mqtt">
                 <small style="color:#777;">Grayed out while playing. Reload to change.</small>
             </div>
 
             <div class="form-group">
+                <label>Options</label>
+                <div style="display:flex; gap:15px;">
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)"> Autosave (60s)
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label>Save Games (LocalStorage)</label>
-                <div style="margin-bottom:5px; display:flex; align-items:center;">
-                    <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)">
-                    <span style="margin-left:5px; font-size:13px; color:#ccc;">Enable Autosave (60s)</span>
-                </div>
-                <div id="save-slots-container">
-                    <!-- Slots generated by JS -->
-                </div>
+                <div id="save-slots-container"></div>
+                <button class="btn" style="background:#555; margin-top:5px;" onclick="SaveSystem.saveAndReload()">Save & Reload Page</button>
             </div>
 
             <div class="form-group">
@@ -228,11 +343,11 @@
                     <button id="btn-bind-down" class="btn btn-bind" onclick="Input.startBind('down')">DOWN</button>
                     <button id="btn-bind-right" class="btn btn-bind" onclick="Input.startBind('right')">RIGHT</button>
                     <button id="btn-bind-build" class="btn btn-bind" onclick="Input.startBind('build')">BUILD</button>
-                    <button id="btn-bind-interact" class="btn btn-bind" onclick="Input.startBind('interact')">INTERACT</button>
+                    <button id="btn-bind-interact" class="btn btn-bind" onclick="Input.startBind('interact')">MENU/INTERACT</button>
                     <button id="btn-bind-transfer" class="btn btn-bind" onclick="Input.startBind('transfer')">TRANSFER</button>
                     <button id="btn-bind-chat" class="btn btn-bind" onclick="Input.startBind('chat')">CHAT</button>
                 </div>
-                <small>Hold BUILD + Arrow to place blocks. Mouse Wheel to Zoom.</small>
+                <small>Hold BUILD + Arrow to place Equipped block. Mouse Wheel to Zoom.</small>
             </div>
 
             <div class="form-group">
@@ -250,8 +365,8 @@
 
 <script>
 /**
- * MEGA MINER ONLINE v2.3
- * Features: Optimized Sync, Sarcastic msgs, Fuel Transfer, Scaling Minimap
+ * MEGA MINER ONLINE v3.1
+ * Updates: Map Sync, Seeded Gen, Trash, Version Check
  */
 
 // --- UTILS ---
@@ -259,18 +374,18 @@ const $ = id => document.getElementById(id);
 const uuid = () => Math.random().toString(36).substr(2, 9);
 const now = () => Date.now();
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+const BUILD_TIMESTAMP = 1716300000000; // Simulated Build Timestamp
+
+// --- SEEDED RNG ---
+const pseudoRandom = (x, y) => {
+    // Deterministic visual noise independent of map logic
+    return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
+};
 
 // --- CONFIG & STATE ---
 const CONSTANTS = {
-    TILE_SIZE: 32,
-    CHUNK_SIZE: 16,
-    SPEED_NORMAL: 2,
-    SPEED_DRILL: 1,
-    FUEL_CONSUMPTION: 0.5,
-    MAP_WIDTH: 200,
-    MAP_HEIGHT: 600,
-    MIN_ZOOM: 0.5,
-    MAX_ZOOM: 3.0
+    TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1, 
+    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 200, MAP_HEIGHT: 600, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
 };
 
 const TILE_TYPES = {
@@ -302,8 +417,203 @@ const MSGS = {
     kick: ["was yeeted.", "read the TOS wrong.", "was shown the door."],
     ban: ["has been banished to the shadow realm.", "caught the ban hammer."],
     death: ["forgot to breathe.", "became bedrock.", "was crushed by capitalism.", "needs a tutorial."],
-    rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
+    rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"],
+    version: ["is using a potato version and was kicked.", "didn't update their client (L).", "is living in the past."]
 };
+
+// --- SOUND ENGINE ---
+class SoundManager {
+    constructor() {
+        this.ctx = null;
+        this.nodes = {};
+        this.volumes = { master: 0.5, music: 0.5, sfx: 0.5, engine: 0.3 };
+        this.playlist = ['audio/Chiptronical.ogg', 'audio/Great_Little_Challenge.ogg', 'audio/Solve_The_Puzzle.ogg'];
+        this.currentTrack = 0;
+        this.noiseBuffer = null;
+    }
+
+    init() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.noiseBuffer = this.createNoiseBuffer();
+            this.setupNodes();
+            this.setupEngineLoop();
+            this.playNextMusic();
+        } else if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    setupNodes() {
+        this.nodes.master = this.ctx.createGain();
+        this.nodes.master.gain.value = this.volumes.master;
+        this.nodes.master.connect(this.ctx.destination);
+
+        this.nodes.music = this.ctx.createGain();
+        this.nodes.music.gain.value = this.volumes.music;
+        this.nodes.music.connect(this.nodes.master);
+
+        this.nodes.sfx = this.ctx.createGain();
+        this.nodes.sfx.gain.value = this.volumes.sfx;
+        this.nodes.sfx.connect(this.nodes.master);
+
+        this.nodes.engine = this.ctx.createGain();
+        this.nodes.engine.gain.value = this.volumes.engine;
+        this.nodes.engine.connect(this.nodes.master);
+    }
+
+    setVolume(type, val) {
+        this.volumes[type] = parseFloat(val);
+        if (this.nodes[type]) this.nodes[type].gain.setTargetAtTime(this.volumes[type], this.ctx.currentTime, 0.1);
+        else if (type === 'master' && this.nodes.master) this.nodes.master.gain.setTargetAtTime(this.volumes[type], this.ctx.currentTime, 0.1);
+        $(`vol-disp-${type}`).innerText = Math.round(val*100) + '%';
+        localStorage.setItem(`mm_vol_${type}`, val);
+    }
+
+    createNoiseBuffer() {
+        if (!this.ctx) return null; 
+        const bufSize = this.ctx.sampleRate * 2; 
+        const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        return buffer;
+    }
+
+    setupEngineLoop() {
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.noiseBuffer; 
+        noise.loop = true;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 100;
+        const gain = this.ctx.createGain();
+        gain.gain.value = 0;
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.nodes.engine); 
+        noise.start();
+        
+        this.nodes.engineRumbleGain = gain;
+        this.nodes.engineFilter = filter;
+
+        // Re-implementing the Drill Grinder Node (Bandpass Noise) for texture
+        const grindNoise = this.ctx.createBufferSource();
+        grindNoise.buffer = this.noiseBuffer;
+        grindNoise.loop = true;
+        grindNoise.playbackRate.value = 0.5;
+        
+        const grindFilter = this.ctx.createBiquadFilter();
+        grindFilter.type = 'bandpass';
+        grindFilter.frequency.value = 150;
+        grindFilter.Q.value = 1.0;
+
+        const grindGain = this.ctx.createGain();
+        grindGain.gain.value = 0;
+
+        grindNoise.connect(grindFilter);
+        grindFilter.connect(grindGain);
+        grindGain.connect(this.nodes.engine);
+        grindNoise.start();
+
+        // Map noise nodes to properties used by updateEngine
+        this.nodes.drillGain = grindGain;
+        this.nodes.drillFilter = grindFilter;
+    }
+
+    updateEngine(speed, isDrilling) {
+        // Safety check to prevent "undefined" errors
+        if (!this.ctx || !this.nodes.engineRumbleGain || !this.nodes.engineFilter || !this.nodes.drillGain || !this.nodes.drillFilter) return;
+        
+        const t = this.ctx.currentTime;
+        let baseVol = (speed > 0.1) ? 0.3 : 0.05;
+        let baseFreq = 60 + (speed * 30);
+
+        // Engine Rumble - Smooth transition using setTargetAtTime
+        this.nodes.engineRumbleGain.gain.setTargetAtTime(baseVol, t, 0.2);
+        this.nodes.engineFilter.frequency.setTargetAtTime(baseFreq, t, 0.2);
+
+        // Drill Grinding
+        if (isDrilling) {
+            this.nodes.drillGain.gain.setTargetAtTime(0.5, t, 0.05);
+            this.nodes.drillFilter.frequency.setTargetAtTime(150 + Math.random()*100, t, 0.1); 
+        } else {
+            this.nodes.drillGain.gain.setTargetAtTime(0, t, 0.1);
+        }
+    }
+
+    playTone(freq, type, duration, vol = 0.1) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.nodes.sfx); 
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+    
+    playMining() {
+        if (!this.ctx || !this.noiseBuffer) return;
+        const t = this.ctx.currentTime;
+        
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.noiseBuffer;
+        src.playbackRate.value = 0.8; 
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 800; 
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.nodes.sfx);
+        src.start();
+        src.stop(t + 0.1);
+    }
+
+    playChat(type) { 
+        if (type==='join') { this.playTone(440, 'sine', 0.1); setTimeout(()=>this.playTone(880, 'sine', 0.2), 100); }
+        else if (type==='leave') { this.playTone(440, 'sine', 0.1); setTimeout(()=>this.playTone(220, 'sine', 0.2), 100); }
+        else if (type==='death') { this.playTone(100, 'sawtooth', 0.5, 0.2); }
+        else this.playTone(600, 'triangle', 0.05);
+    }
+    playError() { this.playTone(150, 'sawtooth', 0.3, 0.1); }
+    playSuccess() { this.playTone(800, 'sine', 0.1); setTimeout(()=>this.playTone(1200, 'sine', 0.2), 100); }
+    playBuild() { this.playTone(300, 'square', 0.1); }
+    playThud() { this.playTone(80, 'square', 0.1, 0.3); }
+
+    playNextMusic() {
+        if(this.musicSource) { this.musicSource.stop(); }
+        const file = this.playlist[this.currentTrack];
+        this.currentTrack = (this.currentTrack + 1) % this.playlist.length;
+        
+        const audio = new Audio(file);
+        const source = this.ctx.createMediaElementSource(audio);
+        source.connect(this.nodes.music);
+        audio.onended = () => this.playNextMusic();
+        audio.onerror = () => { console.log("Music load failed, skipping"); this.playNextMusic(); };
+        audio.play().catch(e=>console.log("Autoplay blocked"));
+    }
+    
+    loadSettings() {
+        ['master', 'music', 'sfx', 'engine'].forEach(t => {
+            const v = localStorage.getItem(`mm_vol_${t}`);
+            if(v !== null) {
+                this.volumes[t] = parseFloat(v);
+                $(`vol-${t}`).value = v;
+                $(`vol-disp-${t}`).innerText = Math.round(v*100) + '%';
+            }
+        });
+    }
+}
+const Sound = new SoundManager();
 
 // --- GAME LOGIC ---
 
@@ -313,16 +623,16 @@ class GameEngine {
         this.ctx = this.canvas.getContext('2d');
         this.minimapCanvas = $('minimap');
         this.minimapCtx = this.minimapCanvas.getContext('2d');
-
+        
         this.running = false;
-
+        
         this.settings = {
             username: 'Miner',
             color: '#3498db',
             broker: 'wss://broker.emqx.io:8084/mqtt',
             room: 'public',
-            keys: {
-                up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown',
+            keys: { 
+                up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', 
                 build: 'b', interact: 'e', chat: 'Enter', transfer: 'f'
             }
         };
@@ -336,15 +646,17 @@ class GameEngine {
             cargo: 0, maxCargo: 50,
             money: 0,
             temp: 0, maxTemp: 100,
-            rotation: 0,
-            isDrilling: false,
+            rotation: 0, isDrilling: false,
             drillTier: 0, heatResist: 0, xrayRange: 0,
+            inventory: {}, 
+            selectedBlock: TILE_TYPES.CASING,
+            stats: { blocksMined: {}, totalMined: 0, startTime: now() },
             joinedAt: now()
         };
 
-        this.map = [];
-        this.discovered = [];
-        this.remotePlayers = {};
+        this.map = []; 
+        this.discovered = []; 
+        this.remotePlayers = {}; 
         this.camera = { x: 0, y: 0 };
         this.zoom = 1.0;
         this.particles = [];
@@ -352,9 +664,29 @@ class GameEngine {
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
         this.lastActionTime = 0;
         this.lastAutosave = 0;
-
+        this.fallHeight = 0; 
+        this.lastCoordsX = -1;
+        this.lastCoordsY = -1;
+        
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
+        
+        this.loadStoredSettings();
+    }
+    
+    loadStoredSettings() {
+        if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
+        if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
+        if(localStorage.getItem('mm_veh_color')) $('start-color').value = localStorage.getItem('mm_veh_color');
+        if(localStorage.getItem('mm_broker_url')) $('setting-broker').value = localStorage.getItem('mm_broker_url');
+        
+        const showCoords = localStorage.getItem('mm_show_coords');
+        if(showCoords === 'true') { $('coords-toggle').checked = true; this.toggleCoords(true); }
+        
+        const binds = localStorage.getItem('mm_keybinds');
+        if(binds) {
+            try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){}
+        }
     }
 
     init() {
@@ -362,10 +694,15 @@ class GameEngine {
         this.settings.room = $('start-room').value || 'public';
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
-
+        
+        localStorage.setItem('mm_username', this.settings.username);
+        localStorage.setItem('mm_room_id', this.settings.room);
+        localStorage.setItem('mm_veh_color', this.settings.color);
+        localStorage.setItem('mm_broker_url', this.settings.broker);
+        
         $('start-screen').style.display = 'none';
-        $('setting-broker').disabled = true;
-        $('server-list').disabled = true;
+        $('connection-screen').style.display = 'flex';
+        this.logConnection("Initializing System...");
 
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -378,19 +715,42 @@ class GameEngine {
         this.minimapCanvas.width = 150;
         this.minimapCanvas.height = 150;
 
+        // Seed PRNG based on Room Name to ensure all clients have same map
+        let seed = 0;
+        for (let i = 0; i < this.settings.room.length; i++) seed += this.settings.room.charCodeAt(i);
+        this.roomSeed = seed * 12345;
+
         this.generateMap();
         Input.init();
-        Network.connect();
+        Sound.loadSettings();
+        
+        Network.connect(); 
         UI.refreshKeybindLabels();
-
+        
         this.running = true;
         this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
         this.localPlayer.gridY = 4;
         this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
         this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+        this.localPlayer.stats.startTime = now();
 
-        this.loop();
-        UI.addMessage("System", "Welcome. Arrows to move. E to Shop. F to Transfer Fuel.", "#FFFF00");
+        Sound.init();
+    }
+    
+    logConnection(msg) {
+        const d = document.createElement('div');
+        d.className = 'log-line';
+        d.innerText = `> ${msg}`;
+        $('connection-log').appendChild(d);
+        $('connection-log').scrollTop = $('connection-log').scrollHeight;
+    }
+    
+    finishConnection() {
+        setTimeout(() => {
+            $('connection-screen').style.display = 'none';
+            this.loop();
+            UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
+        }, 1000);
     }
 
     resize() {
@@ -401,13 +761,13 @@ class GameEngine {
     generateMap() {
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
             this.map[y] = [];
-            this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
+            this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH); 
             for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
                 if (y < 5) this.map[y][x] = TILE_TYPES.EMPTY;
                 else if (y === 5) this.map[y][x] = TILE_TYPES.GRASS;
                 else if (y === CONSTANTS.MAP_HEIGHT - 1) this.map[y][x] = TILE_TYPES.BEDROCK;
                 else {
-                    let r = Math.random();
+                    let r = Game.getMapRandom(x, y);
                     let type = TILE_TYPES.DIRT;
                     if (y > 300) type = TILE_TYPES.DEEP_SLATE;
                     else if (y > 100) type = TILE_TYPES.HARD_STONE;
@@ -429,6 +789,16 @@ class GameEngine {
             }
         }
     }
+    
+    getMapRandom(x, y) {
+        const s = Math.sin(x * 12.9898 + y * 78.233 + this.roomSeed) * 43758.5453;
+        return s - Math.floor(s);
+    }
+
+    toggleCoords(show) {
+        $('coords-display').style.display = show ? 'block' : 'none';
+        localStorage.setItem('mm_show_coords', show);
+    }
 
     update() {
         if (!this.running) return;
@@ -443,13 +813,20 @@ class GameEngine {
         let dy = targetY - p.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
         let speed = p.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
+        let isMoving = false;
 
         if (dist > speed) {
             let angle = Math.atan2(dy, dx);
             p.x += Math.cos(angle) * speed;
             p.y += Math.sin(angle) * speed;
+            isMoving = true;
         } else {
             p.x = targetX; p.y = targetY; p.isDrilling = false;
+
+            if (this.fallHeight > 1 && !isMoving) {
+                Sound.playThud();
+                this.fallHeight = 0;
+            }
 
             let ix = 0, iy = 0;
             if (Input.keys[this.settings.keys.up]) iy = -1;
@@ -465,8 +842,9 @@ class GameEngine {
             } else if (ix || iy) {
                 if (ix === 1) p.rotation = -90 * (Math.PI/180);
                 if (ix === -1) p.rotation = 90 * (Math.PI/180);
-                if (iy === 1) p.rotation = 0;
-                if (iy === -1) p.rotation = 180 * (Math.PI/180);
+                if (iy === 1) { p.rotation = 0; this.fallHeight++; }
+                if (iy === -1) { p.rotation = 180 * (Math.PI/180); this.fallHeight = 0; }
+                if (ix !== 0) this.fallHeight = 0;
 
                 let nx = p.gridX + ix;
                 let ny = p.gridY + iy;
@@ -476,14 +854,14 @@ class GameEngine {
                     if (tile === TILE_TYPES.EMPTY) {
                         p.gridX = nx; p.gridY = ny;
                         if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
-                        Network.broadcastMove(); // Send Move Update
+                        Network.broadcastMove();
                     } else if (tile !== TILE_TYPES.BEDROCK) {
-                        if (now() - this.lastActionTime > 150) {
+                        if (now() - this.lastActionTime > 150) { 
                              if (this.tryMine(nx, ny)) {
                                  p.gridX = nx; p.gridY = ny;
                                  p.isDrilling = true;
                                  if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
-                                 Network.broadcastMove(); // Send Move Update
+                                 Network.broadcastMove();
                              }
                              this.lastActionTime = now();
                         }
@@ -491,66 +869,48 @@ class GameEngine {
                 }
             }
         }
+        
+        Sound.updateEngine(isMoving ? speed : 0, p.isDrilling);
 
-        // --- REMOTE INTERPOLATION ---
         Object.values(this.remotePlayers).forEach(rp => {
             if (rp.targetX !== undefined) {
                 let rdx = rp.targetX - rp.x;
                 let rdy = rp.targetY - rp.y;
                 let rDist = Math.sqrt(rdx*rdx + rdy*rdy);
                 let rSpeed = rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
-
                 if (rDist > rSpeed) {
                     let rAngle = Math.atan2(rdy, rdx);
                     rp.x += Math.cos(rAngle) * rSpeed;
                     rp.y += Math.sin(rAngle) * rSpeed;
-                } else {
-                    rp.x = rp.targetX;
-                    rp.y = rp.targetY;
-                }
+                } else { rp.x = rp.targetX; rp.y = rp.targetY; }
             }
         });
 
-        // Temperature
+        // Heat Logic
         let depth = Math.max(0, p.gridY - 5);
-        if (depth > 200 + (p.heatResist * 50)) {
+        let heatThreshold = 100 + (p.heatResist * 50); 
+        if (depth > heatThreshold) {
             p.temp += 0.05;
-            if (p.temp > 100) { p.temp = 100; p.hull -= 0.1; }
-        } else p.temp = Math.max(0, p.temp - 0.2);
-
-        // Station & Fuel Transfer Prompts
-        let promptText = "";
-
-        // Station
-        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 2) {
-             promptText = "PRESS E TO ENTER STATION";
-             if (Input.keys[this.settings.keys.interact]) {
-                if (p.cargo > 0) { p.money += p.cargo * 10; UI.addMessage("Station", `Sold minerals: $${p.cargo*10}`, "#0f0"); p.cargo = 0; }
-                if (p.fuel < p.maxFuel) p.fuel = p.maxFuel;
-                if (p.hull < p.maxHull && p.money > 0) { p.hull = p.maxHull; p.money -= 10; }
-                p.temp = 0;
-                Shop.open();
-             }
-        }
-
-        // Fuel Transfer
-        if (!promptText) {
-            let nearby = Object.values(this.remotePlayers).find(rp =>
-                Math.abs(rp.gridX - p.gridX) < 2 && Math.abs(rp.gridY - p.gridY) < 2
-            );
-            if (nearby) {
-                promptText = `PRESS F TO GIVE FUEL TO ${nearby.username}`;
-                if (Input.keys[this.settings.keys.transfer]) {
-                     if (now() - this.lastActionTime > 1000) {
-                        this.tryTransferFuel(nearby.id);
-                        this.lastActionTime = now();
-                     }
-                }
+            if (p.temp > 100) { 
+                p.temp = 100; 
+                p.hull -= 0.1; 
+                $('heat-overlay').style.opacity = (Math.sin(now()/100)+1)/4 + 0.3; 
             }
+        } else {
+            p.temp = Math.max(0, p.temp - 0.2);
+            $('heat-overlay').style.opacity = 0;
         }
 
-        $('prompt-msg').style.display = promptText ? 'block' : 'none';
-        $('prompt-msg').innerText = promptText;
+        $('prompt-msg').style.display = 'none';
+        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 2) {
+             $('prompt-msg').style.display = 'block';
+             $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
+        }
+        
+        if (Input.keys[this.settings.keys.interact] && now() - this.lastActionTime > 500) {
+            UI.toggleDashboard();
+            this.lastActionTime = now();
+        }
 
         p.fuel = clamp(p.fuel, 0, p.maxFuel);
         p.hull = clamp(p.hull, 0, p.maxHull);
@@ -559,14 +919,19 @@ class GameEngine {
         this.camera.x += (p.x - this.camera.x) * 0.1;
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
-        // Autosave Logic (Every 60s if moved)
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000) {
-            SaveSystem.saveToSlot(0, true); // Autosave to slot 1 (index 0) silently
+            SaveSystem.saveToSlot(0, true); 
             this.lastAutosave = now();
         }
 
-        Network.update();
-        if(document.getElementById('shop-modal').style.display === 'block') Shop.updateUI();
+        Network.update(); 
+        
+        // Coords Update Optimized
+        if (this.lastCoordsX !== p.gridX || this.lastCoordsY !== p.gridY) {
+            $('coords-display').innerText = `X: ${p.gridX} Y: ${depth}`;
+            this.lastCoordsX = p.gridX;
+            this.lastCoordsY = p.gridY;
+        }
     }
 
     tryTransferFuel(targetId) {
@@ -574,21 +939,42 @@ class GameEngine {
             this.localPlayer.fuel -= 10;
             Network.sendFuel(targetId, 10);
             UI.showToast("Sent 10 Fuel!", "success");
+            Sound.playSuccess();
         } else {
             UI.showToast("Not enough fuel!", "error");
+            Sound.playError();
         }
     }
 
     tryBuild(tx, ty) {
         if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 0 || ty >= CONSTANTS.MAP_HEIGHT) return;
         if (this.map[ty][tx] === TILE_TYPES.EMPTY) {
-            if (this.localPlayer.cargo >= 1) {
-                this.localPlayer.cargo--;
-                this.map[ty][tx] = TILE_TYPES.CASING;
-                Network.sendTileUpdate(tx, ty, TILE_TYPES.CASING);
+            const type = this.localPlayer.selectedBlock;
+            let count = this.localPlayer.inventory[type] || 0;
+            
+            if (count > 0) {
+                this.localPlayer.inventory[type]--;
+                this.localPlayer.cargo--; 
+                this.map[ty][tx] = type;
+                Network.sendTileUpdate(tx, ty, type);
                 this.spawnParticle(tx * 32 + 16, ty * 32 + 16, '#95a5a6', 5);
-                UI.showToast("Structure Built", "success");
-            } else { UI.showToast("No Cargo!", "error"); }
+                Sound.playBuild();
+                UI.showToast("Block Placed", "success");
+                UI.updateDashboard(); 
+            } else {
+                UI.showToast("Out of blocks!", "error");
+                Sound.playError();
+            }
+        }
+    }
+    
+    trashBlock(type) {
+        const p = this.localPlayer;
+        if(p.inventory[type] > 0) {
+            p.inventory[type]--;
+            p.cargo--;
+            UI.showToast(`Trashed 1 ${TILE_PROPS[type].name}`, "normal");
+            UI.updateDashboard();
         }
     }
 
@@ -596,16 +982,24 @@ class GameEngine {
         let tile = this.map[ty][tx];
         if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK) {
             let props = TILE_PROPS[tile];
-            if (this.localPlayer.drillTier < props.tier) { UI.showToast(`Need Tier ${props.tier} Drill`, "error"); return false; }
+            if (this.localPlayer.drillTier < props.tier) { UI.showToast(`Need Tier ${props.tier} Drill`, "error"); Sound.playError(); return false; }
             if (this.localPlayer.cargo < this.localPlayer.maxCargo) {
-                if (props.value > 0) this.localPlayer.cargo++;
-                else if (Math.random() > 0.5) this.localPlayer.cargo++;
+                if (!this.localPlayer.inventory[tile]) this.localPlayer.inventory[tile] = 0;
+                this.localPlayer.inventory[tile]++;
+                this.localPlayer.cargo++;
+                
+                if (!this.localPlayer.stats.blocksMined[tile]) this.localPlayer.stats.blocksMined[tile] = 0;
+                this.localPlayer.stats.blocksMined[tile]++;
+                this.localPlayer.stats.totalMined++;
+
                 this.map[ty][tx] = TILE_TYPES.EMPTY;
                 this.discovered[ty][tx] = 1;
                 this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);
+                Sound.playMining(); 
                 Network.sendTileUpdate(tx, ty, TILE_TYPES.EMPTY);
+                UI.updateDashboard(); 
                 return true;
-            } else { UI.showToast("Cargo Full!", "error"); return false; }
+            } else { UI.showToast("Cargo Full!", "error"); Sound.playError(); return false; }
         }
         return false;
     }
@@ -624,15 +1018,18 @@ class GameEngine {
         this.localPlayer.hull = this.localPlayer.maxHull;
         this.localPlayer.fuel = this.localPlayer.maxFuel;
         this.localPlayer.cargo = 0;
+        this.localPlayer.inventory = {}; 
         this.localPlayer.money = Math.floor(this.localPlayer.money * 0.7);
-        UI.addMessage("System", UI.rndMsg('death'), "#ff0000");
-        Network.broadcastDeath();
+        Network.broadcastDeath(); // Send packet first so message is synced
+        Sound.playChat('death');
+        $('heat-overlay').style.opacity = 0;
+        UI.updateDashboard();
     }
 
     draw() {
         if (!this.running) return;
         this.ctx.resetTransform();
-        this.ctx.fillStyle = '#050505';
+        this.ctx.fillStyle = '#050505'; 
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         let cx = this.canvas.width / 2;
@@ -650,7 +1047,7 @@ class GameEngine {
 
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
-        const visionRad = 6;
+        const visionRad = 6; 
         const xrayRad = 2 + this.localPlayer.xrayRange;
 
         this.ctx.fillStyle = '#87CEEB';
@@ -661,12 +1058,12 @@ class GameEngine {
             for (let x = Math.max(0, startCol); x <= Math.min(CONSTANTS.MAP_WIDTH-1, endCol); x++) {
                 let dx = x - pcx; let dy = y - pcy;
                 let dist = Math.sqrt(dx*dx + dy*dy);
-                let visible = dist <= visionRad;
+                let visible = dist <= visionRad; 
                 let xray = dist <= xrayRad;
-
+                
                 if (visible) this.discovered[y][x] = 1;
                 let tile = this.map[y][x];
-
+                
                 if (tile !== TILE_TYPES.EMPTY) {
                     if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
                     else if (this.discovered[y][x]) {
@@ -716,7 +1113,7 @@ class GameEngine {
             this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
             return;
         }
-        this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-4, ts, 4); this.ctx.fillRect(px+ts-4, py, 4, ts);
+        this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-4, ts, 4); this.ctx.fillRect(px+ts-4, py, 4, ts); 
         this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 4); this.ctx.fillRect(px, py, 4, ts);
         if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
             this.ctx.fillStyle = Qt.lighter(prop.color, 1.5);
@@ -729,7 +1126,7 @@ class GameEngine {
         let cx = p.x + size/2; let cy = p.y + size/2;
         this.ctx.save(); this.ctx.translate(cx, cy); this.ctx.rotate(p.rotation || 0);
         let color = isLocal ? this.settings.color : (p.color || '#fff');
-
+        
         this.ctx.fillStyle = color; this.ctx.fillRect(-12, -12, 24, 24);
         this.ctx.strokeStyle = '#111'; this.ctx.lineWidth = 2; this.ctx.strokeRect(-12, -12, 24, 24);
         this.ctx.fillStyle = '#bdc3c7';
@@ -742,11 +1139,11 @@ class GameEngine {
         }
         this.ctx.restore();
     }
-
+    
     drawLocalMinimap() {
         this.minimapCtx.fillStyle = '#000'; this.minimapCtx.fillRect(0, 0, 150, 150);
-        const range = Math.floor(25 / this.zoom);
-        const center = 75;
+        const range = Math.floor(25 / this.zoom); 
+        const center = 75; 
         const pX = this.localPlayer.gridX; const pY = this.localPlayer.gridY;
         const pixelSize = Math.max(1, 3 * this.zoom);
 
@@ -772,12 +1169,12 @@ class GameEngine {
         this.drawGauge(160, h - 60, 40, p.hull, p.maxHull, "HULL", "#c0392b");
         this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
         this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
-
+        
         this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 20px monospace"; this.ctx.textAlign = "center"; this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
         let depth = Math.floor(Math.max(0, p.gridY - 5));
         this.ctx.fillStyle = "#aaa"; this.ctx.font = "14px monospace"; this.ctx.fillText(`Depth: ${depth}m | Drill Tier: ${p.drillTier}`, w/2, h - 55);
     }
-
+    
     drawGauge(x, y, r, val, max, label, color) {
         const ctx = this.ctx;
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fill();
@@ -810,11 +1207,76 @@ class ShopSystem {
     }
     open() { $('shop-modal').classList.add('active'); this.updateUI(); }
     close() { $('shop-modal').classList.remove('active'); }
+    
+    sellAll() {
+        let total = 0;
+        const p = Game.localPlayer;
+        for (let type in p.inventory) {
+            let count = p.inventory[type];
+            if (count > 0 && TILE_PROPS[type].value > 0) {
+                total += count * TILE_PROPS[type].value;
+                p.inventory[type] = 0;
+            }
+        }
+        if (total > 0) {
+            p.money += total;
+            p.cargo = 0; 
+            for(let t in p.inventory) p.cargo += p.inventory[t];
+            UI.showToast(`Sold all for $${total}`, "success");
+            Sound.playSuccess();
+        } else {
+            UI.showToast("Nothing valuable to sell.", "normal");
+        }
+        this.updateUI();
+        UI.updateDashboard(); 
+    }
+    
+    sellItem(type, amount) {
+        const p = Game.localPlayer;
+        if(p.inventory[type] >= amount) {
+            let val = TILE_PROPS[type].value * amount;
+            p.inventory[type] -= amount;
+            p.cargo -= amount;
+            p.money += val;
+            UI.showToast(`Sold ${amount} ${TILE_PROPS[type].name}`, "success");
+            Sound.playSuccess();
+            this.updateUI();
+            UI.updateDashboard(); 
+        }
+    }
 
     updateUI() {
         const p = Game.localPlayer;
         $('shop-money').innerText = "$" + Math.floor(p.money);
         $('shop-color-picker').value = Game.settings.color;
+        
+        const sellContainer = $('sell-list');
+        sellContainer.innerHTML = '';
+        let hasItems = false;
+        
+        Object.keys(p.inventory).forEach(key => {
+            let type = parseInt(key);
+            let count = p.inventory[type];
+            let val = TILE_PROPS[type].value;
+            
+            if (count > 0 && val > 0) {
+                hasItems = true;
+                let div = document.createElement('div');
+                div.className = 'sell-row';
+                div.innerHTML = `
+                    <span style="color:${TILE_PROPS[type].color}">${TILE_PROPS[type].name} (x${count})</span>
+                    <span style="color:gold">$${val}/ea</span>
+                    <div class="sell-actions">
+                        <button class="btn" onclick="Shop.sellItem(${type}, 1)">Sell 1</button>
+                        <button class="btn" onclick="Shop.sellItem(${type}, ${count})">All</button>
+                    </div>
+                `;
+                sellContainer.appendChild(div);
+            }
+        });
+        
+        if(!hasItems) sellContainer.innerHTML = '<div style="padding:10px; color:#555; text-align:center;">No valuable ore to sell.</div>';
+
         const check = (type, level) => {
             let cost = this.prices[type];
             if(Array.isArray(cost)) cost = cost[level] || 999999;
@@ -833,12 +1295,12 @@ class ShopSystem {
         check('cool', p.heatResist);
         check('xray', p.xrayRange);
     }
-
+    
     buy(item) {
         const p = Game.localPlayer;
         let cost = 0;
         if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); } }
-        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); } }
+        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); } }
         else {
             let level = 0;
             if (item === 'hull') level = (p.maxHull-100)/20;
@@ -855,6 +1317,7 @@ class ShopSystem {
                 if (item === 'cool') p.heatResist++;
                 if (item === 'xray') p.xrayRange++;
                 UI.showToast("Upgraded!", "success");
+                Sound.playSuccess();
             }
         }
         this.updateUI();
@@ -870,61 +1333,65 @@ class NetworkManager {
     }
 
     connect() {
+        Game.logConnection(`Connecting to broker ${Game.settings.broker}...`);
+        
         const broker = Game.settings.broker;
         const options = { clientId: 'mm_' + Game.localPlayer.id, keepalive: 60, clean: true, reconnectPeriod: 1000 };
-        try { this.client = mqtt.connect(broker, options); } catch (e) {}
+        try { this.client = mqtt.connect(broker, options); } catch (e) { Game.logConnection("Error creating client: " + e); }
 
         this.client.on('connect', () => {
-            UI.showToast("Online!", "success");
-            this.client.subscribe(`${this.baseTopic}${Game.settings.room}/#`);
-            this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt });
+            Game.logConnection("Connected. Subscribing...");
+            this.client.subscribe(`${this.baseTopic}${Game.settings.room}/#`, (err) => {
+                if(!err) {
+                    Game.logConnection("Subscribed. Joining room...");
+                    this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt, ver: BUILD_TIMESTAMP });
+                    Game.finishConnection();
+                    Sound.playSuccess();
+                } else {
+                    Game.logConnection("Sub Error: " + err);
+                }
+            });
         });
+        
+        this.client.on('offline', () => { $('disconnect-msg').style.display = 'block'; });
+        this.client.on('reconnect', () => { $('disconnect-msg').style.display = 'none'; });
         this.client.on('message', (topic, message) => this.handleMessage(topic, message));
     }
 
     update() {
-        // Disconnect logic (10s timeout)
         let n = now();
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
-                UI.addMessage("System", `${Game.remotePlayers[id].username} ${UI.rndMsg('leave')}`, "#888");
+                const msg = `${Game.remotePlayers[id].username} ${UI.rndMsg('leave')}`;
+                UI.addMessage("System", msg, "#888");
+                Sound.playChat('leave');
                 delete Game.remotePlayers[id];
                 UI.updatePlayerList();
             }
         });
-
-        // Heartbeat
         if (n - this.lastHeartbeat > 2000) {
-            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id });
+            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username });
             this.lastHeartbeat = n;
         }
     }
 
     broadcastMove() {
         const p = Game.localPlayer;
-        // Optimization: Send START and TARGET so clients interpolate.
-        this.publish('pos', {
-            type: 'move', id: p.id,
-            sx: p.x, sy: p.y, // Start Visual (mostly for correction)
-            tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE, // Target Visual
-            gx: p.gridX, gy: p.gridY, // Grid
-            r: p.rotation, col: Game.settings.color, drill: p.isDrilling
+        this.publish('pos', { 
+            type: 'move', id: p.id, 
+            sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE, 
+            gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
+            username: Game.settings.username
         });
         this.lastHeartbeat = now();
     }
 
-    broadcastDeath() {
-        this.publish('chat', { type: 'death', id: Game.localPlayer.id, name: Game.settings.username });
-    }
-
-    sendFuel(targetId, amount) {
-        this.publish('ctrl', { type: 'fuel', to: targetId, from: Game.settings.username, amt: amount });
-    }
-
+    broadcastDeath() { this.publish('chat', { type: 'death', id: Game.localPlayer.id, name: Game.settings.username }); }
+    sendFuel(targetId, amount) { this.publish('ctrl', { type: 'fuel', to: targetId, from: Game.settings.username, amt: amount }); }
     sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
     sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
-
+    
     publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
 
     handleMessage(topic, message) {
@@ -932,65 +1399,50 @@ class NetworkManager {
         try { msg = JSON.parse(message.toString()); } catch(e) { return; }
         if (msg.id === Game.localPlayer.id && msg.type !== 'kick') return;
 
-        // Remote Player Update
         if (msg.type === 'move' || msg.type === 'heartbeat') {
             if (!Game.remotePlayers[msg.id]) {
-                // New player discovered passively
-                Game.remotePlayers[msg.id] = {
-                    id: msg.id, x: msg.sx || 0, y: msg.sy || 0,
-                    targetX: msg.tx, targetY: msg.ty,
-                    username: "Unknown", color: msg.col || '#fff', lastSeen: now()
+                Game.remotePlayers[msg.id] = { 
+                    id: msg.id, x: msg.sx || 0, y: msg.sy || 0, targetX: msg.tx, targetY: msg.ty,
+                    username: msg.username || "Unknown", color: msg.col || '#fff', lastSeen: now() 
                 };
-                // We ask for identification if username is unknown? simpler: wait for heartbeat/join
             }
             let rp = Game.remotePlayers[msg.id];
             rp.lastSeen = now();
+            if(msg.username && rp.username === "Unknown") rp.username = msg.username;
+            
             if (msg.type === 'move') {
-                rp.color = msg.col;
-                rp.rotation = msg.r;
-                rp.isDrilling = msg.drill;
-                rp.gridX = msg.gx;
-                rp.gridY = msg.gy;
-                // Interpolation Targets
-                rp.targetX = msg.tx;
-                rp.targetY = msg.ty;
-                // If extremely desynced, snap
-                if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) {
-                    rp.x = rp.targetX; rp.y = rp.targetY;
-                }
+                rp.color = msg.col; rp.rotation = msg.r; rp.isDrilling = msg.drill; rp.gridX = msg.gx; rp.gridY = msg.gy;
+                rp.targetX = msg.tx; rp.targetY = msg.ty;
+                if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
             }
         }
         else if (msg.type === 'join') {
             if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
             else {
-                if(!Game.remotePlayers[msg.id]) UI.addMessage("System", `${msg.username} ${UI.rndMsg('join')}`, "#aaa");
-                Game.remotePlayers[msg.id] = {
-                    id: msg.id, username: msg.username, color: msg.color,
-                    x: 0, y: 0, targetX: 0, targetY: 0,
-                    joinedAt: msg.joinedAt, lastSeen: now()
+                if(!Game.remotePlayers[msg.id]) { UI.addMessage("System", `${msg.username} ${UI.rndMsg('join')}`, "#aaa"); Sound.playChat('join'); }
+                Game.remotePlayers[msg.id] = { 
+                    id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now() 
                 };
                 UI.updatePlayerList();
                 this.checkAdmin();
             }
         }
         else if (msg.type === 'tile') {
-             if (Game.map[msg.y]) {
-                 Game.map[msg.y][msg.x] = msg.val;
-                 Game.discovered[msg.y][msg.x] = 1;
-             }
+             if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
         }
-        else if (msg.type === 'chat') UI.addMessage(msg.name, msg.msg);
-        else if (msg.type === 'death') UI.addMessage("System", `${msg.name} ${UI.rndMsg('death')}`, "#f55");
+        else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
+        else if (msg.type === 'death') { UI.addMessage("System", `${msg.name} ${UI.rndMsg('death')}`, "#f55"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
             if (msg.target === Game.localPlayer.id) { alert(UI.rndMsg('kick')); location.reload(); }
-            else {
-                if(Game.remotePlayers[msg.target]) UI.addMessage("System", `${Game.remotePlayers[msg.target].username} ${UI.rndMsg('kick')}`, "red");
+            else { 
+                if(Game.remotePlayers[msg.target]) UI.addMessage("System", `${Game.remotePlayers[msg.target].username} ${UI.rndMsg('kick')}`, "red"); 
                 delete Game.remotePlayers[msg.target];
             }
         }
         else if (msg.type === 'fuel' && msg.to === Game.localPlayer.id) {
             Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
             UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
+            Sound.playSuccess();
             if (Game.localPlayer.fuel < 20) UI.addMessage("System", `${Game.settings.username} ${UI.rndMsg('rescue')}`, "orange");
         }
     }
@@ -1011,8 +1463,10 @@ class InputManager {
     constructor() { this.keys = {}; this.bindMode = null; }
     init() {
         window.addEventListener('keydown', e => {
+            Sound.init(); 
             if (this.bindMode) {
                 Game.settings.keys[this.bindMode] = e.key;
+                localStorage.setItem('mm_keybinds', JSON.stringify(Game.settings.keys));
                 UI.showToast(`Bound ${this.bindMode.toUpperCase()} to ${e.key}`, "success");
                 this.bindMode = null;
                 UI.refreshKeybindLabels();
@@ -1028,13 +1482,44 @@ class InputManager {
         window.addEventListener('keyup', e => this.keys[e.key] = false);
         $('chat-input').addEventListener('keydown', e => {
             if (e.key === 'Enter') {
-                if (e.target.value.trim()) { Network.sendChat(e.target.value); e.target.value = ""; }
+                let val = e.target.value.trim();
+                if (val) { 
+                    if(val.startsWith('/')) { this.handleCommand(val); }
+                    else { Network.sendChat(val); }
+                    e.target.value = ""; 
+                }
                 e.target.blur();
                 $('gameCanvas').focus();
             }
             e.stopPropagation();
         });
     }
+    
+    handleCommand(cmd) {
+        let parts = cmd.split(' ');
+        if (parts[0] === '/tp' && Game.isAdmin) {
+            if (parts.length === 3) {
+                let x = parseInt(parts[1]); let y = parseInt(parts[2]);
+                if (!isNaN(x) && !isNaN(y)) {
+                    Game.localPlayer.gridX = x; Game.localPlayer.gridY = y;
+                    Game.localPlayer.x = x * CONSTANTS.TILE_SIZE; Game.localPlayer.y = y * CONSTANTS.TILE_SIZE;
+                    UI.showToast(`Teleported to ${x}, ${y}`, "success");
+                    Network.broadcastMove();
+                }
+            } else if (parts.length === 2) {
+                let target = Object.values(Game.remotePlayers).find(p => p.username === parts[1]);
+                if (target) {
+                    Game.localPlayer.gridX = target.gridX; Game.localPlayer.gridY = target.gridY;
+                    Game.localPlayer.x = target.x; Game.localPlayer.y = target.y;
+                    UI.showToast(`Teleported to ${target.username}`, "success");
+                    Network.broadcastMove();
+                } else UI.showToast("Player not found", "error");
+            }
+        } else {
+            UI.showToast("Unknown command or not admin", "error");
+        }
+    }
+
     startBind(action) { this.bindMode = action; UI.refreshKeybindLabels(); }
 }
 
@@ -1056,9 +1541,9 @@ class UIManager {
         area.appendChild(el);
         setTimeout(() => el.remove(), 4000);
     }
-    openSettings() {
-        $('settings-modal').classList.add('active');
-        this.refreshKeybindLabels();
+    openSettings() { 
+        $('settings-modal').classList.add('active'); 
+        this.refreshKeybindLabels(); 
         this.renderSaveSlots();
     }
     closeSettings() { $('settings-modal').classList.remove('active'); }
@@ -1067,10 +1552,131 @@ class UIManager {
         const map = { up: 'btn-bind-up', down: 'btn-bind-down', left: 'btn-bind-left', right: 'btn-bind-right', build: 'btn-bind-build', interact: 'btn-bind-interact', transfer: 'btn-bind-transfer', chat: 'btn-bind-chat' };
         for (let action in map) {
             let btn = $(map[action]);
-            if (Input.bindMode === action) { btn.classList.add('binding'); btn.innerText = `PRESS KEY...`; }
+            if (Input.bindMode === action) { btn.classList.add('binding'); btn.innerText = `PRESS KEY...`; } 
             else { btn.classList.remove('binding'); btn.innerText = `${action.toUpperCase()}: ${keys[action]}`; }
         }
     }
+    
+    checkServers() {
+        const list = $('server-list');
+        const display = $('server-status-display');
+        display.style.display = 'block';
+        display.innerHTML = 'Checking servers...';
+        
+        let promises = [];
+        Array.from(list.options).forEach(opt => {
+            const url = opt.value;
+            const p = new Promise(resolve => {
+                try {
+                    const client = mqtt.connect(url, { connectTimeout: 2000, reconnectPeriod: 0 });
+                    client.on('connect', () => { client.end(); resolve({url, status: true}); });
+                    client.on('error', () => { client.end(); resolve({url, status: false}); });
+                    setTimeout(() => { if(!client.connected){ client.end(); resolve({url, status: false}); } }, 2500);
+                } catch(e) { resolve({url, status: false}); }
+            });
+            promises.push(p);
+        });
+        
+        Promise.all(promises).then(results => {
+            display.innerHTML = '';
+            results.forEach(res => {
+                const div = document.createElement('div');
+                div.className = 'server-option';
+                div.innerHTML = `<span class="status-dot ${res.status ? 'green':'red'}"></span> ${res.url}`;
+                display.appendChild(div);
+            });
+        });
+    }
+    
+    checkGithub() {
+        const repo = $('gh-repo').value.trim();
+        const display = $('gh-status');
+        if(!repo) { display.innerText = "Please enter user/repo"; return; }
+        
+        display.innerText = "Checking...";
+        fetch(`https://api.github.com/repos/${repo}/commits/main`)
+            .then(res => {
+                if(!res.ok) throw new Error(res.status);
+                return res.json();
+            })
+            .then(data => {
+                const date = new Date(data.commit.author.date).toLocaleString();
+                display.innerHTML = `<span style="color:#2ecc71">Latest: ${date}</span>`;
+            })
+            .catch(e => {
+                display.innerHTML = `<span style="color:#e74c3c">Error check repo. Rate limited?</span>`;
+            });
+    }
+
+    toggleDashboard() {
+        const dash = $('dashboard-modal');
+        if (dash.classList.contains('active')) {
+            dash.classList.remove('active');
+        } else {
+            dash.classList.add('active');
+            this.updateDashboard();
+        }
+    }
+
+    updateDashboard() {
+        const p = Game.localPlayer;
+        // Inventory
+        const grid = $('inv-grid');
+        grid.innerHTML = '';
+        
+        let types = Object.keys(p.inventory).map(Number).sort((a,b) => a-b);
+        if(p.inventory[TILE_TYPES.CASING] === undefined) p.inventory[TILE_TYPES.CASING] = 0;
+        if(!types.includes(TILE_TYPES.CASING)) types.push(TILE_TYPES.CASING);
+
+        types.forEach(type => {
+            let count = p.inventory[type] || 0;
+            if (count > 0 || type === TILE_TYPES.CASING) {
+                let div = document.createElement('div');
+                div.className = `inv-item ${p.selectedBlock == type ? 'active' : ''}`;
+                div.style.color = TILE_PROPS[type].color || '#fff';
+                div.innerHTML = `
+                    ${TILE_PROPS[type].name}<span class="inv-count">${count}</span>
+                    <div class="inv-trash" onclick="event.stopPropagation(); Game.trashBlock(${type})">x</div>
+                `;
+                if(p.selectedBlock == type) {
+                    div.innerHTML += '<div style="font-size:8px; color:#2ecc71;">[EQUIPPED]</div>';
+                }
+                div.onclick = () => { p.selectedBlock = parseInt(type); UI.updateDashboard(); Sound.playTone(400, 'sine', 0.05); };
+                grid.appendChild(div);
+            }
+        });
+
+        // Stats
+        let elapsed = Math.floor((now() - p.stats.startTime) / 1000);
+        let mins = Math.floor(elapsed / 60);
+        let secs = elapsed % 60;
+        let html = `
+            <div class="stat-row"><span>Time Played:</span><span>${mins}m ${secs}s</span></div>
+            <div class="stat-row"><span>Total Blocks Mined:</span><span>${p.stats.totalMined}</span></div>
+            <div class="stat-row"><span>Max Depth Reached:</span><span>${Math.floor(Math.max(0, p.gridY-5))}m</span></div>
+        `;
+        let sorted = Object.keys(p.stats.blocksMined).sort((a,b) => p.stats.blocksMined[b] - p.stats.blocksMined[a]).slice(0,3);
+        sorted.forEach(t => {
+            html += `<div class="stat-row"><span>${TILE_PROPS[t].name}:</span><span>${p.stats.blocksMined[t]}</span></div>`;
+        });
+        $('stats-container').innerHTML = html;
+
+        // Leaderboard
+        let players = Object.values(Game.remotePlayers).concat(p);
+        players.forEach(pl => pl.score = Math.floor((pl.gridY || 0) + (pl.money||0)/10)); 
+        players.sort((a,b) => b.score - a.score);
+        
+        let lbHtml = "";
+        players.forEach((pl, i) => {
+            // Show ID if username missing
+            const name = pl.username || `ID: ${pl.id.substr(0,5)}`;
+            lbHtml += `<div class="stat-row"><span>${i+1}. ${name}</span><span>${pl.score} pts</span></div>`;
+        });
+        $('leaderboard-container').innerHTML = lbHtml;
+
+        $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 2) ? 'block' : 'none';
+    }
+
     updatePlayerList() {
         if (!Game.isAdmin) return;
         $('admin-panel').style.display = 'block';
@@ -1084,7 +1690,7 @@ class UIManager {
         });
     }
     updateAdminPanel() { this.updatePlayerList(); }
-
+    
     renderSaveSlots() {
         const container = $('save-slots-container');
         container.innerHTML = '';
@@ -1114,10 +1720,9 @@ class AdminSystem { kick(id) { Network.kickUser(id); delete Game.remotePlayers[i
 
 class SaveSystem {
     static autosaveEnabled = true;
-    static slots = [null, null, null]; // Metadata
+    static slots = [null, null, null]; 
 
     static init() {
-        // Load Slot Metadata
         for(let i=0; i<3; i++) {
             const meta = localStorage.getItem(`mm_save_meta_${i}`);
             if(meta) this.slots[i] = JSON.parse(meta);
@@ -1130,6 +1735,11 @@ class SaveSystem {
         this.autosaveEnabled = val;
         localStorage.setItem('mm_autosave_setting', val);
     }
+    
+    static saveAndReload() {
+        this.saveToSlot(0, true);
+        location.reload();
+    }
 
     static saveToSlot(i, isAuto = false) {
         const data = {
@@ -1140,21 +1750,13 @@ class SaveSystem {
             timestamp: now()
         };
         try {
-            // Check quota roughly
             const json = JSON.stringify(data);
             localStorage.setItem(`mm_save_data_${i}`, json);
-
             const meta = { timestamp: now(), name: isAuto ? `Autosave (Slot ${i+1})` : `Save ${i+1}` };
             this.slots[i] = meta;
             localStorage.setItem(`mm_save_meta_${i}`, JSON.stringify(meta));
-
-            if(!isAuto) {
-                UI.renderSaveSlots();
-                UI.showToast(`Saved to Slot ${i+1}`, "success");
-            }
-        } catch(e) {
-            if(!isAuto) UI.showToast("Save Failed (Storage Full?)", "error");
-        }
+            if(!isAuto) { UI.renderSaveSlots(); UI.showToast(`Saved to Slot ${i+1}`, "success"); }
+        } catch(e) { if(!isAuto) UI.showToast("Save Failed (Storage Full?)", "error"); }
     }
 
     static loadFromSlot(i) {
@@ -1218,6 +1820,33 @@ window.SaveSystem = SaveSystem;
 window.Admin = Admin;
 window.Shop = Shop;
 window.Input = Input;
+window.Sound = Sound;
+
+// Helper to get base procedural for syncing
+Game.getProceduralTile = function(x, y) {
+    if (y < 5) return TILE_TYPES.EMPTY;
+    if (y === 5) return TILE_TYPES.GRASS;
+    if (y === CONSTANTS.MAP_HEIGHT - 1) return TILE_TYPES.BEDROCK;
+
+    let r = Game.getMapRandom(x, y);
+    let type = TILE_TYPES.DIRT;
+    if (y > 300) type = TILE_TYPES.DEEP_SLATE;
+    else if (y > 100) type = TILE_TYPES.HARD_STONE;
+    else if (y > 30) type = TILE_TYPES.STONE;
+
+    if (r > 0.985) {
+        if (y > 400) return TILE_TYPES.RUBY;
+        else if (y > 250) return TILE_TYPES.EMERALD;
+        else if (y > 150) return TILE_TYPES.DIAMOND;
+    } else if (r > 0.96) {
+        if (y > 100) return TILE_TYPES.GOLD;
+    } else if (r > 0.92) {
+        if (y > 50) return TILE_TYPES.IRON;
+    } else if (r > 0.88) {
+        return TILE_TYPES.COAL;
+    }
+    return type;
+};
 
 </script>
 </body>
