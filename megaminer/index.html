@@ -953,7 +953,7 @@ class GameEngine {
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000) {
-            SaveSystem.saveToSlot(0, true); 
+            SaveSystem.saveToSlot(0,/*, true*/); 
             this.lastAutosave = now();
             
             // dirty but it works
