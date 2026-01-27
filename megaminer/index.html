@@ -9,7 +9,7 @@
     <style>
         /* CSS Reset & Normalization */
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        
+
         :root {
             --bg-color: #0d0d0d;
             --panel-bg: rgba(20, 25, 40, 0.95);
@@ -18,8 +18,10 @@
             --highlight: #f39c12;
             --danger: #c0392b;
             --success: #27ae60;
+            
         }
-        body { overflow: hidden; background: #000; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
+        body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
+        
         canvas { display: block; width: 100vw; height: 100vh; }
         
         /* UI Overlay */
@@ -102,6 +104,50 @@
         .btn-bind.binding { background: #c0392b; border-color: #e74c3c; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         
+        /* Credits Modal */
+        #credits-modal .credits-section {
+            margin-bottom: 25px;
+        }
+
+        #credits-modal h3 {
+            margin: 10px 0;
+            color: var(--accent);
+            font-size: 18px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .credit-entry {
+            margin-left: 15px;
+            margin-top: 8px;
+        }
+
+        .credit-entry strong {
+            color: var(--highlight);
+            font-size: 14px;
+        }
+
+        .credit-entry ul {
+            margin: 5px 0 10px 20px;
+            padding: 0;
+        }
+
+        .credit-entry li {
+            list-style: none;
+            font-size: 12px;
+            color: #ccc;
+            margin: 2px 0;
+        }
+
+        #credits-modal .simple-list li {
+            list-style: none;
+            margin: 4px 0;
+            color: #ccc;
+            font-size: 13px;
+        }
+
         /* Server Status */
         .server-option { display: flex; justify-content: space-between; font-size: 12px; padding: 2px; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
@@ -114,9 +160,29 @@
         .save-slot-actions button { margin-left: 5px; padding: 5px 10px; font-size: 11px; }
 
         /* Start Screen */
-        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,10,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; pointer-events: auto; }
+        #start-screen { position: absolute; 
+          background-image: 
+            linear-gradient(30deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(150deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(30deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(150deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(60deg, #68313180 25%, transparent 25.5%, transparent 75%, #68313180 75%, #68313180),
+            linear-gradient(60deg, #68313180 25%, transparent 25.5%, transparent 75%, #68313180 75%, #68313180);
+        	background-size: 20px 35px;
+          background-position: 0 0, 0 0, 10px 17.5px, 10px 17.5px, 0 0, 10px 17.5px;
+          background-color: #362520;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 50;
+          pointer-events: auto;
+        }
         #start-screen h1 { font-size: 48px; color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight); }
-
         /* Notification/Error Popup */
         #notification-area { position: absolute; top: 20px; right: 180px; width: 300px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 200; }
         .toast { background: rgba(30, 30, 30, 0.95); border-left: 4px solid var(--accent); padding: 12px; color: white; pointer-events: auto; animation: slideIn 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 14px; }
@@ -283,10 +349,10 @@
             <div class="form-group">
                 <label>Audio Mixer</label>
                 <div style="font-size:12px; display:grid; grid-template-columns: 1fr 3fr 1fr; gap:10px; align-items:center;">
-                    <span>Master</span> <input type="range" id="vol-master" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('master', this.value)"> <span id="vol-disp-master">50%</span>
-                    <span>Music</span> <input type="range" id="vol-music" min="0" max="1" step="0.01" value="0.1" oninput="Sound.setVolume('music', this.value)"> <span id="vol-disp-music">50%</span>
-                    <span>SFX</span> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('sfx', this.value)"> <span id="vol-disp-sfx">50%</span>
-                    <span>Engine</span> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)"> <span id="vol-disp-engine">50%</span>
+                    <span>Master</span> <input type="range" id="vol-master" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('master', this.value)"> <span id="vol-disp-master" hidden>50%</span>
+                    <span>Music</span> <input type="range" id="vol-music" min="0" max="1" step="0.01" value="0.1" oninput="Sound.setVolume('music', this.value)"> <span id="vol-disp-music" hidden>50%</span>
+                    <span>SFX</span> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('sfx', this.value)"> <span id="vol-disp-sfx" hidden>50%</span>
+                    <span>Engine</span> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)"> <span id="vol-disp-engine" hidden>50%</span>
                 </div>
             </div>
 
@@ -361,7 +427,7 @@
                 </div>
                 <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
             </div>
-
+            <div id="credits"></div>
             <button class="btn" onclick="UI.closeSettings()">Close</button>
         </div>
     </div>
@@ -433,8 +499,7 @@ class SoundManager {
         this.ctx = null;
         this.nodes = {};
         this.volumes = { master: 0.5, music: 0.5, sfx: 0.5, engine: 0.3 };
-        // music credit: patrickdearteaga.com and Kevin Macleod
-        this.playlist = ['audio/Chiptronical.ogg', 'audio/Great_Little_Challenge.ogg', 'audio/Solve_The_Puzzle.ogg', 'audio/Sneaky_Snitch.mp3'];
+        this.playlist = ['audio/Chiptronical.ogg', 'audio/Great_Little_Challenge.ogg', 'audio/Solve_The_Puzzle.ogg', 'audio/Sneaky_Snitch.mp3', 'audio/cozy-lofi-relax-468509.mp3', 'audio/field-duel-lofi-464436.mp3', 'audio/lofi-background-music-3-471122.mp3','audio/chill-lofi-beat-469069.mp3'];
         this.currentTrack = 0;
         this.noiseBuffer = null;
     }
@@ -676,6 +741,22 @@ class GameEngine {
         this.loadStoredSettings();
     }
     
+    updateAdminStatus() {
+        const players = Object.values(this.remotePlayers)
+            .concat([this.localPlayer])
+            .filter(p => p && p.joinedAt != null);
+
+        if (players.length === 0) {
+            Game.isAdmin = false;
+            return;
+        }
+
+        players.sort((a, b) => a.joinedAt - b.joinedAt);
+        const oldest = players[0];
+
+        Game.isAdmin = (oldest.id === this.localPlayer.id);
+    }
+
     loadStoredSettings() {
         if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
         if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
@@ -687,7 +768,7 @@ class GameEngine {
         
         const binds = localStorage.getItem('mm_keybinds');
         if(binds) {
-            try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){}
+            try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){console.error(e);}
         }
     }
     
@@ -780,6 +861,7 @@ class GameEngine {
             this.loop();
             UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
             Network.broadcastMove(); 
+            this.updateAdminStatus();
         }, 1000);
     }
 
@@ -955,7 +1037,7 @@ class GameEngine {
         this.camera.x += (p.x - this.camera.x) * 0.1;
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
-        if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000) {
+        if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
             SaveSystem.saveToSlot(currentSaveId,/*, true*/); 
             this.lastAutosave = now();
             
@@ -1070,7 +1152,7 @@ class GameEngine {
     draw() {
         if (!this.running) return;
         this.ctx.resetTransform();
-        this.ctx.fillStyle = '#050505'; 
+        this.ctx.fillStyle = '#050505';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         let cx = this.canvas.width / 2;
@@ -1088,30 +1170,174 @@ class GameEngine {
 
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
-        const visionRad = 6; 
+        const visionRad = 6;
         const xrayRad = 2 + this.localPlayer.xrayRange;
 
-        this.ctx.fillStyle = '#87CEEB';
-        this.ctx.fillRect(this.camera.x - viewW, -1000, viewW*2, 1000 + 5 * CONSTANTS.TILE_SIZE);
+        /// -------------------------------
+        // WORLD TIME (host-based)
+        // -------------------------------
+        const allPlayers = Object.values(this.remotePlayers).concat([this.localPlayer]);
+        const host = allPlayers.sort((a,b)=>a.joinedAt - b.joinedAt)[0] || this.localPlayer;
+        const worldTime = Date.now() - host.joinedAt;
+
+        const dayLength = 20 * 60 * 1000;
+        const t = (worldTime % dayLength) / dayLength;
+
+        // Rotate so sunrise = 0.25, noon = 0.5, sunset = 0.75
+        const sunAngle = (t * Math.PI * 2) - Math.PI / 2;
+
+        // Smooth daylight curve (no flicker)
+        const daylight = (() => {
+            const x = (Math.cos(sunAngle) + 1) / 2; // 0→1→0
+            return x * x * (3 - 2 * x);            // smoothstep
+        })();
+
+        // -------------------------------
+        // SKY COLOR (above ground level y=5)
+        // -------------------------------
+        const baseSky = { r: 135, g: 206, b: 235 };
+        const groundY = 5 * CONSTANTS.TILE_SIZE;
+
+        const sunrise = Math.max(0, 1 - Math.abs(t - 0.25) * 20);
+        const sunset  = Math.max(0, 1 - Math.abs(t - 0.75) * 20);
+        const warm = sunrise + sunset;
+
+        const r = Math.round(baseSky.r * (0.3 + daylight*0.7) - warm * 80);
+        const g = Math.round(baseSky.g * (0.3 + daylight*0.7) - warm * 40);
+        const b = Math.round(baseSky.b * (0.3 + daylight*0.7) - warm * 20);
+
+        this.ctx.fillStyle = `rgb(${r},${g},${b})`;
+        this.ctx.fillRect(
+            this.camera.x - viewW,
+            -2000,
+            viewW * 2,
+            groundY + 2000
+        );
+
+        // Sunrise/sunset gradient
+        if (warm > 0) {
+            const grad = this.ctx.createLinearGradient(0, -2000, 0, groundY);
+            grad.addColorStop(0, `rgba(255,120,50,${warm * 0.6})`);
+            grad.addColorStop(1, `rgba(255,180,120,${warm * 0.3})`);
+            this.ctx.fillStyle = grad;
+            this.ctx.fillRect(
+                this.camera.x - viewW,
+                -2000,
+                viewW * 2,
+                groundY + 2000
+            );
+        }
+
+        // -------------------------------
+        // SUN & MOON POSITIONS
+        // -------------------------------
+        const skyRadius = 900;
+        const centerX = this.camera.x;
+        const centerY = groundY - 300; // horizon
+
+        const sunX = centerX + Math.cos(sunAngle) * skyRadius;
+        const sunY = centerY + Math.sin(sunAngle) * skyRadius;
+
+        const moonX = centerX + Math.cos(sunAngle + Math.PI) * skyRadius;
+        const moonY = centerY + Math.sin(sunAngle + Math.PI) * skyRadius;
+
+        // -------------------------------
+        // SUN (always drawn)
+        // -------------------------------
+        {
+            const sunSize = 70;
+            const grd = this.ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunSize);
+            grd.addColorStop(0, "rgba(255,255,200,1)");
+            grd.addColorStop(1, "rgba(255,180,0,0.2)");
+
+            this.ctx.fillStyle = grd;
+            this.ctx.beginPath();
+            this.ctx.arc(sunX, sunY, sunSize, 0, Math.PI*2);
+            this.ctx.fill();
+        }
+
+        // -------------------------------
+        // MOON (one draw call, 3 phases)
+        // -------------------------------
+        {
+            const moonSize = 55;
+            const moonCycle = 60 * 60 * 1000;
+            const moonPhase = (worldTime % moonCycle) / moonCycle; // 0=new, 0.5=full
+
+            this.ctx.fillStyle = "#e0e0e0";
+            this.ctx.beginPath();
+
+            // Outer circle
+            this.ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
+
+            // Phase curve (one quadratic curve)
+            const curveOffset = (moonPhase - 0.5) * moonSize * 1.6;
+
+            this.ctx.moveTo(moonX - moonSize, moonY);
+            this.ctx.quadraticCurveTo(
+                moonX + curveOffset,
+                moonY,
+                moonX - moonSize,
+                moonY
+            );
+
+            this.ctx.fill();
+        }
+
+        // -------------------------------
+        // STARS
+        // -------------------------------
+        if (!this.starField) {
+            this.starField = [];
+            for (let i = 0; i < 200; i++) {
+                this.starField.push({
+                    x: Math.random() * 5000 - 2500,
+                    y: Math.random() * 2000 - 2000,
+                    b: Math.random() * 0.8 + 0.2
+                });
+            }
+        }
+
+        {
+            const starAlpha = (0.4 - daylight) / 0.4;
+            if (starAlpha > 0) {
+                this.ctx.fillStyle = "#fff";
+                for (const s of this.starField) {
+                    this.ctx.globalAlpha = s.b * starAlpha;
+                    this.ctx.fillRect(s.x, s.y, 2, 2);
+                }
+                this.ctx.globalAlpha = 1;
+            }
+        }
+
+        // -------------------------------
+        // BLACK RECTANGLE (drawn LAST in sky section)
+        // -------------------------------
+        this.ctx.fillStyle = "#000";
+        this.ctx.fillRect(
+            this.camera.x - viewW,
+            groundY,
+            viewW * 2,
+            5000
+        );
+
         this.drawStation();
 
         for (let y = Math.max(0, startRow); y <= Math.min(CONSTANTS.MAP_HEIGHT-1, endRow); y++) {
             for (let x = Math.max(0, startCol); x <= Math.min(CONSTANTS.MAP_WIDTH-1, endCol); x++) {
                 let dx = x - pcx; let dy = y - pcy;
                 let dist = Math.sqrt(dx*dx + dy*dy);
-                let visible = dist <= visionRad; 
+                let visible = dist <= visionRad;
                 let xray = dist <= xrayRad;
-                
+
                 if (visible) this.discovered[y][x] = 1;
                 let tile = this.map[y][x];
-                
-                if (tile !== TILE_TYPES.EMPTY) {
-                    if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
-                    else if (this.discovered[y][x]) {
-                         this.ctx.globalAlpha = 0.3;
-                         this.drawProceduralTile(x, y, tile, false);
-                         this.ctx.globalAlpha = 1.0;
-                    }
+
+                if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
+                else if (this.discovered[y][x]) {
+                    this.ctx.globalAlpha = 0.3;
+                    this.drawProceduralTile(x, y, tile, false);
+                    this.ctx.globalAlpha = 1.0;
                 }
             }
         }
@@ -1131,6 +1357,7 @@ class GameEngine {
         this.ctx.resetTransform();
         this.drawHUD();
     }
+
 
     drawStation() {
         let ts = CONSTANTS.TILE_SIZE;
@@ -1154,8 +1381,23 @@ class GameEngine {
         const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
         const n1 = (seed % 1); 
         const n2 = ((seed * 10) % 1);
-
-        if (type === TILE_TYPES.DIRT) {
+        let bevel = true;
+        if (type === TILE_TYPES.EMPTY && y>=5) {
+            this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
+            this.ctx.fillRect(px, py, ts, ts);
+            
+            // Add some small pebbles/debris
+            this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
+            if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
+            if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
+            if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
+            bevel=false;
+        }
+        else if (type === TILE_TYPES.EMPTY && y<5) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+            return
+        }
+        else if (type === TILE_TYPES.DIRT) {
              this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
              if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
              if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
@@ -1182,8 +1424,10 @@ class GameEngine {
         }
         
         // Bevel for all
-        this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts); 
-        this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
+        if(bevel){
+          this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts); 
+          this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
+        }
     }
 
     drawPlayer(p, isLocal) {
@@ -1448,7 +1692,7 @@ class NetworkManager {
             this.client.subscribe(`${this.baseTopic}${Game.settings.room}/#`, (err) => {
                 if(!err) {
                     Game.logConnection("Subscribed. Joining room...");
-                    this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt, ver: BUILD_TIMESTAMP });
+                    this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt, /*ver: BUILD_TIMESTAMP*/ });
                     Game.finishConnection();
                     Sound.playSuccess();
                     // BROADCAST MOVE immediately so everyone sees new player
@@ -1473,6 +1717,7 @@ class NetworkManager {
                 Sound.playChat('leave');
                 delete Game.remotePlayers[id];
                 UI.updatePlayerList();
+                this.updateAdminStatus();
             }
         });
         if (n - this.lastHeartbeat > 2000) {
@@ -1560,6 +1805,7 @@ class NetworkManager {
                     id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now() 
                 };
                 UI.updatePlayerList();
+                this.updateAdminStatus();
                 this.checkAdmin();
                 
                 // If I am admin, SEND MAP
@@ -1569,6 +1815,7 @@ class NetworkManager {
                 
                 // Reply with MY position so they see me immediately
                 this.broadcastMove();
+                
             }
         }
         else if (msg.type === 'tile') {
@@ -1988,7 +2235,47 @@ class SaveSystem {
     }
 }
 
+function generateCreditsHTML(data) {
+    let html = "";
 
+    for (const category in data) {
+        html += `<div class="credits-section">`;
+        html += `<h3>${category.replace(/([A-Z])/g, " $1").toUpperCase()}</h3>`;
+
+        const section = data[category];
+
+        // Simple string list (e.g., specialThanks)
+        if (Array.isArray(section) && typeof section[0] === "string") {
+            html += `<div class="credit-entry">`;
+            html += `<ul class="simple-list">`;
+            section.forEach(item => html += `<li>${item}</li>`);
+            html += `</ul>`;
+            html += `</div>`;
+            html += `</div>`;
+            continue;
+        }
+
+        // Object list (music, sfx, pictures, etc.)
+        section.forEach(entry => {
+            const key = Object.keys(entry)[0];
+            const name = entry[key];
+            const items = entry.items || entry.songs || [];
+
+            html += `<div class="credit-entry">`;
+            html += `<strong>${name}</strong>`;
+            if (items.length > 0) {
+                html += `<ul>`;
+                items.forEach(i => html += `<li>${i}</li>`);
+                html += `</ul>`;
+            }
+            html += `</div>`;
+        });
+
+        html += `</div>`;
+    }
+
+    return html;
+}
 
 // --- INSTANTIATION ---
 const Game = new GameEngine();
@@ -2009,7 +2296,48 @@ window.Admin = Admin;
 window.Shop = Shop;
 window.Input = Input;
 window.Sound = Sound;
+//patrickdearteaga.com, 
+const creditsData = {
+    music: [
+        {
+            artist: "Patrick de Arteaga",
+            songs: ["Chiptronical","Great Little Challenge", "Solve The Puzzle"]
+        },
+        {
+            artist: "Kevin Macleod",
+            songs: ["Sneaky Snitch"]
+        },
+        {
+            artist: "VibeHorn (Pixabay)",
+            songs: ["Cozy Lofi Relax"]
+        },
+        {
+            artist: "DELOSound (Pixabay)",
+            songs: ["LoFi Background Music 3"]
+        },
+        {
+            artist: "CFL_TurningPages (Pixabay)",
+            songs: ["Field Duel lofi"]
+        }
+    ],
 
+    // pictures: [
+    //     // { author: "Jane Doe", items: ["Sky texture", "Moon texture"] },
+    // ],
+
+    // sfx: [
+    //     // { source: "Jane Doe", items: ["Footsteps", "Door creak"] },
+    // ],
+
+    specialThanks: [
+        "My friends",
+        "Playtesters",
+        "Contributors",
+        "The laptops that were sacrificed in the making of this game"
+    ]
+};
+
+document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
 </script>
 </body>
 </html>
