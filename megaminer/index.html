@@ -334,7 +334,7 @@
             </div>
 
             <div class="form-group">
-                <label>Save Games (LocalStorage) (1st save slot does not work idk why)</label>
+                <label>Save Games (LocalStorage)</label>
                 <div id="save-slots-container"></div>
                 <button class="btn" style="background:#555; margin-top:5px;" onclick="SaveSystem.saveAndReload()">Save & Reload Page</button>
             </div>
@@ -356,8 +356,10 @@
 
             <div class="form-group">
                 <label>Backup Data (File)</label>
-                <button class="btn" onclick="SaveSystem.exportSave()">Export to .JSON</button>
-                <input type="file" id="import-file" style="margin-top:5px;" onchange="SaveSystem.importSave(this)">
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <button class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">Load Save from File</button>
+                </div>
+                <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
             </div>
 
             <button class="btn" onclick="UI.closeSettings()">Close</button>
@@ -431,7 +433,7 @@ class SoundManager {
         this.ctx = null;
         this.nodes = {};
         this.volumes = { master: 0.5, music: 0.5, sfx: 0.5, engine: 0.3 };
-        // music credit: patrickdearteaga.com
+        // music credit: patrickdearteaga.com and Kevin Macleod
         this.playlist = ['audio/Chiptronical.ogg', 'audio/Great_Little_Challenge.ogg', 'audio/Solve_The_Puzzle.ogg', 'audio/Sneaky_Snitch.mp3'];
         this.currentTrack = 0;
         this.noiseBuffer = null;
@@ -1641,7 +1643,11 @@ class InputManager {
                 let val = e.target.value.trim();
                 if (val) { 
                     if(val.startsWith('/')) { this.handleCommand(val); }
-                    else { Network.sendChat(val); }
+                    else {
+                        // Display own message immediately
+                        UI.addMessage(Game.settings.username, val);
+                        Network.sendChat(val);
+                    }
                     e.target.value = ""; 
                 }
                 e.target.blur();
@@ -1851,25 +1857,30 @@ class UIManager {
     renderSaveSlots() {
         const container = $('save-slots-container');
         container.innerHTML = '';
+        const isHost = Game.isAdmin;
         SaveSystem.slots.forEach((slot, i) => {
             const div = document.createElement('div');
             div.className = 'save-slot';
             const dateStr = slot ? new Date(slot.timestamp).toLocaleString() : 'Empty';
             const nameStr = slot ? slot.name : `Slot ${i+1}`;
+            const disabled = !isHost ? 'disabled' : '';
+            const disabledText = !isHost ? ' (Host Only)' : '';
             div.innerHTML = `
                 <div class="save-slot-info">
-                    <strong>${nameStr}</strong><br>
+                    <strong>${nameStr}${disabledText}</strong><br>
                     <span style="font-size:10px; color:#999">${dateStr}</span>
                 </div>
                 <div class="save-slot-actions">
-                    <button class="btn btn-small" onclick="SaveSystem.saveToSlot(${i})">Save</button>
-                    <button class="btn btn-small" ${!slot ? 'disabled' : ''} onclick="SaveSystem.loadFromSlot(${i})">Load</button>
-                    <button class="btn btn-small btn-danger" ${!slot ? 'disabled' : ''} onclick="SaveSystem.deleteSlot(${i})">Del</button>
+                    <button class="btn btn-small" ${disabled} onclick="SaveSystem.saveToSlot(${i})">Save</button>
+                    <button class="btn btn-small" ${!slot || disabled ? 'disabled' : ''} onclick="SaveSystem.loadFromSlot(${i})">Load</button>
+                    <button class="btn btn-small btn-danger" ${!slot || disabled ? 'disabled' : ''} onclick="SaveSystem.deleteSlot(${i})">Del</button>
+                    <button class="btn btn-small" style="background:#444;" ${!slot || disabled ? 'disabled' : ''} onclick="SaveSystem.exportSlot(${i})">Export</button>
                 </div>
             `;
             container.appendChild(div);
         });
         $('autosave-toggle').checked = SaveSystem.autosaveEnabled;
+        $('autosave-toggle').disabled = !isHost;
     }
 }
 
@@ -1881,7 +1892,7 @@ class SaveSystem {
 
     static init() {
         for(let i=0; i<3; i++) {
-            const meta = localStorage.getItem(`mm_save_meta_${i}`);
+            const meta = localStorage.getItem(`mm_save_meta_${i+1}`);
             if(meta) this.slots[i] = JSON.parse(meta);
         }
         const as = localStorage.getItem('mm_autosave_setting');
@@ -1932,6 +1943,23 @@ class SaveSystem {
         localStorage.removeItem(`mm_save_meta_${i}`);
         this.slots[i] = null;
         UI.renderSaveSlots();
+    }
+
+    static exportSlot(i) {
+        const json = localStorage.getItem(`mm_save_data_${i}`);
+        if(!json) {
+            UI.showToast("No save data in this slot", "error");
+            return;
+        }
+        try {
+            const data = JSON.parse(json);
+            const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `mm_save_slot_${i+1}.json`; a.click();
+            UI.showToast(`Exported Slot ${i+1}`, "success");
+        } catch(e) {
+            UI.showToast("Export Failed", "error");
+            console.error(e);
+        }
     }
 
     static exportSave() {
