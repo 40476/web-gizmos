@@ -6,7 +6,7 @@ import requests
 import re
 from jinja2 import Template
 
-MODEL = "deepseek/deepseek-r1-0528:free"
+MODEL = "google/gemini-2.0-flash-exp:free"
 SUMMARY_DIR = ".github/summaries"
 TEMPLATE_FILE = "index.html.template"
 OUTPUT_FILE = "index.html"
