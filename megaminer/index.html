@@ -400,7 +400,7 @@
             </div>
 
             <div class="form-group">
-                <label>Save Games (LocalStorage) (1st slot does not work, some browsers clear localstorage so back up your saves)</label>
+                <label>Save Games (LocalStorage) (1st slot does not work, some browsers clear localstorage/indexedDB so back up your saves)</label>
                 <div id="save-slots-container"></div>
                 <button class="btn" style="background:#555; margin-top:5px;" onclick="SaveSystem.saveAndReload()">Save & Reload Page</button>
             </div>
@@ -1179,7 +1179,13 @@ class GameEngine {
         /// -------------------------------
         // WORLD TIME (host-based)
         // -------------------------------
-        const allPlayers = Object.values(this.remotePlayers).concat([this.localPlayer]);
+        const allPlayers = Object.values(this.remotePlayers)
+            .concat([this.localPlayer])
+            .filter(p => typeof p.joinedAt === "number" && !isNaN(p.joinedAt));
+        if (allPlayers.length === 0) {
+            // fallback: treat local player as host
+            allPlayers.push({ ...this.localPlayer, joinedAt: Date.now() });
+        }
         const host = allPlayers.sort((a,b)=>a.joinedAt - b.joinedAt)[0] || this.localPlayer;
         const worldTime = Date.now() - host.joinedAt;
 
@@ -2139,6 +2145,30 @@ class AdminSystem { kick(id) { Network.kickUser(id); delete Game.remotePlayers[i
 class SaveSystem {
     static autosaveEnabled = true;
     static slots = [null, null, null]; 
+    static db = null;
+    static dbPromise = null;
+
+    static async initDB() {
+        if (!this.dbPromise) {
+            this.dbPromise = new Promise((resolve, reject) => {
+                const request = indexedDB.open("MegaMinerDB", 1);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains("saves")) {
+                        db.createObjectStore("saves", { keyPath: "id" });
+                    }
+                };
+                request.onsuccess = (event) => {
+                    resolve(event.target.result);
+                };
+                request.onerror = (event) => {
+                    console.error("IndexedDB initialization failed", event);
+                    reject(event);
+                };
+            });
+        }
+        this.db = await this.dbPromise;
+    }
 
     static init() {
         for(let i=0; i<3; i++) {
@@ -2159,54 +2189,121 @@ class SaveSystem {
         location.reload();
     }
 
-    static saveToSlot(i, isAuto = false) {
-        const data = {
-            player: Game.localPlayer,
-            map: Game.map,
-            discovered: Array.from(Game.discovered).map(r => Array.from(r)),
-            banned: Game.bannedIds,
-            timestamp: now()
-        };
+    static async saveToSlot(i, isAuto = false) {
         try {
-            const json = JSON.stringify(data);
-            localStorage.setItem(`mm_save_data_${i}`, json);
-            const meta = { timestamp: now(), name: isAuto ? `Autosave (Slot ${i+1})` : `Save ${i+1}` };
+            await this.initDB();
+
+            const cleanPlayer = JSON.parse(JSON.stringify(Game.localPlayer));
+            const cleanMap = JSON.parse(JSON.stringify(Game.map));
+            const cleanDiscovered = Game.discovered.map(r => Array.from(r));
+
+            const data = {
+                id: i + 1,
+                player: cleanPlayer,
+                map: cleanMap,
+                discovered: cleanDiscovered,
+                banned: Game.bannedIds,
+                timestamp: Date.now()
+            };
+
+            const meta = {
+                timestamp: Date.now(),
+                name: isAuto ? `Autosave (Slot ${i + 1})` : `Save ${i + 1}`
+            };
+
+            await new Promise((resolve, reject) => {
+                const tx = this.db.transaction(["saves"], "readwrite");
+                const store = tx.objectStore("saves");
+
+                const req = store.put(data);
+
+                req.onsuccess = () => resolve();
+                req.onerror = (e) => reject(e);
+            });
+
+            // Save metadata (small, safe)
             this.slots[i] = meta;
-            localStorage.setItem(`mm_save_meta_${i}`, JSON.stringify(meta));
-            if(!isAuto) { UI.renderSaveSlots(); UI.showToast(`Saved to Slot ${i+1}`, "success"); }
-        } catch(e) { if(!isAuto) UI.showToast("Save Failed (Storage Full?)", "error"); console.error(e);}
+            localStorage.setItem(`mm_save_meta_${i+1}`, JSON.stringify(meta));
+
+            if (!isAuto) {
+                UI.renderSaveSlots();
+                UI.showToast(`Saved to Slot ${i + 1}`, "success");
+            }
+
+        } catch (e) {
+            console.error("Error during saveToSlot", e);
+            if (!isAuto) UI.showToast("Save Failed", "error");
+        }
     }
 
-    static loadFromSlot(i) {
-        currentSaveId=i;
-        const json = localStorage.getItem(`mm_save_data_${i}`);
-        if(!json) return;
+    static async loadFromSlot(i) {
+        await this.initDB();
+        const id = i + 1;
+
         try {
-            const data = JSON.parse(json);
+            const data = await new Promise((resolve, reject) => {
+                const tx = this.db.transaction(["saves"], "readonly");
+                const store = tx.objectStore("saves");
+                const req = store.get(id);
+
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = (e) => reject(e);
+            });
+
+            if (!data) {
+                UI.showToast("No save data in this slot", "error");
+                return;
+            }
+
             this.restoreData(data);
             UI.closeSettings();
-        } catch(e) { UI.showToast("Corrupt Save File", "error"); }
-    }
 
-    static deleteSlot(i) {
-        localStorage.removeItem(`mm_save_data_${i}`);
-        localStorage.removeItem(`mm_save_meta_${i}`);
-        this.slots[i] = null;
-        UI.renderSaveSlots();
-    }
-
-    static exportSlot(i) {
-        const json = localStorage.getItem(`mm_save_data_${i}`);
-        if(!json) {
-            UI.showToast("No save data in this slot", "error");
-            return;
+        } catch (e) {
+            UI.showToast("Failed to load save", "error");
+            console.error(e);
         }
+    }
+
+
+    static async deleteSlot(i) {
+        await this.initDB();
+        const id = i + 1;
         try {
-            const data = JSON.parse(json);
-            const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `mm_save_slot_${i+1}.json`; a.click();
-            UI.showToast(`Exported Slot ${i+1}`, "success");
-        } catch(e) {
+            const transaction = this.db.transaction(["saves"], "readwrite");
+            const store = transaction.objectStore("saves");
+            store.delete(id);
+            this.slots[i] = null;
+            UI.renderSaveSlots();
+        } catch (e) {
+            UI.showToast("Failed to delete save", "error");
+            console.error(e);
+        }
+    }
+
+    static async exportSlot(i) {
+        await this.initDB();
+        const id = i + 1;
+        try {
+            const transaction = this.db.transaction(["saves"], "readonly");
+            const store = transaction.objectStore("saves");
+            const request = store.get(id);
+            request.onsuccess = (event) => {
+                const data = event.target.result;
+                if (data) {
+                    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `mm_save_slot_${id}.json`;
+                    a.click();
+                    UI.showToast(`Exported Slot ${id}`, "success");
+                } else {
+                    UI.showToast("No save data in this slot", "error");
+                }
+            };
+            request.onerror = () => {
+                UI.showToast("Export Failed", "error");
+            };
+        } catch (e) {
             UI.showToast("Export Failed", "error");
             console.error(e);
         }
@@ -2253,7 +2350,6 @@ function generateCreditsHTML(data) {
             html += `<ul class="simple-list">`;
             section.forEach(item => html += `<li>${item}</li>`);
             html += `</ul>`;
-            html += `</div>`;
             html += `</div>`;
             continue;
         }
