@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procedural PCB Simulator</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --pcb-color: #0d2618;
+            --trace-off: #1a3d2e;
+            --trace-active: #00ffaa;
+            --trace-glow: rgba(0, 255, 170, 0.7);
+            --ui-bg: rgba(10, 20, 15, 0.95);
+            --text-color: #00ffaa;
+            --pin-gold: #d4af37;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-text {
+            color: var(--text-color);
+            text-shadow: 0 0 5px var(--trace-glow);
+            font-size: 14px;
+            margin-bottom: 5px;
+            pointer-events: auto;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            border: 1px solid #004433;
+        }
+
+        #settings-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 340px;
+            background: var(--ui-bg);
+            border: 2px solid var(--trace-off);
+            padding: 20px;
+            color: var(--text-color);
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 0 30px #000;
+            z-index: 100;
+        }
+
+        #settings-panel.visible { display: flex; }
+
+        h2 { margin: 0 0 5px 0; font-size: 20px; text-align: center; border-bottom: 1px solid var(--trace-off); padding-bottom: 10px; letter-spacing: 2px; }
+
+        .control-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            width: 45%;
+            accent-color: var(--trace-active);
+        }
+
+        .input-row { display: flex; gap: 5px; width: 60%; }
+
+        input[type="text"] {
+            background: #000;
+            border: 1px solid var(--trace-off);
+            color: var(--text-color);
+            padding: 5px;
+            flex-grow: 1;
+            font-family: inherit;
+            min-width: 0;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            width: auto;
+            margin: 0;
+        }
+
+        button {
+            background: var(--trace-off);
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.2s;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--trace-active);
+            color: #000;
+            box-shadow: 0 0 15px var(--trace-glow);
+            border-color: #fff;
+        }
+
+        .close-hint {
+            font-size: 11px;
+            text-align: center;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="hud-text" id="fps-counter">FPS: 60</div>
+        <div class="hud-text" onclick="toggleSettings()">Settings [H]</div>
+        <div class="hud-text" id="seed-display">Seed: ...</div>
+    </div>
+
+    <div id="settings-panel">
+        <h2>PCB FABRICATOR</h2>
+
+        <div class="control-group">
+            <label>Seed:</label>
+            <div class="input-row">
+                <input type="text" id="input-seed" placeholder="Seed">
+                <button class="btn-small" onclick="randomizeSeed()">RND</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Component Density:</label>
+            <input type="range" id="input-density" min="1" max="30" value="15">
+        </div>
+
+        <div class="control-group">
+            <label>Max Connections:</label>
+            <input type="range" id="input-fanout" min="1" max="10" value="3" title="Max number of inputs one output can drive">
+        </div>
+
+        <div class="control-group">
+            <label>Simulation Speed:</label>
+            <input type="range" id="input-speed" min="1" max="20" value="8">
+        </div>
+
+        <div class="control-group">
+            <label>Neon Glow:</label>
+            <input type="checkbox" id="input-glow" checked>
+        </div>
+
+        <div class="control-group">
+            <label>Force Connect:</label>
+            <input type="checkbox" id="input-force" checked title="Forces traces to connect even if crowded">
+        </div>
+
+        <div class="control-group">
+            <label>CRT Effect:</label>
+            <input type="checkbox" id="input-crt" checked>
+        </div>
+
+        <button onclick="applySettings()">REGENERATE BOARD</button>
+        <div class="close-hint">Press 'H' to toggle menu</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+<script>
+/**
+ * PROCEDURAL PCB SIMULATOR v2.3
+ * Features: Smart A*, Fan-out Limits, CRT Effect
+ */
+
+// --- USER ADJUSTMENT ZONE ---
+const COMPONENT_OFFSET_X = 10;
+const COMPONENT_OFFSET_Y = 10;
+// ----------------------------
+
+// --- UTILITIES ---
+
+class PRNG {
+    constructor(seed) {
+        this.seed = this.hashString(seed.toString());
+    }
+    hashString(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash);
+    }
+    next() {
+        var t = this.seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    range(min, max) { return min + this.next() * (max - min); }
+    int(min, max) { return Math.floor(this.range(min, max + 1)); }
+    pick(arr) { return arr[this.int(0, arr.length - 1)]; }
+    bool(chance = 0.5) { return this.next() < chance; }
+}
+
+const CONST = {
+    TILE: 20,
+    COLORS: {
+        bg: '#0d2618',
+        traceOff: '#1a3d2e',
+        traceOn: '#4dffb0',
+        traceGlow: '#00ffaa',
+        pad: '#d4af37',
+        body: '#1a1a1a',
+        text: 'rgba(255,255,255,0.7)',
+        ledOn: ['#ff3333', '#33ff33', '#3388ff', '#ffaa00', '#ff00ff', '#00ffff'],
+        segOn: '#ff3333',
+        segOff: '#331111'
+    }
+};
+
+// --- SIMULATION CORE ---
+
+class Net {
+    constructor(id) {
+        this.id = id;
+        this.state = 0;
+        this.active = false;
+        this.decay = 0;
+        this.connections = 0; // Tracks fan-out
+    }
+    update() {
+        if (this.state > 0) {
+            this.active = true;
+            this.state = 0;
+            this.decay = 5;
+        } else {
+            if(this.decay > 0) {
+                this.decay--;
+                this.active = true;
+            } else {
+                this.active = false;
+            }
+        }
+    }
+    drive() { this.state = 1; }
+}
+// -------------------- Base Component --------------------
+
+class Component {
+    constructor(x, y, w, h, id) {
+        // x, y, w, h are in TILE units
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.id = id;
+
+        // rotation in degrees (0, 90, 180, 270)
+        this.rotation = 0;
+
+        // pins: { rx, ry, type, name, net, gx, gy }
+        this.pins = [];
+
+        // arbitrary state per component
+        this.state = {};
+    }
+
+    // rx, ry are in TILE units, relative to component origin (top-left in tile space)
+    addPin(rx, ry, type, name = '') {
+        const pin = {
+            rx,
+            ry,
+            type,
+            name,
+            net: null,
+            gx: this.x + rx,
+            gy: this.y + ry
+        };
+        this.pins.push(pin);
+        return pin;
+    }
+
+    // Recompute absolute pin positions in TILE space (no pixels here)
+    updatePins() {
+        const cx = this.x + this.w / 2;
+        const cy = this.y + this.h / 2;
+        const rad = this.rotation * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        for (const p of this.pins) {
+            const localX = this.x + p.rx;
+            const localY = this.y + p.ry;
+
+            const dx = localX - cx;
+            const dy = localY - cy;
+
+            const rx = dx * cos - dy * sin;
+            const ry = dx * sin + dy * cos;
+
+            p.gx = cx + rx;
+            p.gy = cy + ry;
+        }
+    }
+
+    // Move component in TILE space and update pins
+    setPosition(tx, ty) {
+        this.x = tx;
+        this.y = ty;
+        this.updatePins();
+    }
+
+    // Rotate component (in 90° steps is easiest)
+    rotate(deltaDeg = 90) {
+        this.rotation = (this.rotation + deltaDeg) % 360;
+        this.updatePins();
+    }
+
+    // Hit test in PIXEL space
+    hit(mx, my) {
+        const sx = this.x * CONST.TILE + COMPONENT_OFFSET_X;
+        const sy = this.y * CONST.TILE + COMPONENT_OFFSET_Y;
+        const wpx = this.w * CONST.TILE;
+        const hpx = this.h * CONST.TILE;
+
+        return mx >= sx && mx < sx + wpx &&
+               my >= sy && my < sy + hpx;
+    }
+
+    // Get component pixel position (top-left)
+    getPixelPos() {
+        return {
+            x: this.x * CONST.TILE + COMPONENT_OFFSET_X,
+            y: this.y * CONST.TILE + COMPONENT_OFFSET_Y
+        };
+    }
+
+    // Get pin pixel position by index
+    getPinPixelPos(idx) {
+        const p = this.pins[idx];
+        if (!p) return null;
+        return {
+            x: p.gx * CONST.TILE + COMPONENT_OFFSET_X,
+            y: p.gy * CONST.TILE + COMPONENT_OFFSET_Y
+        };
+    }
+
+    interact() { return false; }
+
+    tick(nets) {}
+}
+
+// -------------------- Chip --------------------
+
+class Chip extends Component {
+    constructor(x, y, w, h, id, type) {
+        super(x, y, w, h, id);
+        this.type = type;
+        this.timer = 0;
+
+        // pins along left (inputs) and right (outputs), centered per row
+        for (let i = 0; i < h; i++) {
+            this.addPin(0, i + 0.5, 'in');
+            this.addPin(w, i + 0.5, 'out');
+        }
+
+        if (type === 'clock')     this.period = 20 + Math.floor(Math.random() * 40);
+        if (type === 'fast_clk')  this.period = 5 + Math.floor(Math.random() * 10);
+        if (type === 'random')    this.period = 10;
+
+        this.updatePins();
+    }
+
+    tick(nets) {
+        const inputs = this.pins.filter(p => p.type === 'in');
+        let highCount = 0;
+        for (const p of inputs) {
+            if (p.net !== null && nets[p.net].active) highCount++;
+        }
+
+        let outState = false;
+
+        switch (this.type) {
+            case 'clock':
+            case 'fast_clk':
+                this.timer++;
+                outState = Math.floor(this.timer / this.period) % 2 === 0;
+                break;
+            case 'and':
+                outState = (highCount === inputs.length && inputs.length > 0);
+                break;
+            case 'or':
+                outState = (highCount > 0);
+                break;
+            case 'not':
+                outState = (highCount === 0);
+                break;
+            case 'nand':
+                outState = !(highCount === inputs.length && inputs.length > 0);
+                break;
+            case 'nor':
+                outState = (highCount === 0);
+                break;
+            case 'xor':
+                outState = (highCount % 2 === 1);
+                break;
+            case 'xnor':
+                outState = (highCount % 2 === 0);
+                break;
+            case 'random':
+                this.timer++;
+                if (this.timer % this.period === 0) {
+                    this.state.rnd = Math.random() > 0.5;
+                }
+                outState = this.state.rnd;
+                break;
+        }
+
+        if (outState) {
+            const outs = this.pins.filter(p => p.type === 'out');
+            for (const p of outs) {
+                if (p.net !== null) nets[p.net].drive();
+            }
+        }
+    }
+}
+
+// -------------------- Switch --------------------
+
+class Switch extends Component {
+    constructor(x, y, id, momentary) {
+        super(x, y, 2, 2, id);
+        this.momentary = momentary;
+        this.on = false;
+
+        // vertical pins centered horizontally
+        this.addPin(1, 0, 'out');
+        this.addPin(1, 2, 'out');
+
+        this.updatePins();
+    }
+
+    interact() {
+        if (this.momentary) {
+            this.on = true;
+            setTimeout(() => this.on = false, 200);
+        } else {
+            this.on = !this.on;
+        }
+        return true;
+    }
+
+    tick(nets) {
+        if (this.on) {
+            for (const p of this.pins) {
+                if (p.net !== null) nets[p.net].drive();
+            }
+        }
+    }
+}
+
+// -------------------- Seven Segment --------------------
+
+class SevenSeg extends Component {
+    constructor(x, y, id) {
+        super(x, y, 3, 4, id);
+        this.val = 0;
+
+        // left side: 8, 4; right side: 2, 1
+        this.addPin(0, 1.5, 'in', '8');
+        this.addPin(0, 2.5, 'in', '4');
+        this.addPin(3, 1.5, 'in', '2');
+        this.addPin(3, 2.5, 'in', '1');
+
+        this.updatePins();
+    }
+
+    tick(nets) {
+        let v = 0;
+        if (this.isHigh(0, nets)) v += 8;
+        if (this.isHigh(1, nets)) v += 4;
+        if (this.isHigh(2, nets)) v += 2;
+        if (this.isHigh(3, nets)) v += 1;
+        this.val = v;
+    }
+
+    isHigh(idx, nets) {
+        const p = this.pins[idx];
+        return p && p.net !== null && nets[p.net].active;
+    }
+}
+
+// -------------------- Capacitor --------------------
+
+class Capacitor extends Component {
+    constructor(x, y, id) {
+        super(x, y, 1, 2, id);
+        this.charge = 0;
+
+        this.addPin(0.5, 0, 'in');
+        this.addPin(0.5, 2, 'out');
+
+        this.updatePins();
+    }
+
+    tick(nets) {
+        const pinIn = this.pins[0];
+        const pinOut = this.pins[1];
+
+        if (pinIn.net !== null && nets[pinIn.net].active) {
+            this.charge = Math.min(this.charge + 0.2, 1.0);
+        } else {
+            this.charge = Math.max(this.charge - 0.05, 0);
+        }
+
+        if (this.charge > 0.5 && pinOut.net !== null) {
+            nets[pinOut.net].drive();
+        }
+    }
+}
+
+// -------------------- LED --------------------
+
+class LED extends Component {
+    constructor(x, y, color, id) {
+        super(x, y, 1, 1, id);
+        this.color = color;
+        this.active = false;
+
+        this.addPin(0.5, 0.5, 'in');
+
+        this.updatePins();
+    }
+
+    tick(nets) {
+        const p = this.pins[0];
+        this.active = (p.net !== null && nets[p.net].active);
+    }
+}
+
+// --- GENERATION & ROUTING (A*) ---
+
+class Generator {
+    constructor(seed, w, h, density, forceConnect, maxFanout) {
+        this.rng = new PRNG(seed);
+        this.w = w; this.h = h;
+        this.density = density;
+        this.forceConnect = forceConnect;
+        this.maxFanout = maxFanout;
+        this.grid = new Uint8Array(w * h).fill(0);
+        this.components = [];
+        this.nets = [];
+        this.traces = [];
+        this.netCount = 0;
+
+        this.generate();
+    }
+
+    idx(x, y) { return y * this.w + x; }
+
+    isFree(x, y, w, h) {
+        if(x<1 || y<1 || x+w >= this.w-1 || y+h >= this.h-1) return false;
+        for(let iy=y; iy<y+h; iy++) {
+            for(let ix=x; ix<x+w; ix++) {
+                if(this.grid[this.idx(ix, iy)] !== 0) return false;
+            }
+        }
+        return true;
+    }
+
+    place(comp) {
+        this.components.push(comp);
+        for(let iy=comp.y; iy<comp.y+comp.h; iy++) {
+            for(let ix=comp.x; ix<comp.x+comp.w; ix++) {
+                this.grid[this.idx(ix, iy)] = 2;
+            }
+        }
+        comp.pins.forEach(p => {
+            if(p.gx >= 0 && p.gx < this.w && p.gy >= 0 && p.gy < this.h)
+                this.grid[this.idx(p.gx, p.gy)] = 3;
+        });
+    }
+
+    generate() {
+        const d = this.density;
+
+        // 1. Logic Chips
+        const types = ['clock', 'fast_clk', 'and', 'or', 'xor', 'nand', 'nor', 'xnor', 'not', 'random'];
+        for(let i=0; i < d + 3; i++) {
+            const w = this.rng.pick([2,3]);
+            const h = this.rng.pick([2,3,4,5]);
+            const x = this.rng.int(2, this.w - w - 2);
+            const y = this.rng.int(2, this.h - h - 2);
+
+            if(this.isFree(x, y, w, h))
+                this.place(new Chip(x, y, w, h, this.components.length, this.rng.pick(types)));
+        }
+
+        // 2. Displays
+        let segs = this.rng.int(2, 4);
+        for(let i=0; i<segs; i++) {
+            let x = this.rng.int(2, this.w - 5);
+            let y = this.rng.int(2, this.h - 5);
+            if(this.isFree(x,y,3,4)) this.place(new SevenSeg(x,y, this.components.length));
+        }
+
+        // 3. Switches
+        let switches = this.rng.int(3, 6);
+        for(let i=0; i<switches; i++) {
+            let x = this.rng.int(2, this.w - 4);
+            let y = this.rng.int(2, this.h - 4);
+            if(this.isFree(x,y,2,2)) this.place(new Switch(x,y, this.components.length, this.rng.bool()));
+        }
+
+        // 4. Caps
+        let caps = this.rng.int(4, 10);
+        for(let i=0; i<caps; i++) {
+            let x = this.rng.int(2, this.w - 3);
+            let y = this.rng.int(2, this.h - 3);
+            if(this.isFree(x,y,1,2)) this.place(new Capacitor(x,y, this.components.length));
+        }
+
+        // 5. Routing
+        this.routeAll();
+
+        // 6. Filler LEDs
+        for(let y=1; y<this.h-1; y+=2) {
+            for(let x=1; x<this.w-1; x+=2) {
+                if(this.grid[this.idx(x,y)] === 0 && this.rng.bool(0.25)) {
+                    const net = this.findNearbyNet(x, y);
+                    if(net !== null) {
+                        const led = new LED(x, y, this.rng.pick(CONST.COLORS.ledOn), this.components.length);
+                        led.pins[0].net = net;
+                        this.place(led);
+                        this.traces.push({x1: x+0.5, y1: y+0.5, x2: x+0.5, y2: y+0.5, net: net});
+                    }
+                }
+            }
+        }
+    }
+
+    findNearbyNet(x, y) {
+        const dirs = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+        for(let d of dirs) {
+            let nx = x + d[0], ny = y + d[1];
+            if(nx<0 || nx>=this.w || ny<0 || ny>=this.h) continue;
+            for(let t of this.traces) {
+                if(Math.abs(t.x1 - nx) < 1 && Math.abs(t.y1 - ny) < 1) return t.net;
+                if(Math.abs(t.x2 - nx) < 1 && Math.abs(t.y2 - ny) < 1) return t.net;
+            }
+        }
+        return null;
+    }
+
+    routeAll() {
+        let inputs = [], outputs = [];
+        this.components.forEach(c => {
+            c.pins.forEach(p => {
+                p.compId = c.id; // Link pin to parent component ID for validation
+                if(p.type === 'in') inputs.push(p);
+                else outputs.push(p);
+            });
+        });
+
+        inputs.sort(() => this.rng.next() - 0.5);
+        outputs.sort(() => this.rng.next() - 0.5);
+
+        inputs.forEach(inp => {
+            if(inp.net !== null) return;
+
+            let best = null;
+            let minDist = 9999;
+
+            for(let out of outputs) {
+                // RULE 1: Never connect to the same component
+                if (out.compId === inp.compId) continue;
+
+                // RULE 2: Check Fan-out Limit
+                if (out.net !== null && this.nets[out.net]) {
+                    if (this.nets[out.net].connections >= this.maxFanout) continue;
+                }
+
+                let dist = Math.abs(inp.gx - out.gx) + Math.abs(inp.gy - out.gy);
+                if(dist < minDist && dist < 100) {
+                    minDist = dist;
+                    best = out;
+                }
+            }
+
+            if(best) {
+                let netId = best.net;
+                let createdNew = false;
+                if(netId === null) {
+                    netId = this.netCount++;
+                    this.nets[netId] = new Net(netId);
+                    best.net = netId;
+                    createdNew = true;
+                }
+
+                // Track connection on the net
+                this.nets[netId].connections++;
+                inp.net = netId;
+
+                // Try route standard (avoid collisions)
+                let path = this.findPath(best.gx, best.gy, inp.gx, inp.gy, false);
+
+                // If failed and force is on, try "loose" routing
+                if(!path && this.forceConnect) {
+                    path = this.findPath(best.gx, best.gy, inp.gx, inp.gy, true);
+                }
+
+                if(path) {
+                    this.buildTraces(path, netId);
+                } else {
+                    // Clean up connection on failure
+                    inp.net = null;
+                    this.nets[netId].connections--;
+                    if(createdNew) best.net = null;
+                }
+            }
+        });
+    }
+
+    findPath(sx, sy, ex, ey, ignoreTraceCollision) {
+        let open = [{x: sx, y: sy, g: 0, f: 0, p: null}];
+        let closed = new Set();
+
+        let iterations = 0;
+        const MAX_ITER = 4000;
+
+        while(open.length > 0 && iterations++ < MAX_ITER) {
+            open.sort((a,b) => a.f - b.f);
+            let cur = open.shift();
+            let key = cur.x + "," + cur.y;
+
+            if(cur.x === ex && cur.y === ey) {
+                let path = [];
+                let temp = cur;
+                while(temp) {
+                    path.push({x: temp.x, y: temp.y});
+                    temp = temp.p;
+                }
+                return path.reverse();
+            }
+
+            if(closed.has(key)) continue;
+            closed.add(key);
+
+            const neighbors = [
+                {x:0, y:1, c:1}, {x:0, y:-1, c:1}, {x:1, y:0, c:1}, {x:-1, y:0, c:1},
+                {x:1, y:1, c:1.414}, {x:-1, y:-1, c:1.414}, {x:1, y:-1, c:1.414}, {x:-1, y:1, c:1.414}
+            ];
+
+            for(let n of neighbors) {
+                let nx = cur.x + n.x;
+                let ny = cur.y + n.y;
+
+                if(nx<0 || nx>=this.w || ny<0 || ny>=this.h) continue;
+                if(closed.has(nx+","+ny)) continue;
+
+                // 1. DIAGONAL ELBOW CHECK
+                if (n.x !== 0 && n.y !== 0) {
+                     let elbow1 = this.grid[this.idx(cur.x + n.x, cur.y)];
+                     let elbow2 = this.grid[this.idx(cur.x, cur.y + n.y)];
+                     if (elbow1 !== 0 || elbow2 !== 0) continue;
+                }
+
+                let cell = this.grid[this.idx(nx, ny)];
+                // 2=Body (BLOCK), 1=Trace (Avoid unless ignoreTraceCollision)
+                if(cell === 2) continue;
+                if(cell === 1 && !ignoreTraceCollision && !(nx===ex && ny===ey)) continue;
+
+                let prevX = cur.p ? cur.x - cur.p.x : 0;
+                let prevY = cur.p ? cur.y - cur.p.y : 0;
+                let turnCost = (prevX !== n.x || prevY !== n.y) ? 0.2 : 0;
+
+                let g = cur.g + n.c + turnCost;
+                let h = Math.sqrt(Math.pow(nx - ex, 2) + Math.pow(ny - ey, 2));
+                let f = g + h;
+
+                let existing = open.find(o => o.x === nx && o.y === ny);
+                if(existing) {
+                    if(g < existing.g) {
+                        existing.g = g;
+                        existing.f = f;
+                        existing.p = cur;
+                    }
+                } else {
+                    open.push({x: nx, y: ny, g: g, f: f, p: cur});
+                }
+            }
+        }
+        return null;
+    }
+
+    buildTraces(path, netId) {
+        if(path.length < 2) return;
+        for(let i=0; i<path.length-1; i++) {
+            let a = path[i];
+            let b = path[i+1];
+            this.traces.push({
+                x1: a.x + 0.5, y1: a.y + 0.5,
+                x2: b.x + 0.5, y2: b.y + 0.5,
+                net: netId
+            });
+            this.grid[this.idx(a.x, a.y)] = 1;
+            this.grid[this.idx(b.x, b.y)] = 1;
+        }
+    }
+}
+
+// --- RENDERER & UI ---
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+let width, height, pcb;
+let mouse = { x:0, y:0, click:false };
+let camera = { x:0, y:0, zoom:1 };
+
+const params = { seed: Math.floor(Math.random()*99999).toString(), density: 15, speed: 8, glow: true, force: true, crt: true, fanout: 3 };
+
+function init() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    let gw = Math.ceil(width/CONST.TILE);
+    let gh = Math.ceil(height/CONST.TILE);
+    pcb = new Generator(params.seed, gw, gh, params.density, params.force, params.fanout);
+
+    document.getElementById('input-seed').value = params.seed;
+    document.getElementById('seed-display').innerText = "Seed: " + params.seed;
+}
+
+function update() {
+    let ticks = Math.ceil(params.speed / 4);
+    for(let i=0; i<ticks; i++) {
+        pcb.nets.forEach(n => n.update());
+        pcb.components.forEach(c => c.tick(pcb.nets));
+    }
+
+    if(mouse.click) {
+        let mx = (mouse.x - camera.x) / camera.zoom;
+        let my = (mouse.y - camera.y) / camera.zoom;
+        for(let c of pcb.components) {
+            if(c.hit(mx, my)) {
+                c.interact();
+                break;
+            }
+        }
+        mouse.click = false;
+    }
+}
+
+function draw() {
+    ctx.fillStyle = CONST.COLORS.bg;
+    ctx.fillRect(0,0,width,height);
+
+    ctx.save();
+
+    // 1. Traces (Standard Grid Alignment)
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = CONST.TILE * 0.25;
+    ctx.strokeStyle = CONST.COLORS.traceOff;
+    ctx.beginPath();
+    pcb.traces.forEach(t => {
+        ctx.moveTo(t.x1*CONST.TILE, t.y1*CONST.TILE);
+        ctx.lineTo(t.x2*CONST.TILE, t.y2*CONST.TILE);
+    });
+    ctx.stroke();
+
+    if(params.glow) {
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = CONST.COLORS.traceGlow;
+    }
+    ctx.lineWidth = CONST.TILE * 0.15;
+    ctx.beginPath();
+    let hasActive = false;
+    pcb.traces.forEach(t => {
+        if(t.net !== null && pcb.nets[t.net] && pcb.nets[t.net].active) {
+            ctx.moveTo(t.x1*CONST.TILE, t.y1*CONST.TILE);
+            ctx.lineTo(t.x2*CONST.TILE, t.y2*CONST.TILE);
+            hasActive = true;
+        }
+    });
+    if(hasActive) {
+        ctx.strokeStyle = CONST.COLORS.traceOn;
+        ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    // 2. Components (With Visual Offset)
+    pcb.components.forEach(c => {
+        // Apply Visual Offset Here
+        const x = c.x*CONST.TILE + COMPONENT_OFFSET_X;
+        const y = c.y*CONST.TILE + COMPONENT_OFFSET_Y;
+        const w = c.w*CONST.TILE;
+        const h = c.h*CONST.TILE;
+
+        // Pins
+        c.pins.forEach(p => {
+            ctx.fillStyle = CONST.COLORS.pad;
+            ctx.beginPath();
+            const px = (c.x + p.rx) * CONST.TILE + COMPONENT_OFFSET_X;
+            const py = (c.y + p.ry) * CONST.TILE + COMPONENT_OFFSET_Y;
+            ctx.arc(px, py, CONST.TILE*0.25, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // Body
+        ctx.fillStyle = CONST.COLORS.body;
+
+        if(c instanceof Chip) {
+            ctx.fillRect(x+2, y+2, w-4, h-4);
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px monospace';
+            ctx.fillText(c.type.toUpperCase().substring(0,4), x+5, y+12);
+            ctx.beginPath(); ctx.arc(x+w/2, y+2, 4, 0, Math.PI); ctx.fill();
+        }
+        else if (c instanceof Switch) {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x+2, y+2, w-4, h-4);
+            ctx.fillStyle = c.on ? '#0f0' : '#d00';
+            let m = 6;
+            ctx.fillRect(x+m, y+m, w-(m*2), h-(m*2));
+        }
+        else if (c instanceof SevenSeg) {
+            ctx.fillStyle = '#111';
+            ctx.fillRect(x, y, w, h);
+            drawSevenSeg(ctx, x, y, w, h, c.val);
+        }
+        else if (c instanceof Capacitor) {
+            ctx.fillStyle = '#444';
+            ctx.beginPath();
+            ctx.roundRect(x+5, y+2, w-10, h-4, 5);
+            ctx.fill();
+            ctx.fillStyle = '#888';
+            ctx.fillRect(x+5, y+4, w-10, 5);
+        }
+        else if (c instanceof LED) {
+            ctx.shadowBlur = (c.active && params.glow) ? 15 : 0;
+            ctx.shadowColor = c.color;
+            ctx.fillStyle = c.active ? c.color : '#220000';
+            ctx.beginPath();
+            ctx.arc(x+w/2, y+h/2, w*0.3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    });
+
+    ctx.restore();
+
+    // 3. CRT Effect (Post-processing)
+    if (params.crt) {
+        // Scanlines
+        ctx.fillStyle = 'rgba(10, 20, 15, 0.2)';
+        for(let i=0; i<height; i+=3) {
+            ctx.fillRect(0, i, width, 1);
+        }
+
+        // Vignette
+        const grad = ctx.createRadialGradient(width/2, height/2, height/3, width/2, height/2, height);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.6)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,width,height);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+function drawSevenSeg(ctx, x, y, w, h, val) {
+    const segs = [
+        [1,1,1,1,1,1,0], [0,1,1,0,0,0,0], [1,1,0,1,1,0,1], [1,1,1,1,0,0,1],
+        [0,1,1,0,0,1,1], [1,0,1,1,0,1,1], [1,0,1,1,1,1,1], [1,1,1,0,0,0,0],
+        [1,1,1,1,1,1,1], [1,1,1,1,0,1,1], [1,1,1,0,1,1,1], [0,0,1,1,1,1,1],
+        [1,0,0,1,1,1,0], [0,1,1,1,1,0,1], [1,0,0,1,1,1,1], [1,0,0,0,1,1,1]
+    ];
+
+    const s = segs[val % 16];
+    const cOn = CONST.COLORS.segOn;
+    const cOff = CONST.COLORS.segOff;
+
+    const mx = x + w/2;
+    const my = y + h/2;
+    const scale = 0.6;
+    const sw = w*scale;
+    const sh = h*scale;
+    const t = 4;
+
+    ctx.shadowBlur = params.glow ? 5 : 0;
+    ctx.shadowColor = cOn;
+
+    // Helper to draw segment
+    const dS = (active, px, py, rw, rh) => {
+        ctx.fillStyle = active ? cOn : cOff;
+        ctx.fillRect(px, py, rw, rh);
+    };
+
+    dS(s[0], mx - sw/2, my - sh/2, sw, t);
+    dS(s[1], mx + sw/2 - t, my - sh/2, t, sh/2);
+    dS(s[2], mx + sw/2 - t, my, t, sh/2);
+    dS(s[3], mx - sw/2, my + sh/2 - t, sw, t);
+    dS(s[4], mx - sw/2, my, t, sh/2);
+    dS(s[5], mx - sw/2, my - sh/2, t, sh/2);
+    dS(s[6], mx - sw/2, my - t/2, sw, t);
+
+    ctx.shadowBlur = 0;
+}
+
+function loop() {
+    update();
+    draw();
+}
+
+// --- CONTROLS ---
+
+function toggleSettings() {
+    document.getElementById('settings-panel').classList.toggle('visible');
+}
+
+function randomizeSeed() {
+    document.getElementById('input-seed').value = Math.floor(Math.random() * 1000000);
+}
+
+function applySettings() {
+    params.seed = document.getElementById('input-seed').value || "12345";
+    params.density = parseInt(document.getElementById('input-density').value);
+    params.speed = parseInt(document.getElementById('input-speed').value);
+    params.fanout = parseInt(document.getElementById('input-fanout').value);
+    params.glow = document.getElementById('input-glow').checked;
+    params.force = document.getElementById('input-force').checked;
+    params.crt = document.getElementById('input-crt').checked;
+    init();
+    toggleSettings();
+}
+
+// Events
+window.addEventListener('resize', init);
+window.addEventListener('keydown', e => { if(e.key.toLowerCase()==='h') toggleSettings(); });
+canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mousedown', () => mouse.click = true);
+
+// Start
+init();
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
