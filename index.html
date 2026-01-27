@@ -147,6 +147,8 @@
     <input id="search" type="text" placeholder="Search applications..." />
 
     
+      <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
+    
       <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
     
       <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
@@ -174,6 +176,25 @@
   <main>
     <h1>Applications Overview</h1>
 
+    
+      <section class="app-section" data-name="pcb">
+        <a class="app-link" href="pcb/index.html">Open pcb</a>
+        <h2>pcb</h2>
+        <section>
+  <ul>
+    <li>Procedurally generates PCB layouts with logic 튩ips, capacitors, LEDs, and seven-segment displays.</li>
+    <li>Simulates signal propagation thr✓ugh traces with adjustable speed and neon glow effects.</li>
+    <li>Features interactive components like switches and a settings panel for dynamic regeneration.</li>
+  </ul>
+
+  <pre>
+    <code>pcb = new Generator(params.seed, gw, gh, params.density, params.force, params.fanout);</code>
+    <code>ctx.shadowBlur = (c.active的开发 params.glow)礦 15 : 0;</code>
+  </pre>
+
+  <p>This application generates interactive circuit board simulations with runtime logic simulation. Users can click components like switches to trigger signals and adjust parameters through a settings panel. The visualization includes configurable effects like trace glow and CRT scanlines.</p>
+</section>
+      </section>
     
       <section class="app-section" data-name="matrix">
         <a class="app-link" href="matrix/index.html">Open matrix</a>
@@ -350,18 +371,22 @@
         <a class="app-link" href="megaminer/index.html">Open megaminer</a>
         <h2>megaminer</h2>
         <section>
-  <ul>
-    <li>Multiplayer mining simulator using MQTT.js for real-time player interactions and map synchronization</li>
-    <li>Procedurally generated map with 20+ tile types, including ores with escalating value based on depth</li>
-    <li>Resource management mechanics featuring fuel consumption, overheating penalties, cargo limits, and upgradeable tools</li>
-  </ul>
+  رود
+<ul>
+    <li>Procedurally generated mining map with tile-based resource distribution</li>
+    <li>MQTT-powered multiplayer functionality with player synchronization</li>
+    <li>Customizable vehicle character with mining/drilling mechanics</li>
+    <li>Inventory system with ores categorization and building mechanics</li>
+    <li>Upgrade progression system for drills, hulls and cargo capacity</li>
+    <li>Admin controls and real-time player management features</li>
+</ul>
 
-  <pre>
-    <code>this.map[y][x] = type; // Procedural tile generation</code>
-    <code>this.publish('pos', { type: 'move', id, gridX, gridY }); // MQTT movement broadcast</code>
-  </pre>
+<pre>
+<code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3 ... };</code>
+<code>this.client = mqtt.connect(broker, options);</code>
+</pre>
 
-  <p>Mega Miner Online is an MQTT-powered multiplayer game where players mine procedurally generated terrain depths to collect increasingly valuable resources while managing fuel and environmental hazards. The game includes real-time chat, dynamic inventory tools with upgradable equipment, and customizable controls alongside persistent local saving mechanisms. Players can collaborate/compete in shared environments while viewing resource locations via minimaps and interacting with built structures.</p>
+<p>Mega Miner Online is a browser-based multiplayer mining game featuring procedural world generation and real-time interactions. Players explore deep caves to collect valuable resources while managing equipment upgrades and collaborating with others through MQTT networking. The application includes complex systems for inventory management, thermal physics modeling, and persistent game state saving across sessions.</p>
 </section>
       </section>
     

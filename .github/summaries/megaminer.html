@@ -1,14 +1,18 @@
 <section>
-  <ul>
-    <li>Multiplayer mining simulator using MQTT.js for real-time player interactions and map synchronization</li>
-    <li>Procedurally generated map with 20+ tile types, including ores with escalating value based on depth</li>
-    <li>Resource management mechanics featuring fuel consumption, overheating penalties, cargo limits, and upgradeable tools</li>
-  </ul>
+  رود
+<ul>
+    <li>Procedurally generated mining map with tile-based resource distribution</li>
+    <li>MQTT-powered multiplayer functionality with player synchronization</li>
+    <li>Customizable vehicle character with mining/drilling mechanics</li>
+    <li>Inventory system with ores categorization and building mechanics</li>
+    <li>Upgrade progression system for drills, hulls and cargo capacity</li>
+    <li>Admin controls and real-time player management features</li>
+</ul>
 
-  <pre>
-    <code>this.map[y][x] = type; // Procedural tile generation</code>
-    <code>this.publish('pos', { type: 'move', id, gridX, gridY }); // MQTT movement broadcast</code>
-  </pre>
+<pre>
+<code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3 ... };</code>
+<code>this.client = mqtt.connect(broker, options);</code>
+</pre>
 
-  <p>Mega Miner Online is an MQTT-powered multiplayer game where players mine procedurally generated terrain depths to collect increasingly valuable resources while managing fuel and environmental hazards. The game includes real-time chat, dynamic inventory tools with upgradable equipment, and customizable controls alongside persistent local saving mechanisms. Players can collaborate/compete in shared environments while viewing resource locations via minimaps and interacting with built structures.</p>
+<p>Mega Miner Online is a browser-based multiplayer mining game featuring procedural world generation and real-time interactions. Players explore deep caves to collect valuable resources while managing equipment upgrades and collaborating with others through MQTT networking. The application includes complex systems for inventory management, thermal physics modeling, and persistent game state saving across sessions.</p>
 </section>
