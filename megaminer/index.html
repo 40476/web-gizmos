@@ -2084,10 +2084,9 @@ class UIManager {
     constructor() {
         this.defaultServers = [
             "wss://broker.emqx.io:8084/mqtt",
-            "ws://broker.emqx.io:8083/mqtt",
-            "wss://broker.hivemq.com:8000",
+            "wss://broker.hivemq.com:8884/mqtt",
             "wss://mqtt.eclipseprojects.io:443/mqtt",
-            "wss://test.mosquitto.org:8081",
+            "wss://test.mosquitto.org:8081"
         ];
         this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
 
@@ -2183,9 +2182,10 @@ class UIManager {
         const el = $(id);
         if(!el) return;
 
-        let failedTimeout = setTimeout(() => { if(!client.connected) setStatus(false); }, 10000);
 
         const client = mqtt.connect(url, { connectTimeout: 9500, reconnectPeriod: 0 });
+
+        let failedTimeout = setTimeout(() => { if(!client.connected) setStatus(false); }, 10000);
 
         const setStatus = (success) => {
             if(el) {
