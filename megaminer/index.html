@@ -470,10 +470,7 @@
     <div id="notification-area"></div>
 
 <script>
-/**
- * MEGA MINER ONLINE v3.8
- * Updates: Save Protection, Host Map Auth, Admin Sync Fixes
- */
+//!summaryignore
 
 // --- UTILS ---
 const $ = id => document.getElementById(id);
@@ -568,6 +565,7 @@ const MSGS = {
 };
 
 let initialTimestamp = null;
+//!endsummaryignore
 
 // --- SOUND ENGINE ---
 class SoundManager {
@@ -1889,7 +1887,7 @@ class ShopSystem {
         this.updateUI();
     }
 }
-
+//!summaryignore
 // --- NETWORK (MQTT) ---
 class NetworkManager {
     constructor() {
@@ -2818,6 +2816,8 @@ const creditsData = {
 // JANK AUDIO FIX
 Sound.loadSettings()
 // bruh
+
+//!endsummaryignore
 document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
 </script>
 </body>
