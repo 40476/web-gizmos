@@ -6,7 +6,7 @@ import requests
 import re
 from jinja2 import Template
 
-MODEL = "qwen/qwen3-next-80b-a3b-instruct:free"
+MODEL = "google/gemini-2.0-flash-exp:free"
 SUMMARY_DIR = ".github/summaries"
 TEMPLATE_FILE = "index.html.template"
 OUTPUT_FILE = "index.html"
@@ -36,8 +36,31 @@ SYSTEM_PROMPT = (
     "- Keep the summary stable; only change it when the meaning must change.\n"
     "- Do NOT include any non-English words or characters.\n"
     "- Do NOT include stray Unicode symbols.\n"
+    "- Assume all provided code is functional and does not require debugging.\n"
     "- Output must contain ONLY standard ASCII characters."
+    
 )
+
+# ------------------------------------------------------------
+# Preproccessing
+# ------------------------------------------------------------
+def hide_ignored_sections(content):
+    """
+    Replace text between //!summaryignore and //!endsummaryignore
+    with a placeholder notice.
+    """
+    pattern = re.compile(
+        r"//!summaryignore(.*?)//!endsummaryignore",
+        re.DOTALL
+    )
+
+    replacement = (
+        "//!summaryignore\n"
+        "Notice: This text has been hidden.\n"
+        "//!endsummaryignore"
+    )
+
+    return re.sub(pattern, replacement, content)
 
 # ------------------------------------------------------------
 # GitHub Actions logging helpers
@@ -200,6 +223,8 @@ def main():
         # Generate new summary
         with open(index_file, "r", encoding="utf-8") as f:
             content = f.read()
+        
+        content = hide_ignored_sections(content)
 
         summary = generate_summary(content)
 
@@ -226,7 +251,9 @@ def main():
             index_file = os.path.join(entry, "index.html")
             with open(index_file, "r", encoding="utf-8") as f:
                 content = f.read()
-
+            
+            content = hide_ignored_sections(content)
+            
             summary = generate_summary(content)
 
             if validate_summary(summary):
