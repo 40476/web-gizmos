@@ -521,11 +521,16 @@ const MSGS = {
         "spawned in.",
         "slid into the server.",
         "has entered the chat.",
-        "compiled successfully.",
-        "sudo joined the game.",
+        "is here to steal your ores.",
         "initialized connection.",
-        "mounted the filesystem.",
-        "pinged the server."
+        "mounted their filesystem.",
+        "is among us.",
+        "has joined! Hide your snacks.",
+        "*Record scratch* *Freeze frame* Yup, that's <user>. You're probably wondering how they got here.",
+        "A wild <user> appeared!",
+        "Everyone panic! <user> has arrived!",
+        "<user> has joined. The quality of this room just went up by 0.0001%.",
+        "<user> is now watching you. (Just kidding... probably.)"
     ],
     leave: [
         "rage quit.",
@@ -533,22 +538,31 @@ const MSGS = {
         "received SIGTERM.",
         "failed to compile.",
         "segfaulted.",
-        "kernel panic.",
-        "unmounted.",
-        "disconnected by peer."
+        "touched grass (Fatal Error).",
+        "kernel panicked.",
+        "unmounted themselves.",
+        "decided to touch grass."
     ],
-    kick: ["was yeeted.", "read the TOS wrong.", "was shown the door.", "lost sudo privileges."],
-    ban: ["has been banished to the shadow realm.", "caught the ban hammer.", "was added to the blacklist."],
+    kick: [
+        "was yeeted.",
+        "read the TOS wrong.",
+        "was shown the door.",
+        "forgot to pay rent."
+    ],
+    ban: [
+        "has been banished to the shadow realm.",
+        "caught the ban hammer.",
+        "was added to the blacklist.",
+        "was banished from this kingdom."
+    ],
     death: [
         "forgot to breathe.",
         "became bedrock.",
         "needs a tutorial.",
-        "touched grass (Fatal Error).",
         "rm -rf /'d themselves.",
-        "is not in the sudoers file.",
-        "forgot to chmod +x their life.",
         "experienced a stack overflow.",
-        "dereferenced a null pointer."
+        "dereferenced a null pointer.",
+        "got rekt."
     ],
     rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
 };
@@ -1909,7 +1923,7 @@ class NetworkManager {
         let n = now();
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
-                const msg = `${Game.remotePlayers[id].username} ${UI.rndMsg('leave')}`;
+                const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
                 UI.addMessage("System", msg, "#888");
                 Sound.playChat('leave');
                 delete Game.remotePlayers[id];
@@ -1995,7 +2009,7 @@ class NetworkManager {
             else {
                 // Only show message if we didn't know them before
                 if(!Game.remotePlayers[msg.id]) {
-                    UI.addMessage("System", `${msg.username} ${UI.rndMsg('join')}`, "#aaa");
+                    UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
                     Sound.playChat('join');
                 }
                 Game.remotePlayers[msg.id] = {
@@ -2033,11 +2047,11 @@ class NetworkManager {
             this.sendMapDiff(msg.from);
         }
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
-        else if (msg.type === 'death') { UI.addMessage("System", `${msg.name} ${UI.rndMsg('death')}`, "#f55"); Sound.playChat('death'); }
+        else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#f55"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
-            if (msg.target === Game.localPlayer.id) { alert(UI.rndMsg('kick')); location.reload(); }
+            if (msg.target === Game.localPlayer.id) { alert(UI.formatMsg('You', 'kick')); location.reload(); }
             else {
-                if(Game.remotePlayers[msg.target]) UI.addMessage("System", `${Game.remotePlayers[msg.target].username} ${UI.rndMsg('kick')}`, "red");
+                if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "red");
                 delete Game.remotePlayers[msg.target];
             }
         }
@@ -2045,7 +2059,7 @@ class NetworkManager {
             Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
             UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
             Sound.playSuccess();
-            if (Game.localPlayer.fuel < 20) UI.addMessage("System", `${Game.settings.username} ${UI.rndMsg('rescue')}`, "orange");
+            if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "orange");
         }
     }
 
@@ -2146,6 +2160,15 @@ class UIManager {
     }
 
     rndMsg(type) { const arr = MSGS[type]; return arr[Math.floor(Math.random() * arr.length)]; }
+
+    formatMsg(username, type) {
+        let msg = this.rndMsg(type);
+        if (msg.includes('<user>')) {
+            return msg.replace(/<user>/g, username);
+        }
+        return `${username} ${msg}`;
+    }
+
     addMessage(name, text, color='#fff') {
         const div = document.createElement('div');
         div.innerHTML = `<span style="color:${color}; font-weight:bold;">${name}:</span> ${text}`;
