@@ -407,7 +407,7 @@
 
             <div class="form-group">
                 <label>Active Broker (Set in Start Screen)</label>
-                <input type="text" id="setting-broker" placeholder="wss://broker.emqx.io:8084/mqtt" disabled style="opacity:0.7">
+                <input type="text" id="setting-broker" placeholder="wss://...t" disabled style="opacity:0.7">
                 <small style="color:#777;">Reload to change connection.</small>
             </div>
 
@@ -471,8 +471,8 @@
 
 <script>
 /**
- * MEGA MINER ONLINE v3.7
- * Updates: Fixed Minimap scaling, Linux Gamer Messages, Day/Night Fix
+ * MEGA MINER ONLINE v3.8
+ * Updates: Save Protection, Host Map Auth, Admin Sync Fixes
  */
 
 // --- UTILS ---
@@ -958,8 +958,10 @@ class GameEngine {
             this.localPlayer.stats.startTime = now();
             Sound.init();
 
-            // Check if we are host and load save if exists
+            // Force update status based on players seen during the timeout
             this.updateAdminStatus();
+
+            // ONLY load save if we are the host (Admin)
             if (this.isAdmin) {
                 const lastId = localStorage.getItem('mm_last_save_id');
                 if (lastId) {
@@ -967,6 +969,11 @@ class GameEngine {
                     await SaveSystem.loadGame(parseInt(lastId), true);
                     UI.addMessage("System", "Auto-loaded previous save.", "#2ecc71");
                 }
+            } else {
+                // If we are NOT admin (Client), ensure we rely on the procedural map + sync
+                // We do NOT load any local saves to prevent overwriting the host's world
+                Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
+                UI.addMessage("System", "Connected as Client. Waiting for Map Sync...", "#3498db");
             }
 
             this.loop();
@@ -1490,7 +1497,7 @@ class GameEngine {
 
                 if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
                 else if (this.discovered[y][x]) {
-                    this.ctx.globalAlpha = 0.3;
+                    this.ctx.globalAlpha = 0.9;
                     this.drawProceduralTile(x, y, tile, false);
                     this.ctx.globalAlpha = 1.0;
                 }
@@ -2149,7 +2156,6 @@ class UIManager {
         this.defaultServers = [
             "wss://broker.emqx.io:8084/mqtt",
             "wss://broker.hivemq.com:8884/mqtt",
-            "wss://mqtt.eclipseprojects.io:443/mqtt",
             "wss://test.mosquitto.org:8081"
         ];
         this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
@@ -2435,6 +2441,12 @@ class SaveSystem {
     // --- CORE SAVE LOGIC ---
 
     static async createNewSave() {
+        // PROTECTION: Only Admin can create/save games
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            UI.showToast("Only Admin can create saves.", "error");
+            return;
+        }
+
         const name = prompt("Enter Save Name:", "New World " + new Date().toLocaleTimeString());
         if(!name) return;
 
@@ -2446,6 +2458,12 @@ class SaveSystem {
     }
 
     static async saveCurrent() {
+        // PROTECTION: Only Admin can save
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            UI.showToast("Only Admin can save.", "error");
+            return;
+        }
+
         if(this.currentSaveId) {
             await this.saveGame(this.currentSaveId);
         } else {
@@ -2454,6 +2472,11 @@ class SaveSystem {
     }
 
     static async saveGame(id, name = null, isAuto = false) {
+        // PROTECTION: Redundant check for internal calls
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            return;
+        }
+
         try {
             await this.initDB();
 
@@ -2519,6 +2542,12 @@ class SaveSystem {
     }
 
     static async loadGame(id, silent = false) {
+        // PROTECTION: Only Admin can load saves
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            if(!silent) UI.showToast("Only Admin (Host) can load saves.", "error");
+            return;
+        }
+
         await this.initDB();
 
         try {
@@ -2622,6 +2651,13 @@ class SaveSystem {
     }
 
     static importSave(input) {
+        // PROTECTION: Only Admin can import saves
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+             UI.showToast("Only Admin (Host) can import saves.", "error");
+             input.value = '';
+             return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
