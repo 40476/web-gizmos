@@ -1,419 +1,2841 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Applications</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mega Miner Online - MQTT Multiplayer</title>
+    <!-- MQTT.js Library -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        /* CSS Reset & Normalization */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
-  <style>
-    :root {
-      --bg: #f5f5f5;
-      --text: #222;
-      --card-bg: #fff;
-      --card-shadow: rgba(0,0,0,0.1);
-      --link: #0077cc;
-      --sidebar-bg: #222;
-      --sidebar-text: #eee;
-      --sidebar-hover: #fff;
+        :root {
+            --bg-color: #0d0d0d;
+            --panel-bg: rgba(20, 25, 40, 0.95);
+            --text-color: #eee;
+            --accent: #2980b9;
+            --highlight: #f39c12;
+            --danger: #c0392b;
+            --success: #27ae60;
+
+        }
+        body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
+
+        canvas { display: block; width: 100vw; height: 100vh; }
+
+        /* UI Overlay */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .pointer-events-auto { pointer-events: auto; }
+
+        /* Gear Icon */
+        #gear-btn { position: absolute; top: 10px; left: 10px; font-size: 30px; color: rgba(255,255,255,0.5); cursor: pointer; pointer-events: auto; z-index: 50; transition: all 0.3s; }
+        #gear-btn:hover { color: #fff; transform: rotate(90deg); }
+
+        /* Coords Display */
+        #coords-display { position: absolute; top: 10px; left: 60px; font-size: 14px; color: #aaa; font-family: monospace; display: none; text-shadow: 1px 1px 0 #000; }
+
+        /* Overheat Overlay */
+        #heat-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; box-shadow: inset 0 0 0px var(--danger); transition: box-shadow 0.2s; opacity: 0; }
+
+        /* Connection Screens */
+        #connection-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
+        #connection-log { font-family: monospace; color: var(--success); margin-top: 20px; font-size: 14px; text-align: left; width: 300px; height: 100px; overflow-y: auto; border: 1px solid #333; padding: 10px; background: #000; }
+        .log-line { margin: 2px 0; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--highlight); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Connection Lost Overlay */
+        #disconnect-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--danger); font-size: 32px; font-weight: bold; background: rgba(0,0,0,0.8); padding: 20px; border: 2px solid var(--danger); display: none; z-index: 200; text-align: center; }
+
+        /* Chat */
+        #chat-container { position: absolute; bottom: 120px; left: 10px; width: 300px; height: 150px; display: flex; flex-direction: column; pointer-events: auto; opacity: 0.8; transition: opacity 0.3s; z-index: 10; }
+        #chat-container:hover { opacity: 1; }
+        #chat-messages { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.6); padding: 5px; font-size: 12px; scrollbar-width: thin; text-shadow: 1px 1px 0 #000; border: 1px solid #444; }
+        #chat-input { background: rgba(0,0,0,0.8); border: 1px solid #444; color: white; padding: 5px; width: 100%; box-sizing: border-box; }
+
+        /* Minimap */
+        #minimap-container { position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; border: 2px solid #555; background: #000; z-index: 20; overflow: hidden; }
+        #minimap { display: block; width: 100%; height: 100%; }
+
+        /* Interaction Prompts */
+        #prompt-msg { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); color: var(--highlight); font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px #000; display: none; pointer-events: none; text-align: center; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 600px; max-height: 85vh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
+        .modal.active { display: block; }
+        .modal h2 { margin-top: 0; color: var(--highlight); border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaa; text-transform: uppercase; }
+        .form-group input[type="text"], .form-group select { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: white; box-sizing: border-box; }
+        .form-group input:disabled { opacity: 0.5; cursor: not-allowed; }
+        input[type=range] { width: 100%; accent-color: var(--accent); }
+
+        /* Shop Grid */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-item { background: rgba(0,0,0,0.3); padding: 10px; border: 1px solid #444; display: flex; flex-direction: column; justify-content: space-between; }
+        .shop-item h4 { margin: 0 0 5px 0; color: var(--accent); }
+        .shop-item p { font-size: 12px; color: #ccc; margin: 0 0 5px 0; }
+        .shop-item .cost { color: var(--highlight); font-weight: bold; font-size: 14px; }
+
+        /* Sell List */
+        .sell-list { max-height: 150px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #444; background: #111; }
+        .sell-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-bottom: 1px solid #333; font-size: 12px; }
+        .sell-row:last-child { border-bottom: none; }
+        .sell-actions button { margin-left: 5px; padding: 2px 8px; font-size: 10px; }
+
+        /* Dashboard (Stats/Inventory) */
+        .dash-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 5px; max-height: 200px; overflow-y: auto; }
+        .inv-item { background: #222; border: 1px solid #444; padding: 5px; text-align: center; cursor: pointer; font-size: 10px; position: relative; transition: all 0.2s; pointer-events: auto; }
+        .inv-item:hover { border-color: #fff; background: #333; }
+        .inv-item.active { border-color: gold; box-shadow: 0 0 8px gold; background: rgba(255, 215, 0, 0.1); transform: scale(1.05); z-index: 10; }
+        .inv-count { position: absolute; bottom: 2px; right: 2px; font-weight: bold; color: #fff; }
+        .inv-trash { position: absolute; top: 0; right: 0; background: #c0392b; color: white; width: 15px; height: 15px; font-size: 10px; line-height: 15px; display: none; cursor: pointer; }
+        .inv-trash:hover { filter: brightness(1.2); }
+        .inv-item:hover .inv-trash { display: block; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid #333; padding: 2px 0; }
+
+        .btn { background: var(--accent); color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; }
+        .btn:hover { background: #3498db; filter: brightness(1.2); }
+        .btn:disabled { background: #555; cursor: not-allowed; filter: none; }
+        .btn-small { width: auto; padding: 4px 8px; font-size: 12px; margin-right: 5px; }
+        .btn-bind { background: #444; border: 1px solid #666; color: #fff; text-align: left; position: relative; }
+        .btn-bind.binding { background: #c0392b; border-color: #e74c3c; animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        /* Credits Modal */
+        #credits-modal .credits-section {
+            margin-bottom: 25px;
+        }
+
+        #credits-modal h3 {
+            margin: 10px 0;
+            color: var(--accent);
+            font-size: 18px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .credit-entry {
+            margin-left: 15px;
+            margin-top: 8px;
+        }
+
+        .credit-entry strong {
+            color: var(--highlight);
+            font-size: 14px;
+        }
+
+        .credit-entry ul {
+            margin: 5px 0 10px 20px;
+            padding: 0;
+        }
+
+        .credit-entry li {
+            list-style: none;
+            font-size: 12px;
+            color: #ccc;
+            margin: 2px 0;
+        }
+
+        #credits-modal .simple-list li {
+            list-style: none;
+            margin: 4px 0;
+            color: #ccc;
+            font-size: 13px;
+        }
+
+        /* Server Status */
+        .server-option { display: flex; justify-content: space-between; font-size: 12px; padding: 2px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
+        .status-dot.green { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+        .status-dot.red { background: #e74c3c; }
+
+        /* Save Slots */
+        .save-list-wrapper { max-height: 200px; overflow-y: auto; border: 1px solid #444; background: #111; padding: 5px; margin-bottom: 10px; }
+        .save-slot { background: rgba(0,0,0,0.4); padding: 8px; border: 1px solid #555; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .save-slot:hover { background: rgba(255,255,255,0.05); }
+        .save-slot.active { border-color: var(--highlight); box-shadow: inset 0 0 10px rgba(243, 156, 18, 0.2); }
+        .save-slot-info { font-size: 12px; color: #ccc; flex: 1; }
+        .save-slot-actions { display:flex; gap: 5px; }
+        .save-slot-actions button { margin: 0; padding: 4px 8px; font-size: 10px; }
+
+        /* Start Screen */
+        #start-screen { position: absolute;
+          background-image:
+            linear-gradient(30deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(150deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(30deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(150deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
+            linear-gradient(60deg, #68313180 25%, transparent 25.5%, transparent 75%, #68313180 75%, #68313180),
+            linear-gradient(60deg, #68313180 25%, transparent 25.5%, transparent 75%, #68313180 75%, #68313180);
+        	background-size: 20px 35px;
+          background-position: 0 0, 0 0, 10px 17.5px, 10px 17.5px, 0 0, 10px 17.5px;
+          background-color: #362520;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 50;
+          pointer-events: auto;
+        }
+        #start-screen h1 { font-size: 48px; color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight); }
+
+        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; max-width: 800px;}
+        .start-panel { width:300px; }
+        .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; }
+
+        /* Server List Styles */
+        .server-list-item { background:rgba(0,0,0,0.3); padding:8px; margin-bottom:5px; border:1px solid #333; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:0.2s; }
+        .server-list-item:hover { background:rgba(255,255,255,0.05); }
+        .server-list-item.active { border-color:var(--highlight); box-shadow:inset 0 0 5px rgba(243, 156, 18, 0.2); }
+        .server-status-icon { width:12px; height:12px; margin-right:8px; display:flex; align-items:center; justify-content:center; }
+        .spin-loader { border: 2px solid #555; border-top: 2px solid #fff; border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; }
+
+        /* Notification/Error Popup */
+        #notification-area { position: absolute; top: 20px; right: 180px; width: 300px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 200; }
+        .toast { background: rgba(30, 30, 30, 0.95); border-left: 4px solid var(--accent); padding: 12px; color: white; pointer-events: auto; animation: slideIn 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 14px; }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.success { border-left-color: var(--success); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Admin Panel */
+        #admin-panel { position: absolute; top: 165px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; display: none; pointer-events: auto; width: 150px; border: 1px solid #555; }
+        .player-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="heat-overlay"></div>
+
+        <!-- Gear Icon -->
+        <div id="gear-btn" onclick="UI.openSettings()">&#9881;</div>
+
+        <!-- Coords -->
+        <div id="coords-display">X: 0 Y: 0</div>
+
+        <!-- Connection Lost -->
+        <div id="disconnect-msg">CONNECTION LOST<br><span style="font-size:16px; font-weight:normal; color:#fff;">Trying to reconnect...</span></div>
+
+        <!-- Connection Screen -->
+        <div id="connection-screen">
+            <div class="spinner"></div>
+            <h2 style="color:#fff; margin-top:20px;">ESTABLISHING UPLINK</h2>
+            <div id="connection-log"></div>
+        </div>
+
+        <!-- Minimap -->
+        <div id="minimap-container">
+            <canvas id="minimap"></canvas>
+        </div>
+
+        <!-- Chat -->
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Press CHAT key to type...">
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-panel">
+            <h4 style="margin:0 0 10px 0; color:gold; font-size:12px;">ADMIN PANEL</h4>
+            <div id="player-list"></div>
+        </div>
+
+        <!-- Prompt -->
+        <div id="prompt-msg"></div>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>Mega Miner</h1>
+            <div class="start-container">
+                <div class="start-panel">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="start-username" value="Miner1" maxlength="12">
+                    </div>
+                    <div class="form-group">
+                        <label>Room ID</label>
+                        <input type="text" id="start-room" value="public-mine-1">
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Color</label>
+                        <input type="color" id="start-color" value="#3498db" style="height:40px;">
+                    </div>
+                    <button class="btn" onclick="Game.init()">LAUNCH MISSION</button>
+                    <button class="btn" style="margin-top:10px; background:#444;" onclick="UI.openSettings()">SETTINGS / IMPORT</button>
+                </div>
+
+                <div class="server-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <label style="margin:0; font-size:12px; color:#aaa;">SERVER STATUS</label>
+                        <button class="btn btn-small" style="width:auto; padding:2px 5px;" onclick="UI.refreshServerList()">&#8635;</button>
+                    </div>
+                    <div id="server-list-sidebar" style="flex:1; overflow-y:auto; max-height:200px; margin-bottom:10px;">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Add Custom Server</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="custom-server-input" placeholder="wss://..." style="font-size:11px;">
+                            <button class="btn btn-small" style="width:auto;" onclick="UI.addCustomServer()">+</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; font-size:10px; color:#e74c3c; line-height:1.4; background:rgba(231, 76, 60, 0.1); padding:5px; border:1px solid #e74c3c;">
+                        <strong>WARNING:</strong> You must select the SAME server as your friends to see them. Check status before joining.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Modal (Inventory/Stats) -->
+        <div id="dashboard-modal" class="modal">
+            <h2>Pilot Dashboard</h2>
+            <div class="dash-cols">
+                <div>
+                    <h4 style="color:#aaa; border-bottom:1px solid #444;">INVENTORY / BUILD</h4>
+                    <p style="font-size:11px; color:#777;">Click item to Equip for Building (B). Hover to Trash (Shift+Click to Trash All).</p>
+                    <button class="btn btn-small" style="background:#c0392b; width:100%; margin-bottom:10px;" onclick="Game.trashJunk()">TRASH ALL JUNK (Dirt/Stone)</button>
+                    <div id="inv-grid" class="inv-grid"></div>
+                    <div id="station-btn-container" style="margin-top:20px; display:none;">
+                        <button class="btn" style="background:var(--success);" onclick="Shop.open()">OPEN STATION SHOP</button>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="color:#aaa; border-bottom:1px solid #444;">STATISTICS</h4>
+                    <div id="stats-container"></div>
+
+                    <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">LEADERBOARD (Local)</h4>
+                    <div id="leaderboard-container"></div>
+                </div>
+            </div>
+            <button class="btn" style="background:#555; margin-top:20px;" onclick="$('dashboard-modal').classList.remove('active')">Close</button>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="shop-modal" class="modal">
+            <h2>Service Station</h2>
+            <div style="text-align:center; margin-bottom:15px; font-size:18px;">
+                Wallet: <span id="shop-money" style="color:gold; font-weight:bold;">$0</span>
+            </div>
+            <button class="btn" style="margin-bottom:10px; background:var(--success);" onclick="Shop.sellAll()">SELL ALL ORES</button>
+            <button class="btn" style="margin-bottom:10px; background:var(--success);" onclick="Shop.refuelRepair()">Refuel and Repair ($10)</button>
+
+            <h4 style="color:#aaa; border-bottom:1px solid #444;">SELL MINERALS</h4>
+            <div id="sell-list" class="sell-list"></div>
+
+            <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">UPGRADES</h4>
+            <div class="shop-grid">
+                <div class="shop-item">
+                    <h4>Diamond Drill</h4>
+                    <p>Increases Mining Tier.</p>
+                    <div class="cost" id="cost-drill"></div>
+                    <button class="btn" id="btn-drill" onclick="Shop.buy('drill')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Nanite Hull</h4>
+                    <p>Increases Max HP.</p>
+                    <div class="cost" id="cost-hull"></div>
+                    <button class="btn" id="btn-hull" onclick="Shop.buy('hull')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Fuel Compactor</h4>
+                    <p>Increases Fuel Capacity.</p>
+                    <div class="cost" id="cost-fuel"></div>
+                    <button class="btn" id="btn-fuel" onclick="Shop.buy('fuel')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Cargo Bay</h4>
+                    <p>Increases Carrying Capacity.</p>
+                    <div class="cost" id="cost-cargo"></div>
+                    <button class="btn" id="btn-cargo" onclick="Shop.buy('cargo')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Heat Shield</h4>
+                    <p>Resist high temperatures.</p>
+                    <div class="cost" id="cost-cool"></div>
+                    <button class="btn" id="btn-cool" onclick="Shop.buy('cool')">Upgrade</button>
+                </div>
+                <div class="shop-item">
+                    <h4>X-Ray Optics</h4>
+                    <p>See minerals through walls.</p>
+                    <div class="cost" id="cost-xray"></div>
+                    <button class="btn" id="btn-xray" onclick="Shop.buy('xray')">Upgrade</button>
+                </div>
+                 <div class="shop-item">
+                    <h4>Vehicle Paint</h4>
+                    <p>Change your look.</p>
+                    <input type="color" id="shop-color-picker" style="width:100%; height:30px; margin-bottom:5px;">
+                    <button class="btn" onclick="Shop.buy('paint')">Repaint ($100)</button>
+                </div>
+            </div>
+            <button class="btn" style="background:#555; margin-top:20px;" onclick="Shop.close()">Exit Station</button>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal">
+            <h2>Settings</h2>
+
+            <div class="form-group">
+                <label>Audio Mixer</label>
+                <div style="font-size:12px; display:grid; grid-template-columns: 1fr 3fr 1fr; gap:10px; align-items:center;">
+                    <span>Master</span> <input type="range" id="vol-master" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('master', this.value)"> <span id="vol-disp-master">50%</span>
+                    <span>Music</span> <input type="range" id="vol-music" min="0" max="1" step="0.01" value="0.1" oninput="Sound.setVolume('music', this.value)"> <span id="vol-disp-music">50%</span>
+                    <span>SFX</span> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('sfx', this.value)"> <span id="vol-disp-sfx">50%</span>
+                    <span>Engine</span> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)"> <span id="vol-disp-engine">50%</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Update Checker</label>
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <button class="btn btn-small" style="width:auto;" onclick="UI.checkForUpdates()">Check For Updates</button>
+                </div>
+                <div id="gh-status" style="font-size:11px; color:#aaa;">Check official repo for updates.</div>
+            </div>
+
+            <div class="form-group">
+                <label>Active Broker (Set in Start Screen)</label>
+                <input type="text" id="setting-broker" placeholder="wss://...t" disabled style="opacity:0.7">
+                <small style="color:#777;">Reload to change connection.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Options</label>
+                <div style="display:flex; gap:15px;">
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)"> Autosave (60s)
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="update-check-toggle" checked> Autocheck Updates (60s)
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
+                    </label>
+                </div>
+                <button class="btn btn-small" style="margin-top:5px; background:#444;" onclick="Network.requestMap(Game.localPlayer.id)">Force Map Sync</button>
+            </div>
+
+            <div class="form-group">
+                <label>Save Management (IndexedDB)</label>
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <button class="btn" style="flex:1; background:var(--success);" onclick="SaveSystem.createNewSave()">+ NEW SAVE</button>
+                    <button class="btn" style="flex:1;" onclick="SaveSystem.saveCurrent()">SAVE CURRENT</button>
+                </div>
+                <div id="save-list-wrapper" class="save-list-wrapper">
+                    <!-- Saves injected here -->
+                </div>
+                <small style="color:#777;">Saves are unlimited. Green border indicates current session.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Controls</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:12px;">
+                    <button id="btn-bind-up" class="btn btn-bind" onclick="Input.startBind('up')">UP</button>
+                    <button id="btn-bind-left" class="btn btn-bind" onclick="Input.startBind('left')">LEFT</button>
+                    <button id="btn-bind-down" class="btn btn-bind" onclick="Input.startBind('down')">DOWN</button>
+                    <button id="btn-bind-right" class="btn btn-bind" onclick="Input.startBind('right')">RIGHT</button>
+                    <button id="btn-bind-build" class="btn btn-bind" onclick="Input.startBind('build')">BUILD</button>
+                    <button id="btn-bind-interact" class="btn btn-bind" onclick="Input.startBind('interact')">MENU/INTERACT</button>
+                    <button id="btn-bind-transfer" class="btn btn-bind" onclick="Input.startBind('transfer')">TRANSFER</button>
+                    <button id="btn-bind-chat" class="btn btn-bind" onclick="Input.startBind('chat')">CHAT</button>
+                </div>
+                <small>Hold BUILD + Arrow to place Equipped block. Mouse Wheel to Zoom.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Backup Data (File)</label>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <button class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">Load Save from File</button>
+                </div>
+                <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
+            </div>
+            <div id="credits"></div>
+            <button class="btn" onclick="UI.closeSettings()">Close</button>
+        </div>
+    </div>
+
+    <!-- Notification Area -->
+    <div id="notification-area"></div>
+
+<script>
+/**
+ * MEGA MINER ONLINE v3.8
+ * Updates: Save Protection, Host Map Auth, Admin Sync Fixes, Toast Debounce
+ */
+
+// --- UTILS ---
+const $ = id => document.getElementById(id);
+const uuid = () => Math.random().toString(36).substr(2, 9);
+const now = () => Date.now();
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+const BUILD_TIMESTAMP = Date.now();
+
+// --- SEEDED RNG ---
+const pseudoRandom = (x, y) => {
+    return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
+};
+
+// --- CONFIG & STATE ---
+const CONSTANTS = {
+    TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1,
+    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 200, MAP_HEIGHT: 600, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
+};
+
+const TILE_TYPES = {
+    EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, DEEP_SLATE: 5,
+    COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11,
+    CASING: 20, BEDROCK: 99
+};
+
+const TILE_PROPS = {
+    [TILE_TYPES.EMPTY]: { name: "Empty" },
+    [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 1, value: 0, tier: 0 },
+    [TILE_TYPES.GRASS]: { name: "Grass", color: '#388e3c', hardness: 1, value: 0, tier: 0 },
+    [TILE_TYPES.STONE]: { name: "Stone", color: '#7f8c8d', hardness: 3, value: 0, tier: 1 },
+    [TILE_TYPES.HARD_STONE]: { name: "Dense Stone", color: '#525a5b', hardness: 6, value: 0, tier: 2 },
+    [TILE_TYPES.DEEP_SLATE]: { name: "Deep Slate", color: '#2c3e50', hardness: 10, value: 0, tier: 3 },
+    [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 },
+    [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 4, value: 50, tier: 1 },
+    [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 6, value: 150, tier: 2 },
+    [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 10, value: 500, tier: 3 },
+    [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 12, value: 800, tier: 3 },
+    [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 15, value: 1200, tier: 4 },
+    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 2, value: 0, tier: 0 },
+    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 0, tier: 99 }
+};
+
+const MSGS = {
+    join: [
+        "spawned in.",
+        "slid into the server.",
+        "has entered the chat.",
+        "is here to steal your ores.",
+        "initialized connection.",
+        "mounted their filesystem.",
+        "is among us.",
+        "has joined! Hide your snacks.",
+        "*Record scratch* *Freeze frame* Yup, that's <user>. You're probably wondering how they got here.",
+        "A wild <user> appeared!",
+        "Everyone panic! <user> has arrived!",
+        "<user> has joined. The quality of this room just went up by 0.0001%.",
+        "<user> is now watching you. (Just kidding... probably.)"
+    ],
+    leave: [
+        "rage quit.",
+        "timed out (RIP).",
+        "received SIGTERM.",
+        "failed to compile.",
+        "segfaulted.",
+        "touched grass (Fatal Error).",
+        "kernel panicked.",
+        "unmounted themselves.",
+        "decided to touch grass."
+    ],
+    kick: [
+        "was yeeted.",
+        "read the TOS wrong.",
+        "was shown the door.",
+        "forgot to pay rent."
+    ],
+    ban: [
+        "has been banished to the shadow realm.",
+        "caught the ban hammer.",
+        "was added to the blacklist.",
+        "was banished from this kingdom."
+    ],
+    death: [
+        "forgot to breathe.",
+        "became bedrock.",
+        "needs a tutorial.",
+        "rm -rf /'d themselves.",
+        "experienced a stack overflow.",
+        "dereferenced a null pointer.",
+        "got rekt."
+    ],
+    rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
+};
+
+let initialTimestamp = null;
+
+// --- SOUND ENGINE ---
+class SoundManager {
+    constructor() {
+        this.ctx = null;
+        this.nodes = {};
+        this.volumes = { master: 0.5, music: 0.5, sfx: 0.5, engine: 0.3 };
+        this.playlist = ['audio/Chiptronical.ogg', 'audio/Great_Little_Challenge.ogg', 'audio/Solve_The_Puzzle.ogg', 'audio/Sneaky_Snitch.mp3', 'audio/cozy-lofi-relax-468509.mp3', 'audio/field-duel-lofi-464436.mp3', 'audio/lofi-background-music-3-471122.mp3','audio/chill-lofi-beat-469069.mp3'];
+        this.currentTrack = 0;
+        this.noiseBuffer = null;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #111;
-        --text: #eee;
-        --card-bg: #1c1c1c;
-        --card-shadow: rgba(255,255,255,0.05);
-        --link: #4da3ff;
-        --sidebar-bg: #000;
-        --sidebar-text: #ccc;
-        --sidebar-hover: #fff;
+    init() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.noiseBuffer = this.createNoiseBuffer();
+            this.setupNodes();
+            this.setupEngineLoop();
+            this.playNextMusic();
+        } else if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    setupNodes() {
+        this.nodes.master = this.ctx.createGain();
+        this.nodes.master.gain.value = this.volumes.master;
+        this.nodes.master.connect(this.ctx.destination);
+
+        this.nodes.music = this.ctx.createGain();
+        this.nodes.music.gain.value = this.volumes.music;
+        this.nodes.music.connect(this.nodes.master);
+
+        this.nodes.sfx = this.ctx.createGain();
+        this.nodes.sfx.gain.value = this.volumes.sfx;
+        this.nodes.sfx.connect(this.nodes.master);
+
+        this.nodes.engine = this.ctx.createGain();
+        this.nodes.engine.gain.value = this.volumes.engine;
+        this.nodes.engine.connect(this.nodes.master);
+    }
+
+    setVolume(type, val) {
+        this.volumes[type] = parseFloat(val);
+        if (this.nodes[type]) this.nodes[type].gain.setTargetAtTime(this.volumes[type], this.ctx.currentTime, 0.1);
+        else if (type === 'master' && this.nodes.master) this.nodes.master.gain.setTargetAtTime(this.volumes[type], this.ctx.currentTime, 0.1);
+        $(`vol-disp-${type}`).innerText = Math.round(val*100) + '%';
+        localStorage.setItem(`mm_vol_${type}`, val);
+    }
+
+    createNoiseBuffer() {
+        if (!this.ctx) return null;
+        const bufSize = this.ctx.sampleRate * 2;
+        const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        return buffer;
+    }
+
+    setupEngineLoop() {
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.noiseBuffer;
+        noise.loop = true;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 100;
+        const gain = this.ctx.createGain();
+        gain.gain.value = 0;
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.nodes.engine);
+        noise.start();
+
+        this.nodes.engineRumbleGain = gain;
+        this.nodes.engineFilter = filter;
+
+        const grindNoise = this.ctx.createBufferSource();
+        grindNoise.buffer = this.noiseBuffer;
+        grindNoise.loop = true;
+        grindNoise.playbackRate.value = 0.5;
+
+        const grindFilter = this.ctx.createBiquadFilter();
+        grindFilter.type = 'bandpass';
+        grindFilter.frequency.value = 150;
+        grindFilter.Q.value = 1.0;
+
+        const grindGain = this.ctx.createGain();
+        grindGain.gain.value = 0;
+
+        grindNoise.connect(grindFilter);
+        grindFilter.connect(grindGain);
+        grindGain.connect(this.nodes.engine);
+        grindNoise.start();
+
+        this.nodes.drillGain = grindGain;
+        this.nodes.drillFilter = grindFilter;
+    }
+
+    updateEngine(speed, isDrilling) {
+        if (!this.ctx || !this.nodes.engineRumbleGain || !this.nodes.engineFilter || !this.nodes.drillGain || !this.nodes.drillFilter) return;
+
+        const t = this.ctx.currentTime;
+        let baseVol = (speed > 0.1) ? 0.3 : 0.05;
+        let baseFreq = 60 + (speed * 30);
+
+        this.nodes.engineRumbleGain.gain.setTargetAtTime(baseVol, t, 0.2);
+        this.nodes.engineFilter.frequency.setTargetAtTime(baseFreq, t, 0.2);
+
+        if (isDrilling) {
+            this.nodes.drillGain.gain.setTargetAtTime(0.5, t, 0.05);
+            this.nodes.drillFilter.frequency.setTargetAtTime(150 + Math.random()*100, t, 0.1);
+        } else {
+            this.nodes.drillGain.gain.setTargetAtTime(0, t, 0.1);
+        }
+    }
+
+    playTone(freq, type, duration, vol = 0.1) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.nodes.sfx);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    playMining() {
+        if (!this.ctx || !this.noiseBuffer) return;
+        const t = this.ctx.currentTime;
+
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.noiseBuffer;
+        src.playbackRate.value = 0.4 + Math.random() * 0.2;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 500;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.nodes.sfx);
+        src.start();
+        src.stop(t + 0.15);
+    }
+
+    playChat(type) {
+        if (type==='join') { this.playTone(440, 'sine', 0.1); setTimeout(()=>this.playTone(880, 'sine', 0.2), 100); }
+        else if (type==='leave') { this.playTone(440, 'sine', 0.1); setTimeout(()=>this.playTone(220, 'sine', 0.2), 100); }
+        else if (type==='death') { this.playTone(100, 'sawtooth', 0.5, 0.2); }
+        else this.playTone(600, 'triangle', 0.05);
+    }
+    playError() { this.playTone(150, 'sawtooth', 0.3, 0.1); }
+    playSuccess() { this.playTone(800, 'sine', 0.1); setTimeout(()=>this.playTone(1200, 'sine', 0.2), 100); }
+    playBuild() { this.playTone(300, 'square', 0.1); }
+    playThud() { this.playTone(80, 'square', 0.1, 0.3); }
+
+    playNextMusic() {
+      try{
+        if(this.musicSource) { this.musicSource.stop(); }
+        this.currentTrack = Math.floor(Math.random() * 100) % this.playlist.length;
+        const file = this.playlist[this.currentTrack];
+        const audio = new Audio(file);
+        const source = this.ctx.createMediaElementSource(audio);
+        source.connect(this.nodes.music);
+        audio.onended = () => this.playNextMusic();
+        audio.onerror = () => { console.log("Music load failed, skipping"); this.playNextMusic(); };
+        audio.play().catch(e=>console.log("Autoplay blocked"));
+      }catch(e){
+        console.error("Error playing music:", e);
       }
     }
 
-    body.dark {
-      --bg: #111;
-      --text: #eee;
-      --card-bg: #1c1c1c;
-      --card-shadow: rgba(255,255,255,0.05);
-      --link: #4da3ff;
-      --sidebar-bg: #000;
-      --sidebar-text: #ccc;
-      --sidebar-hover: #fff;
+    loadSettings() {
+        ['master', 'music', 'sfx', 'engine'].forEach(t => {
+            const v = localStorage.getItem(`mm_vol_${t}`);
+            if(v !== null) {
+                this.volumes[t] = parseFloat(v);
+                $(`vol-${t}`).value = v;
+                $(`vol-disp-${t}`).innerText = Math.round(v*100) + '%';
+            }
+        });
+    }
+}
+const Sound = new SoundManager();
+
+// --- GAME LOGIC ---
+
+class GameEngine {
+    constructor() {
+        this.canvas = $('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.minimapCanvas = $('minimap');
+        this.minimapCtx = this.minimapCanvas.getContext('2d');
+
+        this.running = false;
+
+        this.settings = {
+            username: 'Miner',
+            color: '#3498db',
+            broker: 'wss://broker.emqx.io:8084/mqtt',
+            room: 'public',
+            keys: {
+                up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown',
+                build: 'b', interact: 'e', chat: 'Enter', transfer: 'f'
+            }
+        };
+
+        this.localPlayer = {
+            id: uuid(),
+            gridX: 100, gridY: 4,
+            x: 0, y: 0,
+            fuel: 100, maxFuel: 100,
+            hull: 100, maxHull: 100,
+            cargo: 0, maxCargo: 50,
+            money: 0,
+            temp: 0, maxTemp: 100,
+            rotation: 0, isDrilling: false,
+            drillTier: 0, heatResist: 0, xrayRange: 0,
+            inventory: {},
+            selectedBlock: TILE_TYPES.CASING,
+            stats: { blocksMined: {}, totalMined: 0, startTime: now() },
+            joinedAt: now()
+        };
+
+        this.map = [];
+        this.discovered = [];
+        this.remotePlayers = {};
+        this.camera = { x: 0, y: 0 };
+        this.zoom = 1.0;
+        this.particles = [];
+        this.isAdmin = false;
+        this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
+        this.lastActionTime = 0;
+        this.lastAutosave = 0;
+        this.fallHeight = 0;
+        this.lastCoordsX = -1;
+        this.lastCoordsY = -1;
+
+        this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
+        this.stationGridY = 4;
+
+        this.loadStoredSettings();
     }
 
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
+    updateAdminStatus() {
+        const players = Object.values(this.remotePlayers)
+            .concat([this.localPlayer])
+            .filter(p => p && p.joinedAt != null);
+
+        if (players.length === 0) {
+            Game.isAdmin = false;
+            return;
+        }
+
+        players.sort((a, b) => a.joinedAt - b.joinedAt);
+        const oldest = players[0];
+
+        Game.isAdmin = (oldest.id === this.localPlayer.id);
     }
 
-    nav {
-      width: 260px;
-      background: var(--sidebar-bg);
-      color: var(--sidebar-text);
-      padding: 20px;
-      box-sizing: border-box;
-      transition: background 0.3s, color 0.3s;
+    loadStoredSettings() {
+        if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
+        if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
+        if(localStorage.getItem('mm_veh_color')) $('start-color').value = localStorage.getItem('mm_veh_color');
+
+        // Load broker from storage or use default if none
+        const storedBroker = localStorage.getItem('mm_broker_url');
+        if (storedBroker) {
+            this.settings.broker = storedBroker;
+            $('setting-broker').value = storedBroker;
+        } else {
+            // Ensure input matches default if nothing stored
+            $('setting-broker').value = this.settings.broker;
+        }
+
+        const showCoords = localStorage.getItem('mm_show_coords');
+        if(showCoords === 'true') { $('coords-toggle').checked = true; this.toggleCoords(true); }
+
+        const binds = localStorage.getItem('mm_keybinds');
+        if(binds) {
+            try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){console.error(e);}
+        }
     }
 
-    nav h2 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      letter-spacing: 0.5px;
+    // Helper to get base procedural for syncing
+    getProceduralTile(x, y) {
+        if (y < 5) return TILE_TYPES.EMPTY;
+        if (y === 5) return TILE_TYPES.GRASS;
+        if (y === CONSTANTS.MAP_HEIGHT - 1) return TILE_TYPES.BEDROCK;
+
+        let r = Game.getMapRandom(x, y);
+        let type = TILE_TYPES.DIRT;
+        if (y > 300) type = TILE_TYPES.DEEP_SLATE;
+        else if (y > 100) type = TILE_TYPES.HARD_STONE;
+        else if (y > 30) type = TILE_TYPES.STONE;
+
+        if (r > 0.985) {
+            if (y > 400) return TILE_TYPES.RUBY;
+            else if (y > 250) return TILE_TYPES.EMERALD;
+            else if (y > 150) return TILE_TYPES.DIAMOND;
+        } else if (r > 0.96) {
+            if (y > 100) return TILE_TYPES.GOLD;
+        } else if (r > 0.92) {
+            if (y > 50) return TILE_TYPES.IRON;
+        } else if (r > 0.88) {
+            return TILE_TYPES.COAL;
+        }
+        return type;
     }
 
-    nav a {
-      display: block;
-      color: var(--sidebar-text);
-      text-decoration: none;
-      padding: 6px 0;
-      font-size: 0.95rem;
-      transition: color 0.2s;
+    init() {
+        this.settings.username = $('start-username').value || 'Miner';
+        this.localPlayer.username = this.settings.username;
+        this.settings.room = $('start-room').value || 'public';
+        this.settings.color = $('start-color').value;
+        this.settings.broker = $('setting-broker').value;
+
+        localStorage.setItem('mm_username', this.settings.username);
+        localStorage.setItem('mm_room_id', this.settings.room);
+        localStorage.setItem('mm_veh_color', this.settings.color);
+        localStorage.setItem('mm_broker_url', this.settings.broker);
+
+        $('start-screen').style.display = 'none';
+        $('connection-screen').style.display = 'flex';
+        this.logConnection("Initializing System...");
+
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('wheel', (e) => {
+            if (e.target.id === 'gameCanvas') {
+                this.zoom = clamp(this.zoom - Math.sign(e.deltaY) * 0.1, CONSTANTS.MIN_ZOOM, CONSTANTS.MAX_ZOOM);
+            }
+        });
+
+        this.minimapCanvas.width = 150;
+        this.minimapCanvas.height = 150;
+
+        let seed = 0;
+        for (let i = 0; i < this.settings.room.length; i++) seed += this.settings.room.charCodeAt(i);
+        this.roomSeed = seed * 12345;
+
+        this.generateMap();
+        Input.init();
+        Sound.loadSettings();
+
+        Network.connect();
+        UI.refreshKeybindLabels();
+        UI.checkForUpdates();
+
+        // Start a new session tracking
+        if (!SaveSystem.currentSaveId) SaveSystem.currentSaveId = Date.now();
     }
 
-    nav a:hover {
-      color: var(--sidebar-hover);
+    logConnection(msg) {
+        const d = document.createElement('div');
+        d.className = 'log-line';
+        d.innerText = `> ${msg}`;
+        $('connection-log').appendChild(d);
+        $('connection-log').scrollTop = $('connection-log').scrollHeight;
     }
 
-    #search {
-      width: 100%;
-      padding: 8px 10px;
-      margin: 15px 0 20px 0;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.95rem;
+    finishConnection() {
+        // Critical: Do not re-initialize game state if we just reconnected
+        if (this.running) {
+            console.log("Reconnected to broker. Game state preserved.");
+            $('connection-screen').style.display = 'none';
+            // Just broadcast position to sync up
+            Network.broadcastMove();
+            return;
+        }
+
+        setTimeout(async () => {
+            $('connection-screen').style.display = 'none';
+
+            this.running = true;
+            this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
+            this.localPlayer.gridY = 4;
+            this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
+            this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+            this.localPlayer.stats.startTime = now();
+            Sound.init();
+
+            // Force update status based on players seen during the timeout
+            this.updateAdminStatus();
+
+            // ONLY load save if we are the host (Admin)
+            if (this.isAdmin) {
+                const lastId = localStorage.getItem('mm_last_save_id');
+                if (lastId) {
+                    console.log("Host detected, loading save:", lastId);
+                    await SaveSystem.loadGame(parseInt(lastId), true);
+                    UI.addMessage("System", "Auto-loaded previous save.", "#2ecc71");
+                }
+            } else {
+                // If we are NOT admin (Client), ensure we rely on the procedural map + sync
+                // We do NOT load any local saves to prevent overwriting the host's world
+                Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
+                UI.addMessage("System", "Connected as Client. Waiting for Map Sync...", "#3498db");
+            }
+
+            this.loop();
+            UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
+            Network.broadcastMove();
+            this.updateAdminStatus();
+        }, 1000);
     }
 
-    main {
-      flex: 1;
-      padding: 40px;
-      box-sizing: border-box;
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
     }
 
-    h1 {
-      margin-top: 0;
-      font-size: 2rem;
+    generateMap() {
+        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+            this.map[y] = [];
+            this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
+            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
+                if (y < 5) {
+                    this.map[y][x] = TILE_TYPES.EMPTY;
+                    this.discovered[y][x] = 1;
+                }
+                else if (y === 5) {
+                     this.map[y][x] = TILE_TYPES.GRASS;
+                     this.discovered[y][x] = 1;
+                }
+                else if (y === CONSTANTS.MAP_HEIGHT - 1) this.map[y][x] = TILE_TYPES.BEDROCK;
+                else {
+                    let r = Game.getMapRandom(x, y);
+                    let type = TILE_TYPES.DIRT;
+                    if (y > 300) type = TILE_TYPES.DEEP_SLATE;
+                    else if (y > 100) type = TILE_TYPES.HARD_STONE;
+                    else if (y > 30) type = TILE_TYPES.STONE;
+
+                    if (r > 0.985) {
+                        if (y > 400) type = TILE_TYPES.RUBY;
+                        else if (y > 250) type = TILE_TYPES.EMERALD;
+                        else if (y > 150) type = TILE_TYPES.DIAMOND;
+                    } else if (r > 0.96) {
+                        if (y > 100) type = TILE_TYPES.GOLD;
+                    } else if (r > 0.92) {
+                        if (y > 50) type = TILE_TYPES.IRON;
+                    } else if (r > 0.88) {
+                        type = TILE_TYPES.COAL;
+                    }
+                    this.map[y][x] = type;
+                }
+            }
+        }
     }
 
-    section {
-      background: var(--card-bg);
-      padding: 20px;
-      margin-bottom: 25px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px var(--card-shadow);
-      transition: background 0.3s, box-shadow 0.3s;
+    getMapRandom(x, y) {
+        const s = Math.sin(x * 12.9898 + y * 78.233 + this.roomSeed) * 43758.5453;
+        return s - Math.floor(s);
     }
 
-    section h2 {
-      margin-top: 0;
-      font-size: 1.4rem;
+    toggleCoords(show) {
+        $('coords-display').style.display = show ? 'block' : 'none';
+        localStorage.setItem('mm_show_coords', show);
     }
 
-    .app-link {
-      display: inline-block;
-      margin-bottom: 10px;
-      font-size: 0.9rem;
-      color: var(--link);
-      text-decoration: none;
+    update() {
+        if (!this.running) return;
+
+        const p = this.localPlayer;
+        const TS = CONSTANTS.TILE_SIZE;
+
+        let targetX = p.gridX * TS;
+        let targetY = p.gridY * TS;
+        let dx = targetX - p.x;
+        let dy = targetY - p.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        let speed = p.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
+        let isMoving = false;
+
+        if (dist > speed) {
+            let angle = Math.atan2(dy, dx);
+            p.x += Math.cos(angle) * speed;
+            p.y += Math.sin(angle) * speed;
+            isMoving = true;
+        } else {
+            p.x = targetX; p.y = targetY; p.isDrilling = false;
+
+            // broken -- dont use yet
+            // if (this.fallHeight > 1 && !isMoving) {
+            //     Sound.playThud();
+            //     this.fallHeight = 0;
+            // }
+
+            let ix = 0, iy = 0;
+            if (Input.keys[this.settings.keys.up]) iy = -1;
+            else if (Input.keys[this.settings.keys.down]) iy = 1;
+            else if (Input.keys[this.settings.keys.left]) ix = -1;
+            else if (Input.keys[this.settings.keys.right]) ix = 1;
+
+            if (Input.keys[this.settings.keys.build] && (ix || iy)) {
+                if (now() - this.lastActionTime > 200) {
+                    this.tryBuild(p.gridX + ix, p.gridY + iy);
+                    this.lastActionTime = now();
+                }
+            } else if (ix || iy) {
+                if (ix === 1) p.rotation = -90 * (Math.PI/180);
+                if (ix === -1) p.rotation = 90 * (Math.PI/180);
+                if (iy === 1) { p.rotation = 0; this.fallHeight++; }
+                if (iy === -1) { p.rotation = 180 * (Math.PI/180); this.fallHeight = 0; }
+                if (ix !== 0) this.fallHeight = 0;
+
+                let nx = p.gridX + ix;
+                let ny = p.gridY + iy;
+
+                if (nx >= 0 && nx < CONSTANTS.MAP_WIDTH && ny >= 4 && ny < CONSTANTS.MAP_HEIGHT) {
+                    let tile = (ny < 0) ? TILE_TYPES.EMPTY : this.map[ny][nx];
+                    if (tile === TILE_TYPES.EMPTY) {
+                        p.gridX = nx; p.gridY = ny;
+                        if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
+                        Network.broadcastMove();
+                    } else if (tile !== TILE_TYPES.BEDROCK) {
+                        if (now() - this.lastActionTime > 150) {
+                             if (this.tryMine(nx, ny)) {
+                                 p.gridX = nx; p.gridY = ny;
+                                 p.isDrilling = true;
+                                 if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
+                                 Network.broadcastMove();
+                             }
+                             this.lastActionTime = now();
+                        }
+                    }
+                }
+            }
+        }
+
+        Sound.updateEngine(isMoving ? speed : 0, p.isDrilling);
+
+        Object.values(this.remotePlayers).forEach(rp => {
+            if (rp.targetX !== undefined) {
+                let rdx = rp.targetX - rp.x;
+                let rdy = rp.targetY - rp.y;
+                let rDist = Math.sqrt(rdx*rdx + rdy*rdy);
+                let rSpeed = rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
+                if (rDist > rSpeed) {
+                    let rAngle = Math.atan2(rdy, rdx);
+                    rp.x += Math.cos(rAngle) * rSpeed;
+                    rp.y += Math.sin(rAngle) * rSpeed;
+                } else { rp.x = rp.targetX; rp.y = rp.targetY; }
+            }
+        });
+
+        // Heat Logic
+        let depth = Math.max(0, p.gridY - 5);
+        let heatThreshold = 100 + (p.heatResist * 50);
+        if (depth > heatThreshold) {
+            p.temp += 0.05;
+            if (p.temp > 100) {
+                p.temp = 100;
+                p.hull -= 0.1;
+                $('heat-overlay').style.opacity = (Math.sin(now()/100)+1)/4 + 0.3;
+            }
+        } else {
+            p.temp = Math.max(0, p.temp - 0.2);
+            $('heat-overlay').style.opacity = 0;
+        }
+
+        $('prompt-msg').style.display = 'none';
+        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 2) {
+             $('prompt-msg').style.display = 'block';
+             $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
+        }
+
+        if (Input.keys[this.settings.keys.interact] && now() - this.lastActionTime > 500) {
+            UI.toggleDashboard();
+            this.lastActionTime = now();
+        }
+
+        p.fuel = clamp(p.fuel, 0, p.maxFuel);
+        p.hull = clamp(p.hull, 0, p.maxHull);
+        if (p.hull <= 0) this.respawn();
+
+        this.camera.x += (p.x - this.camera.x) * 0.1;
+        this.camera.y += (p.y - this.camera.y) * 0.1;
+
+        if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
+            // Save to current ID
+            if(SaveSystem.currentSaveId) {
+                SaveSystem.saveGame(SaveSystem.currentSaveId, null, true);
+                this.lastAutosave = now();
+            }
+
+            // dirty but it works
+            if(document.getElementById('update-check-toggle').checked){
+                UI.checkForUpdates();
+            }
+        }
+
+        Network.update();
+
+        // Coords Update Optimized
+        if (this.lastCoordsX !== p.gridX || this.lastCoordsY !== p.gridY) {
+            $('coords-display').innerText = `X: ${p.gridX} Y: ${depth}`;
+            this.lastCoordsX = p.gridX;
+            this.lastCoordsY = p.gridY;
+        }
     }
 
-    .app-link:hover {
-      text-decoration: underline;
+    tryTransferFuel(targetId) {
+        if (this.localPlayer.fuel > 10) {
+            this.localPlayer.fuel -= 10;
+            Network.sendFuel(targetId, 10);
+            UI.showToast("Sent 10 Fuel!", "success");
+            Sound.playSuccess();
+        } else {
+            UI.showToast("Not enough fuel!", "error");
+            Sound.playError();
+        }
     }
 
-    #themeToggle {
-      margin-top: 20px;
-      padding: 8px 12px;
-      background: var(--card-bg);
-      color: var(--text);
-      border: 1px solid var(--text);
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.3s, color 0.3s, border 0.3s;
+    tryBuild(tx, ty) {
+        if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 0 || ty >= CONSTANTS.MAP_HEIGHT) return;
+        if (this.map[ty][tx] === TILE_TYPES.EMPTY) {
+            const type = this.localPlayer.selectedBlock;
+            let count = this.localPlayer.inventory[type] || 0;
+
+            if (count > 0) {
+                this.localPlayer.inventory[type]--;
+                this.localPlayer.cargo--;
+                this.map[ty][tx] = type;
+                Network.sendTileUpdate(tx, ty, type);
+                this.spawnParticle(tx * 32 + 16, ty * 32 + 16, '#95a5a6', 5);
+                Sound.playBuild();
+                UI.showToast("Block Placed", "success");
+                UI.updateDashboard();
+            } else {
+                UI.showToast("Out of blocks!", "error");
+                Sound.playError();
+            }
+        }
     }
-  </style>
-</head>
 
-<body>
+    trashBlock(type, all=false) {
+        const p = this.localPlayer;
+        if(p.inventory[type] > 0) {
+            let amount = all ? p.inventory[type] : 1;
+            p.inventory[type] -= amount;
+            p.cargo -= amount;
 
-  <nav>
-    <h2>Applications</h2>
+            if(p.inventory[type] < 0) p.inventory[type] = 0; // sanity
+            if(p.cargo < 0) p.cargo = 0;
 
-    <input id="search" type="text" placeholder="Search applications..." />
+            const name = TILE_PROPS[type].name;
+            UI.showToast(`Trashed ${amount} ${name}`, "normal");
+            UI.updateDashboard();
+        }
+    }
 
-    
-      <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
-    
-      <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
-    
-      <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
-    
-      <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
-    
-      <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
-    
-      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
-    
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-    
-      <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
-    
-      <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
-    
-      <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
-    
-      <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
-    
+    trashJunk() {
+        const p = this.localPlayer;
+        let totalTrashed = 0;
 
-    <button id="themeToggle">Toggle Theme</button>
-  </nav>
+        for (let key in p.inventory) {
+            let type = parseInt(key);
+            let count = p.inventory[type];
+            let prop = TILE_PROPS[type];
 
-  <main>
-    <h1>Applications Overview</h1>
+            // Trash if value is 0, but keep Casings (building blocks)
+            if (count > 0 && prop.value === 0 && type !== TILE_TYPES.CASING) {
+                p.inventory[type] = 0;
+                p.cargo -= count;
+                totalTrashed += count;
+            }
+        }
 
-    
-      <section class="app-section" data-name="pcb">
-        <a class="app-link" href="pcb/index.html">Open pcb</a>
-        <h2>pcb</h2>
-        <section>
-  <ul>
-    <li>Procedurally generates PCB layouts with logic 튩ips, capacitors, LEDs, and seven-segment displays.</li>
-    <li>Simulates signal propagation thr✓ugh traces with adjustable speed and neon glow effects.</li>
-    <li>Features interactive components like switches and a settings panel for dynamic regeneration.</li>
-  </ul>
+        if (p.cargo < 0) p.cargo = 0;
 
-  <pre>
-    <code>pcb = new Generator(params.seed, gw, gh, params.density, params.force, params.fanout);</code>
-    <code>ctx.shadowBlur = (c.active的开发 params.glow)礦 15 : 0;</code>
-  </pre>
+        if(totalTrashed > 0) {
+            UI.showToast(`Trashed ${totalTrashed} Junk Items`, "success");
+            Sound.playChat('death'); // Reuse sound for impact
+        } else {
+            UI.showToast("No Junk Found", "normal");
+        }
+        UI.updateDashboard();
+    }
 
-  <p>This application generates interactive circuit board simulations with runtime logic simulation. Users can click components like switches to trigger signals and adjust parameters through a settings panel. The visualization includes configurable effects like trace glow and CRT scanlines.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="matrix">
-        <a class="app-link" href="matrix/index.html">Open matrix</a>
-        <h2>matrix</h2>
-        <section>
-  <ul>
-    <li>Creates Matrix-style falling character animation using HTML Canvas</li>
-    <li>Supports extensive customization via URL parameters for text, colors, and motion</li>
-    <li>Implements performance optimization with visibility-aware rendering</li>
-  </ul>
+    tryMine(tx, ty) {
+        let tile = this.map[ty][tx];
+        if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK) {
+            let props = TILE_PROPS[tile];
+            if (this.localPlayer.drillTier < props.tier) { UI.showToast(`Need Tier ${props.tier} Drill`, "error"); Sound.playError(); return false; }
+            if (this.localPlayer.cargo < this.localPlayer.maxCargo) {
+                if (!this.localPlayer.inventory[tile]) this.localPlayer.inventory[tile] = 0;
+                this.localPlayer.inventory[tile]++;
+                this.localPlayer.cargo++;
 
-  <pre属于自己的乐章>
-    <code>ctx.fillText(char, drop.x, drop Narcissus.y);</code>
-    <code>document.hidden ? stopDrawing() : startDrawing();</code>
-  </pre>
+                if (!this.localPlayer.stats.blocksMined[tile]) this.localPlayer.stats.blocksMined[tile] = 0;
+                this.localPlayer.stats.blocksMined[tile]++;
+                this.localPlayer.stats.totalMined++;
 
-  <p>This canvas-based application renders customizable Matrix-inspired character rain effects. Users can modify visual parameters through URL query options like text, speed, and color schemes. The animation pause Menus when tab visibility changes to conserve system resources.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="fonttester">
-        <a class="app-link" href="fonttester/index.html">Open fonttester</a>
-        <h2>fonttester</h2>
-        <section>
-  <ul>
-    <li>Upload fonts in TTF, OTF, WOFF, or WOFF2 format for testing</li>
-    <li>Adjust font size dynamically with range slider from 8px to 72px</li>
-    <li>Preview fonts in headings, paragraphs, UI elements, forms, and special characters</li>
-  </ul>
+                this.map[ty][tx] = TILE_TYPES.EMPTY;
+                this.discovered[ty][tx] = 1;
+                this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);
+                Sound.playMining();
+                Network.sendTileUpdate(tx, ty, TILE_TYPES.EMPTY);
+                UI.updateDashboard();
+                return true;
+            } else { UI.showToast("Cargo Full!", "error"); Sound.playError(); return false; }
+        }
+        return false;
+    }
 
-  <pre>
-    <code>reader.onload = (e) => { const fontDataUrl = e.target.result;</code>
-    <code>fontTestArea.style.fontSize = `${newSize}px`;</code>
-  </pre>
+    spawnParticle(x, y, color, count) {
+        for(let i=0; i<count; i++) {
+            this.particles.push({x, y, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 1.0, color});
+        }
+    }
 
-  <p>This web application allows designers to test custom typography implementations. Users can upload font files, modify font sizes dynamically, and preview rendering across various content formats including UI components. Real-time feedback is provided for headings, paragraphs, form elements, and special character sets.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="pattern">
-        <a class="app-link" href="pattern/index.html">Open pattern</a>
-        <h2>pattern</h2>
-        <section>
-  <ul>
-    <li>Generates reproducible SVG patterns using deterministic seeded randomness</li>
-    <li>Provides six artistic styles (Memphis, Bauhaus, etc.) with adjustable complexity</li>
-    <li>Exports designs as SVG or PNG with texture effects and palette controls</li>
-  </ul>
+    respawn() {
+        this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
+        this.localPlayer.gridY = 4;
+        this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
+        this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+        this.localPlayer.hull = this.localPlayer.maxHull;
+        this.localPlayer.fuel = this.localPlayer.maxFuel;
+        this.localPlayer.cargo = 0;
+        this.localPlayer.inventory = {};
+        this.localPlayer.money = Math.floor(this.localPlayer.money * 0.7);
+        Network.broadcastDeath();
+        Sound.playChat('death');
+        $('heat-overlay').style.opacity = 0;
+        UI.updateDashboard();
+    }
 
-  <pre>
-    <code>function PRNG(seedStr) {</code>
-    <code>document.getElementById('generate').addEventListener('click', generate);</code>
-  </pre>
+    draw() {
+        if (!this.running) return;
+        this.ctx.resetTransform();
+        this.ctx.fillStyle = '#050505';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-  <p>This application creates customizable vector patterns using a seed-based pseudo-random generator. Parameters control dimensions, pattern complexity, color schemes, and texture overlays. Outputs maintain deterministic reproducibility across sessions and support SVG/PNG export.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="asl">
-        <a class="app-link" href="asl/index.html">Open asl</a>
-        <h2>asl</h2>
-        <section>
-  <ul>
-    <li>ASL sign language video generator interface</li>
-    <li>Text input with autocomplete suggestions</li>
-    <li>Video element for sign sequence playback</li>
-  </ul>
+        let cx = this.canvas.width / 2;
+        let cy = this.canvas.height / 2;
+        this.ctx.translate(cx, cy);
+        this.ctx.scale(this.zoom, this.zoom);
+        this.ctx.translate(-Math.floor(this.camera.x), -Math.floor(this.camera.y));
 
-  <pre>
-    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
-    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
-  </pre>
+        const viewW = (this.canvas.width / this.zoom);
+        const viewH = (this.canvas.height / this.zoom);
+        const startCol = Math.floor((this.camera.x - viewW/2) / CONSTANTS.TILE_SIZE) - 1;
+        const endCol = Math.floor((this.camera.x + viewW/2) / CONSTANTS.TILE_SIZE) + 1;
+        const startRow = Math.floor((this.camera.y - viewH/2) / CONSTANTS.TILE_SIZE) - 1;
+        const endRow = Math.floor((this.camera.y + viewH/2) / CONSTANTS.TILE_SIZE) + 1;
 
-  <p>This HTML creates a web interface for converting text input into ASL sign sequences. Users enter text which triggers video playback when clicking the Play button. The layout includes auto-suggestions and a responsive video player for displaying sign language demonstrations.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="pixelreducer">
-        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
-        <h2>pixelreducer</h2>
-        <section>
-  <ul>
-    <li>Degrades resolution linearly over time with user-defined final scale</li>
-    <li>Applies audio degradation via low-pass filtering and bitcrushing for videos</li>
-    <li>Outputs GIFs for images and WebM videos for clips with preview/download</li>
-  </ul>
+        const pcx = this.localPlayer.gridX;
+        const pcy = this.localPlayer.gridY;
+        const visionRad = 6;
+        const xrayRad = 2 + this.localPlayer.xrayRange;
 
-  <pre>
-    <code>bits = 16 - Math.floor(15 * tNorm * crushAmount);</code>
-    <code>ctx.drawImage(tmp, 0, 0, w, h, 0, 0, width, height);</code>
-  </pre>
+        /// -------------------------------
+        // WORLD TIME (host-based)
+        // -------------------------------
+        const allPlayers = Object.values(this.remotePlayers)
+            .concat([this.localPlayer])
+            .filter(p => typeof p.joinedAt === "number" && !isNaN(p.joinedAt));
+        if (allPlayers.length === 0) {
+            // fallback: treat local player as host
+            allPlayers.push({ ...this.localPlayer, joinedAt: Date.now() });
+        }
+        const host = allPlayers.sort((a,b)=>a.joinedAt - b.joinedAt)[0] || this.localPlayer;
+        const worldTime = Date.now() - host.joinedAt;
 
-  <p>The Go Go Gadget Pixel Reducer processes images and videos through controlled degradation sequences. For videos, it dynamically reduces resolution while applying audio filtering and bit-depth reduction during playback. Users can export GIF animations from images or degraded WebM videos with custom quality settings.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        ```html
-<section>
-  <ul>
-    <li>Initializes the game, network, input, UI, and sound systems.</li>
-    <li>Manages game state, map generation, player movement, and mining.</li>
-    <li>Implements settings, save/load, shop, and admin functionality.</li>
-  </ul>
+        const dayLength = 20 * 60 * 1000;
+        const t = (worldTime % dayLength) / dayLength;
 
-  <pre>
-    <code>const $ = id =&gt; document.getElementById(id);</code>
-    <code>Network.connect();</code>
-  </pre>
+        // Rotate so sunrise = 0.25, noon = 0.5, sunset = 0.75
+        const sunAngle = (t * Math.PI * 2) - Math.PI / 2;
 
-  <p>This HTML creates an online multiplayer game called Mega Miner. It uses MQTT for real-time communication between players.  The game logic includes map generation, player movement, resource management, and a shop system.</p>
-</section>
-```
-      </section>
-    
-      <section class="app-section" data-name="animeboydownloader">
-        <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
-        <h2>animeboydownloader</h2>
-        <section>
-  <ul>
-    <li>Fetches random anime boy images from Nekos API with safe/suggestive rating filters</li>
-    <li>Displays image metadata including ID, tags, source link, and color palette swatches</li>
-    <li>Automatically loads first image on startup and handles API errors gracefully</li>
-  </ul>
+        // Smooth daylight curve (no flicker)
+        const daylight = (() => {
+            const x = (Math.cos(sunAngle) + 1) / 2; // 0→1→0
+            return x * x * (3 - 2 * x);            // smoothstep
+        })();
 
-  <pre>
-    <code>const response = await fetchdledllo buy ");</code>
-    <code>const image = dataar1alehasta dites();</code>
-  </pre>
-  
-  <p>This web application retrieves anime boy images from the Nekos API with specific content restrictions. It displays each image with associated metadata and color palette in a styled card layout. Users can fetch new images via a button while error handling manages failed API requests.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="racing">
-        <a class="app-link" href="racing/index.html">Open racing</a>
-        <h2>racing</h2>
-        <section>
-  <ul>
-    <li>Top-down multiplayer racing game with customizable vehicles and real-time physics</li>
-    <li>MQTT-based networking using brokers like HiveMQ for synchronized gameplay</li>
-    <li>Integrated track editor with terrain generation and multiplayer map sharing</li>
-  </ul>
+        // -------------------------------
+        // SKY COLOR (above ground level y=5)
+        // -------------------------------
+        const baseSky = { r: 135, g: 206, b: 235 };
+        const groundY = 5 * CONSTANTS.TILE_SIZE;
 
-  <pre>
-    <code>function gameLoop(timestamp) {</code>
-    <code>mqttClient.on('message', (topic, message) => {</code>
-  </pre>
+        const sunrise = Math.max(0, 1 - Math.abs(t - 0.25) * 20);
+        const sunset  = Math.max(0, 1 - Math.abs(t - 0.75) * 20);
+        const warm = sunrise + sunset;
 
-  <p>DRiFT.js is a browser-based racing game featuring synchronized multiplayer gameplay and track editing. Players can customize their cars, compete in real-time races, and collaboratively build tracks using different terrain types. The game includes mobile controls, leaderboards, chat functionality, and physics adjustments controlled by room hosts.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="microviz">
-        <a class="app-link" href="microviz/index.html">Open microviz</a>
-        <h2>microviz</h2>
-        <section>
-  <ul>
-    <li>Implements customizable audio visualizations using canvas rendering and Web Audio API</li>
-    <li>Supports multiple audio sources including file uploads, microphone input, and WebSocket streams</li>
-    <li>Provides master controls (file input, play/pause, visualizer selection) and visualizer-specific settings</li>
-  </ul>
+        const r = Math.round(baseSky.r * (0.3 + daylight*0.7) - warm * 80);
+        const g = Math.round(baseSky.g * (0.3 + daylight*0.7) - warm * 40);
+        const b = Math.round(baseSky.b * (0.3 + daylight*0.7) - warm * 20);
 
-  <pre>
-    <code>const visualizers = { bars: { draw: ctx => ctx.fillRect(...) } }</code>
-    <code>analyser.getByteFrequencyData(audioData);</code>
-  </pre>
+        this.ctx.fillStyle = `rgb(${r},${g},${b})`;
+        this.ctx.fillRect(
+            this.camera.x - viewW,
+            -2000,
+            viewW * 2,
+            groundY + 2000
+        );
 
-  <p>This application creates interactive audio visualizations with customizable visual effects. Users can select different visualizer presets, adjust sensitivity parameters, and choose audio sources including uploaded files, microphone input, or WebSocket streams. The interface features real-time frequency analysis visualization on dual canvas elements with metadata display functionality.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="turtle">
-        <a class="app-link" href="turtle/index.html">Open turtle</a>
-        <h2>turtle</h2>
-        <section>
-  <ul>
-    <li>A turtle ecosystem simulation where turtles exhibit behaviors like seeking food, wandering, and interacting with environment elements.</li>
-    <li>Grid-based terrain system with configurable cell types including walls, water, grass and sand, editable via painting interface.</li>
-    <li>Customizable settings panel for adjusting turtle personalities, population density, speed parameters, and visual effects.</li>
-  </ul>
+        // Sunrise/sunset gradient
+        if (warm > 0) {
+            const grad = this.ctx.createLinearGradient(0, -2000, 0, groundY);
+            grad.addColorStop(0, `rgba(255,120,50,${warm * 0.6})`);
+            grad.addColorStop(1, `rgba(255,180,120,${warm * 0.3})`);
+            this.ctx.fillStyle = grad;
+            this.ctx.fillRect(
+                this.camera.x - viewW,
+                -2000,
+                viewW * 2,
+                groundY + 2000
+            );
+        }
 
-  <pre>
-    <code>grid[gx][gy ACTION_WIDTH val;</code>
-    <code>this.state = 'SEEK';</code>
-  </pre>
+        // -------------------------------
+        // SUN & MOON POSITIONS
+        // -------------------------------
+        const skyRadius = 900;
+        const centerX = this.camera.x;
+        // Fix: Pivot exactly at ground level so sunrise/sunset looks correct
+        const centerY = groundY;
 
-  <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
-</section>
-      </section>
-    
-  </main>
+        const sunX = centerX + Math.cos(sunAngle) * skyRadius;
+        const sunY = centerY + Math.sin(sunAngle) * skyRadius;
 
-  <script>
-    const search = document.getElementById("search");
-    const navItems = document.querySelectorAll(".nav-item");
-    const sections = document.querySelectorAll(".app-section");
+        const moonX = centerX + Math.cos(sunAngle + Math.PI) * skyRadius;
+        const moonY = centerY + Math.sin(sunAngle + Math.PI) * skyRadius;
 
-    search.addEventListener("input", () => {
-      const q = search.value.toLowerCase();
+        // -------------------------------
+        // SUN (always drawn)
+        // -------------------------------
+        {
+            const sunSize = 70;
+            const grd = this.ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunSize);
+            grd.addColorStop(0, "rgba(255,255,200,1)");
+            grd.addColorStop(1, "rgba(255,180,0,0.2)");
 
-      navItems.forEach(item => {
-        const name = item.dataset.name.toLowerCase();
-        item.style.display = name.includes(q) ? "block" : "none";
-      });
+            this.ctx.fillStyle = grd;
+            this.ctx.beginPath();
+            this.ctx.arc(sunX, sunY, sunSize, 0, Math.PI*2);
+            this.ctx.fill();
+        }
 
-      sections.forEach(sec => {
-        const name = sec.dataset.name.toLowerCase();
-        sec.style.display = name.includes(q) ? "block" : "none";
-      });
-    });
+        // -------------------------------
+        // MOON (one draw call, 3 phases)
+        // -------------------------------
+        {
+            const moonSize = 55;
+            const moonCycle = 60 * 60 * 1000;
+            const moonPhase = (worldTime % moonCycle) / moonCycle; // 0=new, 0.5=full
 
-    const toggle = document.getElementById("themeToggle");
-    toggle.addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-    });
-  </script>
+            this.ctx.fillStyle = "#e0e0e0";
+            this.ctx.beginPath();
 
+            // Outer circle
+            this.ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
+
+            // Phase curve (one quadratic curve)
+            const curveOffset = (moonPhase - 0.5) * moonSize * 1.6;
+
+            this.ctx.moveTo(moonX - moonSize, moonY);
+            this.ctx.quadraticCurveTo(
+                moonX + curveOffset,
+                moonY,
+                moonX - moonSize,
+                moonY
+            );
+
+            this.ctx.fill();
+        }
+
+        // -------------------------------
+        // STARS
+        // -------------------------------
+        if (!this.starField) {
+            this.starField = [];
+            for (let i = 0; i < 200; i++) {
+                this.starField.push({
+                    x: Math.random() * 5000 - 2500,
+                    y: Math.random() * 2000 - 2000,
+                    b: Math.random() * 0.8 + 0.2
+                });
+            }
+        }
+
+        {
+            const starAlpha = (0.4 - daylight) / 0.4;
+            if (starAlpha > 0) {
+                this.ctx.fillStyle = "#fff";
+                for (const s of this.starField) {
+                    this.ctx.globalAlpha = s.b * starAlpha;
+                    this.ctx.fillRect(s.x, s.y, 2, 2);
+                }
+                this.ctx.globalAlpha = 1;
+            }
+        }
+
+        // -------------------------------
+        // BLACK RECTANGLE (drawn LAST in sky section)
+        // -------------------------------
+        this.ctx.fillStyle = "#000";
+        this.ctx.fillRect(
+            this.camera.x - viewW,
+            groundY,
+            viewW * 2,
+            5000
+        );
+
+        this.drawStation();
+
+        for (let y = Math.max(0, startRow); y <= Math.min(CONSTANTS.MAP_HEIGHT-1, endRow); y++) {
+            for (let x = Math.max(0, startCol); x <= Math.min(CONSTANTS.MAP_WIDTH-1, endCol); x++) {
+                let dx = x - pcx; let dy = y - pcy;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                let visible = dist <= visionRad;
+                let xray = dist <= xrayRad;
+
+                if (visible) this.discovered[y][x] = 1;
+                let tile = this.map[y][x];
+
+                if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
+                else if (this.discovered[y][x]) {
+                    this.ctx.globalAlpha = 0.9;
+                    this.drawProceduralTile(x, y, tile, false);
+                    this.ctx.globalAlpha = 1.0;
+                }
+            }
+        }
+
+        Object.values(this.remotePlayers).forEach(p => this.drawPlayer(p, false));
+        this.drawPlayer(this.localPlayer, true);
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+            this.ctx.globalAlpha = p.life; this.ctx.fillStyle = p.color;
+            this.ctx.fillRect(p.x, p.y, 4, 4); this.ctx.globalAlpha = 1.0;
+            if (p.life <= 0) this.particles.splice(i, 1);
+        }
+
+        this.drawLocalMinimap();
+        this.ctx.resetTransform();
+        this.drawHUD();
+    }
+
+
+    drawStation() {
+        let ts = CONSTANTS.TILE_SIZE;
+        let x = this.stationGridX * ts;
+        let y = this.stationGridY * ts;
+        this.ctx.fillStyle = '#7f8c8d'; this.ctx.fillRect(x - 40, y - 40, 80, 72);
+        this.ctx.fillStyle = '#c0392b'; this.ctx.beginPath(); this.ctx.moveTo(x - 50, y - 40); this.ctx.lineTo(x, y - 70); this.ctx.lineTo(x + 50, y - 40); this.ctx.fill();
+        this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(x - 20, y - 10, 40, 42);
+        this.ctx.fillStyle = '#f1c40f'; this.ctx.font = 'bold 12px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText("SHOP", x, y - 50);
+    }
+
+    drawProceduralTile(x, y, type, isXray) {
+        let ts = CONSTANTS.TILE_SIZE;
+        let px = x * ts; let py = y * ts;
+        let prop = TILE_PROPS[type];
+        if (isXray) { this.ctx.strokeStyle = prop.color; this.ctx.lineWidth = 2; this.ctx.strokeRect(px+4, py+4, ts-8, ts-8); return; }
+
+        // Detailed Texture Patterns
+        const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        const n1 = (seed % 1);
+        const n2 = ((seed * 10) % 1);
+
+        let bevel = true;
+
+        // --- ORE RENDERING (Detailed) ---
+        if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
+             // 1. Draw Stone Background (so ores look embedded)
+             this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
+             this.ctx.fillRect(px, py, ts, ts);
+
+             // 2. Draw Bevel for stone
+             this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
+             this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
+
+             // 3. Draw Ore bits
+             this.ctx.fillStyle = prop.color;
+
+             // Procedural placement of chunks
+             const s = Math.abs(seed);
+             const r1 = s - Math.floor(s);
+
+             // Cluster center based on hash
+             let cx = px + 16 + (r1 - 0.5) * 12;
+             let cy = py + 16 + ((r1*10)%1 - 0.5) * 12;
+
+             // Main chunk
+             this.ctx.fillRect(cx-3, cy-3, 6, 6);
+             // Satellites
+             this.ctx.fillRect(cx-6, cy+2, 3, 3);
+             this.ctx.fillRect(cx+4, cy-5, 4, 3);
+             this.ctx.fillRect(cx+3, cy+3, 3, 4);
+
+             // Sparkle (occasional shine)
+             if (now() % 1200 < 200) {
+                this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                this.ctx.fillRect(cx-1, cy-1, 2, 2);
+            }
+            return; // Exit early since we handled bevels/background
+        }
+
+        // --- STANDARD BLOCKS ---
+        this.ctx.fillStyle = prop.color;
+        this.ctx.fillRect(px, py, ts, ts);
+
+        if (type === TILE_TYPES.EMPTY && y>=5) {
+            this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
+            this.ctx.fillRect(px, py, ts, ts);
+
+            // Add some small pebbles/debris
+            this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
+            if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
+            if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
+            if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
+            bevel=false;
+        }
+        else if (type === TILE_TYPES.EMPTY && y<5) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+            return
+        }
+        else if (type === TILE_TYPES.DIRT) {
+             this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
+             if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
+             if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
+             if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
+        } else if (type === TILE_TYPES.GRASS) {
+             this.ctx.fillStyle = '#2ecc71'; this.ctx.fillRect(px, py, ts, 6);
+             this.ctx.fillStyle = 'rgba(0,0,0,0.1)'; this.ctx.fillRect(px, py+6, ts, ts-6);
+        } else if (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE) {
+             this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
+             if(n1 > 0.3) { this.ctx.fillRect(px+5, py+5, 10, 6); this.ctx.fillRect(px+18, py+18, 10, 6); }
+             this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+             this.ctx.beginPath(); this.ctx.moveTo(px, py+ts); this.ctx.lineTo(px+ts, py); this.ctx.stroke();
+        } else if (type === TILE_TYPES.CASING) {
+            this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
+            this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
+            this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
+            return;
+        }
+
+        // Bevel for all
+        if(bevel){
+          this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
+          this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
+        }
+    }
+
+    drawPlayer(p, isLocal) {
+        let size = CONSTANTS.TILE_SIZE;
+        let cx = p.x + size/2; let cy = p.y + size/2;
+        this.ctx.save(); this.ctx.translate(cx, cy); this.ctx.rotate(p.rotation || 0);
+        let color = isLocal ? this.settings.color : (p.color || '#fff');
+
+        this.ctx.fillStyle = color; this.ctx.fillRect(-12, -12, 24, 24);
+        this.ctx.strokeStyle = '#111'; this.ctx.lineWidth = 2; this.ctx.strokeRect(-12, -12, 24, 24);
+        this.ctx.fillStyle = '#bdc3c7';
+        let drillOffset = (p.isDrilling && now() % 200 > 100) ? 2 : 0;
+        this.ctx.beginPath(); this.ctx.moveTo(-6, 12); this.ctx.lineTo(0, 20 + drillOffset); this.ctx.lineTo(6, 12); this.ctx.fill();
+        this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
+        this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
+        if (!isLocal) {
+            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '10px Arial'; this.ctx.textAlign = 'center';
+            this.ctx.shadowColor="black"; this.ctx.shadowBlur=2;
+            this.ctx.fillText(p.username || "Unknown", 0, -20);
+            this.ctx.shadowBlur=0;
+        }
+        this.ctx.restore();
+    }
+
+    drawLocalMinimap() {
+        const ctx = this.minimapCtx;
+        const width = 150;
+        const height = 150;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height);
+
+        // Fixed Minimap Settings (Independent of Zoom)
+        const range = 25; // 25 tile radius = 50 tile diameter view
+        const pixelSize = width / (range * 2); // 150 / 50 = 3px per tile exact
+        const center = width / 2;
+
+        const pX = this.localPlayer.gridX;
+        const pY = this.localPlayer.gridY;
+
+        for (let dy = -range; dy < range; dy++) {
+            for (let dx = -range; dx < range; dx++) {
+                let mx = pX + dx;
+                let my = pY + dy;
+                // Boundary checks
+                if (mx >= 0 && mx < CONSTANTS.MAP_WIDTH && my >= 0 && my < CONSTANTS.MAP_HEIGHT) {
+                    if (this.discovered[my][mx]) {
+                        let tile = this.map[my][mx];
+                        ctx.fillStyle = tile === TILE_TYPES.EMPTY ? '#111' : TILE_PROPS[tile].color;
+                        // Use 3x3 pixel rects
+                        ctx.fillRect(Math.floor(center + dx * pixelSize), Math.floor(center + dy * pixelSize), pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+
+        // Viewport Border calculation needs to map GAME View to MINIMAP Coordinates
+        // Game View Width (in tiles) = CanvasWidth / (TileSize * Zoom)
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.lineWidth = 1;
+
+        const gameViewTilesW = this.canvas.width / (CONSTANTS.TILE_SIZE * this.zoom);
+        const gameViewTilesH = this.canvas.height / (CONSTANTS.TILE_SIZE * this.zoom);
+
+        // Convert tiles to pixels on the minimap
+        const miniMapRectW = gameViewTilesW * pixelSize;
+        const miniMapRectH = gameViewTilesH * pixelSize;
+
+        ctx.strokeRect(center - miniMapRectW/2, center - miniMapRectH/2, miniMapRectW, miniMapRectH);
+
+        // Player Dot (Always Center)
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(center - 2, center - 2, 4, 4);
+
+        // Remote players... mapped to minimap scale
+        Object.values(this.remotePlayers).forEach(rp => {
+            let dx = rp.gridX - pX;
+            let dy = rp.gridY - pY;
+
+            // Only draw if within minimap range
+            if(Math.abs(dx) < range && Math.abs(dy) < range) {
+                const screenX = center + dx * pixelSize;
+                const screenY = center + dy * pixelSize;
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(screenX - 2, screenY - 2, 4, 4);
+
+                // Optional: Tooltip logic if needed, omitted for cleanliness
+            }
+        });
+    }
+
+    drawHUD() {
+        const p = this.localPlayer;
+        const w = this.canvas.width; const h = this.canvas.height;
+        this.drawGauge(60, h - 60, 40, p.fuel, p.maxFuel, "FUEL", "#d35400");
+        this.drawGauge(160, h - 60, 40, p.hull, p.maxHull, "HULL", "#c0392b");
+        this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
+        this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
+
+        this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 20px monospace"; this.ctx.textAlign = "center"; this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
+        let depth = Math.floor(Math.max(0, p.gridY - 5));
+        this.ctx.fillStyle = "#aaa"; this.ctx.font = "14px monospace"; this.ctx.fillText(`Depth: ${depth}m | Drill Tier: ${p.drillTier}`, w/2, h - 55);
+    }
+
+    drawGauge(x, y, r, val, max, label, color) {
+        const ctx = this.ctx;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = "#444"; ctx.stroke();
+        const start = Math.PI * 0.7; const end = Math.PI * 2.3;
+        const pct = clamp(val / max, 0, 1);
+        const current = start + (end - start) * pct;
+        ctx.beginPath(); ctx.arc(x, y, r - 5, start, current); ctx.strokeStyle = color; ctx.lineWidth = 6; ctx.stroke();
+        ctx.fillStyle = "#fff"; ctx.font = "bold 10px Arial"; ctx.textAlign = "center";
+        ctx.fillText(label, x, y + 15); ctx.fillText(Math.floor(val), x, y - 5);
+    }
+
+    loop() {
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+    }
+}
+
+// --- HELPER FOR COLORS ---
+const Qt = { lighter: (hex, factor) => hex };
+
+// --- SHOP SYSTEM ---
+class ShopSystem {
+    constructor() {
+        this.prices = {
+            drill: [500, 2000, 10000, 50000],
+            hull: 200, fuel: 200, cargo: 100, cool: 1000, xray: 2000
+        };
+    }
+    open() { $('shop-modal').classList.add('active'); this.updateUI(); }
+    close() { $('shop-modal').classList.remove('active'); }
+
+    sellAll() {
+        let total = 0;
+        const p = Game.localPlayer;
+        for (let type in p.inventory) {
+            let count = p.inventory[type];
+            if (count > 0 && TILE_PROPS[type].value > 0) {
+                total += count * TILE_PROPS[type].value;
+                p.inventory[type] = 0;
+            }
+        }
+        if (total > 0) {
+            p.money += total;
+            p.cargo = 0;
+            for(let t in p.inventory) p.cargo += p.inventory[t];
+            UI.showToast(`Sold all for $${total}`, "success");
+            Sound.playSuccess();
+        } else {
+            UI.showToast("Nothing valuable to sell.", "normal");
+        }
+        this.updateUI();
+        UI.updateDashboard();
+    }
+
+    sellItem(type, amount) {
+        const p = Game.localPlayer;
+        if(p.inventory[type] >= amount) {
+            let val = TILE_PROPS[type].value * amount;
+            p.inventory[type] -= amount;
+            p.cargo -= amount;
+            p.money += val;
+            UI.showToast(`Sold ${amount} ${TILE_PROPS[type].name}`, "success");
+            Sound.playSuccess();
+            this.updateUI();
+            UI.updateDashboard();
+        }
+    }
+
+    refuelRepair() {
+        const p = Game.localPlayer;
+        if(p.money >= 10) {
+            p.money -= 10;
+            p.fuel = p.maxFuel;
+            p.hull = p.maxHull;
+            UI.showToast("Refueled & Repaired!", "success");
+            Sound.playSuccess();
+            this.updateUI();
+        } else {
+            UI.showToast("Not enough money!", "error");
+            Sound.playError();
+        }
+    }
+
+    updateUI() {
+        const p = Game.localPlayer;
+        $('shop-money').innerText = "$" + Math.floor(p.money);
+        $('shop-color-picker').value = Game.settings.color;
+
+        const sellContainer = $('sell-list');
+        sellContainer.innerHTML = '';
+        let hasItems = false;
+
+        Object.keys(p.inventory).forEach(key => {
+            let type = parseInt(key);
+            let count = p.inventory[type];
+            let val = TILE_PROPS[type].value;
+
+            if (count > 0 && val > 0) {
+                hasItems = true;
+                let div = document.createElement('div');
+                div.className = 'sell-row';
+                div.innerHTML = `
+                    <span style="color:${TILE_PROPS[type].color}">${TILE_PROPS[type].name} (x${count})</span>
+                    <span style="color:gold">$${val}/ea</span>
+                    <div class="sell-actions">
+                        <button class="btn" onclick="Shop.sellItem(${type}, 1)">Sell 1</button>
+                        <button class="btn" onclick="Shop.sellItem(${type}, ${count})">All</button>
+                    </div>
+                `;
+                sellContainer.appendChild(div);
+            }
+        });
+
+        if(!hasItems) sellContainer.innerHTML = '<div style="padding:10px; color:#555; text-align:center;">No valuable ore to sell.</div>';
+
+        const check = (type, level) => {
+            let cost = this.prices[type];
+            if(Array.isArray(cost)) cost = cost[level] || 999999;
+            else cost = Math.floor(cost * (1 + level));
+            $(`cost-${type}`).innerText = "$" + cost;
+            $(`btn-${type}`).disabled = p.money < cost;
+            if(Array.isArray(this.prices[type]) && !this.prices[type][level]) {
+                 $(`cost-${type}`).innerText = "MAX";
+                 $(`btn-${type}`).disabled = true;
+            }
+        };
+        check('drill', p.drillTier);
+        check('hull', (p.maxHull-100)/20);
+        check('fuel', (p.maxFuel-100)/20);
+        check('cargo', (p.maxCargo-50)/10);
+        check('cool', p.heatResist);
+        check('xray', p.xrayRange);
+    }
+
+    buy(item) {
+        const p = Game.localPlayer;
+        let cost = 0;
+        if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); } }
+        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); } }
+        else {
+            let level = 0;
+            if (item === 'hull') level = (p.maxHull-100)/20;
+            if (item === 'fuel') level = (p.maxFuel-100)/20;
+            if (item === 'cargo') level = (p.maxCargo-50)/10;
+            if (item === 'cool') level = p.heatResist;
+            if (item === 'xray') level = p.xrayRange;
+            cost = Math.floor(this.prices[item] * (1 + level));
+            if (p.money >= cost) {
+                p.money -= cost;
+                if (item === 'hull') { p.maxHull += 20; p.hull = p.maxHull; }
+                if (item === 'fuel') { p.maxFuel += 20; p.fuel = p.maxFuel; }
+                if (item === 'cargo') p.maxCargo += 20;
+                if (item === 'cool') p.heatResist++;
+                if (item === 'xray') p.xrayRange++;
+                UI.showToast("Upgraded!", "success");
+                Sound.playSuccess();
+            }
+        }
+        this.updateUI();
+    }
+}
+
+// --- NETWORK (MQTT) ---
+class NetworkManager {
+    constructor() {
+        this.client = null;
+        this.baseTopic = 'mm_online/';
+        this.lastHeartbeat = 0;
+        this.lastSyncToast = 0;
+    }
+
+    connect() {
+        Game.logConnection(`Connecting to broker ${Game.settings.broker}...`);
+
+        const broker = Game.settings.broker;
+        const options = { clientId: 'mm_' + Game.localPlayer.id, keepalive: 60, clean: true, reconnectPeriod: 1000 };
+        try { this.client = mqtt.connect(broker, options); } catch (e) { Game.logConnection("Error creating client: " + e); }
+
+        this.client.on('connect', () => {
+            Game.logConnection("Connected. Subscribing...");
+            this.client.subscribe(`${this.baseTopic}${Game.settings.room}/#`, (err) => {
+                if(!err) {
+                    Game.logConnection("Subscribed. Joining room...");
+                    this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt, /*ver: BUILD_TIMESTAMP*/ });
+                    Game.finishConnection();
+                    Sound.playSuccess();
+                    // BROADCAST MOVE immediately so everyone sees new player
+                    this.broadcastMove();
+                } else {
+                    Game.logConnection("Sub Error: " + err);
+                }
+            });
+        });
+
+        this.client.on('offline', () => { $('disconnect-msg').style.display = 'block'; });
+        this.client.on('reconnect', () => { $('disconnect-msg').style.display = 'none'; });
+        this.client.on('message', (topic, message) => this.handleMessage(topic, message));
+    }
+
+    update() {
+        let n = now();
+        Object.keys(Game.remotePlayers).forEach(id => {
+            if (n - Game.remotePlayers[id].lastSeen > 10000) {
+                const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
+                UI.addMessage("System", msg, "#888");
+                Sound.playChat('leave');
+                delete Game.remotePlayers[id];
+                UI.updatePlayerList();
+                Game.updateAdminStatus();
+            }
+        });
+        if (n - this.lastHeartbeat > 2000) {
+            // FIX: Added joinedAt to heartbeat so late joiners see my timestamp
+            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
+            this.lastHeartbeat = n;
+        }
+    }
+
+    broadcastMove() {
+        const p = Game.localPlayer;
+        // FIX: Added joinedAt to move packets so late joiners see my timestamp
+        this.publish('pos', {
+            type: 'move', id: p.id,
+            sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE,
+            gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
+            username: Game.settings.username,
+            joinedAt: p.joinedAt
+        });
+        this.lastHeartbeat = now();
+    }
+
+    broadcastDeath() { this.publish('chat', { type: 'death', id: Game.localPlayer.id, name: Game.settings.username }); }
+    sendFuel(targetId, amount) { this.publish('ctrl', { type: 'fuel', to: targetId, from: Game.settings.username, amt: amount }); }
+    sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
+    sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
+    kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
+
+    // Add missing Map Request logic
+    requestMap(fromId) {
+        this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId });
+    }
+
+    sendMapDiff(toId) {
+        let diffs = [];
+        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
+                let base = Game.getProceduralTile(x, y);
+                // Note: Game.map is the truth. If it differs from procedural base, send it.
+                if (Game.map[y][x] !== base) {
+                    diffs.push({x, y, v: Game.map[y][x]});
+                }
+            }
+        }
+        // Send ALL diffs (simple version)
+        if(diffs.length > 0) {
+            // chunking
+             const CHUNK_SIZE = 100;
+             for (let i=0; i<diffs.length; i+=CHUNK_SIZE) {
+                 this.publish('map', { type: 'sync', data: diffs.slice(i, i+CHUNK_SIZE), to: toId });
+             }
+        }
+    }
+
+    publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
+
+    handleMessage(topic, message) {
+        let msg;
+        try { msg = JSON.parse(message.toString()); } catch(e) { return; }
+        if (msg.id === Game.localPlayer.id && msg.type !== 'kick') return;
+
+        if (msg.type === 'move' || msg.type === 'heartbeat') {
+            if (!Game.remotePlayers[msg.id]) {
+                Game.remotePlayers[msg.id] = {
+                    id: msg.id, x: msg.sx || 0, y: msg.sy || 0, targetX: msg.tx, targetY: msg.ty,
+                    username: msg.username || "Unknown", color: msg.col || '#fff', lastSeen: now(),
+                    joinedAt: msg.joinedAt // FIX: Capture timestamp on first sight
+                };
+            }
+            let rp = Game.remotePlayers[msg.id];
+            rp.lastSeen = now();
+            if(msg.username && rp.username === "Unknown") rp.username = msg.username;
+
+            // FIX: Ensure timestamp is synced if it comes in late
+            if (msg.joinedAt && !rp.joinedAt) {
+                rp.joinedAt = msg.joinedAt;
+            }
+
+            if (msg.type === 'move') {
+                rp.color = msg.col; rp.rotation = msg.r; rp.isDrilling = msg.drill; rp.gridX = msg.gx; rp.gridY = msg.gy;
+                rp.targetX = msg.tx; rp.targetY = msg.ty;
+                if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
+            }
+
+            // FIX: Always check if this new info changes the admin
+            Game.updateAdminStatus();
+        }
+        else if (msg.type === 'join') {
+            if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
+            else {
+                // Only show message if we didn't know them before
+                if(!Game.remotePlayers[msg.id]) {
+                    UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
+                    Sound.playChat('join');
+                }
+                Game.remotePlayers[msg.id] = {
+                    id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
+                };
+                UI.updatePlayerList();
+                Game.updateAdminStatus();
+
+                // If I am admin, SEND MAP
+                if(Game.isAdmin) {
+                    this.sendMapDiff(msg.id);
+                }
+
+                // Reply with MY position so they see me immediately
+                this.broadcastMove();
+
+            }
+        }
+        else if (msg.type === 'tile') {
+             if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
+        }
+        else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
+            // Apply Map Sync
+            msg.data.forEach(d => {
+                if (Game.map[d.y]) {
+                     Game.map[d.y][d.x] = d.v;
+                     // Auto discover synced changes so we can see them on minimap
+                     Game.discovered[d.y][d.x] = 1;
+                }
+            });
+            // Debounce toast to prevent spam from chunked packets
+            if (now() - this.lastSyncToast > 2000) {
+                UI.showToast("Map Synced with Host", "success");
+                this.lastSyncToast = now();
+            }
+        }
+        else if (msg.type === 'map_req' && Game.isAdmin) {
+            this.sendMapDiff(msg.from);
+        }
+        else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
+        else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#f55"); Sound.playChat('death'); }
+        else if (msg.type === 'kick') {
+            if (msg.target === Game.localPlayer.id) { alert(UI.formatMsg('You', 'kick')); location.reload(); }
+            else {
+                if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "red");
+                delete Game.remotePlayers[msg.target];
+            }
+        }
+        else if (msg.type === 'fuel' && msg.to === Game.localPlayer.id) {
+            Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
+            UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
+            Sound.playSuccess();
+            if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "orange");
+        }
+    }
+
+    checkAdmin() {
+        let all = Object.values(Game.remotePlayers).concat([Game.localPlayer]);
+        all.sort((a,b) => a.joinedAt - b.joinedAt);
+        if (all[0].id === Game.localPlayer.id && !Game.isAdmin) {
+            Game.isAdmin = true;
+            UI.updateAdminPanel();
+        }
+    }
+}
+
+// --- INPUT ---
+
+class InputManager {
+    constructor() { this.keys = {}; this.bindMode = null; }
+    init() {
+        window.addEventListener('keydown', e => {
+            Sound.init();
+            if (this.bindMode) {
+                Game.settings.keys[this.bindMode] = e.key;
+                localStorage.setItem('mm_keybinds', JSON.stringify(Game.settings.keys));
+                UI.showToast(`Bound ${this.bindMode.toUpperCase()} to ${e.key}`, "success");
+                this.bindMode = null;
+                UI.refreshKeybindLabels();
+                return;
+            }
+            this.keys[e.key] = true;
+            if (e.key === Game.settings.keys.chat && document.activeElement !== $('chat-input')) {
+                e.preventDefault();
+                $('chat-input').focus();
+            }
+            if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat) e.preventDefault();
+        });
+        window.addEventListener('keyup', e => this.keys[e.key] = false);
+        $('chat-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                let val = e.target.value.trim();
+                if (val) {
+                    if(val.startsWith('/')) { this.handleCommand(val); }
+                    else {
+                        // Display own message immediately
+                        UI.addMessage(Game.settings.username, val);
+                        Network.sendChat(val);
+                    }
+                    e.target.value = "";
+                }
+                e.target.blur();
+                $('gameCanvas').focus();
+            }
+            e.stopPropagation();
+        });
+    }
+
+    handleCommand(cmd) {
+        let parts = cmd.split(' ');
+        if (parts[0] === '/tp' && Game.isAdmin) {
+            if (parts.length === 3) {
+                let x = parseInt(parts[1]); let y = parseInt(parts[2]);
+                if (!isNaN(x) && !isNaN(y)) {
+                    Game.localPlayer.gridX = x; Game.localPlayer.gridY = y;
+                    Game.localPlayer.x = x * CONSTANTS.TILE_SIZE; Game.localPlayer.y = y * CONSTANTS.TILE_SIZE;
+                    UI.showToast(`Teleported to ${x}, ${y}`, "success");
+                    Network.broadcastMove();
+                }
+            } else if (parts.length === 2) {
+                let target = Object.values(Game.remotePlayers).find(p => p.username === parts[1]);
+                if (target) {
+                    Game.localPlayer.gridX = target.gridX; Game.localPlayer.gridY = target.gridY;
+                    Game.localPlayer.x = target.x; Game.localPlayer.y = target.y;
+                    UI.showToast(`Teleported to ${target.username}`, "success");
+                    Network.broadcastMove();
+                } else UI.showToast("Player not found", "error");
+            }
+        } else {
+            UI.showToast("Unknown command or not admin", "error");
+        }
+    }
+
+    startBind(action) { this.bindMode = action; UI.refreshKeybindLabels(); }
+}
+
+// --- UI & SAVES ---
+
+class UIManager {
+    constructor() {
+        this.defaultServers = [
+            "wss://broker.emqx.io:8084/mqtt",
+            "wss://broker.hivemq.com:8884/mqtt",
+            "wss://test.mosquitto.org:8081"
+        ];
+        this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
+
+        // Init server list on load
+        setTimeout(() => this.refreshServerList(), 500);
+    }
+
+    rndMsg(type) { const arr = MSGS[type]; return arr[Math.floor(Math.random() * arr.length)]; }
+
+    formatMsg(username, type) {
+        let msg = this.rndMsg(type);
+        if (msg.includes('<user>')) {
+            return msg.replace(/<user>/g, username);
+        }
+        return `${username} ${msg}`;
+    }
+
+    addMessage(name, text, color='#fff') {
+        const div = document.createElement('div');
+        div.innerHTML = `<span style="color:${color}; font-weight:bold;">${name}:</span> ${text}`;
+        $('chat-messages').appendChild(div);
+        $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+    }
+    showToast(msg, type='normal',timeout=4000) {
+        const area = $('notification-area');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerText = msg;
+        area.appendChild(el);
+        setTimeout(() => el.remove(), timeout);
+    }
+    openSettings() {
+        $('settings-modal').classList.add('active');
+        this.refreshKeybindLabels();
+        SaveSystem.renderSaveList();
+    }
+    closeSettings() { $('settings-modal').classList.remove('active'); }
+    refreshKeybindLabels() {
+        const keys = Game.settings.keys;
+        const map = { up: 'btn-bind-up', down: 'btn-bind-down', left: 'btn-bind-left', right: 'btn-bind-right', build: 'btn-bind-build', interact: 'btn-bind-interact', transfer: 'btn-bind-transfer', chat: 'btn-bind-chat' };
+        for (let action in map) {
+            let btn = $(map[action]);
+            if (Input.bindMode === action) { btn.classList.add('binding'); btn.innerText = `PRESS KEY...`; }
+            else { btn.classList.remove('binding'); btn.innerText = `${action.toUpperCase()}: ${keys[action]}`; }
+        }
+    }
+
+    // --- SERVER LIST LOGIC ---
+    refreshServerList() {
+        const list = $('server-list-sidebar');
+        list.innerHTML = '';
+
+        // Merge defaults and custom
+        const allServers = [...new Set([...this.defaultServers, ...this.customServers])];
+
+        allServers.forEach(url => {
+            const isActive = url === Game.settings.broker;
+            const item = document.createElement('div');
+            item.className = `server-list-item ${isActive ? 'active' : ''}`;
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; overflow:hidden;">
+                    <div class="server-status-icon" id="status-${btoa(url).replace(/=/g,'')}"><div class="spin-loader"></div></div>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${url}</span>
+                </div>
+            `;
+            item.onclick = () => this.selectServer(url);
+            list.appendChild(item);
+
+            // Ping server
+            this.checkServerStatus(url);
+        });
+    }
+
+    selectServer(url) {
+        Game.settings.broker = url;
+        localStorage.setItem('mm_broker_url', url);
+        $('setting-broker').value = url;
+        this.refreshServerList(); // Redraw to update active class
+        this.showToast("Server Selected. Launch to Connect.", "normal");
+    }
+
+    addCustomServer() {
+        const input = $('custom-server-input');
+        const url = input.value.trim();
+        if(url && (url.startsWith('ws://') || url.startsWith('wss://'))) {
+            if(!this.customServers.includes(url) && !this.defaultServers.includes(url)) {
+                this.customServers.push(url);
+                localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+                input.value = '';
+                this.refreshServerList();
+                this.showToast("Server Added", "success");
+            } else {
+                this.showToast("Server already exists", "error");
+            }
+        } else {
+            this.showToast("Invalid URL (Must start with ws:// or wss://)", "error");
+        }
+    }
+
+    checkServerStatus(url) {
+        const id = `status-${btoa(url).replace(/=/g,'')}`;
+        const el = $(id);
+        if(!el) return;
+
+
+        const client = mqtt.connect(url, { connectTimeout: 9500, reconnectPeriod: 0 });
+
+        let failedTimeout = setTimeout(() => { if(!client.connected) setStatus(false); }, 10000);
+
+        const setStatus = (success) => {
+            if(el) {
+                el.innerHTML = success
+                    ? `<span style="color:#2ecc71; font-weight:bold;">&#10003;</span>`
+                    : `<span style="color:#e74c3c; font-weight:bold;">&#10007;</span>`;
+            }
+            client.end();
+        };
+
+        client.on('connect', () => {setStatus(true);clearTimeout(failedTimeout);});
+        client.on('error', () => setStatus(false));
+        client.on('close', () => {clearTimeout(failedTimeout);}); // silent
+
+    }
+
+    checkServers() {
+        // Legacy settings modal check
+        this.refreshServerList();
+    }
+
+    async checkForUpdates() {
+        try {
+            if (!initialTimestamp) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('_t', Date.now());
+                const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                initialTimestamp = headRes.headers.get('last-modified');
+                console.log("current version is :", initialTimestamp);
+            }else{
+                const url = new URL(window.location.href);
+                url.searchParams.set('_t', Date.now());
+                const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                const currentTimestamp = headRes.headers.get('last-modified');
+
+                if (currentTimestamp && currentTimestamp !== initialTimestamp) {
+                    UI.showToast("New Version Available!", "normal");
+                    UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+                }
+            }
+        } catch (e) { console.error('Update check error:', e); }
+    }
+
+    toggleDashboard() {
+        const dash = $('dashboard-modal');
+        if (dash.classList.contains('active')) {
+            dash.classList.remove('active');
+        } else {
+            dash.classList.add('active');
+            this.updateDashboard();
+        }
+    }
+
+    updateDashboard() {
+        const p = Game.localPlayer;
+        // Inventory
+        const grid = $('inv-grid');
+        grid.innerHTML = '';
+
+        let types = Object.keys(p.inventory).map(Number).sort((a,b) => a-b);
+        if(p.inventory[TILE_TYPES.CASING] === undefined) p.inventory[TILE_TYPES.CASING] = 0;
+        if(!types.includes(TILE_TYPES.CASING)) types.push(TILE_TYPES.CASING);
+
+        types.forEach(type => {
+            let count = p.inventory[type] || 0;
+            if (count > 0 || type === TILE_TYPES.CASING) {
+                let div = document.createElement('div');
+                div.className = `inv-item ${p.selectedBlock == type ? 'active' : ''}`;
+                div.style.color = TILE_PROPS[type].color || '#fff';
+                div.innerHTML = `
+                    ${TILE_PROPS[type].name}<span class="inv-count">${count}</span>
+                    <div class="inv-trash" onclick="event.stopPropagation(); Game.trashBlock(${type}, event.shiftKey)">x</div>
+                `;
+                if(p.selectedBlock == type) {
+                    div.innerHTML += '<div style="font-size:8px; color:#2ecc71;">[EQUIPPED]</div>';
+                }
+                div.onclick = () => { p.selectedBlock = parseInt(type); UI.updateDashboard(); Sound.playTone(400, 'sine', 0.05); };
+                grid.appendChild(div);
+            }
+        });
+
+        // Stats
+        let elapsed = Math.floor((now() - p.stats.startTime) / 1000);
+        let mins = Math.floor(elapsed / 60);
+        let secs = elapsed % 60;
+        let html = `
+            <div class="stat-row"><span>Time Played:</span><span>${mins}m ${secs}s</span></div>
+            <div class="stat-row"><span>Total Blocks Mined:</span><span>${p.stats.totalMined}</span></div>
+            <div class="stat-row"><span>Max Depth Reached:</span><span>${Math.floor(Math.max(0, p.gridY-5))}m</span></div>
+        `;
+        let sorted = Object.keys(p.stats.blocksMined).sort((a,b) => p.stats.blocksMined[b] - p.stats.blocksMined[a]).slice(0,3);
+        sorted.forEach(t => {
+            html += `<div class="stat-row"><span>${TILE_PROPS[t].name}:</span><span>${p.stats.blocksMined[t]}</span></div>`;
+        });
+        $('stats-container').innerHTML = html;
+
+        // Leaderboard
+        let players = Object.values(Game.remotePlayers).concat(p);
+        players.forEach(pl => pl.score = Math.floor((pl.gridY || 0) + (pl.money||0)/10));
+        players.sort((a,b) => b.score - a.score);
+
+        let lbHtml = "";
+        players.forEach((pl, i) => {
+            // Show ID if username missing
+            const name = pl.username || `ID: ${pl.id.substr(0,5)}`;
+            lbHtml += `<div class="stat-row"><span>${i+1}. ${name}</span><span>${pl.score} pts</span></div>`;
+        });
+        $('leaderboard-container').innerHTML = lbHtml;
+
+        $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 2) ? 'block' : 'none';
+    }
+
+    updatePlayerList() {
+        if (!Game.isAdmin) return;
+        $('admin-panel').style.display = 'block';
+        const list = $('player-list');
+        list.innerHTML = '';
+        Object.values(Game.remotePlayers).forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'player-row';
+            row.innerHTML = `<span>${p.username}</span><div><button class="btn btn-small btn-danger" onclick="Admin.kick('${p.id}')">K</button></div>`;
+            list.appendChild(row);
+        });
+    }
+    updateAdminPanel() { this.updatePlayerList(); }
+}
+
+class AdminSystem { kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); } }
+
+class SaveSystem {
+    static autosaveEnabled = true;
+    static currentSaveId = null;
+    static db = null;
+    static dbPromise = null;
+
+    static async initDB() {
+        if (!this.dbPromise) {
+            this.dbPromise = new Promise((resolve, reject) => {
+                const request = indexedDB.open("MegaMinerDB", 2); // Version bumped to 2
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    // Full map data store
+                    if (!db.objectStoreNames.contains("saves")) {
+                        db.createObjectStore("saves", { keyPath: "id" });
+                    }
+                    // Metadata store for fast listing
+                    if (!db.objectStoreNames.contains("save_meta")) {
+                        db.createObjectStore("save_meta", { keyPath: "id" });
+                    }
+                };
+                request.onsuccess = (event) => {
+                    resolve(event.target.result);
+                };
+                request.onerror = (event) => {
+                    console.error("IndexedDB initialization failed", event);
+                    reject(event);
+                };
+            });
+        }
+        this.db = await this.dbPromise;
+    }
+
+    static init() {
+        const as = localStorage.getItem('mm_autosave_setting');
+        if(as !== null) this.autosaveEnabled = (as === 'true');
+        $('autosave-toggle').checked = this.autosaveEnabled;
+    }
+
+    static toggleAutosave(val) {
+        this.autosaveEnabled = val;
+        localStorage.setItem('mm_autosave_setting', val);
+    }
+
+    // --- CORE SAVE LOGIC ---
+
+    static async createNewSave() {
+        // PROTECTION: Only Admin can create/save games
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            UI.showToast("Only Admin can create saves.", "error");
+            return;
+        }
+
+        const name = prompt("Enter Save Name:", "New World " + new Date().toLocaleTimeString());
+        if(!name) return;
+
+        const id = Date.now();
+        this.currentSaveId = id;
+        await this.saveGame(id, name);
+        this.renderSaveList();
+        UI.showToast("Created New Save", "success");
+    }
+
+    static async saveCurrent() {
+        // PROTECTION: Only Admin can save
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            UI.showToast("Only Admin can save.", "error");
+            return;
+        }
+
+        if(this.currentSaveId) {
+            await this.saveGame(this.currentSaveId);
+        } else {
+            this.createNewSave();
+        }
+    }
+
+    static async saveGame(id, name = null, isAuto = false) {
+        // PROTECTION: Redundant check for internal calls
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            return;
+        }
+
+        try {
+            await this.initDB();
+
+            // If name is null, try to fetch existing name or default
+            let finalName = name;
+            if(!finalName) {
+                const existing = await this.getMeta(id);
+                finalName = existing ? existing.name : `Save ${id}`;
+            }
+
+            const cleanPlayer = JSON.parse(JSON.stringify(Game.localPlayer));
+            const cleanMap = JSON.parse(JSON.stringify(Game.map));
+            const cleanDiscovered = Game.discovered.map(r => Array.from(r));
+
+            const fullData = {
+                id: id,
+                player: cleanPlayer,
+                map: cleanMap,
+                discovered: cleanDiscovered,
+                banned: Game.bannedIds,
+                timestamp: Date.now()
+            };
+
+            const metaData = {
+                id: id,
+                name: finalName,
+                timestamp: Date.now()
+            };
+
+            await new Promise((resolve, reject) => {
+                const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
+
+                // Save heavy data
+                tx.objectStore("saves").put(fullData);
+                // Save meta data
+                tx.objectStore("save_meta").put(metaData);
+
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+
+            // Remember this as the last used save
+            localStorage.setItem('mm_last_save_id', id);
+
+            if (!isAuto) {
+                UI.showToast(`Saved "${finalName}"`, "success");
+                this.renderSaveList();
+            }
+
+        } catch (e) {
+            console.error("Error saving game", e);
+            if (!isAuto) UI.showToast("Save Failed", "error");
+        }
+    }
+
+    static async getMeta(id) {
+        await this.initDB();
+        return new Promise(resolve => {
+            const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").get(id);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    static async loadGame(id, silent = false) {
+        // PROTECTION: Only Admin can load saves
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            if(!silent) UI.showToast("Only Admin (Host) can load saves.", "error");
+            return;
+        }
+
+        await this.initDB();
+
+        try {
+            const data = await new Promise((resolve, reject) => {
+                const tx = this.db.transaction(["saves"], "readonly");
+                const store = tx.objectStore("saves");
+                const req = store.get(id);
+
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = (e) => reject(e);
+            });
+
+            if (!data) {
+                if(!silent) UI.showToast("Corrupt or missing save data.", "error");
+                return;
+            }
+
+            this.currentSaveId = id; // Set ID so autosave works correctly
+            this.restoreData(data);
+            if(!silent) UI.closeSettings();
+
+        } catch (e) {
+            if(!silent) UI.showToast("Failed to load save", "error");
+            console.error(e);
+        }
+    }
+
+    static async deleteGame(id) {
+        if(!confirm("Delete this save forever?")) return;
+        await this.initDB();
+        try {
+            const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
+            tx.objectStore("saves").delete(id);
+            tx.objectStore("save_meta").delete(id);
+            tx.oncomplete = () => {
+                UI.showToast("Save Deleted", "normal");
+                this.renderSaveList();
+                if(this.currentSaveId === id) this.currentSaveId = null;
+            };
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // --- RENDER LIST ---
+    static async renderSaveList() {
+        await this.initDB();
+        const container = $('save-list-wrapper');
+        container.innerHTML = 'Loading saves...';
+
+        // Get all meta
+        const metas = await new Promise(resolve => {
+             const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").getAll();
+             req.onsuccess = () => resolve(req.result);
+             req.onerror = () => resolve([]);
+        });
+
+        container.innerHTML = '';
+        if(metas.length === 0) {
+            container.innerHTML = '<div style="padding:10px; color:#555;">No saves found.</div>';
+            return;
+        }
+
+        // Sort by newest
+        metas.sort((a,b) => b.timestamp - a.timestamp);
+
+        metas.forEach(meta => {
+            const div = document.createElement('div');
+            const isActive = meta.id === this.currentSaveId;
+            div.className = `save-slot ${isActive ? 'active' : ''}`;
+            const dateStr = new Date(meta.timestamp).toLocaleString();
+
+            div.innerHTML = `
+                <div class="save-slot-info">
+                    <strong>${meta.name}</strong> ${isActive ? '<span style="color:var(--success)">(Current)</span>' : ''}<br>
+                    <span style="font-size:10px; color:#999">${dateStr}</span>
+                </div>
+                <div class="save-slot-actions">
+                    <button class="btn" style="background:#555;" onclick="SaveSystem.loadGame(${meta.id})">Load</button>
+                    <button class="btn btn-danger" onclick="SaveSystem.deleteGame(${meta.id})">X</button>
+                    <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">&#8595;</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    static async exportGame(id) {
+         await this.initDB();
+         const req = this.db.transaction("saves", "readonly").objectStore("saves").get(id);
+         req.onsuccess = () => {
+             const data = req.result;
+             if(data) {
+                const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `mm_save_${id}.json`;
+                a.click();
+             }
+         }
+    }
+
+    static importSave(input) {
+        // PROTECTION: Only Admin can import saves
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+             UI.showToast("Only Admin (Host) can import saves.", "error");
+             input.value = '';
+             return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                this.restoreData(data);
+                // Create a new entry for this imported save
+                this.currentSaveId = Date.now();
+                this.saveGame(this.currentSaveId, "Imported " + new Date().toLocaleTimeString());
+            } catch(e) { UI.showToast("Invalid File", "error"); }
+        };
+        if(input.files[0]) reader.readAsText(input.files[0]);
+    }
+
+    static restoreData(data) {
+        // Stop the loop briefly? No, just atomic update.
+        // Deep merge player stats
+        if(data.player) {
+            // Keep current Network Identity intact so we don't disconnect or ghost
+            const currentId = Game.localPlayer.id;
+            const currentJoinedAt = Game.localPlayer.joinedAt;
+
+            Game.localPlayer = { ...Game.localPlayer, ...data.player };
+
+            // Restore identity
+            Game.localPlayer.id = currentId;
+            Game.localPlayer.joinedAt = currentJoinedAt;
+
+            // Ensure visual position matches grid
+            Game.localPlayer.x = Game.localPlayer.gridX * CONSTANTS.TILE_SIZE;
+            Game.localPlayer.y = Game.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+        }
+
+        if(data.map) {
+            Game.map = data.map;
+        }
+
+        if(data.discovered) {
+            // Re-convert arrays back to Uint8Array
+            Game.discovered = data.discovered.map(r => {
+                // Check if it's an object (array-like) or actual array
+                if (r instanceof Uint8Array) return r;
+                return new Uint8Array(Object.values(r));
+            });
+        }
+
+        if(data.banned) Game.bannedIds = data.banned;
+
+        // Force refresh UI
+        UI.showToast("Game Loaded!", "success");
+        UI.updateDashboard();
+
+        // Ensure map is redrawn correctly by resetting camera target slightly
+        Game.camera.x = Game.localPlayer.x;
+        Game.camera.y = Game.localPlayer.y;
+    }
+}
+
+function generateCreditsHTML(data) {
+    let html = "";
+
+    for (const category in data) {
+        html += `<div class="credits-section">`;
+        html += `<h3>${category.replace(/([A-Z])/g, " $1").toUpperCase()}</h3>`;
+
+        const section = data[category];
+
+        // Simple string list (e.g., specialThanks)
+        if (Array.isArray(section) && typeof section[0] === "string") {
+            html += `<div class="credit-entry">`;
+            html += `<ul class="simple-list">`;
+            section.forEach(item => html += `<li>${item}</li>`);
+            html += `</ul>`;
+            html += `</div>`;
+            continue;
+        }
+
+        // Object list (music, sfx, pictures, etc.)
+        section.forEach(entry => {
+            const key = Object.keys(entry)[0];
+            const name = entry[key];
+            const items = entry.items || entry.songs || [];
+
+            html += `<div class="credit-entry">`;
+            html += `<strong>${name}</strong>`;
+            if (items.length > 0) {
+                html += `<ul>`;
+                items.forEach(i => html += `<li>${i}</li>`);
+                html += `</ul>`;
+            }
+            html += `</div>`;
+        });
+
+        html += `</div>`;
+    }
+
+    return html;
+}
+
+// --- INSTANTIATION ---
+const Game = new GameEngine();
+const Input = new InputManager();
+const Network = new NetworkManager();
+const UI = new UIManager();
+const Admin = new AdminSystem();
+const Shop = new ShopSystem();
+
+// Init Save System
+SaveSystem.init();
+
+// Expose
+window.Game = Game;
+window.UI = UI;
+window.SaveSystem = SaveSystem;
+window.Admin = Admin;
+window.Shop = Shop;
+window.Input = Input;
+window.Sound = Sound;
+//patrickdearteaga.com,
+const creditsData = {
+    music: [
+        {
+            artist: "Patrick de Arteaga",
+            songs: ["Chiptronical","Great Little Challenge", "Solve The Puzzle"]
+        },
+        {
+            artist: "Kevin Macleod",
+            songs: ["Sneaky Snitch"]
+        },
+        {
+            artist: "VibeHorn (Pixabay)",
+            songs: ["Cozy Lofi Relax"]
+        },
+        {
+            artist: "DELOSound (Pixabay)",
+            songs: ["LoFi Background Music 3"]
+        },
+        {
+            artist: "CFL_TurningPages (Pixabay)",
+            songs: ["Field Duel lofi"]
+        }
+    ],
+
+    // pictures: [
+    //     // { author: "Jane Doe", items: ["Sky texture", "Moon texture"] },
+    // ],
+
+    // sfx: [
+    //     // { source: "Jane Doe", items: ["Footsteps", "Door creak"] },
+    // ],
+
+    specialThanks: [
+        "My friends",
+        "Playtesters",
+        "Contributors",
+        "The laptops that were sacrificed in the making of this game"
+    ]
+};
+// JANK AUDIO FIX
+Sound.loadSettings()
+// bruh
+document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
+</script>
 </body>
 </html>
