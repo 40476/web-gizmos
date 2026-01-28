@@ -470,7 +470,10 @@
     <div id="notification-area"></div>
 
 <script>
-//!summaryignore
+/**
+ * MEGA MINER ONLINE v3.8
+ * Updates: Save Protection, Host Map Auth, Admin Sync Fixes, Toast Debounce
+ */
 
 // --- UTILS ---
 const $ = id => document.getElementById(id);
@@ -565,7 +568,6 @@ const MSGS = {
 };
 
 let initialTimestamp = null;
-//!endsummaryignore
 
 // --- SOUND ENGINE ---
 class SoundManager {
@@ -1495,7 +1497,7 @@ class GameEngine {
 
                 if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
                 else if (this.discovered[y][x]) {
-                    this.ctx.globalAlpha = 0.9;
+                    this.ctx.globalAlpha = 0.3;
                     this.drawProceduralTile(x, y, tile, false);
                     this.ctx.globalAlpha = 1.0;
                 }
@@ -1887,13 +1889,14 @@ class ShopSystem {
         this.updateUI();
     }
 }
-//!summaryignore
+
 // --- NETWORK (MQTT) ---
 class NetworkManager {
     constructor() {
         this.client = null;
         this.baseTopic = 'mm_online/';
         this.lastHeartbeat = 0;
+        this.lastSyncToast = 0;
     }
 
     connect() {
@@ -1937,18 +1940,21 @@ class NetworkManager {
             }
         });
         if (n - this.lastHeartbeat > 2000) {
-            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username });
+            // FIX: Added joinedAt to heartbeat so late joiners see my timestamp
+            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
             this.lastHeartbeat = n;
         }
     }
 
     broadcastMove() {
         const p = Game.localPlayer;
+        // FIX: Added joinedAt to move packets so late joiners see my timestamp
         this.publish('pos', {
             type: 'move', id: p.id,
             sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE,
             gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
-            username: Game.settings.username
+            username: Game.settings.username,
+            joinedAt: p.joinedAt
         });
         this.lastHeartbeat = now();
     }
@@ -1996,18 +2002,27 @@ class NetworkManager {
             if (!Game.remotePlayers[msg.id]) {
                 Game.remotePlayers[msg.id] = {
                     id: msg.id, x: msg.sx || 0, y: msg.sy || 0, targetX: msg.tx, targetY: msg.ty,
-                    username: msg.username || "Unknown", color: msg.col || '#fff', lastSeen: now()
+                    username: msg.username || "Unknown", color: msg.col || '#fff', lastSeen: now(),
+                    joinedAt: msg.joinedAt // FIX: Capture timestamp on first sight
                 };
             }
             let rp = Game.remotePlayers[msg.id];
             rp.lastSeen = now();
             if(msg.username && rp.username === "Unknown") rp.username = msg.username;
 
+            // FIX: Ensure timestamp is synced if it comes in late
+            if (msg.joinedAt && !rp.joinedAt) {
+                rp.joinedAt = msg.joinedAt;
+            }
+
             if (msg.type === 'move') {
                 rp.color = msg.col; rp.rotation = msg.r; rp.isDrilling = msg.drill; rp.gridX = msg.gx; rp.gridY = msg.gy;
                 rp.targetX = msg.tx; rp.targetY = msg.ty;
                 if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
             }
+
+            // FIX: Always check if this new info changes the admin
+            Game.updateAdminStatus();
         }
         else if (msg.type === 'join') {
             if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
@@ -2045,7 +2060,11 @@ class NetworkManager {
                      Game.discovered[d.y][d.x] = 1;
                 }
             });
-            UI.showToast("Map Synced with Host", "success");
+            // Debounce toast to prevent spam from chunked packets
+            if (now() - this.lastSyncToast > 2000) {
+                UI.showToast("Map Synced with Host", "success");
+                this.lastSyncToast = now();
+            }
         }
         else if (msg.type === 'map_req' && Game.isAdmin) {
             this.sendMapDiff(msg.from);
@@ -2816,8 +2835,6 @@ const creditsData = {
 // JANK AUDIO FIX
 Sound.loadSettings()
 // bruh
-
-//!endsummaryignore
 document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
 </script>
 </body>
