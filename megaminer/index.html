@@ -2453,12 +2453,72 @@ class SaveSystem {
         }
     }
 
-    static async loadGame(id, silent = false) {
-        if (!silent && Network.client && Network.client.connected && !Game.isAdmin) {
-            UI.showToast("Only Admin can load saves.", "error");
-            return;
-        }
+    static async saveGame(id, name = null, isAuto = false) {
+        try {
+            await this.initDB();
 
+            // If name is null, try to fetch existing name or default
+            let finalName = name;
+            if(!finalName) {
+                const existing = await this.getMeta(id);
+                finalName = existing ? existing.name : `Save ${id}`;
+            }
+
+            const cleanPlayer = JSON.parse(JSON.stringify(Game.localPlayer));
+            const cleanMap = JSON.parse(JSON.stringify(Game.map));
+            const cleanDiscovered = Game.discovered.map(r => Array.from(r));
+
+            const fullData = {
+                id: id,
+                player: cleanPlayer,
+                map: cleanMap,
+                discovered: cleanDiscovered,
+                banned: Game.bannedIds,
+                timestamp: Date.now()
+            };
+
+            const metaData = {
+                id: id,
+                name: finalName,
+                timestamp: Date.now()
+            };
+
+            await new Promise((resolve, reject) => {
+                const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
+
+                // Save heavy data
+                tx.objectStore("saves").put(fullData);
+                // Save meta data
+                tx.objectStore("save_meta").put(metaData);
+
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+
+            // Remember this as the last used save
+            localStorage.setItem('mm_last_save_id', id);
+
+            if (!isAuto) {
+                UI.showToast(`Saved "${finalName}"`, "success");
+                this.renderSaveList();
+            }
+
+        } catch (e) {
+            console.error("Error saving game", e);
+            if (!isAuto) UI.showToast("Save Failed", "error");
+        }
+    }
+
+    static async getMeta(id) {
+        await this.initDB();
+        return new Promise(resolve => {
+            const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").get(id);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    static async loadGame(id, silent = false) {
         await this.initDB();
 
         try {
@@ -2562,12 +2622,6 @@ class SaveSystem {
     }
 
     static importSave(input) {
-        if (Network.client && Network.client.connected && !Game.isAdmin) {
-            UI.showToast("Only Admin can import saves.", "error");
-            input.value = '';
-            return;
-        }
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
