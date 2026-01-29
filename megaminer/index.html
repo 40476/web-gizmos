@@ -18,16 +18,16 @@
             --highlight: #f39c12;
             --danger: #c0392b;
             --success: #27ae60;
-            
+
         }
         body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
-        
+
         canvas { display: block; width: 100vw; height: 100vh; }
-        
+
         /* UI Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .pointer-events-auto { pointer-events: auto; }
-        
+
         /* Gear Icon */
         #gear-btn { position: absolute; top: 10px; left: 10px; font-size: 30px; color: rgba(255,255,255,0.5); cursor: pointer; pointer-events: auto; z-index: 50; transition: all 0.3s; }
         #gear-btn:hover { color: #fff; transform: rotate(90deg); }
@@ -65,7 +65,7 @@
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 600px; max-height: 85vh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
         .modal.active { display: block; }
         .modal h2 { margin-top: 0; color: var(--highlight); border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        
+
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaa; text-transform: uppercase; }
         .form-group input[type="text"], .form-group select { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: white; box-sizing: border-box; }
@@ -78,7 +78,7 @@
         .shop-item h4 { margin: 0 0 5px 0; color: var(--accent); }
         .shop-item p { font-size: 12px; color: #ccc; margin: 0 0 5px 0; }
         .shop-item .cost { color: var(--highlight); font-weight: bold; font-size: 14px; }
-        
+
         /* Sell List */
         .sell-list { max-height: 150px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #444; background: #111; }
         .sell-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-bottom: 1px solid #333; font-size: 12px; }
@@ -92,7 +92,8 @@
         .inv-item:hover { border-color: #fff; background: #333; }
         .inv-item.active { border-color: gold; box-shadow: 0 0 8px gold; background: rgba(255, 215, 0, 0.1); transform: scale(1.05); z-index: 10; }
         .inv-count { position: absolute; bottom: 2px; right: 2px; font-weight: bold; color: #fff; }
-        .inv-trash { position: absolute; top: 0; right: 0; background: #c0392b; color: white; width: 15px; height: 15px; font-size: 10px; line-height: 15px; display: none; }
+        .inv-trash { position: absolute; top: 0; right: 0; background: #c0392b; color: white; width: 15px; height: 15px; font-size: 10px; line-height: 15px; display: none; cursor: pointer; }
+        .inv-trash:hover { filter: brightness(1.2); }
         .inv-item:hover .inv-trash { display: block; }
         .stat-row { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid #333; padding: 2px 0; }
 
@@ -103,7 +104,7 @@
         .btn-bind { background: #444; border: 1px solid #666; color: #fff; text-align: left; position: relative; }
         .btn-bind.binding { background: #c0392b; border-color: #e74c3c; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        
+
         /* Credits Modal */
         #credits-modal .credits-section {
             margin-bottom: 25px;
@@ -155,13 +156,17 @@
         .status-dot.red { background: #e74c3c; }
 
         /* Save Slots */
-        .save-slot { background: rgba(0,0,0,0.4); padding: 10px; border: 1px solid #555; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .save-slot-info { font-size: 12px; color: #ccc; }
-        .save-slot-actions button { margin-left: 5px; padding: 5px 10px; font-size: 11px; }
+        .save-list-wrapper { max-height: 200px; overflow-y: auto; border: 1px solid #444; background: #111; padding: 5px; margin-bottom: 10px; }
+        .save-slot { background: rgba(0,0,0,0.4); padding: 8px; border: 1px solid #555; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .save-slot:hover { background: rgba(255,255,255,0.05); }
+        .save-slot.active { border-color: var(--highlight); box-shadow: inset 0 0 10px rgba(243, 156, 18, 0.2); }
+        .save-slot-info { font-size: 12px; color: #ccc; flex: 1; }
+        .save-slot-actions { display:flex; gap: 5px; }
+        .save-slot-actions button { margin: 0; padding: 4px 8px; font-size: 10px; }
 
         /* Start Screen */
-        #start-screen { position: absolute; 
-          background-image: 
+        #start-screen { position: absolute;
+          background-image:
             linear-gradient(30deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
             linear-gradient(150deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
             linear-gradient(30deg, #683131 12%, transparent 12.5%, transparent 87%, #683131 87.5%, #683131),
@@ -183,6 +188,20 @@
           pointer-events: auto;
         }
         #start-screen h1 { font-size: 48px; color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight); }
+
+        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; max-width: 800px;}
+        .start-panel { width:300px; }
+        .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; }
+
+        /* Server List Styles */
+        .server-list-item { background:rgba(0,0,0,0.3); padding:8px; margin-bottom:5px; border:1px solid #333; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:0.2s; }
+        .server-list-item:hover { background:rgba(255,255,255,0.05); }
+        .server-list-item.active { border-color:var(--highlight); box-shadow:inset 0 0 5px rgba(243, 156, 18, 0.2); }
+        .server-status-icon { width:12px; height:12px; margin-right:8px; display:flex; align-items:center; justify-content:center; }
+        .spin-loader { border: 2px solid #555; border-top: 2px solid #fff; border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; }
+        .server-actions { display: flex; gap: 4px; opacity: 0.6; transition: opacity 0.2s; }
+        .server-list-item:hover .server-actions { opacity: 1; }
+
         /* Notification/Error Popup */
         #notification-area { position: absolute; top: 20px; right: 180px; width: 300px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 200; }
         .toast { background: rgba(30, 30, 30, 0.95); border-left: 4px solid var(--accent); padding: 12px; color: white; pointer-events: auto; animation: slideIn 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 14px; }
@@ -198,13 +217,13 @@
 <body>
 
     <canvas id="gameCanvas"></canvas>
-    
+
     <div id="ui-layer">
         <div id="heat-overlay"></div>
-        
+
         <!-- Gear Icon -->
         <div id="gear-btn" onclick="UI.openSettings()">&#9881;</div>
-        
+
         <!-- Coords -->
         <div id="coords-display">X: 0 Y: 0</div>
 
@@ -241,21 +260,47 @@
         <!-- Start Screen -->
         <div id="start-screen">
             <h1>Mega Miner</h1>
-            <div style="background: var(--panel-bg); padding: 30px; border-radius: 10px; width: 300px; border: 1px solid #444;">
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="start-username" value="Miner1" maxlength="12">
+            <div class="start-container">
+                <div class="start-panel">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="start-username" placeholder="Enter Username" maxlength="12" style="flex:1;">
+                            <button class="btn btn-small" style="width:auto; padding: 0 10px; font-size: 16px;" onclick="Game.randomizeUsername()" title="Randomize Username">&#127922;</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Room ID</label>
+                        <input type="text" id="start-room" value="public-mine-1">
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Color</label>
+                        <input type="color" id="start-color" value="#3498db" style="height:40px;">
+                    </div>
+                    <button class="btn" onclick="Game.init()">LAUNCH MISSION</button>
+                    <button class="btn" style="margin-top:10px; background:#444;" onclick="UI.openSettings()">SETTINGS / IMPORT</button>
                 </div>
-                <div class="form-group">
-                    <label>Room ID</label>
-                    <input type="text" id="start-room" value="public-mine-1">
+
+                <div class="server-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <label style="margin:0; font-size:12px; color:#aaa;">SERVER STATUS</label>
+                        <button class="btn btn-small" style="width:auto; padding:2px 5px;" onclick="UI.refreshServerList()">&#8635;</button>
+                    </div>
+                    <div id="server-list-sidebar" style="flex:1; overflow-y:auto; max-height:200px; margin-bottom:10px;">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Add Custom Server</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="custom-server-input" placeholder="wss://..." style="font-size:11px;">
+                            <button class="btn btn-small" style="width:auto;" onclick="UI.addCustomServer()">+</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; font-size:10px; color:#e74c3c; line-height:1.4; background:rgba(231, 76, 60, 0.1); padding:5px; border:1px solid #e74c3c;">
+                        <strong>WARNING:</strong> You must select the SAME server as your friends to see them. Check status before joining.
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Vehicle Color</label>
-                    <input type="color" id="start-color" value="#3498db" style="height:40px;">
-                </div>
-                <button class="btn" onclick="Game.init()">LAUNCH MISSION</button>
-                <button class="btn" style="margin-top:10px; background:#444;" onclick="UI.openSettings()">SETTINGS / IMPORT</button>
             </div>
         </div>
 
@@ -265,7 +310,8 @@
             <div class="dash-cols">
                 <div>
                     <h4 style="color:#aaa; border-bottom:1px solid #444;">INVENTORY / BUILD</h4>
-                    <p style="font-size:11px; color:#777;">Click item to Equip for Building (B). Hover to Trash.</p>
+                    <p style="font-size:11px; color:#777;">Click item to Equip for Building (B). Hover to Trash (Shift+Click to Trash All).</p>
+                    <button class="btn btn-small" style="background:#c0392b; width:100%; margin-bottom:10px;" onclick="Game.trashJunk()">TRASH ALL JUNK (Dirt/Stone)</button>
                     <div id="inv-grid" class="inv-grid"></div>
                     <div id="station-btn-container" style="margin-top:20px; display:none;">
                         <button class="btn" style="background:var(--success);" onclick="Shop.open()">OPEN STATION SHOP</button>
@@ -274,7 +320,7 @@
                 <div>
                     <h4 style="color:#aaa; border-bottom:1px solid #444;">STATISTICS</h4>
                     <div id="stats-container"></div>
-                    
+
                     <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">LEADERBOARD (Local)</h4>
                     <div id="leaderboard-container"></div>
                 </div>
@@ -290,10 +336,10 @@
             </div>
             <button class="btn" style="margin-bottom:10px; background:var(--success);" onclick="Shop.sellAll()">SELL ALL ORES</button>
             <button class="btn" style="margin-bottom:10px; background:var(--success);" onclick="Shop.refuelRepair()">Refuel and Repair ($10)</button>
-            
+
             <h4 style="color:#aaa; border-bottom:1px solid #444;">SELL MINERALS</h4>
             <div id="sell-list" class="sell-list"></div>
-            
+
             <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">UPGRADES</h4>
             <div class="shop-grid">
                 <div class="shop-item">
@@ -345,7 +391,7 @@
         <!-- Settings Modal -->
         <div id="settings-modal" class="modal">
             <h2>Settings</h2>
-            
+
             <div class="form-group">
                 <label>Audio Mixer</label>
                 <div style="font-size:12px; display:grid; grid-template-columns: 1fr 3fr 1fr; gap:10px; align-items:center;">
@@ -365,22 +411,9 @@
             </div>
 
             <div class="form-group">
-                <label>Multiplayer Broker</label>
-                <div style="display:flex; gap:5px; margin-bottom:5px;">
-                    <select id="server-list" onchange="$('setting-broker').value = this.value" style="flex:1;">
-                        <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (WSS)</option>
-                        <option value="ws://broker.emqx.io:8083/mqtt">EMQX Public (WS)</option>
-                        <option value="wss://broker.hivemq.com:8000">HiveMQ Public (WSS)</option>
-                        <option value="wss://mqtt.eclipseprojects.io:443/mqtt">Eclipse (WSS)</option>
-                        <option value="wss://test.mosquitto.org:8081">Mosquitto (WSS)</option>
-                        <option value="wss://cloud.mqtt.cool/mqtt">MQTT.cool (WSS)</option>
-                        <option value="ws://localhost:8083/mqtt">Localhost (WS)</option>
-                    </select>
-                    <button class="btn btn-small" style="width:auto;" onclick="UI.checkServers()">Check Status</button>
-                </div>
-                <div id="server-status-display" style="margin-bottom:5px; font-size:11px; max-height:60px; overflow-y:auto; background:#222; padding:5px; display:none;"></div>
-                <input type="text" id="setting-broker" placeholder="wss://broker.emqx.io:8084/mqtt">
-                <small style="color:#777;">No effect while playing. Reload to change.</small>
+                <label>Active Broker (Set in Start Screen)</label>
+                <input type="text" id="setting-broker" placeholder="wss://...t" disabled style="opacity:0.7">
+                <small style="color:#777;">Reload to change connection.</small>
             </div>
 
             <div class="form-group">
@@ -400,9 +433,15 @@
             </div>
 
             <div class="form-group">
-                <label>Save Games (LocalStorage) (1st slot does not work, some browsers clear localstorage/indexedDB so back up your saves)</label>
-                <div id="save-slots-container"></div>
-                <button class="btn" style="background:#555; margin-top:5px;" onclick="SaveSystem.saveAndReload()">Save & Reload Page</button>
+                <label>Save Management (IndexedDB)</label>
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <button class="btn" style="flex:1; background:var(--success);" onclick="SaveSystem.createNewSave()">+ NEW SAVE</button>
+                    <button class="btn" style="flex:1;" onclick="SaveSystem.saveCurrent()">SAVE CURRENT</button>
+                </div>
+                <div id="save-list-wrapper" class="save-list-wrapper">
+                    <!-- Saves injected here -->
+                </div>
+                <small style="color:#777;">Saves are unlimited. Green border indicates current session.</small>
             </div>
 
             <div class="form-group">
@@ -436,17 +475,24 @@
     <div id="notification-area"></div>
 
 <script>
-/**
- * MEGA MINER ONLINE v3.4
- * Updates: Timestamp/Header Update Checker
- */
-
-// --- UTILS ---
+//!summaryignore
 const $ = id => document.getElementById(id);
-const uuid = () => Math.random().toString(36).substr(2, 9);
+
+// Robust UUID Generator (longer for collision avoidance)
+const uuid = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback if crypto.randomUUID not available (older browsers/contexts)
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
 const now = () => Date.now();
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-const BUILD_TIMESTAMP = Date.now(); 
+const BUILD_TIMESTAMP = Date.now();
 
 // --- SEEDED RNG ---
 const pseudoRandom = (x, y) => {
@@ -455,7 +501,7 @@ const pseudoRandom = (x, y) => {
 
 // --- CONFIG & STATE ---
 const CONSTANTS = {
-    TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1, 
+    TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1,
     FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 200, MAP_HEIGHT: 600, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
 };
 
@@ -483,16 +529,58 @@ const TILE_PROPS = {
 };
 
 const MSGS = {
-    join: ["spawned in.", "is here to steal your ores.", "slid into the server.", "woke up.", "has entered the chat."],
-    leave: ["rage quit.", "went to touch grass.", "timed out (RIP).", "vanished.", "was consumed by the void."],
-    kick: ["was yeeted.", "read the TOS wrong.", "was shown the door."],
-    ban: ["has been banished to the shadow realm.", "caught the ban hammer."],
-    death: ["forgot to breathe.", "became bedrock.", "was crushed by capitalism.", "needs a tutorial."],
+    join: [
+        "spawned in.",
+        "slid into the server.",
+        "has entered the chat.",
+        "is here to steal your ores.",
+        "initialized connection.",
+        "mounted their filesystem.",
+        "is among us.",
+        "has joined! Hide your snacks.",
+        "*Record scratch* *Freeze frame* Yup, that's <user>. You're probably wondering how they got here.",
+        "A wild <user> appeared!",
+        "Everyone panic! <user> has arrived!",
+        "<user> has joined. The quality of this room just went up by 0.0001%.",
+        "<user> is now watching you. (Just kidding... probably.)"
+    ],
+    leave: [
+        "rage quit.",
+        "timed out (RIP).",
+        "received SIGTERM.",
+        "failed to compile.",
+        "segfaulted.",
+        "touched grass (Fatal Error).",
+        "kernel panicked.",
+        "unmounted themselves.",
+        "decided to touch grass."
+    ],
+    kick: [
+        "was yeeted.",
+        "read the TOS wrong.",
+        "was shown the door.",
+        "forgot to pay rent."
+    ],
+    ban: [
+        "has been banished to the shadow realm.",
+        "caught the ban hammer.",
+        "was added to the blacklist.",
+        "was banished from this kingdom."
+    ],
+    death: [
+        "forgot to breathe.",
+        "became bedrock.",
+        "needs a tutorial.",
+        "rm -rf /'d themselves.",
+        "experienced a stack overflow.",
+        "dereferenced a null pointer.",
+        "got rekt."
+    ],
     rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
 };
 
 let initialTimestamp = null;
-let currentSaveId = 0;
+//!endsummaryignore
 // --- SOUND ENGINE ---
 class SoundManager {
     constructor() {
@@ -543,8 +631,8 @@ class SoundManager {
     }
 
     createNoiseBuffer() {
-        if (!this.ctx) return null; 
-        const bufSize = this.ctx.sampleRate * 2; 
+        if (!this.ctx) return null;
+        const bufSize = this.ctx.sampleRate * 2;
         const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
@@ -553,7 +641,7 @@ class SoundManager {
 
     setupEngineLoop() {
         const noise = this.ctx.createBufferSource();
-        noise.buffer = this.noiseBuffer; 
+        noise.buffer = this.noiseBuffer;
         noise.loop = true;
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
@@ -562,9 +650,9 @@ class SoundManager {
         gain.gain.value = 0;
         noise.connect(filter);
         filter.connect(gain);
-        gain.connect(this.nodes.engine); 
+        gain.connect(this.nodes.engine);
         noise.start();
-        
+
         this.nodes.engineRumbleGain = gain;
         this.nodes.engineFilter = filter;
 
@@ -572,7 +660,7 @@ class SoundManager {
         grindNoise.buffer = this.noiseBuffer;
         grindNoise.loop = true;
         grindNoise.playbackRate.value = 0.5;
-        
+
         const grindFilter = this.ctx.createBiquadFilter();
         grindFilter.type = 'bandpass';
         grindFilter.frequency.value = 150;
@@ -592,7 +680,7 @@ class SoundManager {
 
     updateEngine(speed, isDrilling) {
         if (!this.ctx || !this.nodes.engineRumbleGain || !this.nodes.engineFilter || !this.nodes.drillGain || !this.nodes.drillFilter) return;
-        
+
         const t = this.ctx.currentTime;
         let baseVol = (speed > 0.1) ? 0.3 : 0.05;
         let baseFreq = 60 + (speed * 30);
@@ -602,7 +690,7 @@ class SoundManager {
 
         if (isDrilling) {
             this.nodes.drillGain.gain.setTargetAtTime(0.5, t, 0.05);
-            this.nodes.drillFilter.frequency.setTargetAtTime(150 + Math.random()*100, t, 0.1); 
+            this.nodes.drillFilter.frequency.setTargetAtTime(150 + Math.random()*100, t, 0.1);
         } else {
             this.nodes.drillGain.gain.setTargetAtTime(0, t, 0.1);
         }
@@ -617,22 +705,22 @@ class SoundManager {
         gain.gain.setValueAtTime(vol, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
         osc.connect(gain);
-        gain.connect(this.nodes.sfx); 
+        gain.connect(this.nodes.sfx);
         osc.start();
         osc.stop(this.ctx.currentTime + duration);
     }
-    
+
     playMining() {
         if (!this.ctx || !this.noiseBuffer) return;
         const t = this.ctx.currentTime;
-        
+
         const src = this.ctx.createBufferSource();
         src.buffer = this.noiseBuffer;
-        src.playbackRate.value = 0.4 + Math.random() * 0.2; 
-        
+        src.playbackRate.value = 0.4 + Math.random() * 0.2;
+
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = 500; 
+        filter.frequency.value = 500;
 
         const gain = this.ctx.createGain();
         gain.gain.setValueAtTime(0.5, t);
@@ -645,7 +733,7 @@ class SoundManager {
         src.stop(t + 0.15);
     }
 
-    playChat(type) { 
+    playChat(type) {
         if (type==='join') { this.playTone(440, 'sine', 0.1); setTimeout(()=>this.playTone(880, 'sine', 0.2), 100); }
         else if (type==='leave') { this.playTone(440, 'sine', 0.1); setTimeout(()=>this.playTone(220, 'sine', 0.2), 100); }
         else if (type==='death') { this.playTone(100, 'sawtooth', 0.5, 0.2); }
@@ -671,7 +759,7 @@ class SoundManager {
         console.error("Error playing music:", e);
       }
     }
-    
+
     loadSettings() {
         ['master', 'music', 'sfx', 'engine'].forEach(t => {
             const v = localStorage.getItem(`mm_vol_${t}`);
@@ -693,16 +781,16 @@ class GameEngine {
         this.ctx = this.canvas.getContext('2d');
         this.minimapCanvas = $('minimap');
         this.minimapCtx = this.minimapCanvas.getContext('2d');
-        
+
         this.running = false;
-        
+
         this.settings = {
-            username: 'Miner',
+            username: '',
             color: '#3498db',
             broker: 'wss://broker.emqx.io:8084/mqtt',
             room: 'public',
-            keys: { 
-                up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', 
+            keys: {
+                up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown',
                 build: 'b', interact: 'e', chat: 'Enter', transfer: 'f'
             }
         };
@@ -718,15 +806,15 @@ class GameEngine {
             temp: 0, maxTemp: 100,
             rotation: 0, isDrilling: false,
             drillTier: 0, heatResist: 0, xrayRange: 0,
-            inventory: {}, 
+            inventory: {},
             selectedBlock: TILE_TYPES.CASING,
             stats: { blocksMined: {}, totalMined: 0, startTime: now() },
             joinedAt: now()
         };
 
-        this.map = []; 
-        this.discovered = []; 
-        this.remotePlayers = {}; 
+        this.map = [];
+        this.discovered = [];
+        this.remotePlayers = {};
         this.camera = { x: 0, y: 0 };
         this.zoom = 1.0;
         this.particles = [];
@@ -734,16 +822,16 @@ class GameEngine {
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
         this.lastActionTime = 0;
         this.lastAutosave = 0;
-        this.fallHeight = 0; 
+        this.fallHeight = 0;
         this.lastCoordsX = -1;
         this.lastCoordsY = -1;
-        
+
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
-        
+
         this.loadStoredSettings();
     }
-    
+
     updateAdminStatus() {
         const players = Object.values(this.remotePlayers)
             .concat([this.localPlayer])
@@ -761,20 +849,35 @@ class GameEngine {
     }
 
     loadStoredSettings() {
-        if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
+        // Load username but default to blank string if nothing stored
+        if(localStorage.getItem('mm_username')) {
+            $('start-username').value = localStorage.getItem('mm_username');
+        } else {
+            $('start-username').value = ""; // Default blank
+        }
+
         if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
         if(localStorage.getItem('mm_veh_color')) $('start-color').value = localStorage.getItem('mm_veh_color');
-        if(localStorage.getItem('mm_broker_url')) $('setting-broker').value = localStorage.getItem('mm_broker_url');
-        
+
+        // Load broker from storage or use default if none
+        const storedBroker = localStorage.getItem('mm_broker_url');
+        if (storedBroker) {
+            this.settings.broker = storedBroker;
+            $('setting-broker').value = storedBroker;
+        } else {
+            // Ensure input matches default if nothing stored
+            $('setting-broker').value = this.settings.broker;
+        }
+
         const showCoords = localStorage.getItem('mm_show_coords');
         if(showCoords === 'true') { $('coords-toggle').checked = true; this.toggleCoords(true); }
-        
+
         const binds = localStorage.getItem('mm_keybinds');
         if(binds) {
             try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){console.error(e);}
         }
     }
-    
+
     // Helper to get base procedural for syncing
     getProceduralTile(x, y) {
         if (y < 5) return TILE_TYPES.EMPTY;
@@ -800,19 +903,44 @@ class GameEngine {
         }
         return type;
     }
-    
+
+    async randomizeUsername() {
+        // UI feedback
+        const btn = $('start-username').nextElementSibling;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<div class="spin-loader" style="width:12px; height:12px; border-width:2px;"></div>';
+
+        try {
+            const res = await fetch('https://randomuser.me/api?inc=login');
+            const data = await res.json();
+            if (data.results && data.results[0]) {
+                let name = data.results[0].login.username;
+                // Clean up name slightly if it's too long
+                if(name.length > 12) name = name.substring(0, 12);
+                $('start-username').value = name;
+            } else {
+                throw new Error("Invalid API response");
+            }
+        } catch(e) {
+            console.error("API Error, using fallback", e);
+            $('start-username').value = 'Miner' + Math.floor(Math.random() * 1000);
+        } finally {
+             btn.innerHTML = originalText;
+        }
+    }
+
     init() {
         this.settings.username = $('start-username').value || 'Miner';
-        this.localPlayer.username = this.settings.username; 
+        this.localPlayer.username = this.settings.username;
         this.settings.room = $('start-room').value || 'public';
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
-        
+
         localStorage.setItem('mm_username', this.settings.username);
         localStorage.setItem('mm_room_id', this.settings.room);
         localStorage.setItem('mm_veh_color', this.settings.color);
         localStorage.setItem('mm_broker_url', this.settings.broker);
-        
+
         $('start-screen').style.display = 'none';
         $('connection-screen').style.display = 'flex';
         this.logConnection("Initializing System...");
@@ -835,21 +963,15 @@ class GameEngine {
         this.generateMap();
         Input.init();
         Sound.loadSettings();
-        
-        Network.connect(); 
+
+        Network.connect();
         UI.refreshKeybindLabels();
-        UI.checkForUpdates(); 
+        UI.checkForUpdates();
 
-        this.running = true;
-        this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
-        this.localPlayer.gridY = 4;
-        this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
-        this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
-        this.localPlayer.stats.startTime = now();
-
-        Sound.init();
+        // Start a new session tracking
+        if (!SaveSystem.currentSaveId) SaveSystem.currentSaveId = Date.now();
     }
-    
+
     logConnection(msg) {
         const d = document.createElement('div');
         d.className = 'log-line';
@@ -857,13 +979,49 @@ class GameEngine {
         $('connection-log').appendChild(d);
         $('connection-log').scrollTop = $('connection-log').scrollHeight;
     }
-    
+
     finishConnection() {
-        setTimeout(() => {
+        // Critical: Do not re-initialize game state if we just reconnected
+        if (this.running) {
+            console.log("Reconnected to broker. Game state preserved.");
             $('connection-screen').style.display = 'none';
+            // Just broadcast position to sync up
+            Network.broadcastMove();
+            return;
+        }
+
+        setTimeout(async () => {
+            $('connection-screen').style.display = 'none';
+
+            this.running = true;
+            this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
+            this.localPlayer.gridY = 4;
+            this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
+            this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+            this.localPlayer.stats.startTime = now();
+            Sound.init();
+
+            // Force update status based on players seen during the timeout
+            this.updateAdminStatus();
+
+            // ONLY load save if we are the host (Admin)
+            if (this.isAdmin) {
+                const lastId = localStorage.getItem('mm_last_save_id');
+                if (lastId) {
+                    console.log("Host detected, loading save:", lastId);
+                    await SaveSystem.loadGame(parseInt(lastId), true);
+                    UI.addMessage("System", "Auto-loaded previous save.", "#2ecc71");
+                }
+            } else {
+                // If we are NOT admin (Client), ensure we rely on the procedural map + sync
+                // We do NOT load any local saves to prevent overwriting the host's world
+                Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
+                UI.addMessage("System", "Connected as Client. Waiting for Map Sync...", "#3498db");
+            }
+
             this.loop();
             UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
-            Network.broadcastMove(); 
+            Network.broadcastMove();
             this.updateAdminStatus();
         }, 1000);
     }
@@ -876,15 +1034,15 @@ class GameEngine {
     generateMap() {
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
             this.map[y] = [];
-            this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH); 
+            this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
             for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
                 if (y < 5) {
                     this.map[y][x] = TILE_TYPES.EMPTY;
-                    this.discovered[y][x] = 1; 
+                    this.discovered[y][x] = 1;
                 }
                 else if (y === 5) {
                      this.map[y][x] = TILE_TYPES.GRASS;
-                     this.discovered[y][x] = 1; 
+                     this.discovered[y][x] = 1;
                 }
                 else if (y === CONSTANTS.MAP_HEIGHT - 1) this.map[y][x] = TILE_TYPES.BEDROCK;
                 else {
@@ -910,7 +1068,7 @@ class GameEngine {
             }
         }
     }
-    
+
     getMapRandom(x, y) {
         const s = Math.sin(x * 12.9898 + y * 78.233 + this.roomSeed) * 43758.5453;
         return s - Math.floor(s);
@@ -942,7 +1100,7 @@ class GameEngine {
             isMoving = true;
         } else {
             p.x = targetX; p.y = targetY; p.isDrilling = false;
-            
+
             // broken -- dont use yet
             // if (this.fallHeight > 1 && !isMoving) {
             //     Sound.playThud();
@@ -977,7 +1135,7 @@ class GameEngine {
                         if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
                         Network.broadcastMove();
                     } else if (tile !== TILE_TYPES.BEDROCK) {
-                        if (now() - this.lastActionTime > 150) { 
+                        if (now() - this.lastActionTime > 150) {
                              if (this.tryMine(nx, ny)) {
                                  p.gridX = nx; p.gridY = ny;
                                  p.isDrilling = true;
@@ -990,7 +1148,7 @@ class GameEngine {
                 }
             }
         }
-        
+
         Sound.updateEngine(isMoving ? speed : 0, p.isDrilling);
 
         Object.values(this.remotePlayers).forEach(rp => {
@@ -1009,13 +1167,13 @@ class GameEngine {
 
         // Heat Logic
         let depth = Math.max(0, p.gridY - 5);
-        let heatThreshold = 100 + (p.heatResist * 50); 
+        let heatThreshold = 100 + (p.heatResist * 50);
         if (depth > heatThreshold) {
             p.temp += 0.05;
-            if (p.temp > 100) { 
-                p.temp = 100; 
-                p.hull -= 0.1; 
-                $('heat-overlay').style.opacity = (Math.sin(now()/100)+1)/4 + 0.3; 
+            if (p.temp > 100) {
+                p.temp = 100;
+                p.hull -= 0.1;
+                $('heat-overlay').style.opacity = (Math.sin(now()/100)+1)/4 + 0.3;
             }
         } else {
             p.temp = Math.max(0, p.temp - 0.2);
@@ -1027,7 +1185,7 @@ class GameEngine {
              $('prompt-msg').style.display = 'block';
              $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
         }
-        
+
         if (Input.keys[this.settings.keys.interact] && now() - this.lastActionTime > 500) {
             UI.toggleDashboard();
             this.lastActionTime = now();
@@ -1041,17 +1199,20 @@ class GameEngine {
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
-            SaveSystem.saveToSlot(currentSaveId,/*, true*/); 
-            this.lastAutosave = now();
-            
+            // Save to current ID
+            if(SaveSystem.currentSaveId) {
+                SaveSystem.saveGame(SaveSystem.currentSaveId, null, true);
+                this.lastAutosave = now();
+            }
+
             // dirty but it works
             if(document.getElementById('update-check-toggle').checked){
                 UI.checkForUpdates();
             }
         }
 
-        Network.update(); 
-        
+        Network.update();
+
         // Coords Update Optimized
         if (this.lastCoordsX !== p.gridX || this.lastCoordsY !== p.gridY) {
             $('coords-display').innerText = `X: ${p.gridX} Y: ${depth}`;
@@ -1077,31 +1238,65 @@ class GameEngine {
         if (this.map[ty][tx] === TILE_TYPES.EMPTY) {
             const type = this.localPlayer.selectedBlock;
             let count = this.localPlayer.inventory[type] || 0;
-            
+
             if (count > 0) {
                 this.localPlayer.inventory[type]--;
-                this.localPlayer.cargo--; 
+                this.localPlayer.cargo--;
                 this.map[ty][tx] = type;
                 Network.sendTileUpdate(tx, ty, type);
                 this.spawnParticle(tx * 32 + 16, ty * 32 + 16, '#95a5a6', 5);
                 Sound.playBuild();
                 UI.showToast("Block Placed", "success");
-                UI.updateDashboard(); 
+                UI.updateDashboard();
             } else {
                 UI.showToast("Out of blocks!", "error");
                 Sound.playError();
             }
         }
     }
-    
-    trashBlock(type) {
+
+    trashBlock(type, all=false) {
         const p = this.localPlayer;
         if(p.inventory[type] > 0) {
-            p.inventory[type]--;
-            p.cargo--;
-            UI.showToast(`Trashed 1 ${TILE_PROPS[type].name}`, "normal");
+            let amount = all ? p.inventory[type] : 1;
+            p.inventory[type] -= amount;
+            p.cargo -= amount;
+
+            if(p.inventory[type] < 0) p.inventory[type] = 0; // sanity
+            if(p.cargo < 0) p.cargo = 0;
+
+            const name = TILE_PROPS[type].name;
+            UI.showToast(`Trashed ${amount} ${name}`, "normal");
             UI.updateDashboard();
         }
+    }
+
+    trashJunk() {
+        const p = this.localPlayer;
+        let totalTrashed = 0;
+
+        for (let key in p.inventory) {
+            let type = parseInt(key);
+            let count = p.inventory[type];
+            let prop = TILE_PROPS[type];
+
+            // Trash if value is 0, but keep Casings (building blocks)
+            if (count > 0 && prop.value === 0 && type !== TILE_TYPES.CASING) {
+                p.inventory[type] = 0;
+                p.cargo -= count;
+                totalTrashed += count;
+            }
+        }
+
+        if (p.cargo < 0) p.cargo = 0;
+
+        if(totalTrashed > 0) {
+            UI.showToast(`Trashed ${totalTrashed} Junk Items`, "success");
+            Sound.playChat('death'); // Reuse sound for impact
+        } else {
+            UI.showToast("No Junk Found", "normal");
+        }
+        UI.updateDashboard();
     }
 
     tryMine(tx, ty) {
@@ -1113,7 +1308,7 @@ class GameEngine {
                 if (!this.localPlayer.inventory[tile]) this.localPlayer.inventory[tile] = 0;
                 this.localPlayer.inventory[tile]++;
                 this.localPlayer.cargo++;
-                
+
                 if (!this.localPlayer.stats.blocksMined[tile]) this.localPlayer.stats.blocksMined[tile] = 0;
                 this.localPlayer.stats.blocksMined[tile]++;
                 this.localPlayer.stats.totalMined++;
@@ -1121,9 +1316,9 @@ class GameEngine {
                 this.map[ty][tx] = TILE_TYPES.EMPTY;
                 this.discovered[ty][tx] = 1;
                 this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);
-                Sound.playMining(); 
+                Sound.playMining();
                 Network.sendTileUpdate(tx, ty, TILE_TYPES.EMPTY);
-                UI.updateDashboard(); 
+                UI.updateDashboard();
                 return true;
             } else { UI.showToast("Cargo Full!", "error"); Sound.playError(); return false; }
         }
@@ -1144,9 +1339,9 @@ class GameEngine {
         this.localPlayer.hull = this.localPlayer.maxHull;
         this.localPlayer.fuel = this.localPlayer.maxFuel;
         this.localPlayer.cargo = 0;
-        this.localPlayer.inventory = {}; 
+        this.localPlayer.inventory = {};
         this.localPlayer.money = Math.floor(this.localPlayer.money * 0.7);
-        Network.broadcastDeath(); 
+        Network.broadcastDeath();
         Sound.playChat('death');
         $('heat-overlay').style.opacity = 0;
         UI.updateDashboard();
@@ -1242,7 +1437,8 @@ class GameEngine {
         // -------------------------------
         const skyRadius = 900;
         const centerX = this.camera.x;
-        const centerY = groundY - 300; // horizon
+        // Fix: Pivot exactly at ground level so sunrise/sunset looks correct
+        const centerY = groundY;
 
         const sunX = centerX + Math.cos(sunAngle) * skyRadius;
         const sunY = centerY + Math.sin(sunAngle) * skyRadius;
@@ -1344,7 +1540,7 @@ class GameEngine {
 
                 if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
                 else if (this.discovered[y][x]) {
-                    this.ctx.globalAlpha = 0.3;
+                    this.ctx.globalAlpha = 0.9;
                     this.drawProceduralTile(x, y, tile, false);
                     this.ctx.globalAlpha = 1.0;
                 }
@@ -1383,18 +1579,58 @@ class GameEngine {
         let px = x * ts; let py = y * ts;
         let prop = TILE_PROPS[type];
         if (isXray) { this.ctx.strokeStyle = prop.color; this.ctx.lineWidth = 2; this.ctx.strokeRect(px+4, py+4, ts-8, ts-8); return; }
-        
+
         // Detailed Texture Patterns
-        this.ctx.fillStyle = prop.color; 
-        this.ctx.fillRect(px, py, ts, ts);
         const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-        const n1 = (seed % 1); 
+        const n1 = (seed % 1);
         const n2 = ((seed * 10) % 1);
+
         let bevel = true;
+
+        // --- ORE RENDERING (Detailed) ---
+        if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
+             // 1. Draw Stone Background (so ores look embedded)
+             this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
+             this.ctx.fillRect(px, py, ts, ts);
+
+             // 2. Draw Bevel for stone
+             this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
+             this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
+
+             // 3. Draw Ore bits
+             this.ctx.fillStyle = prop.color;
+
+             // Procedural placement of chunks
+             const s = Math.abs(seed);
+             const r1 = s - Math.floor(s);
+
+             // Cluster center based on hash
+             let cx = px + 16 + (r1 - 0.5) * 12;
+             let cy = py + 16 + ((r1*10)%1 - 0.5) * 12;
+
+             // Main chunk
+             this.ctx.fillRect(cx-3, cy-3, 6, 6);
+             // Satellites
+             this.ctx.fillRect(cx-6, cy+2, 3, 3);
+             this.ctx.fillRect(cx+4, cy-5, 4, 3);
+             this.ctx.fillRect(cx+3, cy+3, 3, 4);
+
+             // Sparkle (occasional shine)
+             if (now() % 1200 < 200) {
+                this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                this.ctx.fillRect(cx-1, cy-1, 2, 2);
+            }
+            return; // Exit early since we handled bevels/background
+        }
+
+        // --- STANDARD BLOCKS ---
+        this.ctx.fillStyle = prop.color;
+        this.ctx.fillRect(px, py, ts, ts);
+
         if (type === TILE_TYPES.EMPTY && y>=5) {
             this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
             this.ctx.fillRect(px, py, ts, ts);
-            
+
             // Add some small pebbles/debris
             this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
             if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
@@ -1424,17 +1660,11 @@ class GameEngine {
             this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
             this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
             return;
-        } else if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
-            this.ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            // Sparkle
-            if (now() % 1000 < 500) {
-                this.ctx.fillRect(px + 8 + (n1*16), py + 8 + (n2*16), 2, 2);
-            }
         }
-        
+
         // Bevel for all
         if(bevel){
-          this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts); 
+          this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
           this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
         }
     }
@@ -1444,7 +1674,7 @@ class GameEngine {
         let cx = p.x + size/2; let cy = p.y + size/2;
         this.ctx.save(); this.ctx.translate(cx, cy); this.ctx.rotate(p.rotation || 0);
         let color = isLocal ? this.settings.color : (p.color || '#fff');
-        
+
         this.ctx.fillStyle = color; this.ctx.fillRect(-12, -12, 24, 24);
         this.ctx.strokeStyle = '#111'; this.ctx.lineWidth = 2; this.ctx.strokeRect(-12, -12, 24, 24);
         this.ctx.fillStyle = '#bdc3c7';
@@ -1453,53 +1683,75 @@ class GameEngine {
         this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
         this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
         if (!isLocal) {
-            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '10px Arial'; this.ctx.textAlign = 'center'; 
+            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '10px Arial'; this.ctx.textAlign = 'center';
             this.ctx.shadowColor="black"; this.ctx.shadowBlur=2;
             this.ctx.fillText(p.username || "Unknown", 0, -20);
             this.ctx.shadowBlur=0;
         }
         this.ctx.restore();
     }
-    
-    drawLocalMinimap() {
-        this.minimapCtx.fillStyle = '#000'; this.minimapCtx.fillRect(0, 0, 150, 150);
-        const range = Math.floor(30 / this.zoom); 
-        const center = 75; 
-        const pX = this.localPlayer.gridX; const pY = this.localPlayer.gridY;
-        const pixelSize = Math.max(2, 2 * this.zoom); // Better visibility
 
-        for (let dy = -range; dy <= range; dy++) {
-            for (let dx = -range; dx <= range; dx++) {
-                let mx = pX + dx; let my = pY + dy;
+    drawLocalMinimap() {
+        const ctx = this.minimapCtx;
+        const width = 150;
+        const height = 150;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height);
+
+        // Fixed Minimap Settings (Independent of Zoom)
+        const range = 25; // 25 tile radius = 50 tile diameter view
+        const pixelSize = width / (range * 2); // 150 / 50 = 3px per tile exact
+        const center = width / 2;
+
+        const pX = this.localPlayer.gridX;
+        const pY = this.localPlayer.gridY;
+
+        for (let dy = -range; dy < range; dy++) {
+            for (let dx = -range; dx < range; dx++) {
+                let mx = pX + dx;
+                let my = pY + dy;
+                // Boundary checks
                 if (mx >= 0 && mx < CONSTANTS.MAP_WIDTH && my >= 0 && my < CONSTANTS.MAP_HEIGHT) {
                     if (this.discovered[my][mx]) {
                         let tile = this.map[my][mx];
-                        this.minimapCtx.fillStyle = tile === TILE_TYPES.EMPTY ? '#111' : TILE_PROPS[tile].color;
-                        this.minimapCtx.fillRect(center + dx*pixelSize, center + dy*pixelSize, pixelSize, pixelSize);
+                        ctx.fillStyle = tile === TILE_TYPES.EMPTY ? '#111' : TILE_PROPS[tile].color;
+                        // Use 3x3 pixel rects
+                        ctx.fillRect(Math.floor(center + dx * pixelSize), Math.floor(center + dy * pixelSize), pixelSize, pixelSize);
                     }
                 }
             }
         }
-        // Viewport Border
-        this.minimapCtx.strokeStyle = "rgba(255,255,255,0.3)";
-        this.minimapCtx.lineWidth = 1;
-        let vw = (this.canvas.width / CONSTANTS.TILE_SIZE / this.zoom) * pixelSize;
-        let vh = (this.canvas.height / CONSTANTS.TILE_SIZE / this.zoom) * pixelSize;
-        this.minimapCtx.strokeRect(center - vw/2, center - vh/2, vw, vh);
 
-        this.minimapCtx.fillStyle = '#e74c3c'; this.minimapCtx.fillRect(center-2, center-2, 5, 5); // Me
-        
-        // Remote Players
+        // Viewport Border calculation needs to map GAME View to MINIMAP Coordinates
+        // Game View Width (in tiles) = CanvasWidth / (TileSize * Zoom)
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.lineWidth = 1;
+
+        const gameViewTilesW = this.canvas.width / (CONSTANTS.TILE_SIZE * this.zoom);
+        const gameViewTilesH = this.canvas.height / (CONSTANTS.TILE_SIZE * this.zoom);
+
+        // Convert tiles to pixels on the minimap
+        const miniMapRectW = gameViewTilesW * pixelSize;
+        const miniMapRectH = gameViewTilesH * pixelSize;
+
+        ctx.strokeRect(center - miniMapRectW/2, center - miniMapRectH/2, miniMapRectW, miniMapRectH);
+
+        // Player Dot (Always Center)
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(center - 2, center - 2, 4, 4);
+
+        // Remote players... mapped to minimap scale
         Object.values(this.remotePlayers).forEach(rp => {
-            let dx = rp.gridX - pX; let dy = rp.gridY - pY;
-            if(Math.abs(dx) <= range && Math.abs(dy) <= range) {
-                this.minimapCtx.fillStyle = '#3498db';
-                this.minimapCtx.fillRect(center + dx*pixelSize -1, center + dy*pixelSize -1, 4, 4);
-                // Draw ID/Name tooltip if needed, but clean dots are better for minimaps
-                if(!rp.username) {
-                     this.minimapCtx.fillStyle = "#fff"; this.minimapCtx.font = "8px Arial"; 
-                     this.minimapCtx.fillText(rp.id.substr(0,4), center + dx*pixelSize, center + dy*pixelSize - 5);
-                }
+            let dx = rp.gridX - pX;
+            let dy = rp.gridY - pY;
+
+            // Only draw if within minimap range
+            if(Math.abs(dx) < range && Math.abs(dy) < range) {
+                const screenX = center + dx * pixelSize;
+                const screenY = center + dy * pixelSize;
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(screenX - 2, screenY - 2, 4, 4);
+
+                // Optional: Tooltip logic if needed, omitted for cleanliness
             }
         });
     }
@@ -1511,12 +1763,12 @@ class GameEngine {
         this.drawGauge(160, h - 60, 40, p.hull, p.maxHull, "HULL", "#c0392b");
         this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
         this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
-        
+
         this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 20px monospace"; this.ctx.textAlign = "center"; this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
         let depth = Math.floor(Math.max(0, p.gridY - 5));
         this.ctx.fillStyle = "#aaa"; this.ctx.font = "14px monospace"; this.ctx.fillText(`Depth: ${depth}m | Drill Tier: ${p.drillTier}`, w/2, h - 55);
     }
-    
+
     drawGauge(x, y, r, val, max, label, color) {
         const ctx = this.ctx;
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fill();
@@ -1544,12 +1796,12 @@ class ShopSystem {
     constructor() {
         this.prices = {
             drill: [500, 2000, 10000, 50000],
-            hull: 200, fuel: 200, cargo: 300, cool: 1000, xray: 2000
+            hull: 200, fuel: 200, cargo: 100, cool: 1000, xray: 2000
         };
     }
     open() { $('shop-modal').classList.add('active'); this.updateUI(); }
     close() { $('shop-modal').classList.remove('active'); }
-    
+
     sellAll() {
         let total = 0;
         const p = Game.localPlayer;
@@ -1562,7 +1814,7 @@ class ShopSystem {
         }
         if (total > 0) {
             p.money += total;
-            p.cargo = 0; 
+            p.cargo = 0;
             for(let t in p.inventory) p.cargo += p.inventory[t];
             UI.showToast(`Sold all for $${total}`, "success");
             Sound.playSuccess();
@@ -1570,9 +1822,9 @@ class ShopSystem {
             UI.showToast("Nothing valuable to sell.", "normal");
         }
         this.updateUI();
-        UI.updateDashboard(); 
+        UI.updateDashboard();
     }
-    
+
     sellItem(type, amount) {
         const p = Game.localPlayer;
         if(p.inventory[type] >= amount) {
@@ -1583,10 +1835,10 @@ class ShopSystem {
             UI.showToast(`Sold ${amount} ${TILE_PROPS[type].name}`, "success");
             Sound.playSuccess();
             this.updateUI();
-            UI.updateDashboard(); 
+            UI.updateDashboard();
         }
     }
-    
+
     refuelRepair() {
         const p = Game.localPlayer;
         if(p.money >= 10) {
@@ -1606,16 +1858,16 @@ class ShopSystem {
         const p = Game.localPlayer;
         $('shop-money').innerText = "$" + Math.floor(p.money);
         $('shop-color-picker').value = Game.settings.color;
-        
+
         const sellContainer = $('sell-list');
         sellContainer.innerHTML = '';
         let hasItems = false;
-        
+
         Object.keys(p.inventory).forEach(key => {
             let type = parseInt(key);
             let count = p.inventory[type];
             let val = TILE_PROPS[type].value;
-            
+
             if (count > 0 && val > 0) {
                 hasItems = true;
                 let div = document.createElement('div');
@@ -1631,7 +1883,7 @@ class ShopSystem {
                 sellContainer.appendChild(div);
             }
         });
-        
+
         if(!hasItems) sellContainer.innerHTML = '<div style="padding:10px; color:#555; text-align:center;">No valuable ore to sell.</div>';
 
         const check = (type, level) => {
@@ -1652,7 +1904,7 @@ class ShopSystem {
         check('cool', p.heatResist);
         check('xray', p.xrayRange);
     }
-    
+
     buy(item) {
         const p = Game.localPlayer;
         let cost = 0;
@@ -1670,7 +1922,7 @@ class ShopSystem {
                 p.money -= cost;
                 if (item === 'hull') { p.maxHull += 20; p.hull = p.maxHull; }
                 if (item === 'fuel') { p.maxFuel += 20; p.fuel = p.maxFuel; }
-                if (item === 'cargo') p.maxCargo += 10;
+                if (item === 'cargo') p.maxCargo += 20;
                 if (item === 'cool') p.heatResist++;
                 if (item === 'xray') p.xrayRange++;
                 UI.showToast("Upgraded!", "success");
@@ -1680,18 +1932,19 @@ class ShopSystem {
         this.updateUI();
     }
 }
-
+//!summaryignore
 // --- NETWORK (MQTT) ---
 class NetworkManager {
     constructor() {
         this.client = null;
         this.baseTopic = 'mm_online/';
         this.lastHeartbeat = 0;
+        this.lastSyncToast = 0;
     }
 
     connect() {
         Game.logConnection(`Connecting to broker ${Game.settings.broker}...`);
-        
+
         const broker = Game.settings.broker;
         const options = { clientId: 'mm_' + Game.localPlayer.id, keepalive: 60, clean: true, reconnectPeriod: 1000 };
         try { this.client = mqtt.connect(broker, options); } catch (e) { Game.logConnection("Error creating client: " + e); }
@@ -1711,7 +1964,7 @@ class NetworkManager {
                 }
             });
         });
-        
+
         this.client.on('offline', () => { $('disconnect-msg').style.display = 'block'; });
         this.client.on('reconnect', () => { $('disconnect-msg').style.display = 'none'; });
         this.client.on('message', (topic, message) => this.handleMessage(topic, message));
@@ -1721,27 +1974,30 @@ class NetworkManager {
         let n = now();
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
-                const msg = `${Game.remotePlayers[id].username} ${UI.rndMsg('leave')}`;
+                const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
                 UI.addMessage("System", msg, "#888");
                 Sound.playChat('leave');
                 delete Game.remotePlayers[id];
                 UI.updatePlayerList();
-                this.updateAdminStatus();
+                Game.updateAdminStatus();
             }
         });
         if (n - this.lastHeartbeat > 2000) {
-            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username });
+            // FIX: Added joinedAt to heartbeat so late joiners see my timestamp
+            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
             this.lastHeartbeat = n;
         }
     }
 
     broadcastMove() {
         const p = Game.localPlayer;
-        this.publish('pos', { 
-            type: 'move', id: p.id, 
-            sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE, 
+        // FIX: Added joinedAt to move packets so late joiners see my timestamp
+        this.publish('pos', {
+            type: 'move', id: p.id,
+            sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE,
             gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
-            username: Game.settings.username
+            username: Game.settings.username,
+            joinedAt: p.joinedAt
         });
         this.lastHeartbeat = now();
     }
@@ -1751,12 +2007,12 @@ class NetworkManager {
     sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
     sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
-    
+
     // Add missing Map Request logic
     requestMap(fromId) {
         this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId });
     }
-    
+
     sendMapDiff(toId) {
         let diffs = [];
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
@@ -1777,7 +2033,7 @@ class NetworkManager {
              }
         }
     }
-    
+
     publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
 
     handleMessage(topic, message) {
@@ -1787,44 +2043,52 @@ class NetworkManager {
 
         if (msg.type === 'move' || msg.type === 'heartbeat') {
             if (!Game.remotePlayers[msg.id]) {
-                Game.remotePlayers[msg.id] = { 
+                Game.remotePlayers[msg.id] = {
                     id: msg.id, x: msg.sx || 0, y: msg.sy || 0, targetX: msg.tx, targetY: msg.ty,
-                    username: msg.username || "Unknown", color: msg.col || '#fff', lastSeen: now() 
+                    username: msg.username || "Unknown", color: msg.col || '#fff', lastSeen: now(),
+                    joinedAt: msg.joinedAt // FIX: Capture timestamp on first sight
                 };
             }
             let rp = Game.remotePlayers[msg.id];
             rp.lastSeen = now();
             if(msg.username && rp.username === "Unknown") rp.username = msg.username;
-            
+
+            // FIX: Ensure timestamp is synced if it comes in late
+            if (msg.joinedAt && !rp.joinedAt) {
+                rp.joinedAt = msg.joinedAt;
+            }
+
             if (msg.type === 'move') {
                 rp.color = msg.col; rp.rotation = msg.r; rp.isDrilling = msg.drill; rp.gridX = msg.gx; rp.gridY = msg.gy;
                 rp.targetX = msg.tx; rp.targetY = msg.ty;
                 if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
             }
+
+            // FIX: Always check if this new info changes the admin
+            Game.updateAdminStatus();
         }
         else if (msg.type === 'join') {
             if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
             else {
                 // Only show message if we didn't know them before
-                if(!Game.remotePlayers[msg.id]) { 
-                    UI.addMessage("System", `${msg.username} ${UI.rndMsg('join')}`, "#aaa"); 
-                    Sound.playChat('join'); 
+                if(!Game.remotePlayers[msg.id]) {
+                    UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
+                    Sound.playChat('join');
                 }
-                Game.remotePlayers[msg.id] = { 
-                    id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now() 
+                Game.remotePlayers[msg.id] = {
+                    id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
                 };
                 UI.updatePlayerList();
-                this.updateAdminStatus();
-                this.checkAdmin();
-                
+                Game.updateAdminStatus();
+
                 // If I am admin, SEND MAP
                 if(Game.isAdmin) {
                     this.sendMapDiff(msg.id);
                 }
-                
+
                 // Reply with MY position so they see me immediately
                 this.broadcastMove();
-                
+
             }
         }
         else if (msg.type === 'tile') {
@@ -1839,17 +2103,21 @@ class NetworkManager {
                      Game.discovered[d.y][d.x] = 1;
                 }
             });
-            UI.showToast("Map Synced with Host", "success");
+            // Debounce toast to prevent spam from chunked packets
+            if (now() - this.lastSyncToast > 2000) {
+                UI.showToast("Map Synced with Host", "success");
+                this.lastSyncToast = now();
+            }
         }
         else if (msg.type === 'map_req' && Game.isAdmin) {
             this.sendMapDiff(msg.from);
         }
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
-        else if (msg.type === 'death') { UI.addMessage("System", `${msg.name} ${UI.rndMsg('death')}`, "#f55"); Sound.playChat('death'); }
+        else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#f55"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
-            if (msg.target === Game.localPlayer.id) { alert(UI.rndMsg('kick')); location.reload(); }
-            else { 
-                if(Game.remotePlayers[msg.target]) UI.addMessage("System", `${Game.remotePlayers[msg.target].username} ${UI.rndMsg('kick')}`, "red"); 
+            if (msg.target === Game.localPlayer.id) { alert(UI.formatMsg('You', 'kick')); location.reload(); }
+            else {
+                if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "red");
                 delete Game.remotePlayers[msg.target];
             }
         }
@@ -1857,7 +2125,7 @@ class NetworkManager {
             Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
             UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
             Sound.playSuccess();
-            if (Game.localPlayer.fuel < 20) UI.addMessage("System", `${Game.settings.username} ${UI.rndMsg('rescue')}`, "orange");
+            if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "orange");
         }
     }
 
@@ -1877,7 +2145,7 @@ class InputManager {
     constructor() { this.keys = {}; this.bindMode = null; }
     init() {
         window.addEventListener('keydown', e => {
-            Sound.init(); 
+            Sound.init();
             if (this.bindMode) {
                 Game.settings.keys[this.bindMode] = e.key;
                 localStorage.setItem('mm_keybinds', JSON.stringify(Game.settings.keys));
@@ -1897,14 +2165,14 @@ class InputManager {
         $('chat-input').addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 let val = e.target.value.trim();
-                if (val) { 
+                if (val) {
                     if(val.startsWith('/')) { this.handleCommand(val); }
                     else {
                         // Display own message immediately
                         UI.addMessage(Game.settings.username, val);
                         Network.sendChat(val);
                     }
-                    e.target.value = ""; 
+                    e.target.value = "";
                 }
                 e.target.blur();
                 $('gameCanvas').focus();
@@ -1912,7 +2180,7 @@ class InputManager {
             e.stopPropagation();
         });
     }
-    
+
     handleCommand(cmd) {
         let parts = cmd.split(' ');
         if (parts[0] === '/tp' && Game.isAdmin) {
@@ -1944,7 +2212,28 @@ class InputManager {
 // --- UI & SAVES ---
 
 class UIManager {
+    constructor() {
+        this.defaultServers = [
+            "wss://broker.emqx.io:8084/mqtt",
+            "wss://broker.hivemq.com:8884/mqtt",
+            "wss://test.mosquitto.org:8081"
+        ];
+        this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
+
+        // Init server list on load
+        setTimeout(() => this.refreshServerList(), 500);
+    }
+
     rndMsg(type) { const arr = MSGS[type]; return arr[Math.floor(Math.random() * arr.length)]; }
+
+    formatMsg(username, type) {
+        let msg = this.rndMsg(type);
+        if (msg.includes('<user>')) {
+            return msg.replace(/<user>/g, username);
+        }
+        return `${username} ${msg}`;
+    }
+
     addMessage(name, text, color='#fff') {
         const div = document.createElement('div');
         div.innerHTML = `<span style="color:${color}; font-weight:bold;">${name}:</span> ${text}`;
@@ -1959,10 +2248,10 @@ class UIManager {
         area.appendChild(el);
         setTimeout(() => el.remove(), timeout);
     }
-    openSettings() { 
-        $('settings-modal').classList.add('active'); 
-        this.refreshKeybindLabels(); 
-        this.renderSaveSlots();
+    openSettings() {
+        $('settings-modal').classList.add('active');
+        this.refreshKeybindLabels();
+        SaveSystem.renderSaveList();
     }
     closeSettings() { $('settings-modal').classList.remove('active'); }
     refreshKeybindLabels() {
@@ -1970,41 +2259,186 @@ class UIManager {
         const map = { up: 'btn-bind-up', down: 'btn-bind-down', left: 'btn-bind-left', right: 'btn-bind-right', build: 'btn-bind-build', interact: 'btn-bind-interact', transfer: 'btn-bind-transfer', chat: 'btn-bind-chat' };
         for (let action in map) {
             let btn = $(map[action]);
-            if (Input.bindMode === action) { btn.classList.add('binding'); btn.innerText = `PRESS KEY...`; } 
+            if (Input.bindMode === action) { btn.classList.add('binding'); btn.innerText = `PRESS KEY...`; }
             else { btn.classList.remove('binding'); btn.innerText = `${action.toUpperCase()}: ${keys[action]}`; }
         }
     }
-    
-    checkServers() {
-        const list = $('server-list');
-        const display = $('server-status-display');
-        display.style.display = 'block';
-        display.innerHTML = 'Checking servers...';
-        
-        let promises = [];
-        Array.from(list.options).forEach(opt => {
-            const url = opt.value;
-            const p = new Promise(resolve => {
-                try {
-                    const client = mqtt.connect(url, { connectTimeout: 2000, reconnectPeriod: 0 });
-                    client.on('connect', () => { client.end(); resolve({url, status: true}); });
-                    client.on('error', () => { client.end(); resolve({url, status: false}); });
-                    setTimeout(() => { if(!client.connected){ client.end(); resolve({url, status: false}); } }, 2500);
-                } catch(e) { resolve({url, status: false}); }
-            });
-            promises.push(p);
-        });
-        
-        Promise.all(promises).then(results => {
-            display.innerHTML = '';
-            results.forEach(res => {
-                const div = document.createElement('div');
-                div.className = 'server-option';
-                div.innerHTML = `<span class="status-dot ${res.status ? 'green':'red'}"></span> ${res.url}`;
-                display.appendChild(div);
-            });
+
+    async randomizeName() {
+        try {
+            const btn = document.querySelector('button[title="Randomize"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '...';
+            btn.disabled = true;
+
+            const res = await fetch('https://randomuser.me/api?inc=login');
+            const data = await res.json();
+            const name = data.results[0].login.username;
+            $('start-username').value = name;
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        } catch(e) {
+            console.error(e);
+            UI.showToast("Failed to fetch name", "error");
+            document.querySelector('button[title="Randomize"]').disabled = false;
+        }
+    }
+
+    // --- SERVER LIST LOGIC ---
+    refreshServerList() {
+        const list = $('server-list-sidebar');
+        list.innerHTML = '';
+
+        // Render helper
+        const renderItem = (url, isCustom) => {
+            const isActive = url === Game.settings.broker;
+            const item = document.createElement('div');
+            item.className = `server-list-item ${isActive ? 'active' : ''}`;
+
+            let buttonsHtml = '';
+            if(isCustom) {
+                buttonsHtml = `
+                   <div class="server-actions">
+                       <button class="btn btn-small" style="padding:2px 5px; background:#444; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.editCustomServer('${url}')" title="Edit">&#9998;</button>
+                       <button class="btn btn-small" style="padding:2px 5px; background:#c0392b; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')" title="Remove">&times;</button>
+                   </div>
+                `;
+            }
+
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
+                    <div class="server-status-icon" id="status-${btoa(url).replace(/=/g,'')}"><div class="spin-loader"></div></div>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
+                </div>
+                ${buttonsHtml}
+            `;
+            item.onclick = () => this.selectServer(url);
+            list.appendChild(item);
+            this.checkServerStatus(url);
+        };
+
+        // Render Defaults
+        this.defaultServers.forEach(url => renderItem(url, false));
+
+        // Render Custom
+        this.customServers.forEach(url => {
+            if(!this.defaultServers.includes(url)) renderItem(url, true);
         });
     }
+
+    removeCustomServer(url) {
+        if(!confirm(`Remove custom server?\n${url}`)) return;
+        this.customServers = this.customServers.filter(s => s !== url);
+        localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+
+        // If the removed server was the active one, switch to default
+        if(Game.settings.broker === url) {
+            this.selectServer(this.defaultServers[0]);
+        } else {
+            this.refreshServerList();
+        }
+        this.showToast("Server Removed", "normal");
+    }
+
+    editCustomServer(oldUrl) {
+        const newUrl = prompt("Edit Server URL:", oldUrl);
+        if(newUrl && newUrl !== oldUrl) {
+            if(newUrl.startsWith('ws://') || newUrl.startsWith('wss://')) {
+                const idx = this.customServers.indexOf(oldUrl);
+                if(idx !== -1) {
+                    this.customServers[idx] = newUrl;
+                    localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+
+                    if(Game.settings.broker === oldUrl) {
+                        this.selectServer(newUrl); // Update active selection
+                    } else {
+                        this.refreshServerList();
+                    }
+                    this.showToast("Server Updated", "success");
+                }
+            } else {
+                this.showToast("Invalid URL (Must start with ws:// or wss://)", "error");
+            }
+        }
+    }
+
+    selectServer(url) {
+        Game.settings.broker = url;
+        localStorage.setItem('mm_broker_url', url);
+        $('setting-broker').value = url;
+        this.refreshServerList(); // Redraw to update active class
+        this.showToast("Server Selected. Launch to Connect.", "normal");
+    }
+
+    addCustomServer() {
+        const input = $('custom-server-input');
+        const url = input.value.trim();
+        if(url && (url.startsWith('ws://') || url.startsWith('wss://'))) {
+            if(!this.customServers.includes(url) && !this.defaultServers.includes(url)) {
+                this.customServers.push(url);
+                localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+                input.value = '';
+                this.refreshServerList();
+                this.showToast("Server Added", "success");
+            } else {
+                this.showToast("Server already exists", "error");
+            }
+        } else {
+            this.showToast("Invalid URL (Must start with ws:// or wss://)", "error");
+        }
+    }
+
+    removeCustomServer(url) {
+        const index = this.customServers.indexOf(url);
+        if (index > -1) {
+            if (confirm(`Remove custom server: ${url}?`)) {
+                this.customServers.splice(index, 1);
+                localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+
+                // If the deleted server was active, switch to default
+                if (Game.settings.broker === url) {
+                    Game.settings.broker = this.defaultServers[0];
+                    localStorage.setItem('mm_broker_url', Game.settings.broker);
+                    $('setting-broker').value = Game.settings.broker;
+                }
+
+                this.refreshServerList();
+                this.showToast("Server Removed", "normal");
+            }
+        }
+    }
+
+    checkServerStatus(url) {
+        const id = `status-${btoa(url).replace(/=/g,'')}`;
+        const el = $(id);
+        if(!el) return;
+
+
+        const client = mqtt.connect(url, { connectTimeout: 9500, reconnectPeriod: 0 });
+
+        let failedTimeout = setTimeout(() => { if(!client.connected) setStatus(false); }, 10000);
+
+        const setStatus = (success) => {
+            if(el) {
+                el.innerHTML = success
+                    ? `<span style="color:#2ecc71; font-weight:bold;">&#10003;</span>`
+                    : `<span style="color:#e74c3c; font-weight:bold;">&#10007;</span>`;
+            }
+            client.end();
+        };
+
+        client.on('connect', () => {setStatus(true);clearTimeout(failedTimeout);});
+        client.on('error', () => setStatus(false));
+        client.on('close', () => {clearTimeout(failedTimeout);}); // silent
+
+    }
+
+    checkServers() {
+        // Legacy settings modal check
+        this.refreshServerList();
+    }
+
     async checkForUpdates() {
         try {
             if (!initialTimestamp) {
@@ -2018,7 +2452,7 @@ class UIManager {
                 url.searchParams.set('_t', Date.now());
                 const headRes = await fetch(url.toString(), { method: 'HEAD' });
                 const currentTimestamp = headRes.headers.get('last-modified');
-                
+
                 if (currentTimestamp && currentTimestamp !== initialTimestamp) {
                     UI.showToast("New Version Available!", "normal");
                     UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
@@ -2042,7 +2476,7 @@ class UIManager {
         // Inventory
         const grid = $('inv-grid');
         grid.innerHTML = '';
-        
+
         let types = Object.keys(p.inventory).map(Number).sort((a,b) => a-b);
         if(p.inventory[TILE_TYPES.CASING] === undefined) p.inventory[TILE_TYPES.CASING] = 0;
         if(!types.includes(TILE_TYPES.CASING)) types.push(TILE_TYPES.CASING);
@@ -2055,7 +2489,7 @@ class UIManager {
                 div.style.color = TILE_PROPS[type].color || '#fff';
                 div.innerHTML = `
                     ${TILE_PROPS[type].name}<span class="inv-count">${count}</span>
-                    <div class="inv-trash" onclick="event.stopPropagation(); Game.trashBlock(${type})">x</div>
+                    <div class="inv-trash" onclick="event.stopPropagation(); Game.trashBlock(${type}, event.shiftKey)">x</div>
                 `;
                 if(p.selectedBlock == type) {
                     div.innerHTML += '<div style="font-size:8px; color:#2ecc71;">[EQUIPPED]</div>';
@@ -2082,9 +2516,9 @@ class UIManager {
 
         // Leaderboard
         let players = Object.values(Game.remotePlayers).concat(p);
-        players.forEach(pl => pl.score = Math.floor((pl.gridY || 0) + (pl.money||0)/10)); 
+        players.forEach(pl => pl.score = Math.floor((pl.gridY || 0) + (pl.money||0)/10));
         players.sort((a,b) => b.score - a.score);
-        
+
         let lbHtml = "";
         players.forEach((pl, i) => {
             // Show ID if username missing
@@ -2109,53 +2543,29 @@ class UIManager {
         });
     }
     updateAdminPanel() { this.updatePlayerList(); }
-    
-    renderSaveSlots() {
-        const container = $('save-slots-container');
-        container.innerHTML = '';
-        const isHost = Game.isAdmin;
-        SaveSystem.slots.forEach((slot, i) => {
-            const div = document.createElement('div');
-            div.className = 'save-slot';
-            const dateStr = slot ? new Date(slot.timestamp).toLocaleString() : 'Empty';
-            const nameStr = slot ? slot.name : `Slot ${i+1}`;
-            const disabled = !isHost ? 'disabled' : '';
-            const disabledText = !isHost ? ' (Host Only)' : '';
-            div.innerHTML = `
-                <div class="save-slot-info">
-                    <strong>${nameStr}${disabledText}</strong><br>
-                    <span style="font-size:10px; color:#999">${dateStr}</span>
-                </div>
-                <div class="save-slot-actions">
-                    <button class="btn btn-small" ${disabled} onclick="SaveSystem.saveToSlot(${i})">Save</button>
-                    <button class="btn btn-small" ${!slot || disabled ? 'disabled' : ''} onclick="SaveSystem.loadFromSlot(${i})">Load</button>
-                    <button class="btn btn-small btn-danger" ${!slot || disabled ? 'disabled' : ''} onclick="SaveSystem.deleteSlot(${i})">Del</button>
-                    <button class="btn btn-small" style="background:#444;" ${!slot || disabled ? 'disabled' : ''} onclick="SaveSystem.exportSlot(${i})">Export</button>
-                </div>
-            `;
-            container.appendChild(div);
-        });
-        $('autosave-toggle').checked = SaveSystem.autosaveEnabled;
-        $('autosave-toggle').disabled = !isHost;
-    }
 }
 
 class AdminSystem { kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); } }
 
 class SaveSystem {
     static autosaveEnabled = true;
-    static slots = [null, null, null]; 
+    static currentSaveId = null;
     static db = null;
     static dbPromise = null;
 
     static async initDB() {
         if (!this.dbPromise) {
             this.dbPromise = new Promise((resolve, reject) => {
-                const request = indexedDB.open("MegaMinerDB", 1);
+                const request = indexedDB.open("MegaMinerDB", 2); // Version bumped to 2
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
+                    // Full map data store
                     if (!db.objectStoreNames.contains("saves")) {
                         db.createObjectStore("saves", { keyPath: "id" });
+                    }
+                    // Metadata store for fast listing
+                    if (!db.objectStoreNames.contains("save_meta")) {
+                        db.createObjectStore("save_meta", { keyPath: "id" });
                     }
                 };
                 request.onsuccess = (event) => {
@@ -2171,34 +2581,71 @@ class SaveSystem {
     }
 
     static init() {
-        for(let i=0; i<3; i++) {
-            const meta = localStorage.getItem(`mm_save_meta_${i+1}`);
-            if(meta) this.slots[i] = JSON.parse(meta);
-        }
         const as = localStorage.getItem('mm_autosave_setting');
         if(as !== null) this.autosaveEnabled = (as === 'true');
+        $('autosave-toggle').checked = this.autosaveEnabled;
     }
 
     static toggleAutosave(val) {
         this.autosaveEnabled = val;
         localStorage.setItem('mm_autosave_setting', val);
     }
-    
-    static saveAndReload() {
-        this.saveToSlot(currentSaveId/*, true*/);
-        location.reload();
+
+    // --- CORE SAVE LOGIC ---
+
+    static async createNewSave() {
+        // PROTECTION: Only Admin can create/save games
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            UI.showToast("Only Admin can create saves.", "error");
+            return;
+        }
+
+        const name = prompt("Enter Save Name:", "New World " + new Date().toLocaleTimeString());
+        if(!name) return;
+
+        const id = Date.now();
+        this.currentSaveId = id;
+        await this.saveGame(id, name);
+        this.renderSaveList();
+        UI.showToast("Created New Save", "success");
     }
 
-    static async saveToSlot(i, isAuto = false) {
+    static async saveCurrent() {
+        // PROTECTION: Only Admin can save
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            UI.showToast("Only Admin can save.", "error");
+            return;
+        }
+
+        if(this.currentSaveId) {
+            await this.saveGame(this.currentSaveId);
+        } else {
+            this.createNewSave();
+        }
+    }
+
+    static async saveGame(id, name = null, isAuto = false) {
+        // PROTECTION: Redundant check for internal calls
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            return;
+        }
+
         try {
             await this.initDB();
+
+            // If name is null, try to fetch existing name or default
+            let finalName = name;
+            if(!finalName) {
+                const existing = await this.getMeta(id);
+                finalName = existing ? existing.name : `Save ${id}`;
+            }
 
             const cleanPlayer = JSON.parse(JSON.stringify(Game.localPlayer));
             const cleanMap = JSON.parse(JSON.stringify(Game.map));
             const cleanDiscovered = Game.discovered.map(r => Array.from(r));
 
-            const data = {
-                id: i + 1,
+            const fullData = {
+                id: id,
                 player: cleanPlayer,
                 map: cleanMap,
                 discovered: cleanDiscovered,
@@ -2206,39 +2653,55 @@ class SaveSystem {
                 timestamp: Date.now()
             };
 
-            const meta = {
-                timestamp: Date.now(),
-                name: isAuto ? `Autosave (Slot ${i + 1})` : `Save ${i + 1}`
+            const metaData = {
+                id: id,
+                name: finalName,
+                timestamp: Date.now()
             };
 
             await new Promise((resolve, reject) => {
-                const tx = this.db.transaction(["saves"], "readwrite");
-                const store = tx.objectStore("saves");
+                const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
 
-                const req = store.put(data);
+                // Save heavy data
+                tx.objectStore("saves").put(fullData);
+                // Save meta data
+                tx.objectStore("save_meta").put(metaData);
 
-                req.onsuccess = () => resolve();
-                req.onerror = (e) => reject(e);
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
             });
 
-            // Save metadata (small, safe)
-            this.slots[i] = meta;
-            localStorage.setItem(`mm_save_meta_${i+1}`, JSON.stringify(meta));
+            // Remember this as the last used save
+            localStorage.setItem('mm_last_save_id', id);
 
             if (!isAuto) {
-                UI.renderSaveSlots();
-                UI.showToast(`Saved to Slot ${i + 1}`, "success");
+                UI.showToast(`Saved "${finalName}"`, "success");
+                this.renderSaveList();
             }
 
         } catch (e) {
-            console.error("Error during saveToSlot", e);
+            console.error("Error saving game", e);
             if (!isAuto) UI.showToast("Save Failed", "error");
         }
     }
 
-    static async loadFromSlot(i) {
+    static async getMeta(id) {
         await this.initDB();
-        const id = i + 1;
+        return new Promise(resolve => {
+            const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").get(id);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    static async loadGame(id, silent = false) {
+        // PROTECTION: Only Admin can load saves
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+            if(!silent) UI.showToast("Only Admin (Host) can load saves.", "error");
+            return;
+        }
+
+        await this.initDB();
 
         try {
             const data = await new Promise((resolve, reject) => {
@@ -2251,87 +2714,157 @@ class SaveSystem {
             });
 
             if (!data) {
-                UI.showToast("No save data in this slot", "error");
+                if(!silent) UI.showToast("Corrupt or missing save data.", "error");
                 return;
             }
 
+            this.currentSaveId = id; // Set ID so autosave works correctly
             this.restoreData(data);
-            UI.closeSettings();
+            if(!silent) UI.closeSettings();
 
         } catch (e) {
-            UI.showToast("Failed to load save", "error");
+            if(!silent) UI.showToast("Failed to load save", "error");
             console.error(e);
         }
     }
 
-
-    static async deleteSlot(i) {
+    static async deleteGame(id) {
+        if(!confirm("Delete this save forever?")) return;
         await this.initDB();
-        const id = i + 1;
         try {
-            const transaction = this.db.transaction(["saves"], "readwrite");
-            const store = transaction.objectStore("saves");
-            store.delete(id);
-            this.slots[i] = null;
-            UI.renderSaveSlots();
-        } catch (e) {
-            UI.showToast("Failed to delete save", "error");
-            console.error(e);
-        }
-    }
-
-    static async exportSlot(i) {
-        await this.initDB();
-        const id = i + 1;
-        try {
-            const transaction = this.db.transaction(["saves"], "readonly");
-            const store = transaction.objectStore("saves");
-            const request = store.get(id);
-            request.onsuccess = (event) => {
-                const data = event.target.result;
-                if (data) {
-                    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-                    const a = document.createElement("a");
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `mm_save_slot_${id}.json`;
-                    a.click();
-                    UI.showToast(`Exported Slot ${id}`, "success");
-                } else {
-                    UI.showToast("No save data in this slot", "error");
-                }
-            };
-            request.onerror = () => {
-                UI.showToast("Export Failed", "error");
+            const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
+            tx.objectStore("saves").delete(id);
+            tx.objectStore("save_meta").delete(id);
+            tx.oncomplete = () => {
+                UI.showToast("Save Deleted", "normal");
+                this.renderSaveList();
+                if(this.currentSaveId === id) this.currentSaveId = null;
             };
         } catch (e) {
-            UI.showToast("Export Failed", "error");
             console.error(e);
         }
     }
 
-    static exportSave() {
-        const data = { player: Game.localPlayer, map: Game.map, discovered: Array.from(Game.discovered).map(r => Array.from(r)), banned: Game.bannedIds };
-        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `mm_save.json`; a.click();
+    // --- RENDER LIST ---
+    static async renderSaveList() {
+        await this.initDB();
+        const container = $('save-list-wrapper');
+        container.innerHTML = 'Loading saves...';
+
+        // Get all meta
+        const metas = await new Promise(resolve => {
+             const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").getAll();
+             req.onsuccess = () => resolve(req.result);
+             req.onerror = () => resolve([]);
+        });
+
+        container.innerHTML = '';
+        if(metas.length === 0) {
+            container.innerHTML = '<div style="padding:10px; color:#555;">No saves found.</div>';
+            return;
+        }
+
+        // Sort by newest
+        metas.sort((a,b) => b.timestamp - a.timestamp);
+
+        metas.forEach(meta => {
+            const div = document.createElement('div');
+            const isActive = meta.id === this.currentSaveId;
+            div.className = `save-slot ${isActive ? 'active' : ''}`;
+            const dateStr = new Date(meta.timestamp).toLocaleString();
+
+            div.innerHTML = `
+                <div class="save-slot-info">
+                    <strong>${meta.name}</strong> ${isActive ? '<span style="color:var(--success)">(Current)</span>' : ''}<br>
+                    <span style="font-size:10px; color:#999">${dateStr}</span>
+                </div>
+                <div class="save-slot-actions">
+                    <button class="btn" style="background:#555;" onclick="SaveSystem.loadGame(${meta.id})">Load</button>
+                    <button class="btn btn-danger" onclick="SaveSystem.deleteGame(${meta.id})">X</button>
+                    <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">&#8595;</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    static async exportGame(id) {
+         await this.initDB();
+         const req = this.db.transaction("saves", "readonly").objectStore("saves").get(id);
+         req.onsuccess = () => {
+             const data = req.result;
+             if(data) {
+                const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `mm_save_${id}.json`;
+                a.click();
+             }
+         }
     }
 
     static importSave(input) {
+        // PROTECTION: Only Admin can import saves
+        if (Network.client && Network.client.connected && !Game.isAdmin) {
+             UI.showToast("Only Admin (Host) can import saves.", "error");
+             input.value = '';
+             return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
                 this.restoreData(data);
+                // Create a new entry for this imported save
+                this.currentSaveId = Date.now();
+                this.saveGame(this.currentSaveId, "Imported " + new Date().toLocaleTimeString());
             } catch(e) { UI.showToast("Invalid File", "error"); }
         };
         if(input.files[0]) reader.readAsText(input.files[0]);
     }
 
     static restoreData(data) {
-        if(data.player) Game.localPlayer = {...Game.localPlayer, ...data.player};
-        if(data.map) Game.map = data.map;
-        if(data.discovered) Game.discovered = data.discovered.map(r => new Uint8Array(r));
+        // Stop the loop briefly? No, just atomic update.
+        // Deep merge player stats
+        if(data.player) {
+            // Keep current Network Identity intact so we don't disconnect or ghost
+            const currentId = Game.localPlayer.id;
+            const currentJoinedAt = Game.localPlayer.joinedAt;
+
+            Game.localPlayer = { ...Game.localPlayer, ...data.player };
+
+            // Restore identity
+            Game.localPlayer.id = currentId;
+            Game.localPlayer.joinedAt = currentJoinedAt;
+
+            // Ensure visual position matches grid
+            Game.localPlayer.x = Game.localPlayer.gridX * CONSTANTS.TILE_SIZE;
+            Game.localPlayer.y = Game.localPlayer.gridY * CONSTANTS.TILE_SIZE;
+        }
+
+        if(data.map) {
+            Game.map = data.map;
+        }
+
+        if(data.discovered) {
+            // Re-convert arrays back to Uint8Array
+            Game.discovered = data.discovered.map(r => {
+                // Check if it's an object (array-like) or actual array
+                if (r instanceof Uint8Array) return r;
+                return new Uint8Array(Object.values(r));
+            });
+        }
+
         if(data.banned) Game.bannedIds = data.banned;
+
+        // Force refresh UI
         UI.showToast("Game Loaded!", "success");
+        UI.updateDashboard();
+
+        // Ensure map is redrawn correctly by resetting camera target slightly
+        Game.camera.x = Game.localPlayer.x;
+        Game.camera.y = Game.localPlayer.y;
     }
 }
 
@@ -2395,7 +2928,7 @@ window.Admin = Admin;
 window.Shop = Shop;
 window.Input = Input;
 window.Sound = Sound;
-//patrickdearteaga.com, 
+//patrickdearteaga.com,
 const creditsData = {
     music: [
         {
@@ -2435,11 +2968,11 @@ const creditsData = {
         "The laptops that were sacrificed in the making of this game"
     ]
 };
-//J ANK AUDIO FIX
+// JANK AUDIO FIX
 Sound.loadSettings()
 // bruh
 document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
+//!endsummaryignore
 </script>
 </body>
 </html>
-<!-- If the original devs of megaminer are reading this, I would love to hear your feedback! -->
