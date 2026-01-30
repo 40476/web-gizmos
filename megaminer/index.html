@@ -23,6 +23,11 @@
         body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
 
         canvas { display: block; width: 100vw; height: 100vh; }
+        .noaliasing {
+            image-rendering: pixelated; /* Standard, modern approach */
+            image-rendering: -moz-crisp-edges; /* Firefox specific */
+            image-rendering: -webkit-optimize-contrast; /* Legacy WebKit */
+        }
 
         /* UI Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -239,7 +244,7 @@
 
         <!-- Minimap -->
         <div id="minimap-container">
-            <canvas id="minimap"></canvas>
+            <canvas id="minimap" class="noaliasing"></canvas>
         </div>
 
         <!-- Chat -->
@@ -429,7 +434,7 @@
                         <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
                     </label>
                 </div>
-                <button class="btn btn-small" style="margin-top:5px; background:#444;" onclick="Network.requestMap(Game.localPlayer.id)">Force Map Sync</button>
+                <button class="btn btn-small" style="margin-top:5px; background:#444;" onclick="Network.requestMap()">Force Map Sync</button>
             </div>
 
             <div class="form-group">
@@ -475,7 +480,6 @@
     <div id="notification-area"></div>
 
 <script>
-//!summaryignore
 const $ = id => document.getElementById(id);
 
 // Robust UUID Generator (longer for collision avoidance)
@@ -580,7 +584,7 @@ const MSGS = {
 };
 
 let initialTimestamp = null;
-//!endsummaryignore
+
 // --- SOUND ENGINE ---
 class SoundManager {
     constructor() {
@@ -1540,7 +1544,7 @@ class GameEngine {
 
                 if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
                 else if (this.discovered[y][x]) {
-                    this.ctx.globalAlpha = 0.9;
+                    this.ctx.globalAlpha = 0.3;
                     this.drawProceduralTile(x, y, tile, false);
                     this.ctx.globalAlpha = 1.0;
                 }
@@ -1932,7 +1936,7 @@ class ShopSystem {
         this.updateUI();
     }
 }
-//!summaryignore
+
 // --- NETWORK (MQTT) ---
 class NetworkManager {
     constructor() {
@@ -2010,7 +2014,8 @@ class NetworkManager {
 
     // Add missing Map Request logic
     requestMap(fromId) {
-        this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId });
+        UI.showToast("Requesting Map...", "normal");
+        this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId || null });
     }
 
     sendMapDiff(toId) {
@@ -2024,7 +2029,10 @@ class NetworkManager {
                 }
             }
         }
-        // Send ALL diffs (simple version)
+
+        // Protocol: Start -> Chunks -> End
+        this.publish('map', { type: 'map_start', to: toId });
+
         if(diffs.length > 0) {
             // chunking
              const CHUNK_SIZE = 100;
@@ -2032,6 +2040,11 @@ class NetworkManager {
                  this.publish('map', { type: 'sync', data: diffs.slice(i, i+CHUNK_SIZE), to: toId });
              }
         }
+
+        // Small delay to ensure order in some brokers
+        setTimeout(() => {
+             this.publish('map', { type: 'map_end', to: toId });
+        }, 100);
     }
 
     publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
@@ -2094,6 +2107,9 @@ class NetworkManager {
         else if (msg.type === 'tile') {
              if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
         }
+        else if (msg.type === 'map_start' && msg.to === Game.localPlayer.id) {
+             UI.showToast("Receiving Map Data...", "normal");
+        }
         else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
             // Apply Map Sync
             msg.data.forEach(d => {
@@ -2103,11 +2119,9 @@ class NetworkManager {
                      Game.discovered[d.y][d.x] = 1;
                 }
             });
-            // Debounce toast to prevent spam from chunked packets
-            if (now() - this.lastSyncToast > 2000) {
-                UI.showToast("Map Synced with Host", "success");
-                this.lastSyncToast = now();
-            }
+        }
+        else if (msg.type === 'map_end' && msg.to === Game.localPlayer.id) {
+             UI.showToast("Map Synced!", "success");
         }
         else if (msg.type === 'map_req' && Game.isAdmin) {
             this.sendMapDiff(msg.from);
@@ -2289,20 +2303,21 @@ class UIManager {
     refreshServerList() {
         const list = $('server-list-sidebar');
         list.innerHTML = '';
-
-        // Render helper
-        const renderItem = (url, isCustom) => {
-            const isActive = url === Game.settings.broker;
-            const item = document.createElement('div');
-            item.className = `server-list-item ${isActive ? 'active' : ''}`;
-
-            let buttonsHtml = '';
-            if(isCustom) {
-                buttonsHtml = `
-                   <div class="server-actions">
-                       <button class="btn btn-small" style="padding:2px 5px; background:#444; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.editCustomServer('${url}')" title="Edit">&#9998;</button>
-                       <button class="btn btn-small" style="padding:2px 5px; background:#c0392b; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')" title="Remove">&times;</button>
-                   </div>
+            <div class="form-group">
+                <label>Options</label>
+                <div style="display:flex; gap:15px;">
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)"> Autosave (60s)
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="update-check-toggle" checked> Autocheck Updates (60s)
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
+                    </label>
+                </div>
+                <button class="btn btn-small" style="margin-top:5px; background:#444;" onclick="Network.requestMap()">Force Map Sync</button>
+            </div>
                 `;
             }
 
@@ -2781,7 +2796,7 @@ class SaveSystem {
                 <div class="save-slot-actions">
                     <button class="btn" style="background:#555;" onclick="SaveSystem.loadGame(${meta.id})">Load</button>
                     <button class="btn btn-danger" onclick="SaveSystem.deleteGame(${meta.id})">X</button>
-                    <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">&#8595;</button>
+                    <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">Export</button>
                 </div>
             `;
             container.appendChild(div);
