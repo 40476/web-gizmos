@@ -824,6 +824,7 @@ class GameEngine {
         this.zoom = 1.0;
         this.particles = [];
         this.isAdmin = false;
+        this.hostId = null; // New tracking for host ID
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
         this.lastActionTime = 0;
         this.lastAutosave = 0;
@@ -834,41 +835,85 @@ class GameEngine {
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
 
+        this.hostId = null;
+        this.lastHostHeartbeat = 0;
+
         this.loadStoredSettings();
     }
 
-    updateAdminStatus() {
-        // Filter valid players
-        const players = Object.values(this.remotePlayers)
-            .concat([this.localPlayer])
-            .filter(p => p && typeof p.joinedAt === "number" && p.joinedAt > 1600000000000); // Sanity check timestamp
+    // --- NEW: Persistent Stats (Wallet, Upgrades) ---
+    saveLocalProgress() {
+        if (!this.running) return;
+        const data = {
+            money: this.localPlayer.money,
+            drillTier: this.localPlayer.drillTier,
+            maxHull: this.localPlayer.maxHull,
+            maxFuel: this.localPlayer.maxFuel,
+            maxCargo: this.localPlayer.maxCargo,
+            heatResist: this.localPlayer.heatResist,
+            xrayRange: this.localPlayer.xrayRange,
+            vehColor: this.settings.color
+        };
+        localStorage.setItem(`mm_stats_${this.settings.room}`, JSON.stringify(data));
+    }
 
-        if (players.length === 0) {
-            this.isAdmin = false;
+    loadLocalProgress() {
+        try {
+            const raw = localStorage.getItem(`mm_stats_${this.settings.room}`);
+            if (raw) {
+                const data = JSON.parse(raw);
+                const p = this.localPlayer;
+                if (data.money !== undefined) p.money = data.money;
+                if (data.drillTier) p.drillTier = data.drillTier;
+                if (data.maxHull) { p.maxHull = data.maxHull; p.hull = p.maxHull; }
+                if (data.maxFuel) { p.maxFuel = data.maxFuel; p.fuel = p.maxFuel; }
+                if (data.maxCargo) p.maxCargo = data.maxCargo;
+                if (data.heatResist) p.heatResist = data.heatResist;
+                if (data.xrayRange) p.xrayRange = data.xrayRange;
+                if (data.vehColor) {
+                    this.settings.color = data.vehColor;
+                    $('start-color').value = data.vehColor;
+                }
+                console.log("Stats loaded from local storage.");
+            }
+        } catch(e) { console.error("Failed to load stats", e); }
+    }
+
+    // --- NEW: Stable Admin Logic ---
+    checkHostHealth() {
+        const nowTime = Date.now();
+
+        // If I am Admin, I am the host.
+        if (this.isAdmin) {
+            this.hostId = this.localPlayer.id;
+            this.lastHostHeartbeat = nowTime;
             return;
         }
 
-        // Strict Sort: Oldest time first.
-        // TIE BREAKER: If times are identical (or within 50ms), sort by ID to ensure only ONE admin.
-        players.sort((a, b) => {
-            const timeDiff = a.joinedAt - b.joinedAt;
-            if (Math.abs(timeDiff) < 50) {
-                return a.id.localeCompare(b.id);
-            }
-            return timeDiff;
-        });
+        // If no host heard for 5 seconds, trigger election
+        if (nowTime - this.lastHostHeartbeat > 5000) {
+            this.electNewHost();
+        }
+    }
 
-        const oldest = players[0];
-        const wasAdmin = this.isAdmin;
+    electNewHost() {
+        // Find oldest player including myself
+        const all = Object.values(this.remotePlayers)
+            .concat([this.localPlayer])
+            .filter(p => p && p.joinedAt);
 
-        // Am I the oldest?
-        this.isAdmin = (oldest.id === this.localPlayer.id);
+        // Sort by age
+        all.sort((a, b) => a.joinedAt - b.joinedAt);
 
-        // UI Update if status changed
-        if (this.isAdmin !== wasAdmin) {
+        // If I am the oldest survivor, I claim the throne
+        if (all.length > 0 && all[0].id === this.localPlayer.id) {
+            console.log("Host timed out. Claiming Host status.");
+            this.isAdmin = true;
+            this.hostId = this.localPlayer.id;
+            this.lastHostHeartbeat = Date.now();
+            Network.broadcastHostClaim(); // Tell everyone immediately
+            UI.showToast("You are now the Admin (Host)", "success");
             UI.updateAdminPanel();
-            if (this.isAdmin) UI.showToast("You are now the Host/Admin", "success");
-            else UI.showToast("Admin privileges transferred", "normal");
         }
     }
 
@@ -961,6 +1006,9 @@ class GameEngine {
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
 
+        // Reset admin on init
+        this.isAdmin = false;
+
         // --- STICKY TIMESTAMP LOGIC ---
         // Restore timestamp for this specific room if it exists
         const timeKey = `mm_joinedAt_${this.settings.room}`;
@@ -1004,6 +1052,9 @@ class GameEngine {
         Input.init();
         Sound.loadSettings();
 
+        // Load stats before connecting
+        this.loadLocalProgress();
+
         Network.connect();
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
@@ -1041,8 +1092,19 @@ class GameEngine {
             this.localPlayer.stats.startTime = now();
             Sound.init();
 
-            // Force update status based on players seen during the timeout
-            this.updateAdminStatus();
+            // Initial Host Check: If I'm alone, I am Admin.
+            if (Object.keys(this.remotePlayers).length === 0) {
+                this.isAdmin = true;
+                this.hostId = this.localPlayer.id;
+                this.lastHostHeartbeat = Date.now();
+                UI.showToast("Room Created. You are Admin.", "success");
+                UI.updateAdminPanel();
+            } else {
+                // If others exist, wait for heartbeat.
+                // If no heartbeat comes in loop(), checkHostHealth() will elect me if I'm oldest.
+                this.isAdmin = false;
+                UI.updateAdminPanel();
+            }
 
             // ONLY load save if we are the host (Admin)
             if (this.isAdmin) {
@@ -1056,13 +1118,13 @@ class GameEngine {
                 // If we are NOT admin (Client), ensure we rely on the procedural map + sync
                 // We do NOT load any local saves to prevent overwriting the host's world
                 Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
-                UI.addMessage("System", "Connected as Client. Waiting for Map Sync...", "#3498db");
+                UI.addMessage("System", "Waiting for Map Sync...", "#3498db");
             }
 
             this.loop();
             UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
             Network.broadcastMove();
-            this.updateAdminStatus();
+            // Removed updateAdminStatus call
         }, 1000);
     }
 
@@ -1238,20 +1300,24 @@ class GameEngine {
         this.camera.x += (p.x - this.camera.x) * 0.1;
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
+        // Auto-save stats periodically (every 5s)
+        if (now() % 60000 < 20) {
+            this.saveLocalProgress();
+            UI.checkForUpdates()
+        }
+
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
             // Save to current ID
             if(SaveSystem.currentSaveId) {
                 SaveSystem.saveGame(SaveSystem.currentSaveId, null, true);
                 this.lastAutosave = now();
             }
-
-            // dirty but it works
-            if(document.getElementById('update-check-toggle').checked){
-                UI.checkForUpdates();
-            }
         }
 
+
+
         Network.update();
+        this.checkHostHealth(); // Run the election logic
 
         // Coords Update Optimized
         if (this.lastCoordsX !== p.gridX || this.lastCoordsY !== p.gridY) {
@@ -1858,6 +1924,7 @@ class ShopSystem {
             for(let t in p.inventory) p.cargo += p.inventory[t];
             UI.showToast(`Sold all for $${total}`, "success");
             Sound.playSuccess();
+            Game.saveLocalProgress(); // Save on transaction
         } else {
             UI.showToast("Nothing valuable to sell.", "normal");
         }
@@ -1874,6 +1941,7 @@ class ShopSystem {
             p.money += val;
             UI.showToast(`Sold ${amount} ${TILE_PROPS[type].name}`, "success");
             Sound.playSuccess();
+            Game.saveLocalProgress(); // Save on transaction
             this.updateUI();
             UI.updateDashboard();
         }
@@ -1887,6 +1955,7 @@ class ShopSystem {
             p.hull = p.maxHull;
             UI.showToast("Refueled & Repaired!", "success");
             Sound.playSuccess();
+            Game.saveLocalProgress(); // Save on transaction
             this.updateUI();
         } else {
             UI.showToast("Not enough money!", "error");
@@ -1948,8 +2017,9 @@ class ShopSystem {
     buy(item) {
         const p = Game.localPlayer;
         let cost = 0;
-        if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); } }
-        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); } }
+        let success = false;
+        if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); success=true; } }
+        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); success=true; } }
         else {
             let level = 0;
             if (item === 'hull') level = (p.maxHull-100)/20;
@@ -1967,12 +2037,14 @@ class ShopSystem {
                 if (item === 'xray') p.xrayRange++;
                 UI.showToast("Upgraded!", "success");
                 Sound.playSuccess();
+                success = true;
             }
         }
+        if(success) Game.saveLocalProgress(); // Save on buy
         this.updateUI();
     }
 }
-//!summaryignore
+
 // --- NETWORK (MQTT) ---
 class NetworkManager {
     constructor() {
@@ -2014,22 +2086,40 @@ class NetworkManager {
         let n = now();
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
-                const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
-                UI.addMessage("System", msg, "#888");
-                Sound.playChat('leave');
-                delete Game.remotePlayers[id];
-                UI.updatePlayerList();
-                Game.updateAdminStatus();
-            }
-        });
-        if (n - this.lastHeartbeat > 2000) {
-            // FIX: Added joinedAt to heartbeat so late joiners see my timestamp
-            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
-            this.lastHeartbeat = n;
+            const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
+            UI.addMessage("System", msg, "#888");
+            Sound.playChat('leave');
+            delete Game.remotePlayers[id];
+            UI.updatePlayerList();
+            // Removed updateAdminStatus, checking health in Game loop
         }
-    }
+    });
+    if (n - this.lastHeartbeat > 2000) {
+        this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
 
-    broadcastMove() {
+        // --- NEW: Admin Heartbeat ---
+        if (Game.isAdmin) {
+             this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
+        }
+
+        this.lastHeartbeat = n;
+    }
+}
+
+broadcastHostClaim() {
+    this.publish('ctrl', { type: 'claim_host', id: Game.localPlayer.id });
+}
+
+broadcastPromote(targetId) {
+    this.publish('ctrl', { type: 'promote_host', target: targetId, from: Game.localPlayer.id });
+    Game.isAdmin = false;
+    Game.hostId = targetId;
+    Game.lastHostHeartbeat = Date.now(); // Trust the new guy
+    UI.showToast("Admin Transferred", "normal");
+    UI.updateAdminPanel();
+}
+
+broadcastMove() {
         const p = Game.localPlayer;
         // FIX: Added joinedAt to move packets so late joiners see my timestamp
         this.publish('pos', {
@@ -2037,7 +2127,8 @@ class NetworkManager {
             sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE,
             gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
             username: Game.settings.username,
-            joinedAt: p.joinedAt
+            joinedAt: p.joinedAt,
+            isAdmin: Game.isAdmin // FLAG ADMIN STATUS
         });
         this.lastHeartbeat = now();
     }
@@ -2047,6 +2138,7 @@ class NetworkManager {
     sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
     sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
+    transferAdmin(id) { this.publish('ctrl', { type: 'transfer_admin', to: id }); }
 
     // Add missing Map Request logic
     requestMap(fromId) {
@@ -2121,40 +2213,88 @@ class NetworkManager {
                 }
             }
 
+            // HOST ID / ADMIN STATUS TRACKING
+            if (msg.isAdmin) {
+                Game.hostId = msg.id;
+
+                // CONFLICT RESOLUTION: If I think I'm admin, but I see another admin...
+                if (Game.isAdmin && msg.id !== Game.localPlayer.id) {
+                    // Respect the elder (First Joiner Rule)
+                    if (msg.joinedAt < Game.localPlayer.joinedAt) {
+                        console.log("Admin Conflict: Demoting self in favor of older host.");
+                        Game.demoteFromAdmin();
+                    }
+                }
+            }
+
             if (msg.type === 'move') {
                 rp.color = msg.col; rp.rotation = msg.r; rp.isDrilling = msg.drill; rp.gridX = msg.gx; rp.gridY = msg.gy;
                 rp.targetX = msg.tx; rp.targetY = msg.ty;
                 if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
-            }
-
-            // FIX: Always check if this new info changes the admin
-            Game.updateAdminStatus();
         }
-        else if (msg.type === 'join') {
-            if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
-            else {
-                // Only show message if we didn't know them before
-                if(!Game.remotePlayers[msg.id]) {
-                    UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
-                    Sound.playChat('join');
-                }
-                Game.remotePlayers[msg.id] = {
-                    id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
-                };
-                UI.updatePlayerList();
-                Game.updateAdminStatus();
-
-                // If I am admin, SEND MAP
-                if(Game.isAdmin) {
-                    this.sendMapDiff(msg.id);
-                }
-
-                // Reply with MY position so they see me immediately
-                this.broadcastMove();
-
+        // Removed updateAdminStatus
+    }
+    else if (msg.type === 'join') {
+        if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
+        else {
+            if(!Game.remotePlayers[msg.id]) {
+                UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
+                Sound.playChat('join');
             }
+            Game.remotePlayers[msg.id] = {
+                id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
+            };
+            UI.updatePlayerList();
+            // Removed updateAdminStatus
+
+            if(Game.isAdmin) {
+                this.sendMapDiff(msg.id);
+                // Also assert dominance immediately so they know I'm host
+                this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
+            }
+            this.broadcastMove();
         }
-        else if (msg.type === 'tile') {
+    }
+    // --- NEW: Admin Messages ---
+    else if (msg.type === 'host_heartbeat') {
+        Game.hostId = msg.id;
+        Game.lastHostHeartbeat = now();
+
+        // Glitch prevention: If I thought *I* was admin, but someone else is pulsing...
+        if (Game.isAdmin && msg.id !== Game.localPlayer.id) {
+            // Tie breaker: Who claimed it first? Or just yield.
+            // Simple yield:
+            console.warn("Host conflict detected. Yielding to " + msg.id);
+            Game.isAdmin = false;
+            UI.updateAdminPanel();
+        }
+    }
+    else if (msg.type === 'claim_host') {
+        Game.hostId = msg.id;
+        Game.lastHostHeartbeat = now();
+        if (msg.id !== Game.localPlayer.id) {
+            Game.isAdmin = false;
+            UI.updateAdminPanel();
+            UI.showToast("New Host Claimed: " + (Game.remotePlayers[msg.id]?.username || "Unknown"), "normal");
+        }
+    }
+    else if (msg.type === 'promote_host') {
+        if (msg.target === Game.localPlayer.id) {
+            Game.isAdmin = true;
+            Game.hostId = Game.localPlayer.id;
+            Game.lastHostHeartbeat = now();
+            UI.showToast("You have been Promoted to Admin!", "success");
+            Sound.playSuccess();
+            UI.updateAdminPanel();
+            this.broadcastHostClaim();
+        } else {
+             Game.hostId = msg.target;
+             Game.lastHostHeartbeat = now();
+             Game.isAdmin = false;
+             UI.updateAdminPanel();
+        }
+    }
+    else if (msg.type === 'tile') {
              if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
         }
         else if (msg.type === 'map_start' && msg.to === Game.localPlayer.id) {
@@ -2193,15 +2333,13 @@ class NetworkManager {
             Sound.playSuccess();
             if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "orange");
         }
+        else if (msg.type === 'ctrl' && msg.type === 'transfer_admin' && msg.to === Game.localPlayer.id) {
+            Game.promoteToAdmin();
+        }
     }
 
     checkAdmin() {
-        let all = Object.values(Game.remotePlayers).concat([Game.localPlayer]);
-        all.sort((a,b) => a.joinedAt - b.joinedAt);
-        if (all[0].id === Game.localPlayer.id && !Game.isAdmin) {
-            Game.isAdmin = true;
-            UI.updateAdminPanel();
-        }
+        // No-op legacy function
     }
 }
 
@@ -2267,7 +2405,22 @@ class InputManager {
                     Network.broadcastMove();
                 } else UI.showToast("Player not found", "error");
             }
-        } else {
+        }
+        else if (parts[0] === '/op' && Game.isAdmin) {
+            if (parts.length === 2) {
+                let target = Object.values(Game.remotePlayers).find(p => p.username === parts[1]);
+                if (target) {
+                     Network.transferAdmin(target.id);
+                     Game.demoteFromAdmin();
+                     UI.showToast(`Transferred Admin to ${target.username}`, "success");
+                } else {
+                    UI.showToast("Player not found (case sensitive)", "error");
+                }
+            } else {
+                UI.showToast("Usage: /op [Username]", "normal");
+            }
+        }
+        else {
             UI.showToast("Unknown command or not admin", "error");
         }
     }
@@ -2597,21 +2750,37 @@ class UIManager {
     }
 
     updatePlayerList() {
-        if (!Game.isAdmin) return;
+        if (!Game.isAdmin) {
+            $('admin-panel').style.display = 'none';
+            return;
+        }
         $('admin-panel').style.display = 'block';
         const list = $('player-list');
         list.innerHTML = '';
         Object.values(Game.remotePlayers).forEach(p => {
             const row = document.createElement('div');
             row.className = 'player-row';
-            row.innerHTML = `<span>${p.username}</span><div><button class="btn btn-small btn-danger" onclick="Admin.kick('${p.id}')">K</button></div>`;
+            // Added Promote Button (P)
+            row.innerHTML = `
+                <span>${p.username}</span>
+                <div style="display:flex; gap:2px;">
+                    <button class="btn btn-small" style="background:#2980b9; padding:0 4px; width:20px;" title="Promote to Admin" onclick="Admin.promote('${p.id}')">P</button>
+                    <button class="btn btn-small btn-danger" style="padding:0 4px; width:20px;" title="Kick" onclick="Admin.kick('${p.id}')">K</button>
+                </div>`;
             list.appendChild(row);
         });
     }
     updateAdminPanel() { this.updatePlayerList(); }
 }
 
-class AdminSystem { kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); } }
+class AdminSystem {
+    kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); }
+    promote(id) {
+        if(confirm("Pass Admin privileges to this user? You will lose Admin status.")) {
+            Network.broadcastPromote(id);
+        }
+    }
+}
 
 class SaveSystem {
     static autosaveEnabled = true;
