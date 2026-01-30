@@ -1301,10 +1301,7 @@ class GameEngine {
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
         // Auto-save stats periodically (every 5s)
-        if (now() % 60000 < 20) {
-            this.saveLocalProgress();
-            UI.checkForUpdates()
-        }
+        if (now() % 5000 < 20) this.saveLocalProgress();
 
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
             // Save to current ID
@@ -1312,9 +1309,12 @@ class GameEngine {
                 SaveSystem.saveGame(SaveSystem.currentSaveId, null, true);
                 this.lastAutosave = now();
             }
+
+            // dirty but it works
+            if(document.getElementById('update-check-toggle').checked){
+                UI.checkForUpdates();
+            }
         }
-
-
 
         Network.update();
         this.checkHostHealth(); // Run the election logic
@@ -2147,13 +2147,14 @@ broadcastMove() {
     }
 
     sendMapDiff(toId) {
+        // Optimization: Use Arrays [x,y,v] instead of Objects {x,y,v} to reduce JSON size by ~40%
         let diffs = [];
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
             for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
                 let base = Game.getProceduralTile(x, y);
                 // Note: Game.map is the truth. If it differs from procedural base, send it.
                 if (Game.map[y][x] !== base) {
-                    diffs.push({x, y, v: Game.map[y][x]});
+                    diffs.push([x, y, Game.map[y][x]]);
                 }
             }
         }
@@ -2161,11 +2162,12 @@ broadcastMove() {
         console.log(`Sending Map Diff: ${diffs.length} tiles to ${toId}`);
 
         // Protocol: Start -> Chunks -> End
-        this.publish('map', { type: 'map_start', to: toId });
+        this.publish('map', { type: 'map_start', to: toId, count: diffs.length });
 
         if(diffs.length > 0) {
             // FIX: Throttled sending to prevent network flood
-            const CHUNK_SIZE = 50; // Smaller chunks
+            // Lowered chunk size and increased delay for stability
+            const CHUNK_SIZE = 32;
             let i = 0;
 
             const sendLoop = setInterval(() => {
@@ -2177,7 +2179,7 @@ broadcastMove() {
                 const chunk = diffs.slice(i, i+CHUNK_SIZE);
                 this.publish('map', { type: 'sync', data: chunk, to: toId });
                 i += CHUNK_SIZE;
-            }, 20); // 20ms delay between chunks (~50 chunks per second)
+            }, 30); // 30ms delay
         } else {
              // Small delay to ensure order in some brokers even if empty
              setTimeout(() => {
@@ -2288,6 +2290,7 @@ broadcastMove() {
             UI.updateAdminPanel();
             this.broadcastHostClaim();
         } else {
+             // Handle case where someone else was promoted
              Game.hostId = msg.target;
              Game.lastHostHeartbeat = now();
              Game.isAdmin = false;
@@ -2298,16 +2301,23 @@ broadcastMove() {
              if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
         }
         else if (msg.type === 'map_start' && msg.to === Game.localPlayer.id) {
-             UI.showToast("Receiving Map Data...", "normal");
+             const count = msg.count || "Unknown";
+             UI.showToast(`Receiving Map Data (${count} tiles)...`, "normal");
         }
         else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
             // Apply Map Sync
             if (Array.isArray(msg.data)) {
                 msg.data.forEach(d => {
-                    if (Game.map[d.y]) {
-                        Game.map[d.y][d.x] = d.v;
+                    // Optimized: d is now [x, y, v]
+                    // We handle both object (legacy) and array (new) just in case
+                    let x, y, v;
+                    if (Array.isArray(d)) { [x, y, v] = d; }
+                    else { x = d.x; y = d.y; v = d.v; }
+
+                    if (Game.map[y] !== undefined && Game.map[y][x] !== undefined) {
+                        Game.map[y][x] = v;
                         // Auto discover synced changes so we can see them on minimap
-                        Game.discovered[d.y][d.x] = 1;
+                        Game.discovered[y][x] = 1;
                     }
                 });
             }
