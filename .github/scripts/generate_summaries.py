@@ -6,7 +6,7 @@ import requests
 import re
 from jinja2 import Template
 
-MODEL = "google/gemini-2.0-flash-exp:free"
+MODEL = "qwen/qwen3-next-80b-a3b-instruct:free"
 SUMMARY_DIR = ".github/summaries"
 TEMPLATE_FILE = "index.html.template"
 OUTPUT_FILE = "index.html"
