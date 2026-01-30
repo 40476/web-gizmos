@@ -507,7 +507,7 @@ const pseudoRandom = (x, y) => {
 // --- CONFIG & STATE ---
 const CONSTANTS = {
     TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1,
-    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 200, MAP_HEIGHT: 600, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
+    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 600, MAP_HEIGHT: 1800, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
 };
 
 const TILE_TYPES = {
@@ -838,19 +838,38 @@ class GameEngine {
     }
 
     updateAdminStatus() {
+        // Filter valid players
         const players = Object.values(this.remotePlayers)
             .concat([this.localPlayer])
-            .filter(p => p && p.joinedAt != null);
+            .filter(p => p && typeof p.joinedAt === "number" && p.joinedAt > 1600000000000); // Sanity check timestamp
 
         if (players.length === 0) {
-            Game.isAdmin = false;
+            this.isAdmin = false;
             return;
         }
 
-        players.sort((a, b) => a.joinedAt - b.joinedAt);
-        const oldest = players[0];
+        // Strict Sort: Oldest time first.
+        // TIE BREAKER: If times are identical (or within 50ms), sort by ID to ensure only ONE admin.
+        players.sort((a, b) => {
+            const timeDiff = a.joinedAt - b.joinedAt;
+            if (Math.abs(timeDiff) < 50) {
+                return a.id.localeCompare(b.id);
+            }
+            return timeDiff;
+        });
 
-        Game.isAdmin = (oldest.id === this.localPlayer.id);
+        const oldest = players[0];
+        const wasAdmin = this.isAdmin;
+
+        // Am I the oldest?
+        this.isAdmin = (oldest.id === this.localPlayer.id);
+
+        // UI Update if status changed
+        if (this.isAdmin !== wasAdmin) {
+            UI.updateAdminPanel();
+            if (this.isAdmin) UI.showToast("You are now the Host/Admin", "success");
+            else UI.showToast("Admin privileges transferred", "normal");
+        }
     }
 
     loadStoredSettings() {
@@ -940,6 +959,21 @@ class GameEngine {
         this.settings.room = $('start-room').value || 'public';
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
+
+        // --- STICKY TIMESTAMP LOGIC ---
+        // Restore timestamp for this specific room if it exists
+        const timeKey = `mm_joinedAt_${this.settings.room}`;
+        const savedTime = localStorage.getItem(timeKey);
+
+        if (savedTime) {
+            // Restore previous session time to regain seniority
+            this.localPlayer.joinedAt = parseInt(savedTime);
+            console.log("Restored session time:", this.localPlayer.joinedAt);
+        } else {
+            // New session
+            this.localPlayer.joinedAt = now();
+            localStorage.setItem(timeKey, this.localPlayer.joinedAt);
+        }
 
         localStorage.setItem('mm_username', this.settings.username);
         localStorage.setItem('mm_room_id', this.settings.room);
@@ -2067,9 +2101,12 @@ class NetworkManager {
             rp.lastSeen = now();
             if(msg.username && rp.username === "Unknown") rp.username = msg.username;
 
-            // FIX: Ensure timestamp is synced if it comes in late
-            if (msg.joinedAt && !rp.joinedAt) {
-                rp.joinedAt = msg.joinedAt;
+            // FIX: Ensure timestamp is synced if it comes in late, but sanity check it
+            // Must be a valid timestamp > year 2021 to prevent "0" exploits
+            if (msg.joinedAt && (!rp.joinedAt || rp.joinedAt > msg.joinedAt)) {
+                if (msg.joinedAt > 1609459200000) {
+                    rp.joinedAt = msg.joinedAt;
+                }
             }
 
             if (msg.type === 'move') {
