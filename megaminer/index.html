@@ -211,6 +211,7 @@
         #notification-area { position: absolute; top: 20px; right: 180px; width: 300px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 200; }
         .toast { background: rgba(30, 30, 30, 0.95); border-left: 4px solid var(--accent); padding: 12px; color: white; pointer-events: auto; animation: slideIn 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 14px; }
         .toast.error { border-left-color: var(--danger); }
+        .toast.warn { border-left-color: var(--highlight); }
         .toast.success { border-left-color: var(--success); }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
@@ -255,7 +256,7 @@
 
         <!-- Admin Panel -->
         <div id="admin-panel">
-            <h4 style="margin:0 0 10px 0; color:gold; font-size:12px;">ADMIN PANEL</h4>
+            <h4 style="margin:0 0 10px 0; color:gold; font-size:12px;">Host Controls</h4>
             <div id="player-list"></div>
         </div>
 
@@ -507,7 +508,7 @@ const pseudoRandom = (x, y) => {
 // --- CONFIG & STATE ---
 const CONSTANTS = {
     TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1,
-    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 600, MAP_HEIGHT: 1800, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
+    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
 };
 
 const TILE_TYPES = {
@@ -802,7 +803,7 @@ class GameEngine {
 
         this.localPlayer = {
             id: uuid(),
-            gridX: 100, gridY: 4,
+            gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4,
             x: 0, y: 0,
             fuel: 100, maxFuel: 100,
             hull: 100, maxHull: 100,
@@ -967,7 +968,7 @@ class GameEngine {
             if (y > 100) return TILE_TYPES.GOLD;
         } else if (r > 0.92) {
             if (y > 50) return TILE_TYPES.IRON;
-        } else if (r > 0.88) {
+        } else if (r > 0.9) {
             return TILE_TYPES.COAL;
         }
         return type;
@@ -1148,24 +1149,7 @@ class GameEngine {
                 }
                 else if (y === CONSTANTS.MAP_HEIGHT - 1) this.map[y][x] = TILE_TYPES.BEDROCK;
                 else {
-                    let r = Game.getMapRandom(x, y);
-                    let type = TILE_TYPES.DIRT;
-                    if (y > 300) type = TILE_TYPES.DEEP_SLATE;
-                    else if (y > 100) type = TILE_TYPES.HARD_STONE;
-                    else if (y > 30) type = TILE_TYPES.STONE;
-
-                    if (r > 0.985) {
-                        if (y > 400) type = TILE_TYPES.RUBY;
-                        else if (y > 250) type = TILE_TYPES.EMERALD;
-                        else if (y > 150) type = TILE_TYPES.DIAMOND;
-                    } else if (r > 0.96) {
-                        if (y > 100) type = TILE_TYPES.GOLD;
-                    } else if (r > 0.92) {
-                        if (y > 50) type = TILE_TYPES.IRON;
-                    } else if (r > 0.88) {
-                        type = TILE_TYPES.COAL;
-                    }
-                    this.map[y][x] = type;
+                    this.map[y][x] = this.getProceduralTile(x,y);
                 }
             }
         }
@@ -1283,7 +1267,7 @@ class GameEngine {
         }
 
         $('prompt-msg').style.display = 'none';
-        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 2) {
+        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 3) {
              $('prompt-msg').style.display = 'block';
              $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
         }
@@ -1340,7 +1324,7 @@ class GameEngine {
     }
 
     tryBuild(tx, ty) {
-        if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 0 || ty >= CONSTANTS.MAP_HEIGHT) return;
+        if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 4 || ty >= CONSTANTS.MAP_HEIGHT) return;
         if (this.map[ty][tx] === TILE_TYPES.EMPTY) {
             const type = this.localPlayer.selectedBlock;
             let count = this.localPlayer.inventory[type] || 0;
@@ -1474,8 +1458,7 @@ class GameEngine {
 
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
-        const visionRad = 6;
-        const xrayRad = 2 + this.localPlayer.xrayRange;
+        const visionRad = this.localPlayer.xrayRange+6;
 
         /// -------------------------------
         // WORLD TIME (host-based)
@@ -1639,12 +1622,10 @@ class GameEngine {
                 let dx = x - pcx; let dy = y - pcy;
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 let visible = dist <= visionRad;
-                let xray = dist <= xrayRad;
-
-                if (visible) this.discovered[y][x] = 1;
+                if (dist <= this.localPlayer.xrayRange) this.discovered[y][x] = 1;
                 let tile = this.map[y][x];
 
-                if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
+                if (visible) this.drawProceduralTile(x, y, tile, !visible);
                 else if (this.discovered[y][x]) {
                     this.ctx.globalAlpha = 0.9;
                     this.drawProceduralTile(x, y, tile, false);
@@ -1671,101 +1652,228 @@ class GameEngine {
 
 
     drawStation() {
-        let ts = CONSTANTS.TILE_SIZE;
-        let x = this.stationGridX * ts;
-        let y = this.stationGridY * ts;
-        this.ctx.fillStyle = '#7f8c8d'; this.ctx.fillRect(x - 40, y - 40, 80, 72);
-        this.ctx.fillStyle = '#c0392b'; this.ctx.beginPath(); this.ctx.moveTo(x - 50, y - 40); this.ctx.lineTo(x, y - 70); this.ctx.lineTo(x + 50, y - 40); this.ctx.fill();
-        this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(x - 20, y - 10, 40, 42);
-        this.ctx.fillStyle = '#f1c40f'; this.ctx.font = 'bold 12px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText("SHOP", x, y - 50);
+        const ts = CONSTANTS.TILE_SIZE;
+
+        // Station top-left corner in pixels
+        const baseX = (this.stationGridX * ts)+ts;
+        const baseY = (this.stationGridY * ts)-ts;
+
+        const ctx = this.ctx;
+
+        // -------------------------------
+        // BUILDING DIMENSIONS (in tiles)
+        // -------------------------------
+        const buildingW = 2 * ts;   // 2 tiles wide
+        const buildingH = 2 * ts;   // 2 tiles tall
+
+        const roofH = ts * 0.4;     // roof height
+        const doorW = ts * 0.5;
+        const doorH = ts * 0.9;
+
+        // -------------------------------
+        // MAIN BUILDING
+        // -------------------------------
+        ctx.fillStyle = "#7f8c8d"; // concrete walls
+        ctx.fillRect(baseX, baseY, buildingW, buildingH);
+
+        // Wall bevel
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillRect(baseX, baseY + buildingH - 4, buildingW, 4);
+        ctx.fillRect(baseX + buildingW - 4, baseY, 4, buildingH);
+
+        ctx.fillStyle = "rgba(255,255,255,0.15)";
+        ctx.fillRect(baseX, baseY, buildingW, 3);
+        ctx.fillRect(baseX, baseY, 3, buildingH);
+
+        // -------------------------------
+        // ROOF (tile-aligned)
+        // -------------------------------
+        ctx.fillStyle = "#c0392b";
+        ctx.fillRect(baseX - ts * 0.25, baseY - roofH, buildingW + ts * 0.5, roofH);
+
+        // Roof trim
+        ctx.fillStyle = "#922b21";
+        ctx.fillRect(baseX - ts * 0.25, baseY - roofH, buildingW + ts * 0.5, 4);
+
+        // -------------------------------
+        // DOOR (centered)
+        // -------------------------------
+        const doorX = baseX + buildingW / 2 - doorW / 2;
+        const doorY = baseY + buildingH - doorH;
+
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(doorX, doorY, doorW, doorH);
+
+        // Door handle
+        ctx.fillStyle = "#ecf0f1";
+        ctx.fillRect(doorX + doorW - 8, doorY + doorH / 2, 6, 2);
+
+        // -------------------------------
+        // WINDOWS
+        // -------------------------------
+        const winW = ts * 0.7;
+        const winH = ts * 0.6;
+
+        ctx.fillStyle = "#3498db";
+
+        // Left window
+        ctx.fillRect(baseX + ts * 0.2, baseY + ts * 0.3, winW, winH);
+
+        // Right window
+        ctx.fillRect(baseX + buildingW - winW - ts * 0.2, baseY + ts * 0.3, winW, winH);
+
+        // Window shine
+        ctx.fillStyle = "rgba(255,255,255,0.25)";
+        ctx.fillRect(baseX + ts * 0.25, baseY + ts * 0.35, winW * 0.4, winH * 0.2);
+        ctx.fillRect(baseX + buildingW - winW - ts * 0.15, baseY + ts * 0.35, winW * 0.4, winH * 0.2);
+
+        // -------------------------------
+        // SIGNAGE
+        // -------------------------------
+        ctx.fillStyle = `hsl(${(Date.now()*0.05)%360}, 100%, 60%)`;
+        ctx.font = `${ts * 0.5}px Arial`;
+        ctx.textAlign = "center";
+        ctx.fillText("SHOP", baseX + buildingW / 2, baseY - roofH * 0.4);
+
+        // -------------------------------
+        // GAS PUMPS (tile-aligned, left side)
+        // -------------------------------
+        const pumpW = ts * 0.5;
+        const pumpH = ts * 1.2;
+
+        // Pumps should sit to the LEFT of the building
+        const pumpX = baseX - ts*2;   // 1.2 tiles left of building
+        const pumpY = baseY + buildingH - pumpH;  // same Y-level for both pumps
+
+
+        // Pump hoses
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.moveTo(pumpX + pumpW, pumpY - ts * 0.3 + pumpH * 0.6);
+        ctx.lineTo(pumpX + pumpW + ts * 0.3, pumpY - ts * 0.3 + pumpH * 0.8);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(pumpX + pumpW - ts, pumpY - ts * 0.3 + pumpH * 0.6);
+        ctx.lineTo(pumpX + pumpW + ts * 0.3 - ts, pumpY - ts * 0.3 + pumpH * 0.8);
+        ctx.stroke();
+
+        ctx.fillStyle = "#bdc3c7";
+
+        // Pump 1 (front)
+        ctx.fillRect(pumpX, pumpY, pumpW, pumpH);
+
+        // Pump 2 (behind it, slightly offset upward)
+        ctx.fillRect(pumpX - ts, pumpY, pumpW, pumpH);
+
+        // Pump screens
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(pumpX + pumpW * 0.2, pumpY + ts * 0.2, pumpW * 0.6, pumpH * 0.3);
+        ctx.fillRect(pumpX + pumpW * 0.2 - ts, pumpY + ts * 0.2, pumpW * 0.6, pumpH * 0.3);
     }
 
-    drawProceduralTile(x, y, type, isXray) {
+
+    drawProceduralTile(x, y, type) {
         let ts = CONSTANTS.TILE_SIZE;
         let px = x * ts; let py = y * ts;
         let prop = TILE_PROPS[type];
-        if (isXray) { this.ctx.strokeStyle = prop.color; this.ctx.lineWidth = 2; this.ctx.strokeRect(px+4, py+4, ts-8, ts-8); return; }
 
         // Detailed Texture Patterns
-        const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-        const n1 = (seed % 1);
-        const n2 = ((seed * 10) % 1);
+
+        const n1 = (pseudoRandom(x, y) % 1);
+        const n2 = ((pseudoRandom(x, y) * 10) % 1);
 
         let bevel = true;
+        let isOre = false;
 
         // --- ORE RENDERING (Detailed) ---
         if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
-             // 1. Draw Stone Background (so ores look embedded)
-             this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
-             this.ctx.fillRect(px, py, ts, ts);
-
-             // 2. Draw Bevel for stone
-             this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
-             this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
-
-             // 3. Draw Ore bits
-             this.ctx.fillStyle = prop.color;
-
-             // Procedural placement of chunks
-             const s = Math.abs(seed);
-             const r1 = s - Math.floor(s);
-
-             // Cluster center based on hash
-             let cx = px + 16 + (r1 - 0.5) * 12;
-             let cy = py + 16 + ((r1*10)%1 - 0.5) * 12;
-
-             // Main chunk
-             this.ctx.fillRect(cx-3, cy-3, 6, 6);
-             // Satellites
-             this.ctx.fillRect(cx-6, cy+2, 3, 3);
-             this.ctx.fillRect(cx+4, cy-5, 4, 3);
-             this.ctx.fillRect(cx+3, cy+3, 3, 4);
-
-             // Sparkle (occasional shine)
-             if (now() % 1200 < 200) {
-                this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                this.ctx.fillRect(cx-1, cy-1, 2, 2);
-            }
-            return; // Exit early since we handled bevels/background
-        }
-
-        // --- STANDARD BLOCKS ---
-        this.ctx.fillStyle = prop.color;
-        this.ctx.fillRect(px, py, ts, ts);
-
-        if (type === TILE_TYPES.EMPTY && y>=5) {
-            this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
+        isOre=true
+            // Stone background
+            this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
             this.ctx.fillRect(px, py, ts, ts);
 
-            // Add some small pebbles/debris
-            this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
-            if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
-            if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
-            if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
-            bevel=false;
+
+            // Ore color
+            this.ctx.fillStyle = prop.color;
+
+            // Use your seeded RNG
+            const r0 = pseudoRandom(x, y);
+            const r1 = pseudoRandom(x + 17, y + 3);
+            const r2 = pseudoRandom(x - 9, y + 11);
+            const r3 = pseudoRandom(x + 4, y - 6);
+
+            // Cluster center
+            const cx = px + 8 + r0 * 16;
+            const cy = py + 8 + r1 * 16;
+
+            // Main chunk
+            this.ctx.fillRect(cx - 3, cy - 3, 6, 6);
+
+            // Satellite specks
+            const specks = [
+                { dx: (r1 - 0.5) * 12, dy: (r2 - 0.5) * 12, s: 3 },
+                { dx: (r2 - 0.5) * 14, dy: (r3 - 0.5) * 14, s: 4 },
+                { dx: (r3 - 0.5) * 16, dy: (r0 - 0.5) * 16, s: 3 }
+            ];
+
+            for (const sp of specks) {
+                this.ctx.fillRect(cx + sp.dx, cy + sp.dy, sp.s, sp.s);
+            }
+
+            if ((now() + Math.floor(pseudoRandom(x, y) * 2000)) % 2000 < 200) {
+                this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                this.ctx.fillRect(cx - 1, cy - 1, 2, 2);
+            }
+
         }
-        else if (type === TILE_TYPES.EMPTY && y<5) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-            return
-        }
-        else if (type === TILE_TYPES.DIRT) {
-             this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
-             if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
-             if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
-             if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
-        } else if (type === TILE_TYPES.GRASS) {
-             this.ctx.fillStyle = '#2ecc71'; this.ctx.fillRect(px, py, ts, 6);
-             this.ctx.fillStyle = 'rgba(0,0,0,0.1)'; this.ctx.fillRect(px, py+6, ts, ts-6);
-        } else if (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE) {
-             this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
-             if(n1 > 0.3) { this.ctx.fillRect(px+5, py+5, 10, 6); this.ctx.fillRect(px+18, py+18, 10, 6); }
-             this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-             this.ctx.beginPath(); this.ctx.moveTo(px, py+ts); this.ctx.lineTo(px+ts, py); this.ctx.stroke();
-        } else if (type === TILE_TYPES.CASING) {
-            this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
-            this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
-            this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
-            return;
+
+
+        if(!isOre){
+            // --- STANDARD BLOCKS ---
+            this.ctx.fillStyle = prop.color;
+            this.ctx.fillRect(px, py, ts, ts);
+
+            if (type === TILE_TYPES.EMPTY && y>=5) {
+                this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
+                this.ctx.fillRect(px, py, ts, ts);
+
+                // Add some small pebbles/debris
+                this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
+                if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
+                if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
+                if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
+                bevel=false;
+            }
+            else if (type === TILE_TYPES.EMPTY && y<5) {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+                return
+            }
+            else if (type === TILE_TYPES.DIRT) {
+                this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
+                if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
+                if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
+            } else if (type === TILE_TYPES.GRASS) {
+                this.ctx.fillStyle = '#2ecc71'; this.ctx.fillRect(px, py, ts, 6);
+                this.ctx.fillStyle = 'rgba(0,0,0,0.1)'; this.ctx.fillRect(px, py+6, ts, ts-6);
+            } else if (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE) {
+                const r0 = pseudoRandom(x, y);
+                const r1 = pseudoRandom(x + 17, y + 3);
+                const r2 = pseudoRandom(x - 9, y + 11);
+                const r3 = pseudoRandom(x + 4, y - 6);
+                this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                if(n1 > 0.3) { this.ctx.fillRect(px+(r0*5), py+(r2*5), 10, 6); this.ctx.fillRect(px+(r1*18), py+(r3*18), 10, 6); }
+                this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                this.ctx.beginPath(); this.ctx.moveTo(px+(ts*r2), py+(ts*r1)); this.ctx.lineTo(px+(ts*r3), py+(ts*r0)); this.ctx.stroke();
+            } else if (type === TILE_TYPES.CASING) {
+                this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
+                this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
+                this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
+                return;
+            }
         }
 
         // Bevel for all
@@ -1854,10 +1962,8 @@ class GameEngine {
             if(Math.abs(dx) < range && Math.abs(dy) < range) {
                 const screenX = center + dx * pixelSize;
                 const screenY = center + dy * pixelSize;
-                ctx.fillStyle = '#3498db';
-                ctx.fillRect(screenX - 2, screenY - 2, 4, 4);
-
-                // Optional: Tooltip logic if needed, omitted for cleanliness
+                ctx.fillStyle = rp.color;
+                ctx.fillRect(screenX, screenY, 3, 3);
             }
         });
     }
@@ -2035,7 +2141,7 @@ class ShopSystem {
                 if (item === 'cargo') p.maxCargo += 20;
                 if (item === 'cool') p.heatResist++;
                 if (item === 'xray') p.xrayRange++;
-                UI.showToast("Upgraded!", "success");
+                UI.showToast(`You bought ${item} for \$${cost}!`, "success");
                 Sound.playSuccess();
                 success = true;
             }
@@ -2094,7 +2200,7 @@ class NetworkManager {
             // Removed updateAdminStatus, checking health in Game loop
         }
     });
-    if (n - this.lastHeartbeat > 2000) {
+    if (n - this.lastHeartbeat > 1000) {
         this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
 
         // --- NEW: Admin Heartbeat ---
@@ -2346,10 +2452,6 @@ broadcastMove() {
         else if (msg.type === 'ctrl' && msg.type === 'transfer_admin' && msg.to === Game.localPlayer.id) {
             Game.promoteToAdmin();
         }
-    }
-
-    checkAdmin() {
-        // No-op legacy function
     }
 }
 
@@ -2610,6 +2712,7 @@ class UIManager {
                 input.value = '';
                 this.refreshServerList();
                 this.showToast("Server Added", "success");
+                this.selectServer(url);
             } else {
                 this.showToast("Server already exists", "error");
             }
@@ -2670,21 +2773,23 @@ class UIManager {
 
     async checkForUpdates() {
         try {
-            if (!initialTimestamp) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('_t', Date.now());
-                const headRes = await fetch(url.toString(), { method: 'HEAD' });
-                initialTimestamp = headRes.headers.get('last-modified');
-                console.log("current version is :", initialTimestamp);
-            }else{
-                const url = new URL(window.location.href);
-                url.searchParams.set('_t', Date.now());
-                const headRes = await fetch(url.toString(), { method: 'HEAD' });
-                const currentTimestamp = headRes.headers.get('last-modified');
+            if (location.protocol!=='file:'){
+                if (!initialTimestamp) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('_t', Date.now());
+                    const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                    initialTimestamp = headRes.headers.get('last-modified');
+                    console.log("current version is :", initialTimestamp);
+                }else{
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('_t', Date.now());
+                    const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                    const currentTimestamp = headRes.headers.get('last-modified');
 
-                if (currentTimestamp && currentTimestamp !== initialTimestamp) {
-                    UI.showToast("New Version Available!", "normal");
-                    UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+                    if (currentTimestamp && currentTimestamp !== initialTimestamp) {
+                        UI.showToast("New Version Available!", "normal");
+                        UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+                    }
                 }
             }
         } catch (e) { console.error('Update check error:', e); }
@@ -2756,7 +2861,7 @@ class UIManager {
         });
         $('leaderboard-container').innerHTML = lbHtml;
 
-        $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 2) ? 'block' : 'none';
+        $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 3) ? 'block' : 'none';
     }
 
     updatePlayerList() {
@@ -3088,17 +3193,62 @@ class SaveSystem {
             Game.localPlayer.y = Game.localPlayer.gridY * CONSTANTS.TILE_SIZE;
         }
 
-        if(data.map) {
-            Game.map = data.map;
+        // Validate and Adapt map data
+        if(data.map && Array.isArray(data.map) && data.map.length > 0) {
+            // Exact match
+            if (data.map.length === CONSTANTS.MAP_HEIGHT && data.map[0] && data.map[0].length === CONSTANTS.MAP_WIDTH) {
+                Game.map = data.map;
+            }
+            // Dimension mismatch - Adapt (Trim or Extend)
+            else {
+                console.warn("Save map dimensions mismatch. Adapting...");
+                UI.showToast("Map size changed. Adapting save data...", "normal");
+
+                // Overlay saved map onto generated map
+                // Note: Game.map is already populated with procedural terrain from init()
+                for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+                    if (y < data.map.length) {
+                        const savedRow = data.map[y];
+                        // Safety check for row existence
+                        if (!savedRow) continue;
+
+                        if (savedRow.length === CONSTANTS.MAP_WIDTH) {
+                            Game.map[y] = savedRow;
+                        } else {
+                            // Width mismatch: copy what fits
+                            const len = Math.min(savedRow.length, CONSTANTS.MAP_WIDTH);
+                            for (let x = 0; x < len; x++) {
+                                Game.map[y][x] = savedRow[x];
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            console.warn("Save data map invalid or empty. Keeping generated map.");
+            if(data.map) UI.showToast("Map data corrupt. Generated new map. (This is normal for new worlds)", "error");
         }
 
-        if(data.discovered) {
-            // Re-convert arrays back to Uint8Array
-            Game.discovered = data.discovered.map(r => {
-                // Check if it's an object (array-like) or actual array
-                if (r instanceof Uint8Array) return r;
-                return new Uint8Array(Object.values(r));
-            });
+        if(data.discovered && Array.isArray(data.discovered)) {
+            // Adapt discovered array logic similarly
+             for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+                if (y < data.discovered.length) {
+                    let savedRow = data.discovered[y];
+                    if (!savedRow) continue;
+
+                    // Convert from object (JSON serialization of TypedArray) if needed
+                    if (!(savedRow instanceof Uint8Array)) savedRow = new Uint8Array(Object.values(savedRow));
+
+                    if (savedRow.length === CONSTANTS.MAP_WIDTH) {
+                        Game.discovered[y] = savedRow;
+                    } else {
+                        const len = Math.min(savedRow.length, CONSTANTS.MAP_WIDTH);
+                        for (let x = 0; x < len; x++) {
+                             Game.discovered[y][x] = savedRow[x];
+                        }
+                    }
+                }
+            }
         }
 
         if(data.banned) Game.bannedIds = data.banned;
