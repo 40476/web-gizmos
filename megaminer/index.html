@@ -23,14 +23,11 @@
         body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
 
         canvas { display: block; width: 100vw; height: 100vh; }
-<<<<<<< HEAD
-=======
         .noaliasing {
             image-rendering: pixelated; /* Standard, modern approach */
             image-rendering: -moz-crisp-edges; /* Firefox specific */
             image-rendering: -webkit-optimize-contrast; /* Legacy WebKit */
         }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         /* UI Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -207,11 +204,8 @@
         .server-list-item.active { border-color:var(--highlight); box-shadow:inset 0 0 5px rgba(243, 156, 18, 0.2); }
         .server-status-icon { width:12px; height:12px; margin-right:8px; display:flex; align-items:center; justify-content:center; }
         .spin-loader { border: 2px solid #555; border-top: 2px solid #fff; border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; }
-<<<<<<< HEAD
-=======
         .server-actions { display: flex; gap: 4px; opacity: 0.6; transition: opacity 0.2s; }
         .server-list-item:hover .server-actions { opacity: 1; }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         /* Notification/Error Popup */
         #notification-area { position: absolute; top: 20px; right: 180px; width: 300px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 200; }
@@ -276,14 +270,10 @@
                 <div class="start-panel">
                     <div class="form-group">
                         <label>Username</label>
-<<<<<<< HEAD
-                        <input type="text" id="start-username" value="Miner1" maxlength="12">
-=======
                         <div style="display:flex; gap:5px;">
                             <input type="text" id="start-username" placeholder="Enter Username" maxlength="12" style="flex:1;">
                             <button class="btn btn-small" style="width:auto; padding: 0 10px; font-size: 16px;" onclick="Game.randomizeUsername()" title="Randomize Username">&#127922;</button>
                         </div>
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                     </div>
                     <div class="form-group">
                         <label>Room ID</label>
@@ -491,16 +481,7 @@
     <div id="notification-area"></div>
 
 <script>
-<<<<<<< HEAD
-/**
- * MEGA MINER ONLINE v3.8
- * Updates: Save Protection, Host Map Auth, Admin Sync Fixes, Toast Debounce
- */
-
-// --- UTILS ---
-=======
 //!summaryignore
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 const $ = id => document.getElementById(id);
 
 // Robust UUID Generator (longer for collision avoidance)
@@ -527,11 +508,7 @@ const pseudoRandom = (x, y) => {
 // --- CONFIG & STATE ---
 const CONSTANTS = {
     TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1,
-<<<<<<< HEAD
-    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 200, MAP_HEIGHT: 600, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
-=======
     FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 };
 
 const TILE_TYPES = {
@@ -609,11 +586,7 @@ const MSGS = {
 };
 
 let initialTimestamp = null;
-<<<<<<< HEAD
-
-=======
 //!endsummaryignore
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 // --- SOUND ENGINE ---
 class SoundManager {
     constructor() {
@@ -863,21 +836,11 @@ class GameEngine {
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
 
-<<<<<<< HEAD
-        this.loadStoredSettings();
-    }
-
-    updateAdminStatus() {
-        const players = Object.values(this.remotePlayers)
-            .concat([this.localPlayer])
-            .filter(p => p && p.joinedAt != null);
-=======
         this.hostId = null;
         this.lastHostHeartbeat = 0;
 
         this.loadStoredSettings();
     }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
     // --- NEW: Persistent Stats (Wallet, Upgrades) ---
     saveLocalProgress() {
@@ -1011,15 +974,6 @@ class GameEngine {
         return type;
     }
 
-<<<<<<< HEAD
-    init() {
-        this.settings.username = $('start-username').value || 'Miner';
-        this.localPlayer.username = this.settings.username;
-        this.settings.room = $('start-room').value || 'public';
-        this.settings.color = $('start-color').value;
-        this.settings.broker = $('setting-broker').value;
-
-=======
     async randomizeUsername() {
         // UI feedback
         const btn = $('start-username').nextElementSibling;
@@ -1071,7 +1025,6 @@ class GameEngine {
             localStorage.setItem(timeKey, this.localPlayer.joinedAt);
         }
 
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         localStorage.setItem('mm_username', this.settings.username);
         localStorage.setItem('mm_room_id', this.settings.room);
         localStorage.setItem('mm_veh_color', this.settings.color);
@@ -1100,12 +1053,9 @@ class GameEngine {
         Input.init();
         Sound.loadSettings();
 
-<<<<<<< HEAD
-=======
         // Load stats before connecting
         this.loadLocalProgress();
 
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         Network.connect();
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
@@ -1143,10 +1093,6 @@ class GameEngine {
             this.localPlayer.stats.startTime = now();
             Sound.init();
 
-<<<<<<< HEAD
-            // Force update status based on players seen during the timeout
-            this.updateAdminStatus();
-=======
             // Initial Host Check: If I'm alone, I am Admin.
             if (Object.keys(this.remotePlayers).length === 0) {
                 this.isAdmin = true;
@@ -1160,7 +1106,6 @@ class GameEngine {
                 this.isAdmin = false;
                 UI.updateAdminPanel();
             }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
             // ONLY load save if we are the host (Admin)
             if (this.isAdmin) {
@@ -1174,21 +1119,13 @@ class GameEngine {
                 // If we are NOT admin (Client), ensure we rely on the procedural map + sync
                 // We do NOT load any local saves to prevent overwriting the host's world
                 Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
-<<<<<<< HEAD
-                UI.addMessage("System", "Connected as Client. Waiting for Map Sync...", "#3498db");
-=======
                 UI.addMessage("System", "Waiting for Map Sync...", "#3498db");
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             }
 
             this.loop();
             UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
             Network.broadcastMove();
-<<<<<<< HEAD
-            this.updateAdminStatus();
-=======
             // Removed updateAdminStatus call
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }, 1000);
     }
 
@@ -1364,10 +1301,7 @@ class GameEngine {
         }
 
         Network.update();
-<<<<<<< HEAD
-=======
         this.checkHostHealth(); // Run the election logic
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         // Coords Update Optimized
         if (this.lastCoordsX !== p.gridX || this.lastCoordsY !== p.gridY) {
@@ -1693,11 +1627,7 @@ class GameEngine {
 
                 if (visible) this.drawProceduralTile(x, y, tile, !visible);
                 else if (this.discovered[y][x]) {
-<<<<<<< HEAD
-                    this.ctx.globalAlpha = 0.85;
-=======
                     this.ctx.globalAlpha = 0.9;
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                     this.drawProceduralTile(x, y, tile, false);
                     this.ctx.globalAlpha = 1.0;
                 }
@@ -1849,90 +1779,6 @@ class GameEngine {
         let ts = CONSTANTS.TILE_SIZE;
         let px = x * ts; let py = y * ts;
         let prop = TILE_PROPS[type];
-<<<<<<< HEAD
-        if (isXray) { this.ctx.strokeStyle = prop.color; this.ctx.lineWidth = 2; this.ctx.strokeRect(px+4, py+4, ts-8, ts-8); return; }
-
-        // Detailed Texture Patterns
-        const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-        const n1 = (seed % 1);
-        const n2 = ((seed * 10) % 1);
-
-        let bevel = true;
-
-        // --- ORE RENDERING (Detailed) ---
-        if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
-             // 1. Draw Stone Background (so ores look embedded)
-             this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
-             this.ctx.fillRect(px, py, ts, ts);
-
-             // 2. Draw Bevel for stone
-             this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
-             this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
-
-             // 3. Draw Ore bits
-             this.ctx.fillStyle = prop.color;
-
-             // Procedural placement of chunks
-             const s = Math.abs(seed);
-             const r1 = s - Math.floor(s);
-
-             // Cluster center based on hash
-             let cx = px + 16 + (r1 - 0.5) * 12;
-             let cy = py + 16 + ((r1*10)%1 - 0.5) * 12;
-
-             // Main chunk
-             this.ctx.fillRect(cx-3, cy-3, 6, 6);
-             // Satellites
-             this.ctx.fillRect(cx-6, cy+2, 3, 3);
-             this.ctx.fillRect(cx+4, cy-5, 4, 3);
-             this.ctx.fillRect(cx+3, cy+3, 3, 4);
-
-             // Sparkle (occasional shine)
-             if (now() % 1200 < 200) {
-                this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                this.ctx.fillRect(cx-1, cy-1, 2, 2);
-            }
-            return; // Exit early since we handled bevels/background
-        }
-
-        // --- STANDARD BLOCKS ---
-        this.ctx.fillStyle = prop.color;
-        this.ctx.fillRect(px, py, ts, ts);
-
-        if (type === TILE_TYPES.EMPTY && y>=5) {
-            this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
-            this.ctx.fillRect(px, py, ts, ts);
-
-            // Add some small pebbles/debris
-            this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
-            if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
-            if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
-            if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
-            bevel=false;
-        }
-        else if (type === TILE_TYPES.EMPTY && y<5) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-            return
-        }
-        else if (type === TILE_TYPES.DIRT) {
-             this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
-             if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
-             if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
-             if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
-        } else if (type === TILE_TYPES.GRASS) {
-             this.ctx.fillStyle = '#2ecc71'; this.ctx.fillRect(px, py, ts, 6);
-             this.ctx.fillStyle = 'rgba(0,0,0,0.1)'; this.ctx.fillRect(px, py+6, ts, ts-6);
-        } else if (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE) {
-             this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
-             if(n1 > 0.3) { this.ctx.fillRect(px+5, py+5, 10, 6); this.ctx.fillRect(px+18, py+18, 10, 6); }
-             this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-             this.ctx.beginPath(); this.ctx.moveTo(px, py+ts); this.ctx.lineTo(px+ts, py); this.ctx.stroke();
-        } else if (type === TILE_TYPES.CASING) {
-            this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
-            this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
-            this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
-            return;
-=======
 
         // Detailed Texture Patterns
 
@@ -2028,7 +1874,6 @@ class GameEngine {
                 this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
                 return;
             }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
 
         // Bevel for all
@@ -2105,13 +1950,8 @@ class GameEngine {
         ctx.strokeRect(center - miniMapRectW/2, center - miniMapRectH/2, miniMapRectW, miniMapRectH);
 
         // Player Dot (Always Center)
-<<<<<<< HEAD
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(center - 2, center - 2, 4, 4);
-=======
         ctx.fillStyle = Game.settings.color;
         ctx.fillRect(center, center, 3, 3);
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         // Remote players... mapped to minimap scale
         Object.values(this.remotePlayers).forEach(rp => {
@@ -2122,15 +1962,8 @@ class GameEngine {
             if(Math.abs(dx) < range && Math.abs(dy) < range) {
                 const screenX = center + dx * pixelSize;
                 const screenY = center + dy * pixelSize;
-<<<<<<< HEAD
-                ctx.fillStyle = '#3498db';
-                ctx.fillRect(screenX - 2, screenY - 2, 4, 4);
-
-                // Optional: Tooltip logic if needed, omitted for cleanliness
-=======
                 ctx.fillStyle = rp.color;
                 ctx.fillRect(screenX, screenY, 3, 3);
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             }
         });
     }
@@ -2359,27 +2192,12 @@ class NetworkManager {
         let n = now();
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
-<<<<<<< HEAD
-                const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
-                UI.addMessage("System", msg, "#888");
-                Sound.playChat('leave');
-                delete Game.remotePlayers[id];
-                UI.updatePlayerList();
-                Game.updateAdminStatus();
-            }
-        });
-        if (n - this.lastHeartbeat > 2000) {
-            // FIX: Added joinedAt to heartbeat so late joiners see my timestamp
-            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
-            this.lastHeartbeat = n;
-=======
             const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
             UI.addMessage("System", msg, "#888");
             Sound.playChat('leave');
             delete Game.remotePlayers[id];
             UI.updatePlayerList();
             // Removed updateAdminStatus, checking health in Game loop
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
     });
     if (n - this.lastHeartbeat > 1000) {
@@ -2415,12 +2233,8 @@ broadcastMove() {
             sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE,
             gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
             username: Game.settings.username,
-<<<<<<< HEAD
-            joinedAt: p.joinedAt
-=======
             joinedAt: p.joinedAt,
             isAdmin: Game.isAdmin // FLAG ADMIN STATUS
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         });
         this.lastHeartbeat = now();
     }
@@ -2430,10 +2244,7 @@ broadcastMove() {
     sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
     sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
-<<<<<<< HEAD
-=======
     transferAdmin(id) { this.publish('ctrl', { type: 'transfer_admin', to: id }); }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
     // Add missing Map Request logic
     requestMap(fromId) {
@@ -2502,11 +2313,6 @@ broadcastMove() {
             rp.lastSeen = now();
             if(msg.username && rp.username === "Unknown") rp.username = msg.username;
 
-<<<<<<< HEAD
-            // FIX: Ensure timestamp is synced if it comes in late
-            if (msg.joinedAt && !rp.joinedAt) {
-                rp.joinedAt = msg.joinedAt;
-=======
             // FIX: Ensure timestamp is synced if it comes in late, but sanity check it
             // Must be a valid timestamp > year 2021 to prevent "0" exploits
             if (msg.joinedAt && (!rp.joinedAt || rp.joinedAt > msg.joinedAt)) {
@@ -2527,42 +2333,12 @@ broadcastMove() {
                         Game.demoteFromAdmin();
                     }
                 }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             }
 
             if (msg.type === 'move') {
                 rp.color = msg.col; rp.rotation = msg.r; rp.isDrilling = msg.drill; rp.gridX = msg.gx; rp.gridY = msg.gy;
                 rp.targetX = msg.tx; rp.targetY = msg.ty;
                 if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
-<<<<<<< HEAD
-            }
-
-            // FIX: Always check if this new info changes the admin
-            Game.updateAdminStatus();
-        }
-        else if (msg.type === 'join') {
-            if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
-            else {
-                // Only show message if we didn't know them before
-                if(!Game.remotePlayers[msg.id]) {
-                    UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
-                    Sound.playChat('join');
-                }
-                Game.remotePlayers[msg.id] = {
-                    id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
-                };
-                UI.updatePlayerList();
-                Game.updateAdminStatus();
-
-                // If I am admin, SEND MAP
-                if(Game.isAdmin) {
-                    this.sendMapDiff(msg.id);
-                }
-
-                // Reply with MY position so they see me immediately
-                this.broadcastMove();
-
-=======
         }
         // Removed updateAdminStatus
     }
@@ -2572,7 +2348,6 @@ broadcastMove() {
             if(!Game.remotePlayers[msg.id]) {
                 UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
                 Sound.playChat('join');
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             }
             Game.remotePlayers[msg.id] = {
                 id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
@@ -2637,20 +2412,6 @@ broadcastMove() {
         }
         else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
             // Apply Map Sync
-<<<<<<< HEAD
-            msg.data.forEach(d => {
-                if (Game.map[d.y]) {
-                     Game.map[d.y][d.x] = d.v;
-                     // Auto discover synced changes so we can see them on minimap
-                     Game.discovered[d.y][d.x] = 1;
-                }
-            });
-            // Debounce toast to prevent spam from chunked packets
-            if (now() - this.lastSyncToast > 2000) {
-                UI.showToast("Map Synced with Host", "success");
-                this.lastSyncToast = now();
-            }
-=======
             if (Array.isArray(msg.data)) {
                 msg.data.forEach(d => {
                     // Optimized: d is now [x, y, v]
@@ -2669,7 +2430,6 @@ broadcastMove() {
         }
         else if (msg.type === 'map_end' && msg.to === Game.localPlayer.id) {
              UI.showToast("Map Synced!", "success");
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
         else if (msg.type === 'map_req' && Game.isAdmin) {
             this.sendMapDiff(msg.from);
@@ -2835,8 +2595,6 @@ class UIManager {
         }
     }
 
-<<<<<<< HEAD
-=======
     async randomizeName() {
         try {
             const btn = document.querySelector('button[title="Randomize"]');
@@ -2858,35 +2616,11 @@ class UIManager {
         }
     }
 
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
     // --- SERVER LIST LOGIC ---
     refreshServerList() {
         const list = $('server-list-sidebar');
         list.innerHTML = '';
 
-<<<<<<< HEAD
-        // Merge defaults and custom
-        const allServers = [...new Set([...this.defaultServers, ...this.customServers])];
-
-        allServers.forEach(url => {
-            const isActive = url === Game.settings.broker;
-            const item = document.createElement('div');
-            item.className = `server-list-item ${isActive ? 'active' : ''}`;
-            item.innerHTML = `
-                <div style="display:flex; align-items:center; overflow:hidden;">
-                    <div class="server-status-icon" id="status-${btoa(url).replace(/=/g,'')}"><div class="spin-loader"></div></div>
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${url}</span>
-                </div>
-            `;
-            item.onclick = () => this.selectServer(url);
-            list.appendChild(item);
-
-            // Ping server
-            this.checkServerStatus(url);
-        });
-    }
-
-=======
         // Render helper
         const renderItem = (url, isCustom) => {
             const isActive = url === Game.settings.broker;
@@ -2960,7 +2694,6 @@ class UIManager {
         }
     }
 
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
     selectServer(url) {
         Game.settings.broker = url;
         localStorage.setItem('mm_broker_url', url);
@@ -2979,10 +2712,7 @@ class UIManager {
                 input.value = '';
                 this.refreshServerList();
                 this.showToast("Server Added", "success");
-<<<<<<< HEAD
-=======
                 this.selectServer(url);
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             } else {
                 this.showToast("Server already exists", "error");
             }
@@ -2991,8 +2721,6 @@ class UIManager {
         }
     }
 
-<<<<<<< HEAD
-=======
     removeCustomServer(url) {
         const index = this.customServers.indexOf(url);
         if (index > -1) {
@@ -3013,7 +2741,6 @@ class UIManager {
         }
     }
 
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
     checkServerStatus(url) {
         const id = `status-${btoa(url).replace(/=/g,'')}`;
         const el = $(id);
@@ -3046,23 +2773,6 @@ class UIManager {
 
     async checkForUpdates() {
         try {
-<<<<<<< HEAD
-            if (!initialTimestamp) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('_t', Date.now());
-                const headRes = await fetch(url.toString(), { method: 'HEAD' });
-                initialTimestamp = headRes.headers.get('last-modified');
-                console.log("current version is :", initialTimestamp);
-            }else{
-                const url = new URL(window.location.href);
-                url.searchParams.set('_t', Date.now());
-                const headRes = await fetch(url.toString(), { method: 'HEAD' });
-                const currentTimestamp = headRes.headers.get('last-modified');
-
-                if (currentTimestamp && currentTimestamp !== initialTimestamp) {
-                    UI.showToast("New Version Available!", "normal");
-                    UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
-=======
             if (location.protocol!=='file:'){
                 if (!initialTimestamp) {
                     const url = new URL(window.location.href);
@@ -3080,7 +2790,6 @@ class UIManager {
                         UI.showToast("New Version Available!", "normal");
                         UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
                     }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                 }
             }
         } catch (e) { console.error('Update check error:', e); }
@@ -3177,8 +2886,6 @@ class UIManager {
         });
     }
     updateAdminPanel() { this.updatePlayerList(); }
-<<<<<<< HEAD
-=======
 }
 
 class AdminSystem {
@@ -3188,7 +2895,6 @@ class AdminSystem {
             Network.broadcastPromote(id);
         }
     }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 }
 
 class SaveSystem {
@@ -3425,11 +3131,7 @@ class SaveSystem {
                 <div class="save-slot-actions">
                     <button class="btn" style="background:#555;" onclick="SaveSystem.loadGame(${meta.id})">Load</button>
                     <button class="btn btn-danger" onclick="SaveSystem.deleteGame(${meta.id})">X</button>
-<<<<<<< HEAD
-                    <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">&#8595;</button>
-=======
                     <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">Export</button>
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                 </div>
             `;
             container.appendChild(div);
@@ -3491,19 +3193,6 @@ class SaveSystem {
             Game.localPlayer.y = Game.localPlayer.gridY * CONSTANTS.TILE_SIZE;
         }
 
-<<<<<<< HEAD
-        if(data.map) {
-            Game.map = data.map;
-        }
-
-        if(data.discovered) {
-            // Re-convert arrays back to Uint8Array
-            Game.discovered = data.discovered.map(r => {
-                // Check if it's an object (array-like) or actual array
-                if (r instanceof Uint8Array) return r;
-                return new Uint8Array(Object.values(r));
-            });
-=======
         // Validate and Adapt map data
         if(data.map && Array.isArray(data.map) && data.map.length > 0) {
             // Exact match
@@ -3560,7 +3249,6 @@ class SaveSystem {
                     }
                 }
             }
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
 
         if(data.banned) Game.bannedIds = data.banned;
