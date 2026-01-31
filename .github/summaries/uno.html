@@ -1,0 +1,14 @@
+<section>
+  <ul>
+    <li>Multiplayer UNO game using MQTT for real-time communication.</li>
+    <li>Browser-based with pure JavaScript, no backend required.</li>
+    <li>Features include custom card creation, chat, and theme switching.</li>
+  </ul>
+
+  <pre>
+    <code>const client = mqtt.connect(state.brokerUrl, { clientId: `uno_${state.myId}` });</code>
+    <code>client.subscribe([`${topicBase}/state`, `${topicBase}/chat`, `${topicBase}/presence`]);</code>
+  </pre>
+
+  <p>This is a browser-based UNO game that uses MQTT for real-time multiplayer gameplay. Players connect to public brokers, join rooms, and play with custom cards. The game features a lobby system, chat functionality, and theme switching between light and dark modes.</p>
+</section>
