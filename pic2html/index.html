@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pic2html - Image to HTML Text Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+        
+        .output {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        input[type="file"], select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .preview {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        
+        .status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+        }
+        
+        /* Hide the original output container initially */
+        #output-container {
+            display: none;
+        }
+        
+        /* Text image styles */
+        .text-image-container {
+            overflow: auto;
+            max-height: 60vh;
+            border: 1px solid #ddd;
+            background-color: var(--bg-color, black);
+            padding: 10px;
+        }
+        
+        .text-image {
+            font-family: monospace;
+            letter-spacing: 0;
+            white-space: pre;
+            font-size: var(--font-size, 12px);
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .ie-adjustment {
+            /* IE uses normal line-height, adjust character spacing instead */
+        }
+        
+        .firefox-adjustment {
+            /* Firefox uses normal line-height, adjust character spacing instead */
+        }
+        
+        .controls h3, .output h3 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>pic2html - Image to HTML Text Converter</h1>
+    <p>Convert images into HTML text using configurable settings. This is a JavaScript remake of the original Pike program.</p>
+    
+    <div class="container">
+        <div class="controls">
+            <h3>Settings</h3>
+            
+            <div class="control-group">
+                <label for="image-input">Upload Image</label>
+                <input type="file" id="image-input" accept="image/*">
+            </div>
+            
+            <div class="control-group">
+                <label for="text-type">Text Type</label>
+                <select id="text-type">
+                    <option value="sequence">Sequence</option>
+                    <option value="random" selected>Random</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="width">Width (characters)</label>
+                <input type="number" id="width" value="130" min="1" max="500">
+            </div>
+            
+            <div class="control-group">
+                <label for="characters">Characters</label>
+                <input type="text" id="characters" value="01">
+            </div>
+            
+            <div class="control-group">
+                <label for="bg-color">Background Color</label>
+                <input type="text" id="bg-color" value="black">
+            </div>
+            
+            <div class="control-group">
+                <label for="font-size">Font Size</label>
+                <input type="number" id="font-size" value="15">
+            </div>
+            
+            <div class="control-group" hidden>
+                <label for="line-spacing">Line Spacing</label>
+                <input type="number" id="line-spacing" value="1.0" step="0.1" min="0.1" max="3.0">
+            </div>
+            
+            <div class="control-group" hidden>
+                <label for="browser">Browser</label>
+                <select id="browser">
+                    <option value="ie">Internet Explorer</option>
+                    <option value="firefox">Firefox</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label class="checkbox-group">
+                    <input type="checkbox" id="grayscale">
+                    Grayscale
+                </label>
+            </div>
+            
+            <div class="control-group" hidden>
+                <label class="checkbox-group">
+                    <input type="checkbox" id="contrast">
+                    Apply Contrast
+                </label>
+            </div>
+            
+            <button id="convert-btn">Convert Image</button>
+            
+            <div class="control-group">
+              <br>
+                <label>Export Options</label>
+                <button id="export-html-btn" disabled>Copy HTML</button>
+                <button id="export-svg-btn" disabled hidden>Export SVG</button>
+                <button id="export-png-btn" disabled>Export PNG</button>
+            </div>
+            
+            <div class="status" id="status"></div>
+        </div>
+        
+        <div class="output">
+            <h3>Output</h3>
+            <div id="error-message" class="error"></div>
+            <div id="output-container">
+                <div class="text-image-container" id="text-image-container">
+                    <div class="text-image" id="text-image"></div>
+                </div>
+                <div class="status" id="render-time"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        // Contrast curve (sine) - same as original Pike program
+        const contrastCurve = [
+            0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,6,6,6,7,8,8,9,9,10,10,11,12,12,13,14,14,15,16,17,17,18,19,20,21,22,23,23,24,25,26,27,28,29,30,31,32,33,34,35,37,38,39,40,41,42,43,45,46,47,48,49,51,52,53,54,56,57,58,60,61,62,64,65,66,68,69,71,72,73,75,76,78,79,81,82,84,85,87,88,90,91,93,94,96,97,99,100,102,103,105,106,108,109,111,113,114,116,117,119,120,122,124,125,127,128,130,131,133,135,136,138,139,141,142,144,146,147,149,150,152,153,155,156,158,159,161,162,164,165,167,168,170,171,173,174,176,177,179,180,182,183,184,186,187,189,190,191,193,194,195,197,198,199,201,202,203,204,206,207,208,209,210,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229,230,231,232,232,233,234,235,236,237,238,238,239,240,241,241,242,243,243,244,245,245,246,246,247,247,248,249,249,249,250,250,251,251,252,252,252,253,253,253,253,254,254,254,254,254,255,255,255,255,255,255,255,255
+        ];
+
+        // State variables
+        let textTypeCount = -1;
+        let textType = "sequence";
+        let HTMLCharacter = ["0", "1"];
+        let bgColor = "black";
+        let fontSize = -3;
+        let grayscale = 0;
+        let browser = "ie";
+        let contrast = 0;
+        let imageWidth = 130;
+        let lineSpacing = 1.0;
+
+        // DOM elements
+        const imageInput = document.getElementById('image-input');
+        const textTypeSelect = document.getElementById('text-type');
+        const widthInput = document.getElementById('width');
+        const charactersInput = document.getElementById('characters');
+        const bgColorInput = document.getElementById('bg-color');
+        const fontSizeInput = document.getElementById('font-size');
+        const browserSelect = document.getElementById('browser');
+        const grayscaleCheckbox = document.getElementById('grayscale');
+        const contrastCheckbox = document.getElementById('contrast');
+        const lineSpacingInput = document.getElementById('line-spacing');
+        const convertBtn = document.getElementById('convert-btn');
+        const statusEl = document.getElementById('status');
+        const errorMessageEl = document.getElementById('error-message');
+        const outputContainer = document.getElementById('output-container');
+        const textImageContainer = document.getElementById('text-image-container');
+        const textImageEl = document.getElementById('text-image');
+        const renderTimeEl = document.getElementById('render-time');
+        const exportHtmlBtn = document.getElementById('export-html-btn');
+        const exportSvgBtn = document.getElementById('export-svg-btn');
+        const exportPngBtn = document.getElementById('export-png-btn');
+
+        // Event listeners
+        imageInput.addEventListener('change', handleImageChange);
+        textTypeSelect.addEventListener('change', updateSettings);
+        widthInput.addEventListener('change', updateSettings);
+        charactersInput.addEventListener('change', updateSettings);
+        bgColorInput.addEventListener('change', updateSettings);
+        fontSizeInput.addEventListener('change', updateSettings);
+        browserSelect.addEventListener('change', updateSettings);
+        grayscaleCheckbox.addEventListener('change', updateSettings);
+        contrastCheckbox.addEventListener('change', updateSettings);
+        lineSpacingInput.addEventListener('change', updateSettings);
+        convertBtn.addEventListener('click', convertImage);
+        exportHtmlBtn.addEventListener('click', exportHtml);
+        exportSvgBtn.addEventListener('click', exportSvg);
+        exportPngBtn.addEventListener('click', exportPng);
+
+        function handleImageChange(e) {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                
+                // Check file size (10MB limit)
+                if (file.size > 10485760) {
+                    showError("Image too large (10MB limit).");
+                    return;
+                }
+                
+                statusEl.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+                convertBtn.disabled = false;
+                errorMessageEl.textContent = '';
+            }
+        }
+
+        function updateSettings() {
+            textType = textTypeSelect.value;
+            imageWidth = parseInt(widthInput.value) || 130;
+            HTMLCharacter = charactersInput.value.split('');
+            bgColor = bgColorInput.value;
+            fontSize = parseInt(fontSizeInput.value);
+            browser = browserSelect.value;
+            grayscale = grayscaleCheckbox.checked ? 1 : 0;
+            contrast = contrastCheckbox.checked ? 1 : 0;
+            
+            // Apply width limits
+            if (imageWidth < 1 || imageWidth > 500) {
+                imageWidth = 100;
+                widthInput.value = imageWidth;
+            }
+        }
+
+        function showError(message) {
+            errorMessageEl.textContent = message;
+            outputContainer.style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function convertImage() {
+            updateSettings();
+            
+            if (!imageInput.files || !imageInput.files[0]) {
+                showError("No image specified.");
+                return;
+            }
+
+            const file = imageInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const startTime = performance.now();
+                const img = new Image();
+                
+                img.onload = function() {
+                    try {
+                        // Check image dimensions
+                        if (img.width > 2000 || img.height > 2000) {
+                            showError("Image size too large.");
+                            return;
+                        }
+
+                        // Create canvas and draw image
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Calculate aspect ratio adjustments
+                        let aspectRatio = 1.0;
+                        if (browser === 'ie') {
+                            aspectRatio = 0.65;
+                        } else {
+                            aspectRatio = 0.43;
+                        }
+                        
+                        // Calculate new dimensions
+                        const newWidth = imageWidth;
+                        const newHeight = Math.floor((img.height * newWidth) / img.width);
+                        
+                        canvas.width = newWidth;
+                        canvas.height = newHeight;
+                        
+                        // Draw and scale image
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                        
+                        // Apply grayscale if needed
+                        if (grayscale === 1 || grayscale === 2) {
+                            const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+                            const data = imageData.data;
+                            
+                            for (let i = 0; i < data.length; i += 4) {
+                                const r = data[i];
+                                const g = data[i + 1];
+                                const b = data[i + 2];
+                                
+                                // Convert to grayscale
+                                const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                                
+                                if (grayscale === 2) {
+                                    // Threshold
+                                    data[i] = data[i + 1] = data[i + 2] = gray >= 128 ? 255 : 0;
+                                } else {
+                                    // Full grayscale
+                                    data[i] = data[i + 1] = data[i + 2] = gray;
+                                }
+                            }
+                            
+                            ctx.putImageData(imageData, 0, 0);
+                        }
+                        
+                        // Apply contrast if needed
+                        if (contrast) {
+                            const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+                            const data = imageData.data;
+                            
+                            for (let i = 0; i < data.length; i += 4) {
+                                data[i] = contrastCurve[data[i]];
+                                data[i + 1] = contrastCurve[data[i + 1]];
+                                data[i + 2] = contrastCurve[data[i + 2]];
+                            }
+                            
+                            ctx.putImageData(imageData, 0, 0);
+                        }
+                        
+                        // Generate text image
+                        const textImage = generateTextImage(ctx, newWidth, newHeight);
+                        
+                        // Display result
+                        textImageContainer.style.backgroundColor = bgColor;
+                        textImageContainer.className = `text-image-container ${browser}-adjustment`;
+                        textImageEl.style.fontSize = fontSize + 'px';
+                        textImageEl.style.lineHeight = lineSpacing + '';
+                        textImageEl.innerHTML = textImage;
+                        
+                        const endTime = performance.now();
+                        renderTimeEl.textContent = `Rendering time: ${((endTime - startTime) / 1000).toFixed(2)} seconds.`;
+                        
+                        outputContainer.style.display = 'block';
+                        errorMessageEl.textContent = '';
+                        
+                    } catch (error) {
+                        console.error('Error processing image:', error);
+                        showError("Failed to process image.");
+                    }
+                };
+                
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function generateTextImage(ctx, width, height) {
+            textTypeCount = -1; // Reset counter
+            
+            let result = '';
+            let oldColor = null;
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const pixelData = ctx.getImageData(x, y, 1, 1).data;
+                    const color = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
+                    
+                    if (color !== oldColor) {
+                        const character = nextCharacter();
+                        if (x === 0) {
+                            result += `<span style="color:${color}">${character}</span>`;
+                        } else {
+                            result += `</span><span style="color:${color}">${character}</span>`;
+                        }
+                        oldColor = color;
+                    } else {
+                        result += nextCharacter();
+                    }
+                }
+                
+                oldColor = null;
+                result += '<br>';
+            }
+            
+            return result;
+        }
+
+        function nextCharacter() {
+            if (HTMLCharacter.length === 1) {
+                return HTMLCharacter[0];
+            }
+            
+            if (textType === "random") {
+                return HTMLCharacter[Math.floor(Math.random() * HTMLCharacter.length)];
+            } else if (textType === "sequence") {
+                textTypeCount++;
+                if (textTypeCount >= HTMLCharacter.length) {
+                    textTypeCount = 0;
+                    return HTMLCharacter[0];
+                }
+                return HTMLCharacter[textTypeCount];
+            }
+            
+            return HTMLCharacter[0];
+        }
+
+        function exportHtml() {
+            if (!outputContainer.style.display || outputContainer.style.display === 'none') {
+                showError("Please convert an image first.");
+                return;
+            }
+
+            const htmlContent = textImageEl.innerHTML;
+            const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Text Image</title>
+    <style>
+        body { background-color: ${bgColor}; margin: 0; padding: 20px; }
+        .text-image { 
+            font-family: monospace; 
+            font-size: ${fontSize}px; 
+            line-height: ${lineSpacing};
+            color: white;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-image">${htmlContent}</div>
+</body>
+</html>`;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(fullHtml).then(() => {
+                statusEl.textContent = "HTML copied to clipboard!";
+            }).catch(err => {
+                console.error('Failed to copy HTML:', err);
+                statusEl.textContent = "Failed to copy HTML to clipboard.";
+            });
+        }
+
+        function exportSvg() {
+            if (!outputContainer.style.display || outputContainer.style.display === 'none') {
+                showError("Please convert an image first.");
+                return;
+            }
+
+            const textContent = textImageEl.textContent || textImageEl.innerText;
+            const lines = textContent.split('\n');
+            
+            // Calculate SVG dimensions
+            const charWidth = 10;
+            const charHeight = 18;
+            const svgWidth = lines[0] ? lines[0].length * charWidth : 100;
+            const svgHeight = lines.length * charHeight;
+
+            let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" style="background-color:${bgColor}">
+    <style>
+        .char { font-family: monospace; font-size: ${fontSize}px; }
+    </style>`;
+
+            lines.forEach((line, y) => {
+                let currentColor = null;
+                let currentText = '';
+                let currentX = 0;
+
+                for (let x = 0; x < line.length; x++) {
+                    const char = line[x];
+                    if (char === ' ') {
+                        currentX += charWidth;
+                        continue;
+                    }
+
+                    // For simplicity in SVG, we'll use a default color
+                    // In a full implementation, we'd need to parse the span colors
+                    const color = 'white';
+                    
+                    if (currentColor !== color) {
+                        if (currentText) {
+                            svgContent += `\n    <text x="${currentX - currentText.length * charWidth}" y="${(y + 1) * charHeight}" fill="${currentColor}" class="char">${currentText}</text>`;
+                        }
+                        currentColor = color;
+                        currentText = char;
+                    } else {
+                        currentText += char;
+                    }
+                }
+                
+                if (currentText) {
+                    svgContent += `\n    <text x="${currentX - currentText.length * charWidth}" y="${(y + 1) * charHeight}" fill="${currentColor}" class="char">${currentText}</text>`;
+                }
+            });
+
+            svgContent += '\n</svg>';
+
+            // Create download link
+            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'text-image.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            statusEl.textContent = "SVG exported successfully!";
+        }
+
+        function exportPng() {
+            if (!outputContainer.style.display || outputContainer.style.display === 'none') {
+                showError("Please convert an image first.");
+                return;
+            }
+
+            // Create a temporary container for rendering
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.top = '-9999px';
+            tempContainer.style.backgroundColor = bgColor;
+            tempContainer.style.padding = '20px';
+            tempContainer.style.fontFamily = 'monospace';
+            tempContainer.style.fontSize = fontSize + 'px';
+            tempContainer.style.lineHeight = lineSpacing + '';
+            tempContainer.style.whiteSpace = 'pre';
+            tempContainer.style.color = 'white';
+            tempContainer.innerHTML = textImageEl.innerHTML;
+            
+            document.body.appendChild(tempContainer);
+
+            // Use html2canvas to convert to PNG
+            html2canvas(tempContainer, {
+                backgroundColor: bgColor,
+                scale: 2 // Higher resolution
+            }).then(canvas => {
+                // Create download link
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'text-image.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    statusEl.textContent = "PNG exported successfully!";
+                });
+                
+                // Clean up
+                document.body.removeChild(tempContainer);
+            }).catch(err => {
+                console.error('Failed to export PNG:', err);
+                statusEl.textContent = "Failed to export PNG.";
+            });
+        }
+
+        // Initialize
+        updateSettings();
+        convertBtn.disabled = true;
+        
+        // Enable export buttons when output is visible
+        function updateExportButtons() {
+            const hasOutput = outputContainer.style.display === 'block';
+            exportHtmlBtn.disabled = !hasOutput;
+            exportSvgBtn.disabled = !hasOutput;
+            exportPngBtn.disabled = !hasOutput;
+        }
+        
+        // Watch for output container changes
+        const observer = new MutationObserver(updateExportButtons);
+        observer.observe(outputContainer, { attributes: true, attributeFilter: ['style'] });
+    </script>
+</body>
+</html>
