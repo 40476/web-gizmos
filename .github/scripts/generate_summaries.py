@@ -147,7 +147,7 @@ def generate_summary(content):
         # Other errors
         if r.status_code >= 400:
             gha_notice(f"OpenRouter error: {r.text}")
-            if attempt < 5:
+            if attempt < 10:
                 time.sleep(2)
                 continue
             r.raise_for_status()
