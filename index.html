@@ -147,29 +147,27 @@
     <input id="search" type="text" placeholder="Search applications..." />
 
     
-      <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
+      <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
     
-      <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
-    
-      <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
-    
-      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
-    
-      <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
-    
-      <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
-    
-      <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
+      <a class="nav-item" href="pic2html/index.html" data-name="pic2html">pic2html</a>
     
       <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
     
+      <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
+    
+      <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
+    
+      <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
+    
+      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
+    
+      <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
+    
       <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
     
-      <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
+      <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
     
-      <a class="nav-item" href="uno/index.html" data-name="uno">uno</a>
-    
-      <a class="nav-item" href="pic2html/index.html" data-name="pic2html">pic2html</a>
+      <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
     
 
     <button id="themeToggle">Toggle Theme</button>
@@ -179,136 +177,41 @@
     <h1>Applications Overview</h1>
 
     
-      <section class="app-section" data-name="fonttester">
-        <a class="app-link" href="fonttester/index.html">Open fonttester</a>
-        <h2>fonttester</h2>
+      <section class="app-section" data-name="pcb">
+        <a class="app-link" href="pcb/index.html">Open pcb</a>
+        <h2>pcb</h2>
         <section>
   <ul>
-    <li>Upload fonts in TTF, OTF, WOFF, or WOFF2 format for testing</li>
-    <li>Adjust font size dynamically with range slider from 8px to 72px</li>
-    <li>Preview fonts in headings, paragraphs, UI elements, forms, and special characters</li>
+    <li>Procedurally generates PCB layouts with logic 튩ips, capacitors, LEDs, and seven-segment displays.</li>
+    <li>Simulates signal propagation thr✓ugh traces with adjustable speed and neon glow effects.</li>
+    <li>Features interactive components like switches and a settings panel for dynamic regeneration.</li>
   </ul>
 
   <pre>
-    <code>reader.onload = (e) => { const fontDataUrl = e.target.result;</code>
-    <code>fontTestArea.style.fontSize = `${newSize}px`;</code>
+    <code>pcb = new Generator(params.seed, gw, gh, params.density, params.force, params.fanout);</code>
+    <code>ctx.shadowBlur = (c.active的开发 params.glow)礦 15 : 0;</code>
   </pre>
 
-  <p>This web application allows designers to test custom typography implementations. Users can upload font files, modify font sizes dynamically, and preview rendering across various content formats including UI components. Real-time feedback is provided for headings, paragraphs, form elements, and special character sets.</p>
+  <p>This application generates interactive circuit board simulations with runtime logic simulation. Users can click components like switches to trigger signals and adjust parameters through a settings panel. The visualization includes configurable effects like trace glow and CRT scanlines.</p>
 </section>
       </section>
     
-      <section class="app-section" data-name="microviz">
-        <a class="app-link" href="microviz/index.html">Open microviz</a>
-        <h2>microviz</h2>
+      <section class="app-section" data-name="pic2html">
+        <a class="app-link" href="pic2html/index.html">Open pic2html</a>
+        <h2>pic2html</h2>
         <section>
   <ul>
-    <li>Implements customizable audio visualizations using canvas rendering and Web Audio API</li>
-    <li>Supports multiple audio sources including file uploads, microphone input, and WebSocket streams</li>
-    <li>Provides master controls (file input, play/pause, visualizer selection) and visualizer-specific settings</li>
+    <li>Image-to-HTML converter that transforms uploaded images into text-based HTML representations</li>
+    <li>Configurable settings for text type (sequence/random), width, characters, background color, and font size</li>
+    <li>Supports grayscale and contrast adjustments with real-time preview and export options (HTML, SVG, PNG)</li>
   </ul>
 
   <pre>
-    <code>const visualizers = { bars: { draw: ctx => ctx.fillRect(...) } }</code>
-    <code>analyser.getByteFrequencyData(audioData);</code>
+    <code>const contrastCurve = [0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,6,6,6,7,8,8,9,9,10,10,11,12,12,13,14,14,15,16,17,17,18,19,20,21,22,23,23,24,25,26,27,28,29,30,31,32,33,34,35,37,38,39,40,41,42,43,45,46,47,48,49,51,52,53,54,56,57,58,60,61,62,64,65,66,68,69,71,72,73,75,76,78,79,81,82,84,85,87,88,90,91,93,94,96,97,99,100,102,103,105,106,108,109,111,113,114,116,117,119,120,122,124,125,127,128,130,131,133,135,136,138,139,141,142,144,146,147,149,150,152,153,155,156,158,159,161,162,164,165,167,168,170,171,173,174,176,177,179,180,182,183,184,186,187,189,190,191,193,194,195,197,198,199,201,202,203,204,206,207,208,209,210,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229,230,231,232,232,233,234,235,236,237,238,238,239,240,241,241,242,243,243,244,245,245,246,246,247,247,248,249,249,249,250,250,251,251,252,252,252,253,253,253,253,254,254,254,254,254,255,255,255,255,255,255,255,255];</code>
+    <code>function generateTextImage(ctx, width, height) { let result = ''; for (let y = 0; y < height; y++) { for (let x = 0; x &lt; width; x++) { const pixelData = ctx.getImageData(x, y, 1, 1).data; const color = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`; result += `<span style="color:${color}">` + nextCharacter() + `</span>`; } result += '&lt;br&gt;'; } return result; }</code>
   </pre>
 
-  <p>This application creates interactive audio visualizations with customizable visual effects. Users can select different visualizer presets, adjust sensitivity parameters, and choose audio sources including uploaded files, microphone input, or WebSocket streams. The interface features real-time frequency analysis visualization on dual canvas elements with metadata display functionality.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="pattern">
-        <a class="app-link" href="pattern/index.html">Open pattern</a>
-        <h2>pattern</h2>
-        <section>
-  <ul>
-    <li>Generates reproducible SVG patterns using deterministic seeded randomness</li>
-    <li>Provides six artistic styles (Memphis, Bauhaus, etc.) with adjustable complexity</li>
-    <li>Exports designs as SVG or PNG with texture effects and palette controls</li>
-  </ul>
-
-  <pre>
-    <code>function PRNG(seedStr) {</code>
-    <code>document.getElementById('generate').addEventListener('click', generate);</code>
-  </pre>
-
-  <p>This application creates customizable vector patterns using a seed-based pseudo-random generator. Parameters control dimensions, pattern complexity, color schemes, and texture overlays. Outputs maintain deterministic reproducibility across sessions and support SVG/PNG export.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="pixelreducer">
-        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
-        <h2>pixelreducer</h2>
-        <section>
-  <ul>
-    <li>Degrades resolution linearly over time with user-defined final scale</li>
-    <li>Applies audio degradation via low-pass filtering and bitcrushing for videos</li>
-    <li>Outputs GIFs for images and WebM videos for clips with preview/download</li>
-  </ul>
-
-  <pre>
-    <code>bits = 16 - Math.floor(15 * tNorm * crushAmount);</code>
-    <code>ctx.drawImage(tmp, 0, 0, w, h, 0, 0, width, height);</code>
-  </pre>
-
-  <p>The Go Go Gadget Pixel Reducer processes images and videos through controlled degradation sequences. For videos, it dynamically reduces resolution while applying audio filtering and bit-depth reduction during playback. Users can export GIF animations from images or degraded WebM videos with custom quality settings.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="turtle">
-        <a class="app-link" href="turtle/index.html">Open turtle</a>
-        <h2>turtle</h2>
-        <section>
-  <ul>
-    <li>A turtle ecosystem simulation where turtles exhibit behaviors like seeking food, wandering, and interacting with environment elements.</li>
-    <li>Grid-based terrain system with configurable cell types including walls, water, grass and sand, editable via painting interface.</li>
-    <li>Customizable settings panel for adjusting turtle personalities, population density, speed parameters, and visual effects.</li>
-  </ul>
-
-  <pre>
-    <code>grid[gx][gy ACTION_WIDTH val;</code>
-    <code>this.state = 'SEEK';</code>
-  </pre>
-
-  <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="animeboydownloader">
-        <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
-        <h2>animeboydownloader</h2>
-        <section>
-  <ul>
-    <li>Fetches random anime boy images from Nekos API with safe/suggestive rating filters</li>
-    <li>Displays image metadata including ID, tags, source link, and color palette swatches</li>
-    <li>Automatically loads first image on startup and handles API errors gracefully</li>
-  </ul>
-
-  <pre>
-    <code>const response = await fetchdledllo buy ");</code>
-    <code>const image = dataar1alehasta dites();</code>
-  </pre>
-  
-  <p>This web application retrieves anime boy images from the Nekos API with specific content restrictions. It displays each image with associated metadata and color palette in a styled card layout. Users can fetch new images via a button while error handling manages failed API requests.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="asl">
-        <a class="app-link" href="asl/index.html">Open asl</a>
-        <h2>asl</h2>
-        <section>
-  <ul>
-    <li>ASL sign language video generator interface</li>
-    <li>Text input with autocomplete suggestions</li>
-    <li>Video element for sign sequence playback</li>
-  </ul>
-
-  <pre>
-    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
-    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
-  </pre>
-
-  <p>This HTML creates a web interface for converting text input into ASL sign sequences. Users enter text which triggers video playback when clicking the Play button. The layout includes auto-suggestions and a responsive video player for displaying sign language demonstrations.</p>
+  <p>This JavaScript application converts uploaded images into HTML text representations with customizable settings. Users can adjust text type, character width, font size, and color scheme, then export the results as HTML, SVG, or PNG formats. The tool includes contrast enhancement and grayscale options for improved visual output.</p>
 </section>
       </section>
     
@@ -331,6 +234,101 @@
 </section>
       </section>
     
+      <section class="app-section" data-name="fonttester">
+        <a class="app-link" href="fonttester/index.html">Open fonttester</a>
+        <h2>fonttester</h2>
+        <section>
+  <ul>
+    <li>Upload fonts in TTF, OTF, WOFF, or WOFF2 format for testing</li>
+    <li>Adjust font size dynamically with range slider from 8px to 72px</li>
+    <li>Preview fonts in headings, paragraphs, UI elements, forms, and special characters</li>
+  </ul>
+
+  <pre>
+    <code>reader.onload = (e) => { const fontDataUrl = e.target.result;</code>
+    <code>fontTestArea.style.fontSize = `${newSize}px`;</code>
+  </pre>
+
+  <p>This web application allows designers to test custom typography implementations. Users can upload font files, modify font sizes dynamically, and preview rendering across various content formats including UI components. Real-time feedback is provided for headings, paragraphs, form elements, and special character sets.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="pattern">
+        <a class="app-link" href="pattern/index.html">Open pattern</a>
+        <h2>pattern</h2>
+        <section>
+  <ul>
+    <li>Generates reproducible SVG patterns using deterministic seeded randomness</li>
+    <li>Provides six artistic styles (Memphis, Bauhaus, etc.) with adjustable complexity</li>
+    <li>Exports designs as SVG or PNG with texture effects and palette controls</li>
+  </ul>
+
+  <pre>
+    <code>function PRNG(seedStr) {</code>
+    <code>document.getElementById('generate').addEventListener('click', generate);</code>
+  </pre>
+
+  <p>This application creates customizable vector patterns using a seed-based pseudo-random generator. Parameters control dimensions, pattern complexity, color schemes, and texture overlays. Outputs maintain deterministic reproducibility across sessions and support SVG/PNG export.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="asl">
+        <a class="app-link" href="asl/index.html">Open asl</a>
+        <h2>asl</h2>
+        <section>
+  <ul>
+    <li>ASL sign language video generator interface</li>
+    <li>Text input with autocomplete suggestions</li>
+    <li>Video element for sign sequence playback</li>
+  </ul>
+
+  <pre>
+    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
+    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
+  </pre>
+
+  <p>This HTML creates a web interface for converting text input into ASL sign sequences. Users enter text which triggers video playback when clicking the Play button. The layout includes auto-suggestions and a responsive video player for displaying sign language demonstrations.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="pixelreducer">
+        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
+        <h2>pixelreducer</h2>
+        <section>
+  <ul>
+    <li>Degrades resolution linearly over time with user-defined final scale</li>
+    <li>Applies audio degradation via low-pass filtering and bitcrushing for videos</li>
+    <li>Outputs GIFs for images and WebM videos for clips with preview/download</li>
+  </ul>
+
+  <pre>
+    <code>bits = 16 - Math.floor(15 * tNorm * crushAmount);</code>
+    <code>ctx.drawImage(tmp, 0, 0, w, h, 0, 0, width, height);</code>
+  </pre>
+
+  <p>The Go Go Gadget Pixel Reducer processes images and videos through controlled degradation sequences. For videos, it dynamically reduces resolution while applying audio filtering and bit-depth reduction during playback. Users can export GIF animations from images or degraded WebM videos with custom quality settings.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="animeboydownloader">
+        <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
+        <h2>animeboydownloader</h2>
+        <section>
+  <ul>
+    <li>Fetches random anime boy images from Nekos API with safe/suggestive rating filters</li>
+    <li>Displays image metadata including ID, tags, source link, and color palette swatches</li>
+    <li>Automatically loads first image on startup and handles API errors gracefully</li>
+  </ul>
+
+  <pre>
+    <code>const response = await fetchdledllo buy ");</code>
+    <code>const image = dataar1alehasta dites();</code>
+  </pre>
+  
+  <p>This web application retrieves anime boy images from the Nekos API with specific content restrictions. It displays each image with associated metadata and color palette in a styled card layout. Users can fetch new images via a button while error handling manages failed API requests.</p>
+</section>
+      </section>
+    
       <section class="app-section" data-name="racing">
         <a class="app-link" href="racing/index.html">Open racing</a>
         <h2>racing</h2>
@@ -350,60 +348,41 @@
 </section>
       </section>
     
-      <section class="app-section" data-name="pcb">
-        <a class="app-link" href="pcb/index.html">Open pcb</a>
-        <h2>pcb</h2>
+      <section class="app-section" data-name="microviz">
+        <a class="app-link" href="microviz/index.html">Open microviz</a>
+        <h2>microviz</h2>
         <section>
   <ul>
-    <li>Procedurally generates PCB layouts with logic 튩ips, capacitors, LEDs, and seven-segment displays.</li>
-    <li>Simulates signal propagation thr✓ugh traces with adjustable speed and neon glow effects.</li>
-    <li>Features interactive components like switches and a settings panel for dynamic regeneration.</li>
+    <li>Implements customizable audio visualizations using canvas rendering and Web Audio API</li>
+    <li>Supports multiple audio sources including file uploads, microphone input, and WebSocket streams</li>
+    <li>Provides master controls (file input, play/pause, visualizer selection) and visualizer-specific settings</li>
   </ul>
 
   <pre>
-    <code>pcb = new Generator(params.seed, gw, gh, params.density, params.force, params.fanout);</code>
-    <code>ctx.shadowBlur = (c.active的开发 params.glow)礦 15 : 0;</code>
+    <code>const visualizers = { bars: { draw: ctx => ctx.fillRect(...) } }</code>
+    <code>analyser.getByteFrequencyData(audioData);</code>
   </pre>
 
-  <p>This application generates interactive circuit board simulations with runtime logic simulation. Users can click components like switches to trigger signals and adjust parameters through a settings panel. The visualization includes configurable effects like trace glow and CRT scanlines.</p>
+  <p>This application creates interactive audio visualizations with customizable visual effects. Users can select different visualizer presets, adjust sensitivity parameters, and choose audio sources including uploaded files, microphone input, or WebSocket streams. The interface features real-time frequency analysis visualization on dual canvas elements with metadata display functionality.</p>
 </section>
       </section>
     
-      <section class="app-section" data-name="uno">
-        <a class="app-link" href="uno/index.html">Open uno</a>
-        <h2>uno</h2>
+      <section class="app-section" data-name="turtle">
+        <a class="app-link" href="turtle/index.html">Open turtle</a>
+        <h2>turtle</h2>
         <section>
   <ul>
-    <li>Multiplayer UNO game using MQTT for real-time communication.</li>
-    <li>Browser-based with pure JavaScript, no backend required.</li>
-    <li>Features include custom card creation, chat, and theme switching.</li>
+    <li>A turtle ecosystem simulation where turtles exhibit behaviors like seeking food, wandering, and interacting with environment elements.</li>
+    <li>Grid-based terrain system with configurable cell types including walls, water, grass and sand, editable via painting interface.</li>
+    <li>Customizable settings panel for adjusting turtle personalities, population density, speed parameters, and visual effects.</li>
   </ul>
 
   <pre>
-    <code>const client = mqtt.connect(state.brokerUrl, { clientId: `uno_${state.myId}` });</code>
-    <code>client.subscribe([`${topicBase}/state`, `${topicBase}/chat`, `${topicBase}/presence`]);</code>
+    <code>grid[gx][gy ACTION_WIDTH val;</code>
+    <code>this.state = 'SEEK';</code>
   </pre>
 
-  <p>This is a browser-based UNO game that uses MQTT for real-time multiplayer gameplay. Players connect to public brokers, join rooms, and play with custom cards. The game features a lobby system, chat functionality, and theme switching between light and dark modes.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="pic2html">
-        <a class="app-link" href="pic2html/index.html">Open pic2html</a>
-        <h2>pic2html</h2>
-        <section>
-  <ul>
-    <li>Image-to-HTML converter that transforms uploaded images into text-based HTML representations</li>
-    <li>Configurable settings for text type (sequence/random), width, characters, background color, and font size</li>
-    <li>Supports grayscale and contrast adjustments with real-time preview and export options (HTML, SVG, PNG)</li>
-  </ul>
-
-  <pre>
-    <code>const contrastCurve = [0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,6,6,6,7,8,8,9,9,10,10,11,12,12,13,14,14,15,16,17,17,18,19,20,21,22,23,23,24,25,26,27,28,29,30,31,32,33,34,35,37,38,39,40,41,42,43,45,46,47,48,49,51,52,53,54,56,57,58,60,61,62,64,65,66,68,69,71,72,73,75,76,78,79,81,82,84,85,87,88,90,91,93,94,96,97,99,100,102,103,105,106,108,109,111,113,114,116,117,119,120,122,124,125,127,128,130,131,133,135,136,138,139,141,142,144,146,147,149,150,152,153,155,156,158,159,161,162,164,165,167,168,170,171,173,174,176,177,179,180,182,183,184,186,187,189,190,191,193,194,195,197,198,199,201,202,203,204,206,207,208,209,210,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229,230,231,232,232,233,234,235,236,237,238,238,239,240,241,241,242,243,243,244,245,245,246,246,247,247,248,249,249,249,250,250,251,251,252,252,252,253,253,253,253,254,254,254,254,254,255,255,255,255,255,255,255,255];</code>
-    <code>function generateTextImage(ctx, width, height) { let result = ''; for (let y = 0; y < height; y++) { for (let x = 0; x &lt; width; x++) { const pixelData = ctx.getImageData(x, y, 1, 1).data; const color = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`; result += `<span style="color:${color}">` + nextCharacter() + `</span>`; } result += '&lt;br&gt;'; } return result; }</code>
-  </pre>
-
-  <p>This JavaScript application converts uploaded images into HTML text representations with customizable settings. Users can adjust text type, character width, font size, and color scheme, then export the results as HTML, SVG, or PNG formats. The tool includes contrast enhancement and grayscale options for improved visual output.</p>
+  <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
 </section>
       </section>
     
