@@ -57,11 +57,7 @@ def hide_ignored_sections(content):
     replacement = (
         "//!summaryignore\n"
         "Notice: This text has been hidden.\n"
-<<<<<<< HEAD
-        "//!endsummaryignore"
-=======
         "//!endsummaryignore\n"
->>>>>>> 224a3142ae73b958692b0352e69874fef126032d
     )
 
     return re.sub(pattern, replacement, content)

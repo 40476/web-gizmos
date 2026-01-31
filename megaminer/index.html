@@ -811,7 +811,7 @@ class GameEngine {
             money: 0,
             temp: 0, maxTemp: 100,
             rotation: 0, isDrilling: false,
-            drillTier: 0, heatResist: 0, xrayRange: 0,
+            drillTier: 0, heatResist: 0, xrayRange: 6,
             inventory: {},
             selectedBlock: TILE_TYPES.CASING,
             stats: { blocksMined: {}, totalMined: 0, startTime: now() },
@@ -1458,7 +1458,7 @@ class GameEngine {
 
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
-        const visionRad = this.localPlayer.xrayRange+6;
+        const visionRad = this.localPlayer.xrayRange;
 
         /// -------------------------------
         // WORLD TIME (host-based)
