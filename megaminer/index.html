@@ -23,6 +23,14 @@
         body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
 
         canvas { display: block; width: 100vw; height: 100vh; }
+<<<<<<< HEAD
+=======
+        .noaliasing {
+            image-rendering: pixelated; /* Standard, modern approach */
+            image-rendering: -moz-crisp-edges; /* Firefox specific */
+            image-rendering: -webkit-optimize-contrast; /* Legacy WebKit */
+        }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         /* UI Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -199,11 +207,17 @@
         .server-list-item.active { border-color:var(--highlight); box-shadow:inset 0 0 5px rgba(243, 156, 18, 0.2); }
         .server-status-icon { width:12px; height:12px; margin-right:8px; display:flex; align-items:center; justify-content:center; }
         .spin-loader { border: 2px solid #555; border-top: 2px solid #fff; border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; }
+<<<<<<< HEAD
+=======
+        .server-actions { display: flex; gap: 4px; opacity: 0.6; transition: opacity 0.2s; }
+        .server-list-item:hover .server-actions { opacity: 1; }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         /* Notification/Error Popup */
         #notification-area { position: absolute; top: 20px; right: 180px; width: 300px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 200; }
         .toast { background: rgba(30, 30, 30, 0.95); border-left: 4px solid var(--accent); padding: 12px; color: white; pointer-events: auto; animation: slideIn 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 14px; }
         .toast.error { border-left-color: var(--danger); }
+        .toast.warn { border-left-color: var(--highlight); }
         .toast.success { border-left-color: var(--success); }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
@@ -237,7 +251,7 @@
 
         <!-- Minimap -->
         <div id="minimap-container">
-            <canvas id="minimap"></canvas>
+            <canvas id="minimap" class="noaliasing"></canvas>
         </div>
 
         <!-- Chat -->
@@ -248,7 +262,7 @@
 
         <!-- Admin Panel -->
         <div id="admin-panel">
-            <h4 style="margin:0 0 10px 0; color:gold; font-size:12px;">ADMIN PANEL</h4>
+            <h4 style="margin:0 0 10px 0; color:gold; font-size:12px;">Host Controls</h4>
             <div id="player-list"></div>
         </div>
 
@@ -262,7 +276,14 @@
                 <div class="start-panel">
                     <div class="form-group">
                         <label>Username</label>
+<<<<<<< HEAD
                         <input type="text" id="start-username" value="Miner1" maxlength="12">
+=======
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="start-username" placeholder="Enter Username" maxlength="12" style="flex:1;">
+                            <button class="btn btn-small" style="width:auto; padding: 0 10px; font-size: 16px;" onclick="Game.randomizeUsername()" title="Randomize Username">&#127922;</button>
+                        </div>
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                     </div>
                     <div class="form-group">
                         <label>Room ID</label>
@@ -470,14 +491,30 @@
     <div id="notification-area"></div>
 
 <script>
+<<<<<<< HEAD
 /**
  * MEGA MINER ONLINE v3.8
  * Updates: Save Protection, Host Map Auth, Admin Sync Fixes, Toast Debounce
  */
 
 // --- UTILS ---
+=======
+//!summaryignore
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 const $ = id => document.getElementById(id);
-const uuid = () => Math.random().toString(36).substr(2, 9);
+
+// Robust UUID Generator (longer for collision avoidance)
+const uuid = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback if crypto.randomUUID not available (older browsers/contexts)
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
 const now = () => Date.now();
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 const BUILD_TIMESTAMP = Date.now();
@@ -490,7 +527,11 @@ const pseudoRandom = (x, y) => {
 // --- CONFIG & STATE ---
 const CONSTANTS = {
     TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1,
+<<<<<<< HEAD
     FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 200, MAP_HEIGHT: 600, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
+=======
+    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 };
 
 const TILE_TYPES = {
@@ -568,7 +609,11 @@ const MSGS = {
 };
 
 let initialTimestamp = null;
+<<<<<<< HEAD
 
+=======
+//!endsummaryignore
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 // --- SOUND ENGINE ---
 class SoundManager {
     constructor() {
@@ -773,7 +818,7 @@ class GameEngine {
         this.running = false;
 
         this.settings = {
-            username: 'Miner',
+            username: '',
             color: '#3498db',
             broker: 'wss://broker.emqx.io:8084/mqtt',
             room: 'public',
@@ -785,7 +830,7 @@ class GameEngine {
 
         this.localPlayer = {
             id: uuid(),
-            gridX: 100, gridY: 4,
+            gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4,
             x: 0, y: 0,
             fuel: 100, maxFuel: 100,
             hull: 100, maxHull: 100,
@@ -807,6 +852,7 @@ class GameEngine {
         this.zoom = 1.0;
         this.particles = [];
         this.isAdmin = false;
+        this.hostId = null; // New tracking for host ID
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
         this.lastActionTime = 0;
         this.lastAutosave = 0;
@@ -817,6 +863,7 @@ class GameEngine {
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
 
+<<<<<<< HEAD
         this.loadStoredSettings();
     }
 
@@ -824,20 +871,98 @@ class GameEngine {
         const players = Object.values(this.remotePlayers)
             .concat([this.localPlayer])
             .filter(p => p && p.joinedAt != null);
+=======
+        this.hostId = null;
+        this.lastHostHeartbeat = 0;
 
-        if (players.length === 0) {
-            Game.isAdmin = false;
+        this.loadStoredSettings();
+    }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
+
+    // --- NEW: Persistent Stats (Wallet, Upgrades) ---
+    saveLocalProgress() {
+        if (!this.running) return;
+        const data = {
+            money: this.localPlayer.money,
+            drillTier: this.localPlayer.drillTier,
+            maxHull: this.localPlayer.maxHull,
+            maxFuel: this.localPlayer.maxFuel,
+            maxCargo: this.localPlayer.maxCargo,
+            heatResist: this.localPlayer.heatResist,
+            xrayRange: this.localPlayer.xrayRange,
+            vehColor: this.settings.color
+        };
+        localStorage.setItem(`mm_stats_${this.settings.room}`, JSON.stringify(data));
+    }
+
+    loadLocalProgress() {
+        try {
+            const raw = localStorage.getItem(`mm_stats_${this.settings.room}`);
+            if (raw) {
+                const data = JSON.parse(raw);
+                const p = this.localPlayer;
+                if (data.money !== undefined) p.money = data.money;
+                if (data.drillTier) p.drillTier = data.drillTier;
+                if (data.maxHull) { p.maxHull = data.maxHull; p.hull = p.maxHull; }
+                if (data.maxFuel) { p.maxFuel = data.maxFuel; p.fuel = p.maxFuel; }
+                if (data.maxCargo) p.maxCargo = data.maxCargo;
+                if (data.heatResist) p.heatResist = data.heatResist;
+                if (data.xrayRange) p.xrayRange = data.xrayRange;
+                if (data.vehColor) {
+                    this.settings.color = data.vehColor;
+                    $('start-color').value = data.vehColor;
+                }
+                console.log("Stats loaded from local storage.");
+            }
+        } catch(e) { console.error("Failed to load stats", e); }
+    }
+
+    // --- NEW: Stable Admin Logic ---
+    checkHostHealth() {
+        const nowTime = Date.now();
+
+        // If I am Admin, I am the host.
+        if (this.isAdmin) {
+            this.hostId = this.localPlayer.id;
+            this.lastHostHeartbeat = nowTime;
             return;
         }
 
-        players.sort((a, b) => a.joinedAt - b.joinedAt);
-        const oldest = players[0];
+        // If no host heard for 5 seconds, trigger election
+        if (nowTime - this.lastHostHeartbeat > 5000) {
+            this.electNewHost();
+        }
+    }
 
-        Game.isAdmin = (oldest.id === this.localPlayer.id);
+    electNewHost() {
+        // Find oldest player including myself
+        const all = Object.values(this.remotePlayers)
+            .concat([this.localPlayer])
+            .filter(p => p && p.joinedAt);
+
+        // Sort by age
+        all.sort((a, b) => a.joinedAt - b.joinedAt);
+
+        // If I am the oldest survivor, I claim the throne
+        if (all.length > 0 && all[0].id === this.localPlayer.id) {
+            console.log("Host timed out. Claiming Host status.");
+            this.isAdmin = true;
+            this.hostId = this.localPlayer.id;
+            this.lastHostHeartbeat = Date.now();
+            Network.broadcastHostClaim(); // Tell everyone immediately
+            UI.showToast("You are now the Admin (Host)", "success");
+            UI.updateAdminPanel();
+        }
     }
 
     loadStoredSettings() {
-        if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
+        // Load username but default to blank string if nothing stored
+        if(localStorage.getItem('mm_username')) {
+            $('start-username').value = localStorage.getItem('mm_username');
+        } else {
+            $('start-username').value = ""; // Default blank
+        }
+
         if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
         if(localStorage.getItem('mm_veh_color')) $('start-color').value = localStorage.getItem('mm_veh_color');
 
@@ -880,12 +1005,13 @@ class GameEngine {
             if (y > 100) return TILE_TYPES.GOLD;
         } else if (r > 0.92) {
             if (y > 50) return TILE_TYPES.IRON;
-        } else if (r > 0.88) {
+        } else if (r > 0.9) {
             return TILE_TYPES.COAL;
         }
         return type;
     }
 
+<<<<<<< HEAD
     init() {
         this.settings.username = $('start-username').value || 'Miner';
         this.localPlayer.username = this.settings.username;
@@ -893,6 +1019,59 @@ class GameEngine {
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
 
+=======
+    async randomizeUsername() {
+        // UI feedback
+        const btn = $('start-username').nextElementSibling;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<div class="spin-loader" style="width:12px; height:12px; border-width:2px;"></div>';
+
+        try {
+            const res = await fetch('https://randomuser.me/api?inc=login');
+            const data = await res.json();
+            if (data.results && data.results[0]) {
+                let name = data.results[0].login.username;
+                // Clean up name slightly if it's too long
+                if(name.length > 12) name = name.substring(0, 12);
+                $('start-username').value = name;
+            } else {
+                throw new Error("Invalid API response");
+            }
+        } catch(e) {
+            console.error("API Error, using fallback", e);
+            $('start-username').value = 'Miner' + Math.floor(Math.random() * 1000);
+        } finally {
+             btn.innerHTML = originalText;
+        }
+    }
+
+    init() {
+        this.settings.username = $('start-username').value || 'Miner';
+        this.localPlayer.username = this.settings.username;
+        // FIX: Trim room ID to ensure seeds match perfectly across clients
+        this.settings.room = ($('start-room').value || 'public').trim();
+        this.settings.color = $('start-color').value;
+        this.settings.broker = $('setting-broker').value;
+
+        // Reset admin on init
+        this.isAdmin = false;
+
+        // --- STICKY TIMESTAMP LOGIC ---
+        // Restore timestamp for this specific room if it exists
+        const timeKey = `mm_joinedAt_${this.settings.room}`;
+        const savedTime = localStorage.getItem(timeKey);
+
+        if (savedTime) {
+            // Restore previous session time to regain seniority
+            this.localPlayer.joinedAt = parseInt(savedTime);
+            console.log("Restored session time:", this.localPlayer.joinedAt);
+        } else {
+            // New session
+            this.localPlayer.joinedAt = now();
+            localStorage.setItem(timeKey, this.localPlayer.joinedAt);
+        }
+
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         localStorage.setItem('mm_username', this.settings.username);
         localStorage.setItem('mm_room_id', this.settings.room);
         localStorage.setItem('mm_veh_color', this.settings.color);
@@ -921,6 +1100,12 @@ class GameEngine {
         Input.init();
         Sound.loadSettings();
 
+<<<<<<< HEAD
+=======
+        // Load stats before connecting
+        this.loadLocalProgress();
+
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         Network.connect();
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
@@ -958,8 +1143,24 @@ class GameEngine {
             this.localPlayer.stats.startTime = now();
             Sound.init();
 
+<<<<<<< HEAD
             // Force update status based on players seen during the timeout
             this.updateAdminStatus();
+=======
+            // Initial Host Check: If I'm alone, I am Admin.
+            if (Object.keys(this.remotePlayers).length === 0) {
+                this.isAdmin = true;
+                this.hostId = this.localPlayer.id;
+                this.lastHostHeartbeat = Date.now();
+                UI.showToast("Room Created. You are Admin.", "success");
+                UI.updateAdminPanel();
+            } else {
+                // If others exist, wait for heartbeat.
+                // If no heartbeat comes in loop(), checkHostHealth() will elect me if I'm oldest.
+                this.isAdmin = false;
+                UI.updateAdminPanel();
+            }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
             // ONLY load save if we are the host (Admin)
             if (this.isAdmin) {
@@ -973,13 +1174,21 @@ class GameEngine {
                 // If we are NOT admin (Client), ensure we rely on the procedural map + sync
                 // We do NOT load any local saves to prevent overwriting the host's world
                 Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
+<<<<<<< HEAD
                 UI.addMessage("System", "Connected as Client. Waiting for Map Sync...", "#3498db");
+=======
+                UI.addMessage("System", "Waiting for Map Sync...", "#3498db");
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             }
 
             this.loop();
             UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
             Network.broadcastMove();
+<<<<<<< HEAD
             this.updateAdminStatus();
+=======
+            // Removed updateAdminStatus call
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }, 1000);
     }
 
@@ -1003,24 +1212,7 @@ class GameEngine {
                 }
                 else if (y === CONSTANTS.MAP_HEIGHT - 1) this.map[y][x] = TILE_TYPES.BEDROCK;
                 else {
-                    let r = Game.getMapRandom(x, y);
-                    let type = TILE_TYPES.DIRT;
-                    if (y > 300) type = TILE_TYPES.DEEP_SLATE;
-                    else if (y > 100) type = TILE_TYPES.HARD_STONE;
-                    else if (y > 30) type = TILE_TYPES.STONE;
-
-                    if (r > 0.985) {
-                        if (y > 400) type = TILE_TYPES.RUBY;
-                        else if (y > 250) type = TILE_TYPES.EMERALD;
-                        else if (y > 150) type = TILE_TYPES.DIAMOND;
-                    } else if (r > 0.96) {
-                        if (y > 100) type = TILE_TYPES.GOLD;
-                    } else if (r > 0.92) {
-                        if (y > 50) type = TILE_TYPES.IRON;
-                    } else if (r > 0.88) {
-                        type = TILE_TYPES.COAL;
-                    }
-                    this.map[y][x] = type;
+                    this.map[y][x] = this.getProceduralTile(x,y);
                 }
             }
         }
@@ -1138,7 +1330,7 @@ class GameEngine {
         }
 
         $('prompt-msg').style.display = 'none';
-        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 2) {
+        if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 3) {
              $('prompt-msg').style.display = 'block';
              $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
         }
@@ -1155,6 +1347,9 @@ class GameEngine {
         this.camera.x += (p.x - this.camera.x) * 0.1;
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
+        // Auto-save stats periodically (every 5s)
+        if (now() % 5000 < 20) this.saveLocalProgress();
+
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
             // Save to current ID
             if(SaveSystem.currentSaveId) {
@@ -1169,6 +1364,10 @@ class GameEngine {
         }
 
         Network.update();
+<<<<<<< HEAD
+=======
+        this.checkHostHealth(); // Run the election logic
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         // Coords Update Optimized
         if (this.lastCoordsX !== p.gridX || this.lastCoordsY !== p.gridY) {
@@ -1191,7 +1390,7 @@ class GameEngine {
     }
 
     tryBuild(tx, ty) {
-        if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 0 || ty >= CONSTANTS.MAP_HEIGHT) return;
+        if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 4 || ty >= CONSTANTS.MAP_HEIGHT) return;
         if (this.map[ty][tx] === TILE_TYPES.EMPTY) {
             const type = this.localPlayer.selectedBlock;
             let count = this.localPlayer.inventory[type] || 0;
@@ -1325,8 +1524,7 @@ class GameEngine {
 
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
-        const visionRad = 6;
-        const xrayRad = 2 + this.localPlayer.xrayRange;
+        const visionRad = this.localPlayer.xrayRange+6;
 
         /// -------------------------------
         // WORLD TIME (host-based)
@@ -1490,14 +1688,16 @@ class GameEngine {
                 let dx = x - pcx; let dy = y - pcy;
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 let visible = dist <= visionRad;
-                let xray = dist <= xrayRad;
-
-                if (visible) this.discovered[y][x] = 1;
+                if (dist <= this.localPlayer.xrayRange) this.discovered[y][x] = 1;
                 let tile = this.map[y][x];
 
-                if (visible || xray) this.drawProceduralTile(x, y, tile, xray && !visible);
+                if (visible) this.drawProceduralTile(x, y, tile, !visible);
                 else if (this.discovered[y][x]) {
+<<<<<<< HEAD
                     this.ctx.globalAlpha = 0.85;
+=======
+                    this.ctx.globalAlpha = 0.9;
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                     this.drawProceduralTile(x, y, tile, false);
                     this.ctx.globalAlpha = 1.0;
                 }
@@ -1522,19 +1722,134 @@ class GameEngine {
 
 
     drawStation() {
-        let ts = CONSTANTS.TILE_SIZE;
-        let x = this.stationGridX * ts;
-        let y = this.stationGridY * ts;
-        this.ctx.fillStyle = '#7f8c8d'; this.ctx.fillRect(x - 40, y - 40, 80, 72);
-        this.ctx.fillStyle = '#c0392b'; this.ctx.beginPath(); this.ctx.moveTo(x - 50, y - 40); this.ctx.lineTo(x, y - 70); this.ctx.lineTo(x + 50, y - 40); this.ctx.fill();
-        this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(x - 20, y - 10, 40, 42);
-        this.ctx.fillStyle = '#f1c40f'; this.ctx.font = 'bold 12px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText("SHOP", x, y - 50);
+        const ts = CONSTANTS.TILE_SIZE;
+
+        // Station top-left corner in pixels
+        const baseX = (this.stationGridX * ts)+ts;
+        const baseY = (this.stationGridY * ts)-ts;
+
+        const ctx = this.ctx;
+
+        // -------------------------------
+        // BUILDING DIMENSIONS (in tiles)
+        // -------------------------------
+        const buildingW = 2 * ts;   // 2 tiles wide
+        const buildingH = 2 * ts;   // 2 tiles tall
+
+        const roofH = ts * 0.4;     // roof height
+        const doorW = ts * 0.5;
+        const doorH = ts * 0.9;
+
+        // -------------------------------
+        // MAIN BUILDING
+        // -------------------------------
+        ctx.fillStyle = "#7f8c8d"; // concrete walls
+        ctx.fillRect(baseX, baseY, buildingW, buildingH);
+
+        // Wall bevel
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillRect(baseX, baseY + buildingH - 4, buildingW, 4);
+        ctx.fillRect(baseX + buildingW - 4, baseY, 4, buildingH);
+
+        ctx.fillStyle = "rgba(255,255,255,0.15)";
+        ctx.fillRect(baseX, baseY, buildingW, 3);
+        ctx.fillRect(baseX, baseY, 3, buildingH);
+
+        // -------------------------------
+        // ROOF (tile-aligned)
+        // -------------------------------
+        ctx.fillStyle = "#c0392b";
+        ctx.fillRect(baseX - ts * 0.25, baseY - roofH, buildingW + ts * 0.5, roofH);
+
+        // Roof trim
+        ctx.fillStyle = "#922b21";
+        ctx.fillRect(baseX - ts * 0.25, baseY - roofH, buildingW + ts * 0.5, 4);
+
+        // -------------------------------
+        // DOOR (centered)
+        // -------------------------------
+        const doorX = baseX + buildingW / 2 - doorW / 2;
+        const doorY = baseY + buildingH - doorH;
+
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(doorX, doorY, doorW, doorH);
+
+        // Door handle
+        ctx.fillStyle = "#ecf0f1";
+        ctx.fillRect(doorX + doorW - 8, doorY + doorH / 2, 6, 2);
+
+        // -------------------------------
+        // WINDOWS
+        // -------------------------------
+        const winW = ts * 0.7;
+        const winH = ts * 0.6;
+
+        ctx.fillStyle = "#3498db";
+
+        // Left window
+        ctx.fillRect(baseX + ts * 0.2, baseY + ts * 0.3, winW, winH);
+
+        // Right window
+        ctx.fillRect(baseX + buildingW - winW - ts * 0.2, baseY + ts * 0.3, winW, winH);
+
+        // Window shine
+        ctx.fillStyle = "rgba(255,255,255,0.25)";
+        ctx.fillRect(baseX + ts * 0.25, baseY + ts * 0.35, winW * 0.4, winH * 0.2);
+        ctx.fillRect(baseX + buildingW - winW - ts * 0.15, baseY + ts * 0.35, winW * 0.4, winH * 0.2);
+
+        // -------------------------------
+        // SIGNAGE
+        // -------------------------------
+        ctx.fillStyle = `hsl(${(Date.now()*0.05)%360}, 100%, 60%)`;
+        ctx.font = `${ts * 0.5}px Arial`;
+        ctx.textAlign = "center";
+        ctx.fillText("SHOP", baseX + buildingW / 2, baseY - roofH * 0.4);
+
+        // -------------------------------
+        // GAS PUMPS (tile-aligned, left side)
+        // -------------------------------
+        const pumpW = ts * 0.5;
+        const pumpH = ts * 1.2;
+
+        // Pumps should sit to the LEFT of the building
+        const pumpX = baseX - ts*2;   // 1.2 tiles left of building
+        const pumpY = baseY + buildingH - pumpH;  // same Y-level for both pumps
+
+
+        // Pump hoses
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.moveTo(pumpX + pumpW, pumpY - ts * 0.3 + pumpH * 0.6);
+        ctx.lineTo(pumpX + pumpW + ts * 0.3, pumpY - ts * 0.3 + pumpH * 0.8);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(pumpX + pumpW - ts, pumpY - ts * 0.3 + pumpH * 0.6);
+        ctx.lineTo(pumpX + pumpW + ts * 0.3 - ts, pumpY - ts * 0.3 + pumpH * 0.8);
+        ctx.stroke();
+
+        ctx.fillStyle = "#bdc3c7";
+
+        // Pump 1 (front)
+        ctx.fillRect(pumpX, pumpY, pumpW, pumpH);
+
+        // Pump 2 (behind it, slightly offset upward)
+        ctx.fillRect(pumpX - ts, pumpY, pumpW, pumpH);
+
+        // Pump screens
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(pumpX + pumpW * 0.2, pumpY + ts * 0.2, pumpW * 0.6, pumpH * 0.3);
+        ctx.fillRect(pumpX + pumpW * 0.2 - ts, pumpY + ts * 0.2, pumpW * 0.6, pumpH * 0.3);
     }
 
-    drawProceduralTile(x, y, type, isXray) {
+
+    drawProceduralTile(x, y, type) {
         let ts = CONSTANTS.TILE_SIZE;
         let px = x * ts; let py = y * ts;
         let prop = TILE_PROPS[type];
+<<<<<<< HEAD
         if (isXray) { this.ctx.strokeStyle = prop.color; this.ctx.lineWidth = 2; this.ctx.strokeRect(px+4, py+4, ts-8, ts-8); return; }
 
         // Detailed Texture Patterns
@@ -1617,6 +1932,103 @@ class GameEngine {
             this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
             this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
             return;
+=======
+
+        // Detailed Texture Patterns
+
+        const n1 = (pseudoRandom(x, y) % 1);
+        const n2 = ((pseudoRandom(x, y) * 10) % 1);
+
+        let bevel = true;
+        let isOre = false;
+
+        // --- ORE RENDERING (Detailed) ---
+        if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
+        isOre=true
+            // Stone background
+            this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
+            this.ctx.fillRect(px, py, ts, ts);
+
+
+            // Ore color
+            this.ctx.fillStyle = prop.color;
+
+            // Use your seeded RNG
+            const r0 = pseudoRandom(x, y);
+            const r1 = pseudoRandom(x + 17, y + 3);
+            const r2 = pseudoRandom(x - 9, y + 11);
+            const r3 = pseudoRandom(x + 4, y - 6);
+
+            // Cluster center
+            const cx = px + 8 + r0 * 16;
+            const cy = py + 8 + r1 * 16;
+
+            // Main chunk
+            this.ctx.fillRect(cx - 3, cy - 3, 6, 6);
+
+            // Satellite specks
+            const specks = [
+                { dx: (r1 - 0.5) * 12, dy: (r2 - 0.5) * 12, s: 3 },
+                { dx: (r2 - 0.5) * 14, dy: (r3 - 0.5) * 14, s: 4 },
+                { dx: (r3 - 0.5) * 16, dy: (r0 - 0.5) * 16, s: 3 }
+            ];
+
+            for (const sp of specks) {
+                this.ctx.fillRect(cx + sp.dx, cy + sp.dy, sp.s, sp.s);
+            }
+
+            if ((now() + Math.floor(pseudoRandom(x, y) * 2000)) % 2000 < 200) {
+                this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                this.ctx.fillRect(cx - 1, cy - 1, 2, 2);
+            }
+
+        }
+
+
+        if(!isOre){
+            // --- STANDARD BLOCKS ---
+            this.ctx.fillStyle = prop.color;
+            this.ctx.fillRect(px, py, ts, ts);
+
+            if (type === TILE_TYPES.EMPTY && y>=5) {
+                this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
+                this.ctx.fillRect(px, py, ts, ts);
+
+                // Add some small pebbles/debris
+                this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
+                if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
+                if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
+                if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
+                bevel=false;
+            }
+            else if (type === TILE_TYPES.EMPTY && y<5) {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+                return
+            }
+            else if (type === TILE_TYPES.DIRT) {
+                this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
+                if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
+                if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
+            } else if (type === TILE_TYPES.GRASS) {
+                this.ctx.fillStyle = '#2ecc71'; this.ctx.fillRect(px, py, ts, 6);
+                this.ctx.fillStyle = 'rgba(0,0,0,0.1)'; this.ctx.fillRect(px, py+6, ts, ts-6);
+            } else if (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE) {
+                const r0 = pseudoRandom(x, y);
+                const r1 = pseudoRandom(x + 17, y + 3);
+                const r2 = pseudoRandom(x - 9, y + 11);
+                const r3 = pseudoRandom(x + 4, y - 6);
+                this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                if(n1 > 0.3) { this.ctx.fillRect(px+(r0*5), py+(r2*5), 10, 6); this.ctx.fillRect(px+(r1*18), py+(r3*18), 10, 6); }
+                this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                this.ctx.beginPath(); this.ctx.moveTo(px+(ts*r2), py+(ts*r1)); this.ctx.lineTo(px+(ts*r3), py+(ts*r0)); this.ctx.stroke();
+            } else if (type === TILE_TYPES.CASING) {
+                this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
+                this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
+                this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
+                return;
+            }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
 
         // Bevel for all
@@ -1693,8 +2105,13 @@ class GameEngine {
         ctx.strokeRect(center - miniMapRectW/2, center - miniMapRectH/2, miniMapRectW, miniMapRectH);
 
         // Player Dot (Always Center)
+<<<<<<< HEAD
         ctx.fillStyle = '#e74c3c';
         ctx.fillRect(center - 2, center - 2, 4, 4);
+=======
+        ctx.fillStyle = Game.settings.color;
+        ctx.fillRect(center, center, 3, 3);
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
         // Remote players... mapped to minimap scale
         Object.values(this.remotePlayers).forEach(rp => {
@@ -1705,10 +2122,15 @@ class GameEngine {
             if(Math.abs(dx) < range && Math.abs(dy) < range) {
                 const screenX = center + dx * pixelSize;
                 const screenY = center + dy * pixelSize;
+<<<<<<< HEAD
                 ctx.fillStyle = '#3498db';
                 ctx.fillRect(screenX - 2, screenY - 2, 4, 4);
 
                 // Optional: Tooltip logic if needed, omitted for cleanliness
+=======
+                ctx.fillStyle = rp.color;
+                ctx.fillRect(screenX, screenY, 3, 3);
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             }
         });
     }
@@ -1775,6 +2197,7 @@ class ShopSystem {
             for(let t in p.inventory) p.cargo += p.inventory[t];
             UI.showToast(`Sold all for $${total}`, "success");
             Sound.playSuccess();
+            Game.saveLocalProgress(); // Save on transaction
         } else {
             UI.showToast("Nothing valuable to sell.", "normal");
         }
@@ -1791,6 +2214,7 @@ class ShopSystem {
             p.money += val;
             UI.showToast(`Sold ${amount} ${TILE_PROPS[type].name}`, "success");
             Sound.playSuccess();
+            Game.saveLocalProgress(); // Save on transaction
             this.updateUI();
             UI.updateDashboard();
         }
@@ -1804,6 +2228,7 @@ class ShopSystem {
             p.hull = p.maxHull;
             UI.showToast("Refueled & Repaired!", "success");
             Sound.playSuccess();
+            Game.saveLocalProgress(); // Save on transaction
             this.updateUI();
         } else {
             UI.showToast("Not enough money!", "error");
@@ -1865,8 +2290,9 @@ class ShopSystem {
     buy(item) {
         const p = Game.localPlayer;
         let cost = 0;
-        if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); } }
-        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); } }
+        let success = false;
+        if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); success=true; } }
+        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); success=true; } }
         else {
             let level = 0;
             if (item === 'hull') level = (p.maxHull-100)/20;
@@ -1882,10 +2308,12 @@ class ShopSystem {
                 if (item === 'cargo') p.maxCargo += 20;
                 if (item === 'cool') p.heatResist++;
                 if (item === 'xray') p.xrayRange++;
-                UI.showToast("Upgraded!", "success");
+                UI.showToast(`You bought ${item} for \$${cost}!`, "success");
                 Sound.playSuccess();
+                success = true;
             }
         }
+        if(success) Game.saveLocalProgress(); // Save on buy
         this.updateUI();
     }
 }
@@ -1931,6 +2359,7 @@ class NetworkManager {
         let n = now();
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
+<<<<<<< HEAD
                 const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
                 UI.addMessage("System", msg, "#888");
                 Sound.playChat('leave');
@@ -1943,10 +2372,42 @@ class NetworkManager {
             // FIX: Added joinedAt to heartbeat so late joiners see my timestamp
             this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
             this.lastHeartbeat = n;
+=======
+            const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
+            UI.addMessage("System", msg, "#888");
+            Sound.playChat('leave');
+            delete Game.remotePlayers[id];
+            UI.updatePlayerList();
+            // Removed updateAdminStatus, checking health in Game loop
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
-    }
+    });
+    if (n - this.lastHeartbeat > 1000) {
+        this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
 
-    broadcastMove() {
+        // --- NEW: Admin Heartbeat ---
+        if (Game.isAdmin) {
+             this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
+        }
+
+        this.lastHeartbeat = n;
+    }
+}
+
+broadcastHostClaim() {
+    this.publish('ctrl', { type: 'claim_host', id: Game.localPlayer.id });
+}
+
+broadcastPromote(targetId) {
+    this.publish('ctrl', { type: 'promote_host', target: targetId, from: Game.localPlayer.id });
+    Game.isAdmin = false;
+    Game.hostId = targetId;
+    Game.lastHostHeartbeat = Date.now(); // Trust the new guy
+    UI.showToast("Admin Transferred", "normal");
+    UI.updateAdminPanel();
+}
+
+broadcastMove() {
         const p = Game.localPlayer;
         // FIX: Added joinedAt to move packets so late joiners see my timestamp
         this.publish('pos', {
@@ -1954,7 +2415,12 @@ class NetworkManager {
             sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE,
             gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
             username: Game.settings.username,
+<<<<<<< HEAD
             joinedAt: p.joinedAt
+=======
+            joinedAt: p.joinedAt,
+            isAdmin: Game.isAdmin // FLAG ADMIN STATUS
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         });
         this.lastHeartbeat = now();
     }
@@ -1964,30 +2430,56 @@ class NetworkManager {
     sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
     sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
+<<<<<<< HEAD
+=======
+    transferAdmin(id) { this.publish('ctrl', { type: 'transfer_admin', to: id }); }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
 
     // Add missing Map Request logic
     requestMap(fromId) {
-        this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId });
+        UI.showToast("Requesting Map...", "normal");
+        this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId || null });
     }
 
     sendMapDiff(toId) {
+        // Optimization: Use Arrays [x,y,v] instead of Objects {x,y,v} to reduce JSON size by ~40%
         let diffs = [];
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
             for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
                 let base = Game.getProceduralTile(x, y);
                 // Note: Game.map is the truth. If it differs from procedural base, send it.
                 if (Game.map[y][x] !== base) {
-                    diffs.push({x, y, v: Game.map[y][x]});
+                    diffs.push([x, y, Game.map[y][x]]);
                 }
             }
         }
-        // Send ALL diffs (simple version)
+
+        console.log(`Sending Map Diff: ${diffs.length} tiles to ${toId}`);
+
+        // Protocol: Start -> Chunks -> End
+        this.publish('map', { type: 'map_start', to: toId, count: diffs.length });
+
         if(diffs.length > 0) {
-            // chunking
-             const CHUNK_SIZE = 100;
-             for (let i=0; i<diffs.length; i+=CHUNK_SIZE) {
-                 this.publish('map', { type: 'sync', data: diffs.slice(i, i+CHUNK_SIZE), to: toId });
-             }
+            // FIX: Throttled sending to prevent network flood
+            // Lowered chunk size and increased delay for stability
+            const CHUNK_SIZE = 32;
+            let i = 0;
+
+            const sendLoop = setInterval(() => {
+                if (i >= diffs.length) {
+                    clearInterval(sendLoop);
+                    this.publish('map', { type: 'map_end', to: toId });
+                    return;
+                }
+                const chunk = diffs.slice(i, i+CHUNK_SIZE);
+                this.publish('map', { type: 'sync', data: chunk, to: toId });
+                i += CHUNK_SIZE;
+            }, 30); // 30ms delay
+        } else {
+             // Small delay to ensure order in some brokers even if empty
+             setTimeout(() => {
+                 this.publish('map', { type: 'map_end', to: toId });
+             }, 100);
         }
     }
 
@@ -2010,15 +2502,39 @@ class NetworkManager {
             rp.lastSeen = now();
             if(msg.username && rp.username === "Unknown") rp.username = msg.username;
 
+<<<<<<< HEAD
             // FIX: Ensure timestamp is synced if it comes in late
             if (msg.joinedAt && !rp.joinedAt) {
                 rp.joinedAt = msg.joinedAt;
+=======
+            // FIX: Ensure timestamp is synced if it comes in late, but sanity check it
+            // Must be a valid timestamp > year 2021 to prevent "0" exploits
+            if (msg.joinedAt && (!rp.joinedAt || rp.joinedAt > msg.joinedAt)) {
+                if (msg.joinedAt > 1609459200000) {
+                    rp.joinedAt = msg.joinedAt;
+                }
+            }
+
+            // HOST ID / ADMIN STATUS TRACKING
+            if (msg.isAdmin) {
+                Game.hostId = msg.id;
+
+                // CONFLICT RESOLUTION: If I think I'm admin, but I see another admin...
+                if (Game.isAdmin && msg.id !== Game.localPlayer.id) {
+                    // Respect the elder (First Joiner Rule)
+                    if (msg.joinedAt < Game.localPlayer.joinedAt) {
+                        console.log("Admin Conflict: Demoting self in favor of older host.");
+                        Game.demoteFromAdmin();
+                    }
+                }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             }
 
             if (msg.type === 'move') {
                 rp.color = msg.col; rp.rotation = msg.r; rp.isDrilling = msg.drill; rp.gridX = msg.gx; rp.gridY = msg.gy;
                 rp.targetX = msg.tx; rp.targetY = msg.ty;
                 if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
+<<<<<<< HEAD
             }
 
             // FIX: Always check if this new info changes the admin
@@ -2046,13 +2562,82 @@ class NetworkManager {
                 // Reply with MY position so they see me immediately
                 this.broadcastMove();
 
-            }
+=======
         }
-        else if (msg.type === 'tile') {
+        // Removed updateAdminStatus
+    }
+    else if (msg.type === 'join') {
+        if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
+        else {
+            if(!Game.remotePlayers[msg.id]) {
+                UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
+                Sound.playChat('join');
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
+            }
+            Game.remotePlayers[msg.id] = {
+                id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
+            };
+            UI.updatePlayerList();
+            // Removed updateAdminStatus
+
+            if(Game.isAdmin) {
+                this.sendMapDiff(msg.id);
+                // Also assert dominance immediately so they know I'm host
+                this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
+            }
+            this.broadcastMove();
+        }
+    }
+    // --- NEW: Admin Messages ---
+    else if (msg.type === 'host_heartbeat') {
+        Game.hostId = msg.id;
+        Game.lastHostHeartbeat = now();
+
+        // Glitch prevention: If I thought *I* was admin, but someone else is pulsing...
+        if (Game.isAdmin && msg.id !== Game.localPlayer.id) {
+            // Tie breaker: Who claimed it first? Or just yield.
+            // Simple yield:
+            console.warn("Host conflict detected. Yielding to " + msg.id);
+            Game.isAdmin = false;
+            UI.updateAdminPanel();
+        }
+    }
+    else if (msg.type === 'claim_host') {
+        Game.hostId = msg.id;
+        Game.lastHostHeartbeat = now();
+        if (msg.id !== Game.localPlayer.id) {
+            Game.isAdmin = false;
+            UI.updateAdminPanel();
+            UI.showToast("New Host Claimed: " + (Game.remotePlayers[msg.id]?.username || "Unknown"), "normal");
+        }
+    }
+    else if (msg.type === 'promote_host') {
+        if (msg.target === Game.localPlayer.id) {
+            Game.isAdmin = true;
+            Game.hostId = Game.localPlayer.id;
+            Game.lastHostHeartbeat = now();
+            UI.showToast("You have been Promoted to Admin!", "success");
+            Sound.playSuccess();
+            UI.updateAdminPanel();
+            this.broadcastHostClaim();
+        } else {
+             // Handle case where someone else was promoted
+             Game.hostId = msg.target;
+             Game.lastHostHeartbeat = now();
+             Game.isAdmin = false;
+             UI.updateAdminPanel();
+        }
+    }
+    else if (msg.type === 'tile') {
              if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
+        }
+        else if (msg.type === 'map_start' && msg.to === Game.localPlayer.id) {
+             const count = msg.count || "Unknown";
+             UI.showToast(`Receiving Map Data (${count} tiles)...`, "normal");
         }
         else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
             // Apply Map Sync
+<<<<<<< HEAD
             msg.data.forEach(d => {
                 if (Game.map[d.y]) {
                      Game.map[d.y][d.x] = d.v;
@@ -2065,6 +2650,26 @@ class NetworkManager {
                 UI.showToast("Map Synced with Host", "success");
                 this.lastSyncToast = now();
             }
+=======
+            if (Array.isArray(msg.data)) {
+                msg.data.forEach(d => {
+                    // Optimized: d is now [x, y, v]
+                    // We handle both object (legacy) and array (new) just in case
+                    let x, y, v;
+                    if (Array.isArray(d)) { [x, y, v] = d; }
+                    else { x = d.x; y = d.y; v = d.v; }
+
+                    if (Game.map[y] !== undefined && Game.map[y][x] !== undefined) {
+                        Game.map[y][x] = v;
+                        // Auto discover synced changes so we can see them on minimap
+                        Game.discovered[y][x] = 1;
+                    }
+                });
+            }
+        }
+        else if (msg.type === 'map_end' && msg.to === Game.localPlayer.id) {
+             UI.showToast("Map Synced!", "success");
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
         else if (msg.type === 'map_req' && Game.isAdmin) {
             this.sendMapDiff(msg.from);
@@ -2084,14 +2689,8 @@ class NetworkManager {
             Sound.playSuccess();
             if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "orange");
         }
-    }
-
-    checkAdmin() {
-        let all = Object.values(Game.remotePlayers).concat([Game.localPlayer]);
-        all.sort((a,b) => a.joinedAt - b.joinedAt);
-        if (all[0].id === Game.localPlayer.id && !Game.isAdmin) {
-            Game.isAdmin = true;
-            UI.updateAdminPanel();
+        else if (msg.type === 'ctrl' && msg.type === 'transfer_admin' && msg.to === Game.localPlayer.id) {
+            Game.promoteToAdmin();
         }
     }
 }
@@ -2158,7 +2757,22 @@ class InputManager {
                     Network.broadcastMove();
                 } else UI.showToast("Player not found", "error");
             }
-        } else {
+        }
+        else if (parts[0] === '/op' && Game.isAdmin) {
+            if (parts.length === 2) {
+                let target = Object.values(Game.remotePlayers).find(p => p.username === parts[1]);
+                if (target) {
+                     Network.transferAdmin(target.id);
+                     Game.demoteFromAdmin();
+                     UI.showToast(`Transferred Admin to ${target.username}`, "success");
+                } else {
+                    UI.showToast("Player not found (case sensitive)", "error");
+                }
+            } else {
+                UI.showToast("Usage: /op [Username]", "normal");
+            }
+        }
+        else {
             UI.showToast("Unknown command or not admin", "error");
         }
     }
@@ -2221,11 +2835,36 @@ class UIManager {
         }
     }
 
+<<<<<<< HEAD
+=======
+    async randomizeName() {
+        try {
+            const btn = document.querySelector('button[title="Randomize"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '...';
+            btn.disabled = true;
+
+            const res = await fetch('https://randomuser.me/api?inc=login');
+            const data = await res.json();
+            const name = data.results[0].login.username;
+            $('start-username').value = name;
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        } catch(e) {
+            console.error(e);
+            UI.showToast("Failed to fetch name", "error");
+            document.querySelector('button[title="Randomize"]').disabled = false;
+        }
+    }
+
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
     // --- SERVER LIST LOGIC ---
     refreshServerList() {
         const list = $('server-list-sidebar');
         list.innerHTML = '';
 
+<<<<<<< HEAD
         // Merge defaults and custom
         const allServers = [...new Set([...this.defaultServers, ...this.customServers])];
 
@@ -2247,6 +2886,81 @@ class UIManager {
         });
     }
 
+=======
+        // Render helper
+        const renderItem = (url, isCustom) => {
+            const isActive = url === Game.settings.broker;
+            const item = document.createElement('div');
+            item.className = `server-list-item ${isActive ? 'active' : ''}`;
+
+            let buttonsHtml = '';
+            if(isCustom) {
+                buttonsHtml = `
+                   <div class="server-actions">
+                       <button class="btn btn-small" style="padding:2px 5px; background:#444; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.editCustomServer('${url}')" title="Edit">&#9998;</button>
+                       <button class="btn btn-small" style="padding:2px 5px; background:#c0392b; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')" title="Remove">&times;</button>
+                   </div>
+                `;
+            }
+
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
+                    <div class="server-status-icon" id="status-${btoa(url).replace(/=/g,'')}"><div class="spin-loader"></div></div>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
+                </div>
+                ${buttonsHtml}
+            `;
+            item.onclick = () => this.selectServer(url);
+            list.appendChild(item);
+            this.checkServerStatus(url);
+        };
+
+        // Render Defaults
+        this.defaultServers.forEach(url => renderItem(url, false));
+
+        // Render Custom
+        this.customServers.forEach(url => {
+            if(!this.defaultServers.includes(url)) renderItem(url, true);
+        });
+    }
+
+    removeCustomServer(url) {
+        if(!confirm(`Remove custom server?\n${url}`)) return;
+        this.customServers = this.customServers.filter(s => s !== url);
+        localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+
+        // If the removed server was the active one, switch to default
+        if(Game.settings.broker === url) {
+            this.selectServer(this.defaultServers[0]);
+        } else {
+            this.refreshServerList();
+        }
+        this.showToast("Server Removed", "normal");
+    }
+
+    editCustomServer(oldUrl) {
+        const newUrl = prompt("Edit Server URL:", oldUrl);
+        if(newUrl && newUrl !== oldUrl) {
+            if(newUrl.startsWith('ws://') || newUrl.startsWith('wss://')) {
+                const idx = this.customServers.indexOf(oldUrl);
+                if(idx !== -1) {
+                    this.customServers[idx] = newUrl;
+                    localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+
+                    if(Game.settings.broker === oldUrl) {
+                        this.selectServer(newUrl); // Update active selection
+                    } else {
+                        this.refreshServerList();
+                    }
+                    this.showToast("Server Updated", "success");
+                }
+            } else {
+                this.showToast("Invalid URL (Must start with ws:// or wss://)", "error");
+            }
+        }
+    }
+
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
     selectServer(url) {
         Game.settings.broker = url;
         localStorage.setItem('mm_broker_url', url);
@@ -2265,6 +2979,10 @@ class UIManager {
                 input.value = '';
                 this.refreshServerList();
                 this.showToast("Server Added", "success");
+<<<<<<< HEAD
+=======
+                this.selectServer(url);
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
             } else {
                 this.showToast("Server already exists", "error");
             }
@@ -2273,6 +2991,29 @@ class UIManager {
         }
     }
 
+<<<<<<< HEAD
+=======
+    removeCustomServer(url) {
+        const index = this.customServers.indexOf(url);
+        if (index > -1) {
+            if (confirm(`Remove custom server: ${url}?`)) {
+                this.customServers.splice(index, 1);
+                localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
+
+                // If the deleted server was active, switch to default
+                if (Game.settings.broker === url) {
+                    Game.settings.broker = this.defaultServers[0];
+                    localStorage.setItem('mm_broker_url', Game.settings.broker);
+                    $('setting-broker').value = Game.settings.broker;
+                }
+
+                this.refreshServerList();
+                this.showToast("Server Removed", "normal");
+            }
+        }
+    }
+
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
     checkServerStatus(url) {
         const id = `status-${btoa(url).replace(/=/g,'')}`;
         const el = $(id);
@@ -2305,6 +3046,7 @@ class UIManager {
 
     async checkForUpdates() {
         try {
+<<<<<<< HEAD
             if (!initialTimestamp) {
                 const url = new URL(window.location.href);
                 url.searchParams.set('_t', Date.now());
@@ -2320,6 +3062,25 @@ class UIManager {
                 if (currentTimestamp && currentTimestamp !== initialTimestamp) {
                     UI.showToast("New Version Available!", "normal");
                     UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+=======
+            if (location.protocol!=='file:'){
+                if (!initialTimestamp) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('_t', Date.now());
+                    const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                    initialTimestamp = headRes.headers.get('last-modified');
+                    console.log("current version is :", initialTimestamp);
+                }else{
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('_t', Date.now());
+                    const headRes = await fetch(url.toString(), { method: 'HEAD' });
+                    const currentTimestamp = headRes.headers.get('last-modified');
+
+                    if (currentTimestamp && currentTimestamp !== initialTimestamp) {
+                        UI.showToast("New Version Available!", "normal");
+                        UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+                    }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                 }
             }
         } catch (e) { console.error('Update check error:', e); }
@@ -2391,25 +3152,44 @@ class UIManager {
         });
         $('leaderboard-container').innerHTML = lbHtml;
 
-        $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 2) ? 'block' : 'none';
+        $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 3) ? 'block' : 'none';
     }
 
     updatePlayerList() {
-        if (!Game.isAdmin) return;
+        if (!Game.isAdmin) {
+            $('admin-panel').style.display = 'none';
+            return;
+        }
         $('admin-panel').style.display = 'block';
         const list = $('player-list');
         list.innerHTML = '';
         Object.values(Game.remotePlayers).forEach(p => {
             const row = document.createElement('div');
             row.className = 'player-row';
-            row.innerHTML = `<span>${p.username}</span><div><button class="btn btn-small btn-danger" onclick="Admin.kick('${p.id}')">K</button></div>`;
+            // Added Promote Button (P)
+            row.innerHTML = `
+                <span>${p.username}</span>
+                <div style="display:flex; gap:2px;">
+                    <button class="btn btn-small" style="background:#2980b9; padding:0 4px; width:20px;" title="Promote to Admin" onclick="Admin.promote('${p.id}')">P</button>
+                    <button class="btn btn-small btn-danger" style="padding:0 4px; width:20px;" title="Kick" onclick="Admin.kick('${p.id}')">K</button>
+                </div>`;
             list.appendChild(row);
         });
     }
     updateAdminPanel() { this.updatePlayerList(); }
+<<<<<<< HEAD
+=======
 }
 
-class AdminSystem { kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); } }
+class AdminSystem {
+    kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); }
+    promote(id) {
+        if(confirm("Pass Admin privileges to this user? You will lose Admin status.")) {
+            Network.broadcastPromote(id);
+        }
+    }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
+}
 
 class SaveSystem {
     static autosaveEnabled = true;
@@ -2645,7 +3425,11 @@ class SaveSystem {
                 <div class="save-slot-actions">
                     <button class="btn" style="background:#555;" onclick="SaveSystem.loadGame(${meta.id})">Load</button>
                     <button class="btn btn-danger" onclick="SaveSystem.deleteGame(${meta.id})">X</button>
+<<<<<<< HEAD
                     <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">&#8595;</button>
+=======
+                    <button class="btn" style="background:#444;" onclick="SaveSystem.exportGame(${meta.id})">Export</button>
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
                 </div>
             `;
             container.appendChild(div);
@@ -2707,6 +3491,7 @@ class SaveSystem {
             Game.localPlayer.y = Game.localPlayer.gridY * CONSTANTS.TILE_SIZE;
         }
 
+<<<<<<< HEAD
         if(data.map) {
             Game.map = data.map;
         }
@@ -2718,6 +3503,64 @@ class SaveSystem {
                 if (r instanceof Uint8Array) return r;
                 return new Uint8Array(Object.values(r));
             });
+=======
+        // Validate and Adapt map data
+        if(data.map && Array.isArray(data.map) && data.map.length > 0) {
+            // Exact match
+            if (data.map.length === CONSTANTS.MAP_HEIGHT && data.map[0] && data.map[0].length === CONSTANTS.MAP_WIDTH) {
+                Game.map = data.map;
+            }
+            // Dimension mismatch - Adapt (Trim or Extend)
+            else {
+                console.warn("Save map dimensions mismatch. Adapting...");
+                UI.showToast("Map size changed. Adapting save data...", "normal");
+
+                // Overlay saved map onto generated map
+                // Note: Game.map is already populated with procedural terrain from init()
+                for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+                    if (y < data.map.length) {
+                        const savedRow = data.map[y];
+                        // Safety check for row existence
+                        if (!savedRow) continue;
+
+                        if (savedRow.length === CONSTANTS.MAP_WIDTH) {
+                            Game.map[y] = savedRow;
+                        } else {
+                            // Width mismatch: copy what fits
+                            const len = Math.min(savedRow.length, CONSTANTS.MAP_WIDTH);
+                            for (let x = 0; x < len; x++) {
+                                Game.map[y][x] = savedRow[x];
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            console.warn("Save data map invalid or empty. Keeping generated map.");
+            if(data.map) UI.showToast("Map data corrupt. Generated new map. (This is normal for new worlds)", "error");
+        }
+
+        if(data.discovered && Array.isArray(data.discovered)) {
+            // Adapt discovered array logic similarly
+             for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+                if (y < data.discovered.length) {
+                    let savedRow = data.discovered[y];
+                    if (!savedRow) continue;
+
+                    // Convert from object (JSON serialization of TypedArray) if needed
+                    if (!(savedRow instanceof Uint8Array)) savedRow = new Uint8Array(Object.values(savedRow));
+
+                    if (savedRow.length === CONSTANTS.MAP_WIDTH) {
+                        Game.discovered[y] = savedRow;
+                    } else {
+                        const len = Math.min(savedRow.length, CONSTANTS.MAP_WIDTH);
+                        for (let x = 0; x < len; x++) {
+                             Game.discovered[y][x] = savedRow[x];
+                        }
+                    }
+                }
+            }
+>>>>>>> 224a3142ae73b958692b0352e69874fef126032d
         }
 
         if(data.banned) Game.bannedIds = data.banned;
@@ -2836,6 +3679,7 @@ const creditsData = {
 Sound.loadSettings()
 // bruh
 document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
+//!endsummaryignore
 </script>
 </body>
 </html>
