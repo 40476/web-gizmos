@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="amogus.png">
     <title>Mega Miner Online - MQTT Multiplayer</title>
     <!-- MQTT.js Library -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -507,8 +508,8 @@ const pseudoRandom = (x, y) => {
 
 // --- CONFIG & STATE ---
 const CONSTANTS = {
-    TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 2, SPEED_DRILL: 1,
-    FUEL_CONSUMPTION: 0.5, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
+    TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 1.75, SPEED_DRILL: 0.75,
+    FUEL_CONSUMPTION: 0.125, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
 };
 
 const TILE_TYPES = {
@@ -968,7 +969,7 @@ class GameEngine {
             if (y > 100) return TILE_TYPES.GOLD;
         } else if (r > 0.92) {
             if (y > 50) return TILE_TYPES.IRON;
-        } else if (r > 0.9) {
+        } else if (r > 0.8) {
             return TILE_TYPES.COAL;
         }
         return type;
@@ -1176,7 +1177,7 @@ class GameEngine {
         let dx = targetX - p.x;
         let dy = targetY - p.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
-        let speed = p.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
+        let speed = this.localPlayer.fuel > 0 ? (this.localPlayer.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL) : 0.3;
         let isMoving = false;
 
         if (dist > speed) {
@@ -1222,13 +1223,13 @@ class GameEngine {
                         Network.broadcastMove();
                     } else if (tile !== TILE_TYPES.BEDROCK) {
                         if (now() - this.lastActionTime > 150) {
-                             if (this.tryMine(nx, ny)) {
-                                 p.gridX = nx; p.gridY = ny;
-                                 p.isDrilling = true;
-                                 if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
-                                 Network.broadcastMove();
-                             }
-                             this.lastActionTime = now();
+                            if (this.tryMine(nx, ny)) {
+                                p.gridX = nx; p.gridY = ny;
+                                p.isDrilling = true;
+                                if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
+                                Network.broadcastMove();
+                            }
+                            this.lastActionTime = now();
                         }
                     }
                 }
@@ -1287,16 +1288,14 @@ class GameEngine {
         // Auto-save stats periodically (every 5s)
         if (now() % 5000 < 20) this.saveLocalProgress();
 
+        if (now() % 60000 < 20 && document.getElementById('update-check-toggle').checked) {
+            UI.checkForUpdates();
+        }
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
             // Save to current ID
             if(SaveSystem.currentSaveId) {
                 SaveSystem.saveGame(SaveSystem.currentSaveId, null, true);
                 this.lastAutosave = now();
-            }
-
-            // dirty but it works
-            if(document.getElementById('update-check-toggle').checked){
-                UI.checkForUpdates();
             }
         }
 
@@ -1391,7 +1390,7 @@ class GameEngine {
 
     tryMine(tx, ty) {
         let tile = this.map[ty][tx];
-        if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK) {
+        if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK && this.localPlayer.fuel > 0) {
             let props = TILE_PROPS[tile];
             if (this.localPlayer.drillTier < props.tier) { UI.showToast(`Need Tier ${props.tier} Drill`, "error"); Sound.playError(); return false; }
             if (this.localPlayer.cargo < this.localPlayer.maxCargo) {
@@ -1827,9 +1826,7 @@ class GameEngine {
                 this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
                 this.ctx.fillRect(cx - 1, cy - 1, 2, 2);
             }
-
         }
-
 
         if(!isOre){
             // --- STANDARD BLOCKS ---
@@ -2316,7 +2313,7 @@ broadcastMove() {
             // FIX: Ensure timestamp is synced if it comes in late, but sanity check it
             // Must be a valid timestamp > year 2021 to prevent "0" exploits
             if (msg.joinedAt && (!rp.joinedAt || rp.joinedAt > msg.joinedAt)) {
-                if (msg.joinedAt > 1609459200000) {
+                if (msg.joinedAt > 1769977740008) {
                     rp.joinedAt = msg.joinedAt;
                 }
             }
