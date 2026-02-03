@@ -157,8 +157,6 @@
     
       <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
     
-      <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
-    
       <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
     
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
@@ -271,27 +269,6 @@
   </pre>
 
   <p>This application creates customizable vector patterns using a seed-based pseudo-random generator. Parameters control dimensions, pattern complexity, color schemes, and texture overlays. Outputs maintain deterministic reproducibility across sessions and support SVG/PNG export.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="voxelracing">
-        <a class="app-link" href="voxelracing/index.html">Open voxelracing</a>
-        <h2>voxelracing</h2>
-        <section>
-  <ul>
-    <li>Three.js 3D racing game with MQTT multiplayer networking</li>
-    <li>Procedural terrain generation with noise-based height maps</li>
-    <li>Real-time chat, audio soundboard, and vehicle physics</li>
-    <li>IndexedDB for persistent user settings and game state</li>
-    <li>Day/night cycle, particle effects, and multiple camera modes</li>
-  </ul>
-
-  <pre>
-    <code>class TerrainSystem { getHeight(x, z) { return noise * 20 + noise * 5 + noise * 60; } }</code>
-    <code>class Car { updatePhysics(dt, input) { this.speed += throttle * accel * dt; this.rot.y += turnSpeed * dt; } }</code>
-  </pre>
-
-  <p>Infinity Racer is a browser-based 3D racing game built with Three.js and MQTT networking. It features procedurally generated terrain, real-time multiplayer racing, and a full audio soundboard system. Players can customize their vehicles, chat with others, and race across dynamically generated landscapes with day/night cycles and physics-based vehicle handling.</p>
 </section>
       </section>
     
