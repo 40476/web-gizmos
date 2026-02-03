@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Infinity Racer: MQTT Edition</title>
+    <style>
+        :root {
+            --primary: #00ffd5;
+            --secondary: #ff0055;
+            --bg-dark: rgba(10, 15, 20, 0.9);
+            --text-main: #ffffff;
+            --font-ui: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: var(--font-ui);
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* --- UI Overlay --- */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* --- HUD --- */
+        #hud-top {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .panel {
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 15px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        #speedometer {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            text-align: right;
+            transform: skewX(-10deg);
+        }
+
+        #speed-value {
+            font-size: 64px;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary);
+            line-height: 1;
+        }
+
+        #speed-label {
+            font-size: 14px;
+            opacity: 0.7;
+            letter-spacing: 2px;
+        }
+
+        #nitro-bar-container {
+            width: 200px;
+            height: 10px;
+            background: #333;
+            margin-top: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        #nitro-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ffaa00, #ff0055);
+            transform-origin: left;
+            transform: scaleX(1);
+            transition: transform 0.1s;
+        }
+
+        /* --- Chat --- */
+        #chat-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #chat-messages {
+            height: 150px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            mask-image: linear-gradient(to bottom, transparent, black 10%);
+        }
+
+        .chat-msg {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chat-msg .author {
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .chat-msg.system {
+            color: #aaa;
+            font-style: italic;
+        }
+
+        #chat-input-row {
+            display: flex;
+            gap: 5px;
+        }
+
+        #chat-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #444;
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        #chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        /* --- Soundboard --- */
+        #soundboard {
+            margin-top: 10px;
+            max-width: 250px;
+        }
+
+        .sound-btn {
+            display: block;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 8px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sound-btn:hover {
+            background: rgba(0, 255, 213, 0.2);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .sound-btn.playing {
+            border-color: var(--secondary);
+            color: var(--secondary);
+            background: rgba(255, 0, 85, 0.1);
+        }
+
+        /* --- Main Menu / Settings --- */
+        #menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: opacity 0.3s;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 60px;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+            font-style: italic;
+            background: linear-gradient(45deg, var(--primary), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 255, 213, 0.3);
+        }
+
+        .menu-card {
+            background: #1a1f26;
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid #333;
+            width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+
+        input, select {
+            background: #0f1216;
+            border: 1px solid #333;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        button.btn-primary {
+            background: linear-gradient(45deg, var(--primary), #00ccaa);
+            border: none;
+            color: #000;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: transform 0.1s, filter 0.2s;
+        }
+
+        button.btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        /* --- Floating Labels --- */
+        .name-tag {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            pointer-events: none;
+            white-space: nowrap;
+            transform: translate(-50%, -100%);
+            text-shadow: 0 1px 2px black;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    </style>
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+
+        <!-- Top HUD -->
+        <div id="hud-top">
+            <div style="display:flex; flex-direction:column;">
+                <div class="panel">
+                    <span id="fps-counter">60 FPS</span> |
+                    <span id="ping-counter">Ping: - ms</span> |
+                    <span id="coords">X: 0 Z: 0</span>
+                </div>
+                <!-- Soundboard Panel -->
+                <div class="panel interactive" id="soundboard" style="display:none;">
+                    <div style="margin-bottom:5px; font-weight:bold; font-size:12px; color:#aaa;">AUDIO PLAYER</div>
+                    <div id="sound-list">Loading...</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <span id="time-display">12:00 PM</span>
+            </div>
+        </div>
+
+        <!-- Speedometer -->
+        <div id="speedometer">
+            <div id="speed-value">0</div>
+            <div id="speed-label">KM/H</div>
+            <div id="nitro-bar-container">
+                <div id="nitro-bar"></div>
+            </div>
+        </div>
+
+        <!-- Chat -->
+        <div id="chat-container" class="interactive">
+            <div id="chat-messages">
+                <!-- Chat items go here -->
+            </div>
+            <div id="chat-input-row">
+                <input type="text" id="chat-input" placeholder="Press ENTER to chat..." autocomplete="off">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Menu / Settings Overlay -->
+    <div id="menu-overlay" class="interactive">
+        <h1>Infinity Racer</h1>
+        <div class="menu-card" id="loading-card" style="display:none;">
+            <div class="spinner"></div>
+            <div style="text-align:center;">Connecting to Network...</div>
+        </div>
+
+        <div class="menu-card" id="settings-card">
+            <div class="form-group">
+                <label>Driver Name</label>
+                <input type="text" id="input-username" placeholder="Enter Name" maxlength="12">
+            </div>
+
+            <div class="form-group">
+                <label>Vehicle Color</label>
+                <input type="color" id="input-color" value="#00ffd5" style="width: 100%; height: 40px; padding: 0;">
+            </div>
+
+            <div class="form-group">
+                <label>Multiplayer Server (MQTT)</label>
+                <div style="display:flex; gap: 5px;">
+                    <select id="select-server" style="flex:1;">
+                        <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (SSL)</option>
+                        <option value="wss://broker.hivemq.com:8000/mqtt">HiveMQ Public (SSL)</option>
+                        <option value="ws://test.mosquitto.org:8080">Mosquitto (No SSL)</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                </div>
+                <input type="text" id="input-custom-server" placeholder="wss://your-broker:8084" style="display:none;">
+            </div>
+
+            <div class="form-group">
+                <button id="btn-play" class="btn-primary">Start Engine</button>
+            </div>
+
+            <div style="font-size: 11px; color: #555; text-align: center; margin-top: 10px;">
+                Game data saved to IndexedDB. <br>
+                Controls: WASD (Drive), Space (Brake), Shift (Nitro), C (Cam).
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+/**
+ * INFINITY RACER v2.1
+ * Updates:
+ * - Networked Soundboard with Spatial Audio
+ */
+
+/* -------------------------------------------------------------------------- */
+/* 1. UTILITIES                                */
+/* -------------------------------------------------------------------------- */
+
+const Utils = {
+    lerp: (a, b, t) => a + (b - a) * t,
+    clamp: (val, min, max) => Math.min(Math.max(val, min), max),
+    rand: (min, max) => Math.random() * (max - min) + min,
+
+    // Hash string to color
+    strToColor: (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+        return '#' + "00000".substring(0, 6 - c.length) + c;
+    },
+
+    getTimeString: (gameTime) => {
+        const totalMinutes = Math.floor(gameTime * 24 * 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+};
+
+class SimpleNoise {
+    constructor() {
+        this.perm = new Uint8Array(512);
+        this.grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+        for(let i=0; i<256; i++) this.perm[i] = this.perm[i+256] = Math.floor(Math.random()*256);
+    }
+    dot(g, x, y) { return g[0]*x + g[1]*y; }
+    noise(xin, yin) {
+        let n0, n1, n2;
+        const F2 = 0.5*(Math.sqrt(3.0)-1.0), G2 = (3.0-Math.sqrt(3.0))/6.0;
+        let s = (xin+yin)*F2;
+        let i = Math.floor(xin+s), j = Math.floor(yin+s);
+        let t = (i+j)*G2;
+        let X0 = i-t, Y0 = j-t;
+        let x0 = xin-X0, y0 = yin-Y0;
+        let i1, j1;
+        if(x0>y0) {i1=1; j1=0;} else {i1=0; j1=1;}
+        let x1 = x0 - i1 + G2, y1 = y0 - j1 + G2;
+        let x2 = x0 - 1.0 + 2.0*G2, y2 = y0 - 1.0 + 2.0*G2;
+        let ii = i & 255, jj = j & 255;
+        let gi0 = this.perm[ii+this.perm[jj]] % 12;
+        let gi1 = this.perm[ii+i1+this.perm[jj+j1]] % 12;
+        let gi2 = this.perm[ii+1+this.perm[jj+1]] % 12;
+        let t0 = 0.5 - x0*x0 - y0*y0;
+        if(t0<0) n0 = 0.0; else {t0 *= t0; n0 = t0 * t0 * this.dot(this.grad3[gi0], x0, y0);}
+        let t1 = 0.5 - x1*x1 - y1*y1;
+        if(t1<0) n1 = 0.0; else {t1 *= t1; n1 = t1 * t1 * this.dot(this.grad3[gi1], x1, y1);}
+        let t2 = 0.5 - x2*x2 - y2*y2;
+        if(t2<0) n2 = 0.0; else {t2 *= t2; n2 = t2 * t2 * this.dot(this.grad3[gi2], x2, y2);}
+        return 70.0 * (n0 + n1 + n2);
+    }
+}
+
+class DB {
+    constructor(dbName, storeName) {
+        this.dbName = dbName;
+        this.storeName = storeName;
+        this.db = null;
+    }
+    async init() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName);
+            };
+            request.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+            request.onerror = (e) => reject("DB Error");
+        });
+    }
+    async get(key) {
+        return new Promise((resolve) => {
+            const tx = this.db.transaction([this.storeName], "readonly");
+            const req = tx.objectStore(this.storeName).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+    async put(key, value) {
+        return new Promise((resolve) => {
+            const tx = this.db.transaction([this.storeName], "readwrite");
+            tx.objectStore(this.storeName).put(value, key);
+            tx.oncomplete = () => resolve();
+        });
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 2. SYSTEMS                                  */
+/* -------------------------------------------------------------------------- */
+
+class TerrainSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.noise = new SimpleNoise();
+        this.chunks = {};
+        this.chunkSize = 100;
+        this.resolution = 32;
+        this.activeRadius = 2;
+    }
+
+    getHeight(x, z) {
+        let y = 0;
+        y += this.noise.noise(x * 0.01, z * 0.01) * 20;
+        y += this.noise.noise(x * 0.05, z * 0.05) * 5;
+        y += this.noise.noise(x * 0.002, z * 0.002) * 60;
+        return y;
+    }
+
+    update(playerX, playerZ) {
+        const cx = Math.floor(playerX / this.chunkSize);
+        const cz = Math.floor(playerZ / this.chunkSize);
+        const activeKeys = new Set();
+
+        for (let x = -this.activeRadius; x <= this.activeRadius; x++) {
+            for (let z = -this.activeRadius; z <= this.activeRadius; z++) {
+                const key = `${cx + x}:${cz + z}`;
+                activeKeys.add(key);
+                if (!this.chunks[key]) this.createChunk(cx + x, cz + z, key);
+            }
+        }
+
+        for (const key in this.chunks) {
+            if (!activeKeys.has(key)) {
+                this.scene.remove(this.chunks[key].mesh);
+                this.chunks[key].geometry.dispose();
+                delete this.chunks[key];
+            }
+        }
+    }
+
+    createChunk(cx, cz, key) {
+        const geometry = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize, this.resolution, this.resolution);
+        geometry.rotateX(-Math.PI / 2);
+        const posAttr = geometry.attributes.position;
+        const count = posAttr.count;
+
+        for (let i = 0; i < count; i++) {
+            const x = posAttr.getX(i) + cx * this.chunkSize;
+            const z = posAttr.getZ(i) + cz * this.chunkSize;
+            posAttr.setY(i, this.getHeight(x, z));
+        }
+        geometry.computeVertexNormals();
+
+        geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+        const colorAttr = geometry.attributes.color;
+        const c1 = new THREE.Color(0x2d5a27);
+        const c2 = new THREE.Color(0xe6cc85);
+        const c3 = new THREE.Color(0x555555);
+        const c4 = new THREE.Color(0xffffff);
+
+        for (let i = 0; i < count; i++) {
+            const h = posAttr.getY(i);
+            let c = c1;
+            if(h < -5) c = c2;
+            else if(h > 35 && h < 60) c = c3;
+            else if(h >= 60) c = c4;
+            const variation = (Math.random() * 0.1) - 0.05;
+            colorAttr.setXYZ(i, Utils.clamp(c.r + variation,0,1), Utils.clamp(c.g+variation,0,1), Utils.clamp(c.b+variation,0,1));
+        }
+
+        const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(cx * this.chunkSize, 0, cz * this.chunkSize);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        this.scene.add(mesh);
+        this.chunks[key] = { mesh, geometry };
+        this.generateProps(cx, cz, mesh);
+    }
+
+    generateProps(cx, cz, chunkMesh) {
+        const seed = Math.sin(cx * 12.9898 + cz * 78.233) * 43758.5453;
+        const count = Math.floor(Math.abs(seed % 10));
+        const treeGeo = new THREE.ConeGeometry(1, 4, 6);
+        const treeMat = new THREE.MeshLambertMaterial({color: 0x1a2e12});
+
+        for(let i=0; i<count; i++) {
+            const rx = (Math.random() - 0.5) * this.chunkSize;
+            const rz = (Math.random() - 0.5) * this.chunkSize;
+            const wx = (cx * this.chunkSize) + rx;
+            const wz = (cz * this.chunkSize) + rz;
+            const wy = this.getHeight(wx, wz);
+
+            if(wy > 0 && wy < 30) {
+                const tree = new THREE.Mesh(treeGeo, treeMat);
+                tree.position.set(rx, wy, rz);
+                tree.castShadow = true;
+                chunkMesh.add(tree);
+            }
+        }
+    }
+}
+
+class ParticleSystem {
+    constructor(scene) {
+        this.particles = [];
+        this.scene = scene;
+        this.geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+        this.material = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.6 });
+    }
+    spawn(pos, color, life = 1.0, size = 1.0) {
+        if(this.particles.length > 200) return;
+        const mesh = new THREE.Mesh(this.geometry, this.material.clone());
+        mesh.material.color.set(color);
+        mesh.position.copy(pos);
+        mesh.scale.setScalar(size);
+        mesh.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
+        this.scene.add(mesh);
+        this.particles.push({ mesh, life, maxLife: life, vel: new THREE.Vector3(Utils.rand(-0.2,0.2), Utils.rand(0.2, 0.5), Utils.rand(-0.2,0.2)) });
+    }
+    update(dt) {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.life -= dt;
+            p.mesh.position.add(p.vel);
+            p.mesh.rotation.x += dt;
+            p.mesh.material.opacity = (p.life / p.maxLife) * 0.5;
+            if (p.life <= 0) {
+                this.scene.remove(p.mesh);
+                this.particles.splice(i, 1);
+            }
+        }
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 3. ENTITIES                                 */
+/* -------------------------------------------------------------------------- */
+
+class Car {
+    constructor(scene, color, isLocal = false) {
+        this.scene = scene;
+        this.isLocal = isLocal;
+        this.mesh = this.createMesh(color);
+        this.scene.add(this.mesh);
+
+        // Physics State
+        this.pos = new THREE.Vector3(0, 10, 0);
+        this.vel = new THREE.Vector3(0, 0, 0);
+        this.rot = new THREE.Euler(0, 0, 0, 'YXZ');
+        this.speed = 0;
+        this.verticalVel = 0;
+
+        this.maxSpeed = 60;
+        this.accel = 30;
+        this.turnSpeed = 2.0;
+        this.driftFactor = 0;
+        this.nitro = 100;
+        this.isNitro = false;
+        this.grounded = false;
+
+        this.headlights = [];
+        if(isLocal) this.setupLights();
+
+        this.nameTag = document.createElement('div');
+        this.nameTag.className = 'name-tag';
+        this.nameTag.textContent = "Unknown";
+        if(!isLocal) document.body.appendChild(this.nameTag);
+    }
+
+    createMesh(color) {
+        const group = new THREE.Group();
+        // Chassis
+        const chassis = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4), new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.6 }));
+        chassis.position.y = 0.8;
+        chassis.castShadow = true;
+        group.add(chassis);
+        // Cabin
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 2), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.0, metalness: 0.9 }));
+        cabin.position.set(0, 1.5, -0.5);
+        group.add(cabin);
+        // Wheels
+        const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
+        wheelGeo.rotateZ(Math.PI/2);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        [{x:1.1,z:1.2}, {x:-1.1,z:1.2}, {x:1.1,z:-1.2}, {x:-1.1,z:-1.2}].forEach(p => {
+            const w = new THREE.Mesh(wheelGeo, wheelMat);
+            w.position.set(p.x, 0.5, p.z);
+            w.castShadow = true;
+            group.add(w);
+        });
+        return group;
+    }
+
+    setupLights() {
+        const t1 = new THREE.Object3D(); t1.position.set(0.8, 1, -10);
+        const t2 = new THREE.Object3D(); t2.position.set(-0.8, 1, -10);
+        this.mesh.add(t1); this.mesh.add(t2);
+        const l1 = new THREE.SpotLight(0xffffee, 2, 80, 0.5, 0.5, 1); l1.target = t1; l1.castShadow = true; l1.position.set(0.8, 1, -1.8);
+        const l2 = new THREE.SpotLight(0xffffee, 2, 80, 0.5, 0.5, 1); l2.target = t2; l2.castShadow = true; l2.position.set(-0.8, 1, -1.8);
+        this.mesh.add(l1); this.mesh.add(l2);
+        this.headlights = [l1, l2];
+    }
+
+    updatePhysics(dt, input, terrainSystem, particles) {
+        const groundHeight = terrainSystem.getHeight(this.pos.x, this.pos.z);
+        const gravity = 25.0;
+
+        // Apply Gravity
+        this.verticalVel -= gravity * dt;
+        this.pos.y += this.verticalVel * dt;
+
+        // Collision Check
+        if (this.pos.y < groundHeight) {
+            this.pos.y = groundHeight;
+            this.verticalVel = 0;
+            this.grounded = true;
+        } else {
+            this.grounded = false;
+        }
+
+        // --- Input & Movement ---
+        let throttle = 0;
+        if (input.keys['w'] || input.keys['ArrowUp']) throttle = 1;
+        if (input.keys['s'] || input.keys['ArrowDown']) throttle = -1;
+
+        let turn = 0;
+        if (input.keys['a'] || input.keys['ArrowLeft']) turn = 1;
+        if (input.keys['d'] || input.keys['ArrowRight']) turn = -1;
+
+        const brake = input.keys[' '] ? 1 : 0;
+        this.isNitro = (input.keys['Shift'] && this.nitro > 0);
+
+        let currentMaxSpeed = this.maxSpeed;
+        if(this.isNitro) {
+            currentMaxSpeed *= 1.5;
+            this.nitro -= dt * 30;
+            if(this.nitro < 0) this.nitro = 0;
+            particles.spawn(this.mesh.position.clone().add(new THREE.Vector3(0,0.5,2)), 0x00ffff, 0.5, 0.8);
+        } else {
+            if(this.nitro < 100) this.nitro += dt * 5;
+        }
+
+        if (throttle !== 0) {
+            this.speed += throttle * this.accel * dt;
+        } else {
+            this.speed = Utils.lerp(this.speed, 0, dt * 1.0);
+        }
+
+        if (brake) {
+            this.speed = Utils.lerp(this.speed, 0, dt * 3.0);
+            this.driftFactor = Utils.lerp(this.driftFactor, 1.0, dt * 5);
+        } else {
+            this.driftFactor = Utils.lerp(this.driftFactor, 0.0, dt * 2);
+        }
+
+        this.speed = Utils.clamp(this.speed, -this.maxSpeed * 0.5, currentMaxSpeed);
+
+        if (Math.abs(this.speed) > 1.0) {
+            const dir = Math.sign(this.speed);
+            const controlMult = this.grounded ? 1.0 : 0.3;
+            this.rot.y += this.turnSpeed * dt * turn * dir * controlMult;
+        }
+
+        this.vel.x = -Math.sin(this.rot.y) * this.speed;
+        this.vel.z = -Math.cos(this.rot.y) * this.speed;
+
+        this.pos.x += this.vel.x * dt;
+        this.pos.z += this.vel.z * dt;
+
+        this.mesh.position.copy(this.pos);
+
+        this.mesh.rotation.y = this.rot.y;
+
+        if (this.grounded) {
+            const d = 1.0;
+            const hx = terrainSystem.getHeight(this.pos.x + d, this.pos.z);
+            const hz = terrainSystem.getHeight(this.pos.x, this.pos.z + d);
+            const normal = new THREE.Vector3(groundHeight - hx, d, 0).cross(new THREE.Vector3(0, d, groundHeight - hz)).normalize();
+
+            const targetPitch = normal.z * 0.5;
+            const targetRoll = -normal.x * 0.5;
+
+            this.mesh.rotation.x = Utils.lerp(this.mesh.rotation.x, targetPitch, dt * 10);
+            this.mesh.rotation.z = Utils.lerp(this.mesh.rotation.z, targetRoll, dt * 10);
+
+            if(Math.abs(this.speed) > 10 && groundHeight > -5) {
+                if(Math.random() > 0.8) particles.spawn(this.pos.clone(), 0x888888, 1.0, 0.5);
+            }
+        } else {
+            this.mesh.rotation.x = Utils.lerp(this.mesh.rotation.x, 0, dt * 2);
+            this.mesh.rotation.z = Utils.lerp(this.mesh.rotation.z, 0, dt * 2);
+        }
+    }
+
+    setFromNetworkData(data) {
+        this.mesh.position.lerp(new THREE.Vector3(data.x, data.y, data.z), 0.3);
+        if(data.ry !== undefined) this.mesh.rotation.y = data.ry;
+        this.mesh.rotation.x = Utils.lerp(this.mesh.rotation.x, data.rx || 0, 0.3);
+        this.mesh.rotation.z = Utils.lerp(this.mesh.rotation.z, data.rz || 0, 0.3);
+    }
+
+    updateNameTag(camera) {
+        if(!this.nameTag || !this.nameTag.parentNode) return;
+        const tempV = new THREE.Vector3();
+        this.mesh.updateWorldMatrix(true, false);
+        this.mesh.getWorldPosition(tempV);
+        tempV.y += 2.5;
+        tempV.project(camera);
+        const x = (tempV.x * .5 + .5) * window.innerWidth;
+        const y = (-(tempV.y * .5) + .5) * window.innerHeight;
+
+        if (tempV.z > 1) this.nameTag.style.display = 'none';
+        else {
+            this.nameTag.style.display = 'block';
+            this.nameTag.style.left = `${x}px`;
+            this.nameTag.style.top = `${y}px`;
+        }
+    }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* 4. MANAGERS                                 */
+/* -------------------------------------------------------------------------- */
+
+class AudioManager {
+    constructor(game) {
+        this.game = game; // Store reference to game for network access
+        this.container = document.getElementById('sound-list');
+        this.panel = document.getElementById('soundboard');
+        this.activeAudio = null;
+        this.baseUrl = "../shared/audio/";
+    }
+
+    async init() {
+        this.panel.style.display = 'block';
+        try {
+            // Fetch the atlas from the relative path
+            const response = await fetch(this.baseUrl + 'atlas.json');
+
+            if (!response.ok) {
+                throw new Error(`Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Map the atlas JSON structure to our UI format
+            const sounds = data.map(track => ({
+                name: track.name,
+                // Simple title formatting: remove extension and capitalize
+                title: track.name.replace(/\.[^/.]+$/, "")
+            }));
+
+            this.render(sounds);
+        } catch(e) {
+            console.warn("Audio load error:", e);
+            this.container.innerText = "No audio atlas found.";
+        }
+    }
+
+    render(sounds) {
+        this.container.innerHTML = "";
+        sounds.forEach(s => {
+            const btn = document.createElement('div');
+            btn.className = 'sound-btn';
+            btn.innerHTML = `<span>${s.title}</span> <span>▶</span>`;
+            btn.onclick = () => this.play(s.name, btn);
+            this.container.appendChild(btn);
+        });
+    }
+
+    // Handles UI interaction and Local Playback + Broadcasting
+    play(filename, btnElement) {
+        // --- UI TOGGLE LOGIC (Local only) ---
+        if (this.activeAudio && this.activeAudio.src.includes(filename)) {
+            // Clicking the currently playing song -> Stop it
+            this.activeAudio.pause();
+            this.activeAudio = null;
+            btnElement.classList.remove('playing');
+            btnElement.lastElementChild.innerText = "▶";
+            return;
+        }
+
+        // Reset other buttons
+        document.querySelectorAll('.sound-btn').forEach(b => {
+            b.classList.remove('playing');
+            b.lastElementChild.innerText = "▶";
+        });
+
+        // --- PLAYBACK LOGIC ---
+        // 1. Play Locally
+        this.playClip(filename, 1.0, (audio) => {
+            // Callback to link UI state to this audio instance
+            this.activeAudio = audio;
+            btnElement.classList.add('playing');
+            btnElement.lastElementChild.innerText = "■";
+
+            audio.onended = () => {
+                btnElement.classList.remove('playing');
+                btnElement.lastElementChild.innerText = "▶";
+                this.activeAudio = null;
+            };
+        });
+
+        // 2. Broadcast to Network
+        if(this.game && this.game.network) {
+            this.game.network.publishSound(filename);
+        }
+    }
+
+    // Handles the actual audio generation (Used by Local and Remote)
+    playClip(filename, volume, onPlayCallback) {
+        const audio = new Audio(this.baseUrl + filename);
+        audio.volume = Utils.clamp(volume, 0, 1);
+
+        audio.play().then(() => {
+            if(onPlayCallback) onPlayCallback(audio);
+        }).catch(e => console.log("Audio play failed (interaction needed first)"));
+    }
+}
+
+class InputManager {
+    constructor() {
+        this.keys = {};
+        window.addEventListener('keydown', (e) => this.keys[e.key] = true);
+        window.addEventListener('keyup', (e) => this.keys[e.key] = false);
+    }
+}
+
+class NetworkManager {
+    constructor(game) {
+        this.game = game;
+        this.client = null;
+        this.topicRoot = "infinity_racer_v1/global";
+        this.playerId = "p_" + Math.floor(Math.random() * 100000);
+        this.lastPub = 0;
+        this.connected = false;
+        this.remoteCars = {};
+
+        window.addEventListener('beforeunload', () => this.disconnect());
+    }
+
+    connect(brokerUrl) {
+        console.log(`Connecting to ${brokerUrl}...`);
+        try {
+            this.client = mqtt.connect(brokerUrl, {
+                clientId: this.playerId,
+                clean: true,
+                reconnectPeriod: 2000,
+                will: {
+                    topic: `${this.topicRoot}/players/${this.playerId}`,
+                    payload: JSON.stringify({ left: true }),
+                    qos: 0, retain: false
+                }
+            });
+        } catch(e) { alert("Connection Failed: " + e); return; }
+
+        this.client.on('connect', () => {
+            this.connected = true;
+            document.getElementById('loading-card').style.display = 'none';
+            document.getElementById('menu-overlay').classList.add('hidden');
+            this.client.subscribe(`${this.topicRoot}/players/+`);
+            this.client.subscribe(`${this.topicRoot}/chat`);
+            this.client.subscribe(`${this.topicRoot}/sounds`); // Listen for sounds
+            this.publishChat("System", `${this.game.username} joined the race.`);
+        });
+
+        this.client.on('message', (topic, message) => {
+            try {
+                const msg = JSON.parse(message.toString());
+
+                // --- Handle Sounds ---
+                if (topic.includes('/sounds')) {
+                    if (msg.id === this.playerId) return; // Ignore own echoes
+
+                    if (this.game.playerCar) {
+                        const dist = this.game.playerCar.pos.distanceTo(new THREE.Vector3(msg.x, msg.y, msg.z));
+                        const maxDist = 200; // Meters
+                        if (dist < maxDist) {
+                            // Spatial Audio: Volume drops over distance
+                            const vol = 1.0 - (dist / maxDist);
+                            this.game.audio.playClip(msg.name, vol);
+                            // Optional: Show visual indicator in chat or above car?
+                        }
+                    }
+                    return;
+                }
+
+                // --- Handle Chat ---
+                if (topic.includes('/chat')) {
+                    this.game.ui.addChat(msg.name, msg.text, msg.system);
+                }
+                // --- Handle Players ---
+                else if (topic.includes('/players/')) {
+                    const pid = topic.split('/').pop();
+                    if (pid === this.playerId) return;
+                    this.handlePlayerUpdate(pid, msg);
+                }
+            } catch (e) {}
+        });
+    }
+
+    disconnect() {
+        if(this.client && this.connected) {
+            this.client.publish(`${this.topicRoot}/players/${this.playerId}`, JSON.stringify({ left: true }));
+            this.client.end();
+        }
+    }
+
+    publishSound(filename) {
+        if (!this.connected || !this.game.playerCar) return;
+        const p = this.game.playerCar.mesh.position;
+        const payload = {
+            id: this.playerId,
+            name: filename,
+            x: p.x, y: p.y, z: p.z
+        };
+        this.client.publish(`${this.topicRoot}/sounds`, JSON.stringify(payload));
+    }
+
+    handlePlayerUpdate(id, data) {
+        if (data.left) {
+            if (this.remoteCars[id]) {
+                this.game.scene.remove(this.remoteCars[id].mesh);
+                if(this.remoteCars[id].nameTag.parentNode) this.remoteCars[id].nameTag.parentNode.removeChild(this.remoteCars[id].nameTag);
+                delete this.remoteCars[id];
+            }
+            return;
+        }
+
+        if (!this.remoteCars[id]) {
+            const c = new Car(this.game.scene, data.color || '#ffffff', false);
+            c.nameTag.textContent = data.name || "Unknown";
+            this.remoteCars[id] = c;
+        }
+
+        const car = this.remoteCars[id];
+        car.lastUpdate = Date.now();
+        car.setFromNetworkData(data);
+    }
+
+    update(dt) {
+        if (!this.connected) return;
+        const now = Date.now();
+
+        for(const id in this.remoteCars) {
+            if (now - this.remoteCars[id].lastUpdate > 5000) {
+                this.game.scene.remove(this.remoteCars[id].mesh);
+                if(this.remoteCars[id].nameTag.parentNode) this.remoteCars[id].nameTag.parentNode.removeChild(this.remoteCars[id].nameTag);
+                delete this.remoteCars[id];
+            } else {
+                this.remoteCars[id].updateNameTag(this.game.camera);
+            }
+        }
+
+        if (now - this.lastPub > 100) {
+            const p = this.game.playerCar;
+            const payload = {
+                x: p.mesh.position.x, y: p.mesh.position.y, z: p.mesh.position.z,
+                rx: p.mesh.rotation.x, ry: p.mesh.rotation.y, rz: p.mesh.rotation.z,
+                color: this.game.color, name: this.game.username
+            };
+            this.client.publish(`${this.topicRoot}/players/${this.playerId}`, JSON.stringify(payload));
+            this.lastPub = now;
+        }
+    }
+
+    publishChat(name, text, system=false) {
+        if(!this.connected) return;
+        const payload = { name, text, system, time: Date.now() };
+        this.client.publish(`${this.topicRoot}/chat`, JSON.stringify(payload));
+    }
+}
+
+class UIManager {
+    constructor(game) {
+        this.game = game;
+        this.fpsDiv = document.getElementById('fps-counter');
+        this.coordsDiv = document.getElementById('coords');
+        this.speedDiv = document.getElementById('speed-value');
+        this.nitroBar = document.getElementById('nitro-bar');
+        this.timeDiv = document.getElementById('time-display');
+        this.chatDiv = document.getElementById('chat-messages');
+        this.chatInput = document.getElementById('chat-input');
+
+        this.chatInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && this.chatInput.value.trim() !== "") {
+                this.game.network.publishChat(this.game.username, this.chatInput.value);
+                this.chatInput.value = "";
+                this.chatInput.blur();
+            }
+        });
+
+        document.getElementById('select-server').addEventListener('change', (e) => {
+            const custom = document.getElementById('input-custom-server');
+            if(e.target.value === 'custom') custom.style.display = 'block';
+            else custom.style.display = 'none';
+        });
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            this.game.startGame();
+        });
+
+        this.initSettings();
+    }
+
+    async initSettings() {
+        await this.game.db.init();
+        const storedName = await this.game.db.get('username');
+        const storedColor = await this.game.db.get('color');
+        if(storedName) document.getElementById('input-username').value = storedName;
+        if(storedColor) document.getElementById('input-color').value = storedColor;
+    }
+
+    update(dt) {
+        const p = this.game.playerCar;
+        const kmh = Math.abs(Math.floor(p.speed * 3.6));
+        this.speedDiv.innerText = kmh;
+        this.nitroBar.style.transform = `scaleX(${p.nitro / 100})`;
+        this.coordsDiv.innerText = `X: ${Math.floor(p.pos.x)} Z: ${Math.floor(p.pos.z)}`;
+        this.fpsDiv.innerText = Math.floor(1/dt) + " FPS";
+        this.timeDiv.innerText = Utils.getTimeString(this.game.dayTime);
+    }
+
+    addChat(name, text, isSystem) {
+        const el = document.createElement('div');
+        el.className = 'chat-msg' + (isSystem ? ' system' : '');
+        const spanName = document.createElement('span');
+        spanName.className = 'author';
+        spanName.innerText = name + ":";
+        spanName.style.color = Utils.strToColor(name);
+        const spanText = document.createElement('span');
+        spanText.innerText = text;
+        if(!isSystem) el.appendChild(spanName);
+        el.appendChild(spanText);
+        this.chatDiv.appendChild(el);
+        this.chatDiv.scrollTop = this.chatDiv.scrollHeight;
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 5. MAIN GAME CLASS                          */
+/* -------------------------------------------------------------------------- */
+
+class Game {
+    constructor() {
+        this.container = document.getElementById('canvas-container');
+        this.db = new DB('InfinityRacerDB', 'settings');
+        this.input = new InputManager();
+        this.ui = new UIManager(this);
+        this.audio = new AudioManager(this); // Pass game ref to audio
+
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x87CEEB);
+        this.scene.fog = new THREE.Fog(0x87CEEB, 20, 200);
+
+        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.cameraMode = 0;
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.container.appendChild(this.renderer.domElement);
+
+        this.terrain = new TerrainSystem(this.scene);
+        this.particles = new ParticleSystem(this.scene);
+        this.network = new NetworkManager(this);
+
+        this.sunLight = new THREE.DirectionalLight(0xffffff, 1);
+        this.sunLight.position.set(50, 100, 50);
+        this.sunLight.castShadow = true;
+        this.sunLight.shadow.mapSize.width = 2048;
+        this.sunLight.shadow.mapSize.height = 2048;
+        this.sunLight.shadow.camera.near = 0.5;
+        this.sunLight.shadow.camera.far = 500;
+        this.sunLight.shadow.camera.left = -100;
+        this.sunLight.shadow.camera.right = 100;
+        this.sunLight.shadow.camera.top = 100;
+        this.sunLight.shadow.camera.bottom = -100;
+        this.scene.add(this.sunLight);
+
+        this.ambientLight = new THREE.AmbientLight(0x404040);
+        this.scene.add(this.ambientLight);
+
+        this.clock = new THREE.Clock();
+        this.playerCar = null;
+        this.dayTime = 0.5;
+        this.running = false;
+
+        window.addEventListener('resize', () => {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        this.animate = this.animate.bind(this);
+        requestAnimationFrame(this.animate);
+
+        window.addEventListener('keydown', (e) => {
+            if(e.key === 'c' || e.key === 'C') this.cameraMode = (this.cameraMode + 1) % 3;
+        });
+
+        // Initialize Audio UI
+        this.audio.init();
+    }
+
+    async startGame() {
+        this.username = document.getElementById('input-username').value || "Racer" + Math.floor(Math.random()*100);
+        this.color = document.getElementById('input-color').value;
+        const serverSelect = document.getElementById('select-server').value;
+        const customServer = document.getElementById('input-custom-server').value;
+        const brokerUrl = (serverSelect === 'custom') ? customServer : serverSelect;
+
+        await this.db.put('username', this.username);
+        await this.db.put('color', this.color);
+
+        document.getElementById('settings-card').style.display = 'none';
+        document.getElementById('loading-card').style.display = 'block';
+
+        this.playerCar = new Car(this.scene, this.color, true);
+        this.network.connect(brokerUrl);
+        this.running = true;
+    }
+
+    animate() {
+        requestAnimationFrame(this.animate);
+        const dt = Math.min(this.clock.getDelta(), 0.1);
+
+        if (this.running && this.playerCar) {
+            this.playerCar.updatePhysics(dt, this.input, this.terrain, this.particles);
+            this.terrain.update(this.playerCar.pos.x, this.playerCar.pos.z);
+            this.particles.update(dt);
+            this.network.update(dt);
+            this.ui.update(dt);
+            this.updateCamera();
+            this.updateDayCycle(dt);
+        }
+
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    updateCamera() {
+        const car = this.playerCar;
+        let targetPos;
+        let lookAtPos = car.mesh.position.clone();
+
+        if (this.cameraMode === 0) { // Chase Standard
+            const offset = new THREE.Vector3(0, 5, 12);
+            offset.applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y);
+            targetPos = car.mesh.position.clone().add(offset);
+            lookAtPos.y += 2;
+        } else if (this.cameraMode === 1) { // Far
+            const offset = new THREE.Vector3(0, 15, 25);
+            offset.applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y);
+            targetPos = car.mesh.position.clone().add(offset);
+        } else { // Driver
+            const offset = new THREE.Vector3(0, 1.8, 0.5);
+            offset.applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y);
+            targetPos = car.mesh.position.clone().add(offset);
+            lookAtPos = car.mesh.position.clone().add(new THREE.Vector3(0, 1.8, -10).applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y));
+        }
+        this.camera.position.lerp(targetPos, 0.1);
+        this.camera.lookAt(lookAtPos);
+    }
+
+    updateDayCycle(dt) {
+        this.dayTime += dt * 0.005;
+        if (this.dayTime > 1) this.dayTime = 0;
+
+        const angle = this.dayTime * Math.PI * 2;
+        const r = 100;
+        this.sunLight.position.set(Math.sin(angle)*r, Math.cos(angle)*r, 0);
+
+        const isNight = (this.dayTime < 0.25 || this.dayTime > 0.75);
+        let skyColor = new THREE.Color(0x87CEEB);
+        if (isNight) skyColor.setHex(0x050510);
+        else if (Math.abs(this.dayTime - 0.25) < 0.1 || Math.abs(this.dayTime - 0.75) < 0.1) skyColor.setHex(0xffaa00);
+
+        this.scene.background.lerp(skyColor, dt * 1.0);
+        this.scene.fog.color.copy(this.scene.background);
+
+        if(isNight) {
+            this.playerCar.headlights.forEach(l => l.intensity = 2);
+            this.sunLight.intensity = 0.1;
+        } else {
+            this.playerCar.headlights.forEach(l => l.intensity = 0);
+            this.sunLight.intensity = 1.0;
+        }
+    }
+}
+
+window.onload = () => { const game = new Game(); };
+
+    </script>
+</body>
+</html>
