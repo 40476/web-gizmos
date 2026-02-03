@@ -894,7 +894,7 @@ class GameEngine {
         }
 
         // If no host heard for 5 seconds, trigger election
-        if (nowTime - this.lastHostHeartbeat > 5000) {
+        if (nowTime - this.lastHostHeartbeat > 15000) {
             this.electNewHost();
         }
     }
