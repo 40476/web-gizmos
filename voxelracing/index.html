@@ -169,7 +169,23 @@
             margin-top: 10px;
             max-width: 250px;
         }
+        
+        #sound-list {
+            max-height: 200px;
+            overflow-y: auto;
+            /* Scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
 
+        #sound-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        #sound-list::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+        
         .sound-btn {
             display: block;
             width: 100%;
@@ -186,6 +202,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-sizing: border-box; /* Fix padding issues */
         }
 
         .sound-btn:hover {
@@ -305,7 +322,7 @@
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
+        
         /* Loading Spinner */
         .spinner {
             width: 40px;
@@ -330,12 +347,12 @@
 
     <!-- UI Overlay -->
     <div id="ui-layer">
-
+        
         <!-- Top HUD -->
         <div id="hud-top">
             <div style="display:flex; flex-direction:column;">
                 <div class="panel">
-                    <span id="fps-counter">60 FPS</span> |
+                    <span id="fps-counter">60 FPS</span> | 
                     <span id="ping-counter">Ping: - ms</span> |
                     <span id="coords">X: 0 Z: 0</span>
                 </div>
@@ -407,7 +424,7 @@
             <div class="form-group">
                 <button id="btn-play" class="btn-primary">Start Engine</button>
             </div>
-
+            
             <div style="font-size: 11px; color: #555; text-align: center; margin-top: 10px;">
                 Game data saved to IndexedDB. <br>
                 Controls: WASD (Drive), Space (Brake), Shift (Nitro), C (Cam).
@@ -418,9 +435,10 @@
     <!-- Game Logic -->
     <script>
 /**
- * INFINITY RACER v2.1
+ * INFINITY RACER v2.2
  * Updates:
- * - Networked Soundboard with Spatial Audio
+ * - Soundboard scrollable height fix
+ * - Correct Quaternion-based slope alignment
  */
 
 /* -------------------------------------------------------------------------- */
@@ -431,7 +449,7 @@ const Utils = {
     lerp: (a, b, t) => a + (b - a) * t,
     clamp: (val, min, max) => Math.min(Math.max(val, min), max),
     rand: (min, max) => Math.random() * (max - min) + min,
-
+    
     // Hash string to color
     strToColor: (str) => {
         let hash = 0;
@@ -458,9 +476,9 @@ class SimpleNoise {
     }
     dot(g, x, y) { return g[0]*x + g[1]*y; }
     noise(xin, yin) {
-        let n0, n1, n2;
+        let n0, n1, n2; 
         const F2 = 0.5*(Math.sqrt(3.0)-1.0), G2 = (3.0-Math.sqrt(3.0))/6.0;
-        let s = (xin+yin)*F2;
+        let s = (xin+yin)*F2; 
         let i = Math.floor(xin+s), j = Math.floor(yin+s);
         let t = (i+j)*G2;
         let X0 = i-t, Y0 = j-t;
@@ -576,7 +594,7 @@ class TerrainSystem {
 
         geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
         const colorAttr = geometry.attributes.color;
-        const c1 = new THREE.Color(0x2d5a27);
+        const c1 = new THREE.Color(0x2d5a27); 
         const c2 = new THREE.Color(0xe6cc85);
         const c3 = new THREE.Color(0x555555);
         const c4 = new THREE.Color(0xffffff);
@@ -607,7 +625,7 @@ class TerrainSystem {
         const count = Math.floor(Math.abs(seed % 10));
         const treeGeo = new THREE.ConeGeometry(1, 4, 6);
         const treeMat = new THREE.MeshLambertMaterial({color: 0x1a2e12});
-
+        
         for(let i=0; i<count; i++) {
             const rx = (Math.random() - 0.5) * this.chunkSize;
             const rz = (Math.random() - 0.5) * this.chunkSize;
@@ -671,21 +689,21 @@ class Car {
         // Physics State
         this.pos = new THREE.Vector3(0, 10, 0);
         this.vel = new THREE.Vector3(0, 0, 0);
-        this.rot = new THREE.Euler(0, 0, 0, 'YXZ');
+        this.rot = new THREE.Euler(0, 0, 0, 'YXZ'); 
         this.speed = 0;
-        this.verticalVel = 0;
-
+        this.verticalVel = 0; 
+        
         this.maxSpeed = 60;
         this.accel = 30;
         this.turnSpeed = 2.0;
         this.driftFactor = 0;
         this.nitro = 100;
         this.isNitro = false;
-        this.grounded = false;
+        this.grounded = false; 
 
         this.headlights = [];
         if(isLocal) this.setupLights();
-
+        
         this.nameTag = document.createElement('div');
         this.nameTag.className = 'name-tag';
         this.nameTag.textContent = "Unknown";
@@ -728,7 +746,7 @@ class Car {
 
     updatePhysics(dt, input, terrainSystem, particles) {
         const groundHeight = terrainSystem.getHeight(this.pos.x, this.pos.z);
-        const gravity = 25.0;
+        const gravity = 25.0; 
 
         // Apply Gravity
         this.verticalVel -= gravity * dt;
@@ -747,11 +765,11 @@ class Car {
         let throttle = 0;
         if (input.keys['w'] || input.keys['ArrowUp']) throttle = 1;
         if (input.keys['s'] || input.keys['ArrowDown']) throttle = -1;
-
+        
         let turn = 0;
         if (input.keys['a'] || input.keys['ArrowLeft']) turn = 1;
         if (input.keys['d'] || input.keys['ArrowRight']) turn = -1;
-
+        
         const brake = input.keys[' '] ? 1 : 0;
         this.isNitro = (input.keys['Shift'] && this.nitro > 0);
 
@@ -768,7 +786,7 @@ class Car {
         if (throttle !== 0) {
             this.speed += throttle * this.accel * dt;
         } else {
-            this.speed = Utils.lerp(this.speed, 0, dt * 1.0);
+            this.speed = Utils.lerp(this.speed, 0, dt * 1.0); 
         }
 
         if (brake) {
@@ -777,7 +795,7 @@ class Car {
         } else {
             this.driftFactor = Utils.lerp(this.driftFactor, 0.0, dt * 2);
         }
-
+        
         this.speed = Utils.clamp(this.speed, -this.maxSpeed * 0.5, currentMaxSpeed);
 
         if (Math.abs(this.speed) > 1.0) {
@@ -794,27 +812,44 @@ class Car {
 
         this.mesh.position.copy(this.pos);
 
-        this.mesh.rotation.y = this.rot.y;
-
+        // --- Ground Alignment Logic (Replaced for better stability) ---
+        // 1. Calculate Ground Normal using Tangents
+        const d = 1.0;
+        const hx = terrainSystem.getHeight(this.pos.x + d, this.pos.z);
+        const hz = terrainSystem.getHeight(this.pos.x, this.pos.z + d);
+        // Tangent vectors relative to center (0,0,0) offset
+        const vec1 = new THREE.Vector3(d, hx - groundHeight, 0); // +X direction tangent
+        const vec2 = new THREE.Vector3(0, hz - groundHeight, d); // +Z direction tangent
+        const normal = new THREE.Vector3().crossVectors(vec2, vec1).normalize(); // Upward normal
+        
+        const targetQ = new THREE.Quaternion();
+        
         if (this.grounded) {
-            const d = 1.0;
-            const hx = terrainSystem.getHeight(this.pos.x + d, this.pos.z);
-            const hz = terrainSystem.getHeight(this.pos.x, this.pos.z + d);
-            const normal = new THREE.Vector3(groundHeight - hx, d, 0).cross(new THREE.Vector3(0, d, groundHeight - hz)).normalize();
-
-            const targetPitch = normal.z * 0.5;
-            const targetRoll = -normal.x * 0.5;
-
-            this.mesh.rotation.x = Utils.lerp(this.mesh.rotation.x, targetPitch, dt * 10);
-            this.mesh.rotation.z = Utils.lerp(this.mesh.rotation.z, targetRoll, dt * 10);
-
+            // Determine forward direction based on current yaw (steering)
+            // Note: In ThreeJS, standard forward can be -Z. 
+            // We use standard trig here: X = -sin(ang), Z = -cos(ang) corresponds to standard 0deg = North (-Z)
+            const forward = new THREE.Vector3( -Math.sin(this.rot.y), 0, -Math.cos(this.rot.y) );
+            
+            // Construct a matrix that looks 'forward', but oriented so 'up' is 'normal'
+            const target = this.pos.clone().add(forward);
+            const m = new THREE.Matrix4();
+            m.lookAt(this.pos, target, normal);
+            targetQ.setFromRotationMatrix(m);
+            
             if(Math.abs(this.speed) > 10 && groundHeight > -5) {
                 if(Math.random() > 0.8) particles.spawn(this.pos.clone(), 0x888888, 1.0, 0.5);
             }
         } else {
-            this.mesh.rotation.x = Utils.lerp(this.mesh.rotation.x, 0, dt * 2);
-            this.mesh.rotation.z = Utils.lerp(this.mesh.rotation.z, 0, dt * 2);
+            // Mid-air: Level out to World Up (0,1,0) while keeping steering
+            const forward = new THREE.Vector3( -Math.sin(this.rot.y), 0, -Math.cos(this.rot.y) );
+            const target = this.pos.clone().add(forward);
+            const m = new THREE.Matrix4();
+            m.lookAt(this.pos, target, new THREE.Vector3(0,1,0));
+            targetQ.setFromRotationMatrix(m);
         }
+        
+        // Smoothly interpolate current rotation to target rotation
+        this.mesh.quaternion.slerp(targetQ, dt * 10);
     }
 
     setFromNetworkData(data) {
@@ -862,13 +897,13 @@ class AudioManager {
         try {
             // Fetch the atlas from the relative path
             const response = await fetch(this.baseUrl + 'atlas.json');
-
+            
             if (!response.ok) {
                 throw new Error(`Status: ${response.status}`);
             }
 
             const data = await response.json();
-
+            
             // Map the atlas JSON structure to our UI format
             const sounds = data.map(track => ({
                 name: track.name,
@@ -919,7 +954,7 @@ class AudioManager {
             this.activeAudio = audio;
             btnElement.classList.add('playing');
             btnElement.lastElementChild.innerText = "■";
-
+            
             audio.onended = () => {
                 btnElement.classList.remove('playing');
                 btnElement.lastElementChild.innerText = "▶";
@@ -937,7 +972,7 @@ class AudioManager {
     playClip(filename, volume, onPlayCallback) {
         const audio = new Audio(this.baseUrl + filename);
         audio.volume = Utils.clamp(volume, 0, 1);
-
+        
         audio.play().then(() => {
             if(onPlayCallback) onPlayCallback(audio);
         }).catch(e => console.log("Audio play failed (interaction needed first)"));
@@ -960,7 +995,7 @@ class NetworkManager {
         this.playerId = "p_" + Math.floor(Math.random() * 100000);
         this.lastPub = 0;
         this.connected = false;
-        this.remoteCars = {};
+        this.remoteCars = {}; 
 
         window.addEventListener('beforeunload', () => this.disconnect());
     }
@@ -993,11 +1028,11 @@ class NetworkManager {
         this.client.on('message', (topic, message) => {
             try {
                 const msg = JSON.parse(message.toString());
-
+                
                 // --- Handle Sounds ---
                 if (topic.includes('/sounds')) {
                     if (msg.id === this.playerId) return; // Ignore own echoes
-
+                    
                     if (this.game.playerCar) {
                         const dist = this.game.playerCar.pos.distanceTo(new THREE.Vector3(msg.x, msg.y, msg.z));
                         const maxDist = 200; // Meters
@@ -1014,11 +1049,11 @@ class NetworkManager {
                 // --- Handle Chat ---
                 if (topic.includes('/chat')) {
                     this.game.ui.addChat(msg.name, msg.text, msg.system);
-                }
+                } 
                 // --- Handle Players ---
                 else if (topic.includes('/players/')) {
                     const pid = topic.split('/').pop();
-                    if (pid === this.playerId) return;
+                    if (pid === this.playerId) return; 
                     this.handlePlayerUpdate(pid, msg);
                 }
             } catch (e) {}
@@ -1058,7 +1093,7 @@ class NetworkManager {
             c.nameTag.textContent = data.name || "Unknown";
             this.remoteCars[id] = c;
         }
-
+        
         const car = this.remoteCars[id];
         car.lastUpdate = Date.now();
         car.setFromNetworkData(data);
@@ -1067,7 +1102,7 @@ class NetworkManager {
     update(dt) {
         if (!this.connected) return;
         const now = Date.now();
-
+        
         for(const id in this.remoteCars) {
             if (now - this.remoteCars[id].lastUpdate > 5000) {
                 this.game.scene.remove(this.remoteCars[id].mesh);
@@ -1082,7 +1117,7 @@ class NetworkManager {
             const p = this.game.playerCar;
             const payload = {
                 x: p.mesh.position.x, y: p.mesh.position.y, z: p.mesh.position.z,
-                rx: p.mesh.rotation.x, ry: p.mesh.rotation.y, rz: p.mesh.rotation.z,
+                rx: p.mesh.rotation.x, ry: p.mesh.rotation.y, rz: p.mesh.rotation.z, 
                 color: this.game.color, name: this.game.username
             };
             this.client.publish(`${this.topicRoot}/players/${this.playerId}`, JSON.stringify(payload));
@@ -1107,7 +1142,7 @@ class UIManager {
         this.timeDiv = document.getElementById('time-display');
         this.chatDiv = document.getElementById('chat-messages');
         this.chatInput = document.getElementById('chat-input');
-
+        
         this.chatInput.addEventListener('keydown', (e) => {
             if(e.key === 'Enter' && this.chatInput.value.trim() !== "") {
                 this.game.network.publishChat(this.game.username, this.chatInput.value);
@@ -1220,7 +1255,7 @@ class Game {
 
         this.animate = this.animate.bind(this);
         requestAnimationFrame(this.animate);
-
+        
         window.addEventListener('keydown', (e) => {
             if(e.key === 'c' || e.key === 'C') this.cameraMode = (this.cameraMode + 1) % 3;
         });
@@ -1238,7 +1273,7 @@ class Game {
 
         await this.db.put('username', this.username);
         await this.db.put('color', this.color);
-
+        
         document.getElementById('settings-card').style.display = 'none';
         document.getElementById('loading-card').style.display = 'block';
 
@@ -1289,18 +1324,18 @@ class Game {
     }
 
     updateDayCycle(dt) {
-        this.dayTime += dt * 0.005;
+        this.dayTime += dt * 0.005; 
         if (this.dayTime > 1) this.dayTime = 0;
 
         const angle = this.dayTime * Math.PI * 2;
         const r = 100;
         this.sunLight.position.set(Math.sin(angle)*r, Math.cos(angle)*r, 0);
-
+        
         const isNight = (this.dayTime < 0.25 || this.dayTime > 0.75);
         let skyColor = new THREE.Color(0x87CEEB);
         if (isNight) skyColor.setHex(0x050510);
         else if (Math.abs(this.dayTime - 0.25) < 0.1 || Math.abs(this.dayTime - 0.75) < 0.1) skyColor.setHex(0xffaa00);
-
+        
         this.scene.background.lerp(skyColor, dt * 1.0);
         this.scene.fog.color.copy(this.scene.background);
 
