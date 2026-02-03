@@ -157,6 +157,8 @@
     
       <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
     
+      <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
+    
       <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
     
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
@@ -269,6 +271,26 @@
   </pre>
 
   <p>This application creates customizable vector patterns using a seed-based pseudo-random generator. Parameters control dimensions, pattern complexity, color schemes, and texture overlays. Outputs maintain deterministic reproducibility across sessions and support SVG/PNG export.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="voxelracing">
+        <a class="app-link" href="voxelracing/index.html">Open voxelracing</a>
+        <h2>voxelracing</h2>
+        <section>
+  <ul>
+    <li>Multiplayer racing game using Three.js for 3D graphics and MQTT for real-time networking</li>
+    <li>Features terrain generation, particle effects, day/night cycle, and audio broadcasting system</li>
+    <li>Players can chat, play shared audio clips, and see each other's positions in real-time</li>
+    <li>Customizable cars with physics-based movement and local multiplayer support</li>
+  </ul>
+
+  <pre>
+    <code>const mqtt = require('mqtt')</code>
+    <code>const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt')</code>
+  </pre>
+
+  <p>Infinity Racer is a browser-based multiplayer racing game that combines Three.js 3D graphics with MQTT networking. Players race across procedurally generated terrain, chat with others, and share audio clips through a spatial audio system. The game features realistic car physics, dynamic lighting, and supports multiple camera angles for an immersive racing experience.</p>
 </section>
       </section>
     
