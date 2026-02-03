@@ -9,7 +9,6 @@ def file_attributes(path: Path):
     return {
         "name": path.name,
         "size": stats.st_size,
-        "modified": stats.st_mtime,
         "extension": path.suffix.lstrip(".")
     }
 
