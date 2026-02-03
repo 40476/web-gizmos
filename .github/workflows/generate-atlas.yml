@@ -1,4 +1,4 @@
-name: Generate Shared Atlases
+name: Generate Atlases
 
 on:
   push:
