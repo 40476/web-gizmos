@@ -2,9 +2,11 @@ name: Generate Atlases
 
 on:
   push:
-    paths:
-      - "shared/**"
+    branches: [ main ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-atlas:
