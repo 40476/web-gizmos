@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>Multiplayer racing game using Three.js for 3D graphics and MQTT for real-time networking</li>
-    <li>Features terrain generation, particle effects, day/night cycle, and audio broadcasting system</li>
-    <li>Players can chat, play shared audio clips, and see each other's positions in real-time</li>
-    <li>Customizable cars with physics-based movement and local multiplayer support</li>
+    <li>Three.js 3D racing game with MQTT multiplayer networking</li>
+    <li>Procedural terrain generation with noise-based height maps</li>
+    <li>Real-time chat, audio soundboard, and vehicle physics</li>
+    <li>IndexedDB for persistent user settings and game state</li>
+    <li>Day/night cycle, particle effects, and multiple camera modes</li>
   </ul>
 
   <pre>
-    <code>const mqtt = require('mqtt')</code>
-    <code>const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt')</code>
+    <code>class TerrainSystem { getHeight(x, z) { return noise * 20 + noise * 5 + noise * 60; } }</code>
+    <code>class Car { updatePhysics(dt, input) { this.speed += throttle * accel * dt; this.rot.y += turnSpeed * dt; } }</code>
   </pre>
 
-  <p>Infinity Racer is a browser-based multiplayer racing game that combines Three.js 3D graphics with MQTT networking. Players race across procedurally generated terrain, chat with others, and share audio clips through a spatial audio system. The game features realistic car physics, dynamic lighting, and supports multiple camera angles for an immersive racing experience.</p>
+  <p>Infinity Racer is a browser-based 3D racing game built with Three.js and MQTT networking. It features procedurally generated terrain, real-time multiplayer racing, and a full audio soundboard system. Players can customize their vehicles, chat with others, and race across dynamically generated landscapes with day/night cycles and physics-based vehicle handling.</p>
 </section>
