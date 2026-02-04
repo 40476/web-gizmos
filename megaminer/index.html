@@ -9,7 +9,10 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         /* CSS Reset & Normalization */
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; touch-action: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+        /* Only disable touch on game specific elements so UI can still scroll */
+        canvas, #mobile-controls, .d-btn, .act-btn { touch-action: none; }
 
         :root {
             --bg-color: #0d0d0d;
@@ -184,7 +187,7 @@
         #prompt-msg { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); color: var(--highlight); font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px #000; display: none; pointer-events: none; text-align: center; }
 
         /* Modals */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 600px; max-height: 85vh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 95%; max-width: 600px; max-height: 90vh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch; }
         .modal.active { display: block; }
         .modal h2 { margin-top: 0; color: var(--highlight); border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -282,12 +285,13 @@
         }
         #start-screen h1 { font-size: 48px; color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight); }
 
-        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; max-width: 800px; max-height: 90vh; overflow-y:auto; }
-        .start-panel { width:300px; }
-        .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; }
+        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; width: 95%; max-width: 800px; max-height: 90vh; overflow-y:auto; -webkit-overflow-scrolling: touch; }
+        .start-panel { width:300px; flex-shrink: 0; }
+        .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; flex-shrink: 0; }
 
         @media (max-width: 700px) {
-            .start-container { flex-direction: column; }
+            .start-container { flex-direction: column; width: 90%; }
+            .start-panel, .server-panel { width: 100%; }
             .server-panel { border-left: none; border-top: 1px solid #444; padding-left: 0; padding-top: 20px; }
         }
 
@@ -1223,7 +1227,7 @@ class GameEngine {
         this.isMobile = enabled;
         localStorage.setItem('mm_mobile_mode', enabled);
 
-        if (enabled) {
+        if (enabled && this.running) {
             document.body.classList.add('mobile-mode');
         } else {
             document.body.classList.remove('mobile-mode');
@@ -1369,6 +1373,7 @@ class GameEngine {
             $('connection-screen').style.display = 'none';
 
             this.running = true;
+            this.toggleMobile($("mobile-toggle").checked)
             this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
             this.localPlayer.gridY = 4;
             this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
@@ -3136,9 +3141,9 @@ class UIManager {
             }
 
             item.innerHTML = `
-                <div style="display:flex; align-items:center; flex:1;">
+                <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
                     <div class="server-status-icon" id="status-${btoa(url).replace(/=/g,'')}"><div class="spin-loader"></div></div>
-                    <span style="white-space:nowrap; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
                 </div>
                 ${buttonsHtml}
             `;
