@@ -21,7 +21,7 @@
             --success: #27ae60;
             --control-height: 180px; /* Reserved space for mobile controls */
         }
-        body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; background: #000; }
+        body { overflow:hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; background: #000; }
 
         /* Canvas resizing handled by JS, but default to full */
         canvas { display: block; width: 100vw; height: 100vh; }
@@ -47,7 +47,7 @@
         /* Portrait: Controls at bottom, Canvas shorter */
         @media (orientation: portrait) {
             body #gear-btn{
-                font-size: 80px;
+
             }
             body.mobile-mode #mobile-controls {
                 position: fixed; bottom: 0; left: 0; width: 100%; height: var(--control-height);
@@ -63,7 +63,7 @@
         /* Landscape: Controls on sides, Canvas narrower in middle */
         @media (orientation: landscape) {
             body #gear-btn{
-                font-size: 80px;
+
             }
             body.mobile-mode #mobile-controls {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -83,7 +83,7 @@
             }
 
             /* Shift Game Canvas to center, avoiding overlap */
-            body.mobile-mode canvas {
+            body.mobile-mode #gameCanvas {
                 position: absolute; top: 0; left: 200px;
                 width: calc(100vw - 400px); /* 200px buffer each side */
                 height: 100vh;
@@ -308,6 +308,38 @@
         /* Admin Panel */
         #admin-panel { position: absolute; top: 165px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; display: none; pointer-events: auto; width: 150px; border: 1px solid #555; }
         .player-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 11px; }
+
+        /* --- FIXES --- */
+
+        /* 1. Mobile Toast Fix: prevent off-screen width causing overflow/glitches */
+        @media (max-width: 600px) {
+            #notification-area {
+                right: 10px;
+                left: 10px;
+                width: auto;
+                top: 60px;
+            }
+        }
+
+        /* 2. Scroll Fix: Re-enable scrolling on containers that need it */
+        .start-container,
+        .modal,
+        #server-list-sidebar,
+        .sell-list,
+        .inv-grid,
+        #chat-messages,
+        #connection-log,
+        #save-list-wrapper,
+        .save-list-wrapper {
+            touch-action: pan-y !important;
+        }
+
+        /* 3. Animation Fix: Use Vertical slide instead of Horizontal to prevent layout thrashing */
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
     </style>
 </head>
 <body>
@@ -2784,6 +2816,13 @@ class InputManager {
     init() {
         window.addEventListener('keydown', e => {
             Sound.init();
+
+            // --- FIX: Ignore game inputs while typing in chat ---
+            if (document.activeElement === $('chat-input')) {
+                if (e.key === 'Escape') $('chat-input').blur(); // Allow ESC to exit chat
+                return; // Stop processing game keys
+            }
+
             if (this.bindMode) {
                 Game.settings.keys[this.bindMode] = e.key;
                 localStorage.setItem('mm_keybinds', JSON.stringify(Game.settings.keys));
@@ -2800,6 +2839,19 @@ class InputManager {
             if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat) e.preventDefault();
         });
         window.addEventListener('keyup', e => this.keys[e.key] = false);
+
+        // --- CHAT FIX: Handle Enter key on the input itself ---
+        $('chat-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.stopPropagation(); // Prevent game from re-focusing or doing other keybinds
+                const msg = e.target.value.trim();
+                if (msg.length > 0) {
+                    Network.sendChat(msg);
+                    e.target.value = '';
+                    e.target.blur(); // Close keyboard / unfocus
+                }
+            }
+        });
 
         // Touch / Mouse Events for Virtual Controls
         const bindTouch = (elem, key) => {
