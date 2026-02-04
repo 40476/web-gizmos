@@ -1,21 +1,16 @@
 <section>
   <ul>
-    <li>Mobile-optimized controls with D-Pad and action buttons for touch devices</li>
-    <li>Real-time multiplayer using MQTT for seamless online mining with friends</li>
-    <li>Dynamic world generation with procedural terrain and resource distribution</li>
-    <li>Upgrade system for drills, hull, fuel capacity, cargo space, and special abilities</li>
-    <li>Shop system for buying/selling ores, purchasing upgrades, and consumables</li>
-    <li>Teleporter network for fast travel between discovered locations</li>
-    <li>Admin controls for server management including player kicking and promotion</li>
-    <li>IndexedDB save system with autosave and import/export functionality</li>
-    <li>Day/night cycle with dynamic lighting and weather effects</li>
-    <li>Minimap showing discovered areas and player positions</li>
+    <li>Mobile-optimized controls with D-pad and action buttons for touchscreens.</li>
+    <li>Real-time multiplayer using MQTT for low-latency synchronization.</li>
+    <li>Procedural map generation with seeded RNG for consistent worlds across clients.</li>
+    <li>Save system using IndexedDB with import/export functionality and autosave.</li>
+    <li>Admin features including player kicking, admin promotion, and map control.</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { update() { /* movement, mining, fuel consumption */ } }</code>
-    <code>class ShopSystem { buy(item) { /* upgrade logic */ } sellAll() { /* ore selling */ } }</code>
+    <code>const uuid = () => { if (typeof crypto !== 'undefined' && crypto.randomUUID) { return crypto.randomUUID(); } return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); };</code>
+    <code>const pseudoRandom = (x, y) => { return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1; };</code>
   </pre>
 
-  <p>This browser-based mining game features real-time multiplayer gameplay with mobile controls, dynamic world generation, and extensive upgrade systems. Players can mine resources, trade with friends, and explore procedurally generated underground environments while managing fuel, hull integrity, and cargo capacity. The game includes admin controls, save systems, and a shop for purchasing upgrades and consumables.</p>
+  <p>Mega Miner Online is a multiplayer mining game with mobile controls, real-time synchronization, and persistent save systems. Players explore procedurally generated worlds, mine resources, and interact through an admin-controlled network using MQTT. The game features a day-night cycle, explosion mechanics, and a shop system for upgrades and items.</p>
 </section>

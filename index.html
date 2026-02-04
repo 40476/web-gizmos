@@ -163,6 +163,8 @@
     
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
     
+      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
+    
       <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
     
       <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
@@ -330,6 +332,27 @@
   </pre>
 
   <p>The Go Go Gadget Pixel Reducer processes images and videos through controlled degradation sequences. For videos, it dynamically reduces resolution while applying audio filtering and bit-depth reduction during playback. Users can export GIF animations from images or degraded WebM videos with custom quality settings.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
+        <h2>megaminer</h2>
+        <section>
+  <ul>
+    <li>Mobile-optimized controls with D-pad and action buttons for touchscreens.</li>
+    <li>Real-time multiplayer using MQTT for low-latency synchronization.</li>
+    <li>Procedural map generation with seeded RNG for consistent worlds across clients.</li>
+    <li>Save system using IndexedDB with import/export functionality and autosave.</li>
+    <li>Admin features including player kicking, admin promotion, and map control.</li>
+  </ul>
+
+  <pre>
+    <code>const uuid = () => { if (typeof crypto !== 'undefined' && crypto.randomUUID) { return crypto.randomUUID(); } return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); };</code>
+    <code>const pseudoRandom = (x, y) => { return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1; };</code>
+  </pre>
+
+  <p>Mega Miner Online is a multiplayer mining game with mobile controls, real-time synchronization, and persistent save systems. Players explore procedurally generated worlds, mine resources, and interact through an admin-controlled network using MQTT. The game features a day-night cycle, explosion mechanics, and a shop system for upgrades and items.</p>
 </section>
       </section>
     
