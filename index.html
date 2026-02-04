@@ -163,8 +163,6 @@
     
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
     
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-    
       <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
     
       <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
@@ -172,6 +170,8 @@
       <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
+    
+      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
     
 
     <button id="themeToggle">Toggle Theme</button>
@@ -335,27 +335,6 @@
 </section>
       </section>
     
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        <section>
-  <ul>
-    <li>Multiplayer mining game with real-time player interaction and persistent world</li>
-    <li>Procedural map generation with ore distribution and environmental hazards</li>
-    <li>Mobile-optimized controls with touch D-pad and action buttons</li>
-    <li>Upgrade system for drills, hull, fuel, cargo, and special abilities</li>
-    <li>Admin system with host election, player management, and world control</li>
-  </ul>
-
-  <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
-    <code>class NetworkManager { connect() { this.client = mqtt.connect(broker, options); } }</code>
-  </pre>
-
-  <p>Mega Miner Online is a multiplayer mining adventure featuring real-time player interaction, procedural world generation, and mobile-optimized controls. Players explore underground caverns, mine valuable resources, upgrade their equipment, and compete for leaderboard positions while managing fuel, hull integrity, and heat resistance. The game includes an admin system for host management, persistent world saves, and a comprehensive upgrade shop for enhancing mining capabilities.</p>
-</section>
-      </section>
-    
       <section class="app-section" data-name="animeboydownloader">
         <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
         <h2>animeboydownloader</h2>
@@ -429,6 +408,27 @@
   </pre>
 
   <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
+        <h2>megaminer</h2>
+        <section>
+  <ul>
+    <li>Mobile-optimized controls with D-pad and action buttons for portrait and landscape modes</li>
+    <li>Real-time multiplayer using MQTT protocol with host election and map synchronization</li>
+    <li>Procedural world generation with dynamic daylight cycle, sky color transitions, and celestial bodies</li>
+    <li>Upgrades system including drill tiers, hull capacity, fuel capacity, cargo space, heat resistance, and X-ray vision</li>
+    <li>Teleporter network for fast travel and explosive mechanics (TNT, Nuke) for large-scale mining</li>
+  </ul>
+
+  <pre>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, DEEP_SLATE: 5,</code>
+    <code>COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99 };</code>
+  </pre>
+
+  <p>MMO mining game featuring real-time multiplayer, procedural world generation, and mobile controls. Players explore an infinite underground world, mine resources, upgrade their equipment, and interact with others through chat and trading systems. The game includes a dynamic day/night cycle, weather effects, and a shop system for purchasing upgrades and items.</p>
 </section>
       </section>
     
