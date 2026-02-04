@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Mobile-optimized controls with D-pad and action buttons for touch devices.</li>
-    <li>Procedurally generated world with mining, building, and multiplayer support.</li>
-    <li>Real-time multiplayer via MQTT broker with chat, transfer, and admin features.</li>
-    <li>Persistent save system using IndexedDB with import/export functionality.</li>
-    <li>Shop system for upgrades, consumables, and vehicle customization.</li>
+    <li>Multiplayer mining game with real-time MQTT networking and procedurally generated underground maps.</li>
+    <li>Mobile-optimized controls with D-pad and action buttons for touchscreen devices.</li>
+    <li>Upgrade system including drills, hull, fuel capacity, cargo, heat resistance, and special items like teleporters.</li>
+    <li>Dynamic lighting system with day/night cycle and heat mechanics that affect mining depth.</li>
+    <li>Save/load system using IndexedDB with autosave, import/export, and admin-only save management.</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = new GameEngine();</code>
-    <code>const Network = new NetworkManager();</code>
+    <code>const GameEngine = class { constructor() { this.localPlayer = { id: uuid(), gridX: 500, gridY: 4, ... }; this.map = []; this.remotePlayers = {}; } };</code>
+    <code>const NetworkManager = class { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } connect() { this.client = mqtt.connect(broker, options); } };</code>
   </pre>
 
-  <p>This is a multiplayer mining game with mobile controls, real-time networking, and persistent saves. Players can mine resources, build structures, trade with others, and upgrade their equipment. The game features a procedurally generated world, day/night cycles, and admin tools for server management.</p>
+  <p>This HTML document implements a browser-based multiplayer mining game featuring real-time MQTT networking, procedural terrain generation, and comprehensive upgrade systems. The game supports both desktop and mobile controls, includes a dynamic day/night cycle, heat mechanics, and a robust save system with IndexedDB storage. Players can mine various resources, upgrade their equipment, build structures, and interact with other players in a persistent underground world.</p>
 </section>
