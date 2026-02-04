@@ -3458,13 +3458,16 @@ class UIManager {
 
         // Stats update
         $('stats-container').innerHTML = `
-            <div class="stat-row"><span>Mined:</span><span>${p.stats.totalMined}</span></div>
-            <div class="stat-row"><span>Depth:</span><span>${Math.floor(Math.max(0, p.gridY-5))}m</span></div>
+            <div class="stat-row"><span>Current Total Mined:</span><span>${p.stats.totalMined}</span></div>
+            <div class="stat-row"><span>Current Depth:</span><span>${Math.floor(Math.max(0, p.gridY-4))}m</span></div>
+            <div class="stat-row"><span>Current Cargo:</span><span>${p.cargo}</span></div>
+            <div class="stat-row"><span>Current health:</span><span>${p.hull}</span></div>
+            <div class="stat-row"><span>Current Money:</span><span>\$${p.money}</span></div>
         `;
         // Leaderboard
         let players = Object.values(Game.remotePlayers).concat(p);
-        players.sort((a,b)=>(b.gridY||0)-(a.gridY||0));
-        $('leaderboard-container').innerHTML = players.map((pl, i)=>`<div class="stat-row"><span>${i+1}.${pl.username}</span><span>${pl.gridY||0}m</span></div>`).join('');
+        players.sort((a,b)=>(b.stats.totalMined||0)-(a.stats.totalMinedY||0));
+        $('leaderboard-container').innerHTML = players.map((pl, i)=>`<div class="stat-row"><span>${i+1}. ${pl.username}</span><span>${pl.stats.totalMined||0} blocks</span></div>`).join('');
         $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 3) ? 'block' : 'none';
     }
 
