@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>Real-time multiplayer mining game with procedural world generation</li>
-    <li>Mobile-optimized controls with D-pad and action buttons</li>
-    <li>Dynamic day/night cycle with sun, moon, and starfield rendering</li <li>Upgrade system for drills, cargo, fuel, and hull capacity</li>
-    <li>Teleporter network for fast travel and multiplayer interaction</li>
+    <li>Multiplayer mining game with real-time player interaction and persistent world</li>
+    <li>Procedural map generation with ore distribution and environmental hazards</li>
+    <li>Mobile-optimized controls with touch D-pad and action buttons</li>
+    <li>Upgrade system for drills, hull, fuel, cargo, and special abilities</li>
+    <li>Admin system with host election, player management, and world control</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, BEDROCK: 99 };</code>
-    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, SPEED_NORMAL: 1.75, FUEL_CONSUMPTION: 0.125 };</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>class NetworkManager { connect() { this.client = mqtt.connect(broker, options); } }</code>
   </pre>
 
-  <p>Mega Miner Online is a browser-based multiplayer mining game featuring procedurally generated worlds, real-time player interaction, and extensive upgrade systems. Players dig through layers of earth to discover valuable resources while managing fuel, cargo space, and vehicle durability. The game includes a comprehensive shop system, teleporter network, and mobile-optimized controls for seamless gameplay across devices.</p>
+  <p>Mega Miner Online is a multiplayer mining adventure featuring real-time player interaction, procedural world generation, and mobile-optimized controls. Players explore underground caverns, mine valuable resources, upgrade their equipment, and compete for leaderboard positions while managing fuel, hull integrity, and heat resistance. The game includes an admin system for host management, persistent world saves, and a comprehensive upgrade shop for enhancing mining capabilities.</p>
 </section>
