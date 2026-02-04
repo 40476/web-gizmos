@@ -813,7 +813,7 @@ class ModalSystem {
 
         this.btnOk.onclick = () => this.close(true);
         this.btnCancel.onclick = () => this.close(false);
-        
+
         // Allow Enter key to confirm in input mode
         this.input.onkeydown = (e) => { if(e.key === 'Enter') this.close(true); };
     }
@@ -824,7 +824,7 @@ class ModalSystem {
             this.title.innerText = title;
             this.text.innerText = msg;
             this.input.value = defaultVal;
-            
+
             // Reset visibility
             this.input.style.display = 'none';
             this.btnCancel.style.display = 'none';
@@ -2251,20 +2251,33 @@ class GameEngine {
             } else if (type === TILE_TYPES.CASING) {
                 this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
                 this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
-                this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
-                return;
+                this.ctx.beginPath();
+                this.ctx.moveTo(px, py);
+                this.ctx.lineTo(px+ts, py+ts);
+                this.ctx.moveTo(px+ts, py);
+                this.ctx.lineTo(px, py+ts);
+                this.ctx.stroke();
             }else if(type === TILE_TYPES.TNT) {
                 this.ctx.fillStyle = "#c0392b"; this.ctx.fillRect(px,py,ts,ts);
-                this.ctx.fillStyle = "white"; this.ctx.font="10px Arial"; this.ctx.textAlign="center"; this.ctx.fillText("TNT", px+16, py+20);
-                return;
+                this.ctx.fillStyle = "white";
+                this.ctx.font="10px Arial";
+                this.ctx.textAlign="center";
+                this.ctx.fillText("TNT", px+16, py+20);
             }else if(type === TILE_TYPES.NUKE) {
-                this.ctx.fillStyle = "#2c3e50"; this.ctx.fillRect(px,py,ts,ts);
-                this.ctx.fillStyle = "#f1c40f"; this.ctx.beginPath(); this.ctx.arc(px+16,py+16,8,0,Math.PI*2); this.ctx.fill();
-                return;
+                this.ctx.fillStyle = "#2c3e50";
+                this.ctx.fillRect(px,py,ts,ts);
+                this.ctx.fillStyle = "#f1c40f";
+                this.ctx.beginPath();
+                this.ctx.arc(px+16,py+16,8,0,Math.PI*2);
+                this.ctx.fill();
             }else if(type === TILE_TYPES.TELEPORTER) {
-                this.ctx.fillStyle = "#8e44ad"; this.ctx.fillRect(px,py,ts,ts);
-                this.ctx.strokeStyle = "#fff"; this.ctx.lineWidth=2; this.ctx.beginPath(); this.ctx.arc(px+16,py+16,10,0,Math.PI*2); this.ctx.stroke();
-                return;
+                this.ctx.fillStyle = "#8e44ad";
+                this.ctx.fillRect(px,py,ts,ts);
+                this.ctx.strokeStyle = "#fff";
+                this.ctx.lineWidth=2;
+                this.ctx.beginPath();
+                this.ctx.arc(px+16,py+16,10,0,Math.PI*2);
+                this.ctx.stroke();
             }
         }
 
@@ -2893,10 +2906,10 @@ class NetworkManager {
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
         else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#f55"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
-            if (msg.target === Game.localPlayer.id) { 
+            if (msg.target === Game.localPlayer.id) {
                 // --- MODAL REPLACEMENT ---
                 await CustomModal.show('alert', "Kicked", UI.formatMsg('You', 'kick'));
-                location.reload(); 
+                location.reload();
             }
             else {
                 if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "red");
@@ -2935,6 +2948,8 @@ class InputManager {
             if (document.activeElement === $('chat-input')) {
                 if (e.key === 'Escape') $('chat-input').blur(); // Allow ESC to exit chat
                 return; // Stop processing game keys
+            } else if (document.activeElement === $('c-modal-input')) {
+                return;
             }
 
             if (this.bindMode) {
@@ -3144,7 +3159,7 @@ class UIManager {
     async editCustomServer(oldUrl) {
         // --- MODAL REPLACEMENT ---
         const newUrl = await CustomModal.show('prompt', "Edit Server", "Enter new Server URL:", oldUrl);
-        
+
         if(newUrl && newUrl !== oldUrl) {
             if(newUrl.startsWith('ws://') || newUrl.startsWith('wss://')) {
                 const idx = this.customServers.indexOf(oldUrl);
@@ -3196,7 +3211,7 @@ class UIManager {
         // --- MODAL REPLACEMENT ---
         // Handles both calls (there was a duplicate in original code, this fixes it)
         const confirm = await CustomModal.show('confirm', "Remove Server", `Remove custom server: ${url}?`);
-        
+
         if (confirm) {
             const index = this.customServers.indexOf(url);
             if (index > -1) {
@@ -3628,7 +3643,7 @@ class SaveSystem {
         // --- MODAL REPLACEMENT ---
         const confirm = await CustomModal.show('confirm', "Delete Save", "Delete this save forever?");
         if(!confirm) return;
-        
+
         await this.initDB();
         try {
             const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
