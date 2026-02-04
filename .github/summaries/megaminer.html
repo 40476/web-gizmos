@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Multiplayer mining game with real-time MQTT networking and procedurally generated underground maps.</li>
-    <li>Mobile-optimized controls with D-pad and action buttons for touchscreen devices.</li>
-    <li>Upgrade system including drills, hull, fuel capacity, cargo, heat resistance, and special items like teleporters.</li>
-    <li>Dynamic lighting system with day/night cycle and heat mechanics that affect mining depth.</li>
-    <li>Save/load system using IndexedDB with autosave, import/export, and admin-only save management.</li>
+    <li>Implements a full multiplayer mining game with real-time networking via MQTT.</li>
+    <li>Features mobile-optimized touch controls with landscape/portrait layouts.</li>
+    <li>Includes persistent save/load system using IndexedDB and file import/export.</li>
+    <li>Adds admin/host election system for managing game state and map syncing.</li>
+    <li>Supports advanced features like teleporters, explosions (TNT/Nuke), and a shop system.</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = class { constructor() { this.localPlayer = { id: uuid(), gridX: 500, gridY: 4, ... }; this.map = []; this.remotePlayers = {}; } };</code>
-    <code>const NetworkManager = class { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } connect() { this.client = mqtt.connect(broker, options); } };</code>
+    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, ... }; } }</code>
+    <code>class NetworkManager { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } connect() { this.client = mqtt.connect(broker, options); } }</code>
   </pre>
 
-  <p>This HTML document implements a browser-based multiplayer mining game featuring real-time MQTT networking, procedural terrain generation, and comprehensive upgrade systems. The game supports both desktop and mobile controls, includes a dynamic day/night cycle, heat mechanics, and a robust save system with IndexedDB storage. Players can mine various resources, upgrade their equipment, build structures, and interact with other players in a persistent underground world.</p>
+  <p>This web application delivers a complete multiplayer mining experience with procedurally generated maps, real-time synchronization, and extensive customization. The game supports both desktop and mobile play, features a robust admin system for managing multiplayer sessions, and includes persistent storage for player progress and world states. Advanced mechanics like teleporters, explosives, and a shop system create engaging gameplay depth.</p>
 </section>
