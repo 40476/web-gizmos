@@ -62,7 +62,6 @@
         }
 
         /* Landscape: Controls on sides, Canvas narrower in middle */
-        /* Landscape: Controls on sides, Canvas narrower in middle */
         @media (orientation: landscape) {
             body #gear-btn{
 
@@ -71,7 +70,7 @@
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background: transparent; pointer-events: none;
                 display: flex; justify-content: space-between; align-items: flex-end;
-                padding: 20px;
+                padding: 5px;
             }
 
             body.mobile-mode .d-pad, body.mobile-mode .action-pad {
@@ -80,7 +79,7 @@
                 border: 1px solid #444;
                 border-radius: 16px;
                 padding: 15px;
-                margin-bottom: 20px;
+                margin-bottom: 5px;
                 backdrop-filter: blur(4px);
             }
 
@@ -312,7 +311,7 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         /* Admin Panel */
-        #admin-panel { position: absolute; top: 165px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; display: none; pointer-events: auto; width: 150px; border: 1px solid #555; }
+        #admin-panel { position: absolute; top: 165px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; pointer-events: auto; width: 150px; border: 1px solid #555; }
         .player-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 11px; }
 
         /* --- CUSTOM MODAL --- */
@@ -353,6 +352,55 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
+        /* --- MOBILE CHAT MODIFICATIONS --- */
+        body.mobile-mode #chat-container {
+            transition: height 0.3s, opacity 0.3s, border-color 0.3s;
+            cursor: pointer;
+        }
+
+        /* Minimized State */
+        body.mobile-mode #chat-container.minimized {
+            height: 35px !important;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hide internals when minimized */
+        body.mobile-mode #chat-container.minimized #chat-messages,
+        body.mobile-mode #chat-container.minimized #chat-input,
+        body.mobile-mode #chat-container.minimized #chat-close-btn {
+            display: none !important;
+        }
+
+        /* Label for minimized state */
+        body.mobile-mode #chat-container.minimized::after {
+            content: "CHAT (Click to Open)";
+            color: #aaa;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* Unread State (Red Pulse) */
+        body.mobile-mode #chat-container.minimized.unread {
+            border: 1px solid #e74c3c;
+            background: rgba(231, 76, 60, 0.3);
+            animation: pulse-red 1.5s infinite;
+        }
+        body.mobile-mode #chat-container.minimized.unread::after {
+            content: "NEW MESSAGE !";
+            color: #fff;
+        }
+
+        /* Show Close button only in mobile mode when open */
+        body.mobile-mode #chat-container #chat-close-btn {
+            display: block;
+        }
+
     </style>
 </head>
 <body>
@@ -367,10 +415,11 @@
             <div class="d-btn d-down" data-key="down">&#8595;</div>
         </div>
         <div class="action-pad">
-            <div class="act-btn" data-key="build" style="background:var(--highlight); color:black;"><i>B</i>BUILD</div>
-            <div class="act-btn" data-key="interact" style="background:var(--success);"><i>E</i>MENU</div>
-            <div class="act-btn" data-key="chat" style="background:#555;"><i>&#9166;</i>CHAT</div>
-            <div class="act-btn" data-key="transfer" style="background:#8e44ad;"><i>F</i>GIVE</div>
+            <div class="act-btn" data-key="build" style="background:var(--highlight); color:black;"><i>&#9874;</i>BUILD</div>
+            <div class="act-btn" data-key="interact" style="background:var(--success);"><i>&#128736;</i>ACT</div>
+            <div class="act-btn" data-key="chat" style="background:#555;"><i>&#128489;</i>CHAT</div>
+            <div class="act-btn" data-key="transfer" style="background:#8e44ad;"><i>&#127873;</i>GIVE</div>
+            <div class="act-btn" data-key="adminToggle" style="background:#ff0000;"><i>&#128737;</i>ADMIN</div>
         </div>
     </div>
 
@@ -399,7 +448,8 @@
         </div>
 
         <!-- Chat -->
-        <div id="chat-container">
+        <div id="chat-container" onclick="UI.openChat()">
+            <button id="chat-close-btn" onclick="event.stopPropagation(); UI.closeChat()" style="display:none; position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; border:none; background:#c0392b; color:white; font-weight:bold; cursor:pointer; z-index:100; font-size:10px;">X</button>
             <div id="chat-messages"></div>
             <input type="text" id="chat-input" placeholder="Press CHAT key to type...">
         </div>
@@ -1228,8 +1278,11 @@ class GameEngine {
 
         if (enabled && this.running) {
             document.body.classList.add('mobile-mode');
+            // Auto-minimize chat when entering mobile mode
+            $('chat-container').classList.add('minimized');
         } else {
             document.body.classList.remove('mobile-mode');
+            $('chat-container').classList.remove('minimized');
         }
         this.resize();
     }
@@ -1625,8 +1678,13 @@ class GameEngine {
 
         // Mobile Action consumption
         if (Input.virtual.chat && now() - this.lastActionTime > 200) {
+            $('chat-container').classList.toggle('minimized');
             $('chat-input').focus();
             Input.virtual.chat = false;
+        }
+        if (Input.virtual.adminToggle && now() - this.lastActionTime > 200) {
+            UI.toggleAdminPanel();
+            Input.virtual.adminToggle=false;
         }
 
         p.fuel = clamp(p.fuel, 0, p.maxFuel); p.hull = clamp(p.hull, 0, p.maxHull);
@@ -2940,7 +2998,7 @@ class NetworkManager {
 class InputManager {
     constructor() {
         this.keys = {};
-        this.virtual = { up: false, down: false, left: false, right: false, build: false, interact: false, chat: false, transfer: false };
+        this.virtual = { up: false, down: false, left: false, right: false, build: false, interact: false, chat: false, transfer: false, adminToggle:false };
         this.bindMode = null;
     }
 
@@ -3072,7 +3130,55 @@ class UIManager {
         div.innerHTML = `<span style="color:${color}; font-weight:bold;">${name}:</span> ${text}`;
         $('chat-messages').appendChild(div);
         $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+
+        // Mobile Unread Logic
+        if(document.body.classList.contains('mobile-mode')) {
+            const chat = $('chat-container');
+            if(chat.classList.contains('minimized')) {
+                chat.classList.add('unread');
+                Sound.playChat('msg'); // Ensure sound plays so they know
+            }
+        }
     }
+
+    // --- CHAT & ADMIN TOGGLES ---
+    openChat() {
+        if(document.body.classList.contains('mobile-mode')) {
+            const chat = $('chat-container');
+            chat.classList.remove('minimized');
+            chat.classList.remove('unread');
+
+            // Optional: Focus input automatically
+            setTimeout(() => $('chat-input').focus(), 100);
+        }
+    }
+
+    closeChat() {
+        if(document.body.classList.contains('mobile-mode')) {
+            $('chat-container').classList.add('minimized');
+            $('chat-input').blur();
+        }
+    }
+
+    toggleAdminPanel() {
+        const panel = $('admin-panel');
+
+        // If currently hidden, try to show it
+        if (panel.hidden) {
+            if (Game.isAdmin) {
+                panel.hidden = false;
+                this.updateAdminPanel();
+            } else {
+                panel.hidden = true;
+                this.showToast("You are not Admin", "error");
+            }
+        } else {
+            // Hide it
+            panel.hidden = true;
+        }
+    }
+
+
     showToast(msg, type='normal',timeout=4000) {
         const area = $('notification-area');
         const el = document.createElement('div');
@@ -3364,10 +3470,10 @@ class UIManager {
 
     updatePlayerList() {
         if (!Game.isAdmin) {
-            $('admin-panel').style.display = 'none';
+            $('admin-panel').hidden = true;
             return;
         }
-        $('admin-panel').style.display = 'block';
+        $('admin-panel').hidden = false;
         const list = $('player-list');
         list.innerHTML = '';
         Object.values(Game.remotePlayers).forEach(p => {
