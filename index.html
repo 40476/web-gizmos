@@ -340,19 +340,24 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>Implements a full multiplayer mining game with real-time networking via MQTT.</li>
-    <li>Features mobile-optimized touch controls with landscape/portrait layouts.</li>
-    <li>Includes persistent save/load system using IndexedDB and file import/export.</li>
-    <li>Adds admin/host election system for managing game state and map syncing.</li>
-    <li>Supports advanced features like teleporters, explosions (TNT/Nuke), and a shop system.</li>
+    <li>Mobile-optimized controls with D-Pad and action buttons for touch devices</li>
+    <li>Real-time multiplayer using MQTT for seamless online mining with friends</li>
+    <li>Dynamic world generation with procedural terrain and resource distribution</li>
+    <li>Upgrade system for drills, hull, fuel capacity, cargo space, and special abilities</li>
+    <li>Shop system for buying/selling ores, purchasing upgrades, and consumables</li>
+    <li>Teleporter network for fast travel between discovered locations</li>
+    <li>Admin controls for server management including player kicking and promotion</li>
+    <li>IndexedDB save system with autosave and import/export functionality</li>
+    <li>Day/night cycle with dynamic lighting and weather effects</li>
+    <li>Minimap showing discovered areas and player positions</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, ... }; } }</code>
-    <code>class NetworkManager { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } connect() { this.client = mqtt.connect(broker, options); } }</code>
+    <code>class GameEngine { update() { /* movement, mining, fuel consumption */ } }</code>
+    <code>class ShopSystem { buy(item) { /* upgrade logic */ } sellAll() { /* ore selling */ } }</code>
   </pre>
 
-  <p>This web application delivers a complete multiplayer mining experience with procedurally generated maps, real-time synchronization, and extensive customization. The game supports both desktop and mobile play, features a robust admin system for managing multiplayer sessions, and includes persistent storage for player progress and world states. Advanced mechanics like teleporters, explosives, and a shop system create engaging gameplay depth.</p>
+  <p>This browser-based mining game features real-time multiplayer gameplay with mobile controls, dynamic world generation, and extensive upgrade systems. Players can mine resources, trade with friends, and explore procedurally generated underground environments while managing fuel, hull integrity, and cargo capacity. The game includes admin controls, save systems, and a shop for purchasing upgrades and consumables.</p>
 </section>
       </section>
     
