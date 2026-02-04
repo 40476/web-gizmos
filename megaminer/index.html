@@ -261,6 +261,9 @@
         .save-slot-actions { display:flex; gap: 5px; }
         .save-slot-actions button { margin: 0; padding: 4px 8px; font-size: 10px; }
 
+        /* Warp List */
+        .warp-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+
         /* Start Screen */
         #start-screen { position: absolute;
           background-image:
@@ -1007,7 +1010,8 @@ class GameEngine {
             inventory: {},
             selectedBlock: TILE_TYPES.CASING,
             stats: { blocksMined: {}, totalMined: 0, startTime: now() },
-            joinedAt: now()
+            joinedAt: now(),
+            teleporters: [] // Discovered teleporters list
         };
 
         this.map = [];
@@ -1041,7 +1045,8 @@ class GameEngine {
             maxCargo: this.localPlayer.maxCargo,
             heatResist: this.localPlayer.heatResist,
             xrayRange: this.localPlayer.xrayRange,
-            vehColor: this.settings.color
+            vehColor: this.settings.color,
+            teleporters: this.localPlayer.teleporters || []
         };
         localStorage.setItem(`mm_stats_${this.settings.room}`, JSON.stringify(data));
     }
@@ -1059,6 +1064,7 @@ class GameEngine {
                 if (data.maxCargo) p.maxCargo = data.maxCargo;
                 if (data.heatResist) p.heatResist = data.heatResist;
                 if (data.xrayRange) p.xrayRange = data.xrayRange;
+                if (data.teleporters) p.teleporters = data.teleporters;
                 if (data.vehColor) {
                     this.settings.color = data.vehColor;
                     $('start-color').value = data.vehColor;
@@ -1068,7 +1074,6 @@ class GameEngine {
         } catch(e) { console.error("Failed to load stats", e); }
     }
 
-    // --- NEW: Stable Admin Logic ---
     checkHostHealth() {
         const nowTime = Date.now();
 
@@ -1079,8 +1084,8 @@ class GameEngine {
             return;
         }
 
-        // If no host heard for 5 seconds, trigger election
-        if (nowTime - this.lastHostHeartbeat > 5000) {
+        // If no host heard for 10 seconds, trigger election
+        if (nowTime - this.lastHostHeartbeat > 10000) {
             this.electNewHost();
         }
     }
@@ -1494,7 +1499,7 @@ class GameEngine {
         // Check Teleporter interaction
         if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
              $('prompt-msg').style.display = 'block';
-             $('prompt-msg').innerText = "PRESS E TO TELEPORT HOME";
+             $('prompt-msg').innerText = "PRESS E TO WARP";
         }
 
         if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 3) {
@@ -1506,11 +1511,7 @@ class GameEngine {
         if (interactPressed && now() - this.lastActionTime > 500) {
             // Priority: Teleporter -> Station -> Dashboard
             if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
-                p.gridX = this.stationGridX; p.gridY = this.stationGridY;
-                p.x = p.gridX * TS; p.y = p.gridY * TS;
-                UI.showToast("Teleported to Surface", "success");
-                Sound.playSuccess();
-                Network.broadcastMove();
+                UI.openWarpMenu();
             } else {
                 UI.toggleDashboard();
             }
@@ -3286,6 +3287,70 @@ class UIManager {
         });
     }
     updateAdminPanel() { this.updatePlayerList(); }
+
+    // --- NEW: Warp System Implementation ---
+    openWarpMenu() {
+        $('warp-modal').classList.add('active');
+        const list = $('warp-list');
+        list.innerHTML = '';
+
+        // Option 1: Always available - Surface
+        const surfaceBtn = document.createElement('button');
+        surfaceBtn.className = 'btn';
+        surfaceBtn.style.background = 'var(--success)';
+        surfaceBtn.innerHTML = `<strong>Surface Station</strong> <span style="float:right; font-size:10px; opacity:0.8;">0m</span>`;
+        surfaceBtn.onclick = () => this.warpTo(Game.stationGridX, Game.stationGridY);
+        list.appendChild(surfaceBtn);
+
+        // Option 2: Discovered Relays
+        const p = Game.localPlayer;
+        if(p.teleporters && p.teleporters.length > 0) {
+            // Sort by depth
+            p.teleporters.sort((a,b) => a.y - b.y).forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.style.background = '#8e44ad';
+                btn.innerHTML = `<strong>${t.name}</strong> <span style="float:right; font-size:10px; opacity:0.8;">${t.y}m</span>`;
+                btn.onclick = () => this.warpTo(t.x, t.y);
+                list.appendChild(btn);
+            });
+        } else {
+            const msg = document.createElement('div');
+            msg.style.padding = '15px';
+            msg.style.color = '#777';
+            msg.style.textAlign = 'center';
+            msg.style.fontSize = '12px';
+            msg.style.fontStyle = 'italic';
+            msg.innerText = "No other relays discovered yet. Build Teleporters to expand your network.";
+            list.appendChild(msg);
+        }
+    }
+
+    warpTo(gx, gy) {
+        const p = Game.localPlayer;
+
+        // Visual effects before moving
+        Game.spawnParticle(p.x + 16, p.y + 16, '#9b59b6', 15);
+
+        // Move
+        p.gridX = gx;
+        p.gridY = gy;
+        p.x = gx * CONSTANTS.TILE_SIZE;
+        p.y = gy * CONSTANTS.TILE_SIZE;
+
+        // Sync
+        Network.broadcastMove();
+        $('warp-modal').classList.remove('active');
+
+        // Success Feedback
+        UI.showToast("Warp Successful", "success");
+        Sound.playSuccess();
+
+        // Visual effects after arrival
+        setTimeout(() => {
+            Game.spawnParticle(p.x + 16, p.y + 16, '#fff', 20);
+        }, 50);
+    }
 }
 
 class AdminSystem {
@@ -3762,4 +3827,3 @@ document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
 </script>
 </body>
 </html>
-
