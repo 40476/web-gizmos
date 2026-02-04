@@ -312,6 +312,13 @@
         #admin-panel { position: absolute; top: 165px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; display: none; pointer-events: auto; width: 150px; border: 1px solid #555; }
         .player-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 11px; }
 
+        /* --- CUSTOM MODAL --- */
+        #c-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .c-modal-box { background: rgba(20, 25, 40, 0.98); border: 1px solid var(--accent); padding: 20px; width: 90%; max-width: 400px; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); text-align: center; animation: slideIn 0.2s ease; }
+        .c-modal-box h3 { color: var(--highlight); margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px; }
+        .c-modal-box p { color: #ddd; font-size: 14px; margin-bottom: 15px; line-height: 1.4; }
+        .c-modal-btns { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+
         /* --- FIXES --- */
 
         /* 1. Mobile Toast Fix: prevent off-screen width causing overflow/glitches */
@@ -665,6 +672,20 @@
 
     <!-- Notification Area -->
     <div id="notification-area"></div>
+
+    <!-- Custom Modal Structure -->
+    <div id="c-modal-overlay">
+        <div class="c-modal-box">
+            <h3 id="c-modal-title">TITLE</h3>
+            <p id="c-modal-text">Message goes here...</p>
+            <input type="text" id="c-modal-input" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:#fff; display:none; margin-bottom:5px;">
+            <div class="c-modal-btns">
+                <button id="c-modal-cancel" class="btn btn-danger" style="width:auto; min-width:80px; display:none;">Cancel</button>
+                <button id="c-modal-ok" class="btn" style="width:auto; min-width:80px;">OK</button>
+            </div>
+        </div>
+    </div>
+
 <script>
 const $ = id => document.getElementById(id);
 
@@ -778,6 +799,65 @@ const MSGS = {
     ],
     rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
 };
+
+// --- CUSTOM MODAL SYSTEM ---
+class ModalSystem {
+    constructor() {
+        this.overlay = $('c-modal-overlay');
+        this.title = $('c-modal-title');
+        this.text = $('c-modal-text');
+        this.input = $('c-modal-input');
+        this.btnOk = $('c-modal-ok');
+        this.btnCancel = $('c-modal-cancel');
+        this.resolve = null;
+
+        this.btnOk.onclick = () => this.close(true);
+        this.btnCancel.onclick = () => this.close(false);
+        
+        // Allow Enter key to confirm in input mode
+        this.input.onkeydown = (e) => { if(e.key === 'Enter') this.close(true); };
+    }
+
+    show(type, title, msg, defaultVal = '') {
+        return new Promise(resolve => {
+            this.resolve = resolve;
+            this.title.innerText = title;
+            this.text.innerText = msg;
+            this.input.value = defaultVal;
+            
+            // Reset visibility
+            this.input.style.display = 'none';
+            this.btnCancel.style.display = 'none';
+            this.btnOk.innerText = "OK";
+            this.btnOk.style.width = "auto";
+
+            if (type === 'prompt') {
+                this.input.style.display = 'block';
+                this.btnCancel.style.display = 'block';
+                setTimeout(() => this.input.focus(), 50);
+            } else if (type === 'confirm') {
+                this.btnCancel.style.display = 'block';
+                this.btnOk.innerText = "Yes";
+                this.btnCancel.innerText = "No";
+            }
+
+            this.overlay.style.display = 'flex';
+        });
+    }
+
+    close(result) {
+        this.overlay.style.display = 'none';
+        if (this.resolve) {
+            if (this.input.style.display === 'block') {
+                this.resolve(result ? this.input.value : null);
+            } else {
+                this.resolve(result);
+            }
+            this.resolve = null;
+        }
+    }
+}
+const CustomModal = new ModalSystem();
 
 let initialTimestamp = null;
 
@@ -1576,8 +1656,7 @@ class GameEngine {
             Sound.playError();
         }
     }
-
-    tryBuild(tx, ty) {
+    async tryBuild(tx, ty) {
         if (tx < 0 || tx >= CONSTANTS.MAP_WIDTH || ty < 4 || ty >= CONSTANTS.MAP_HEIGHT) return;
         if (this.map[ty][tx] === TILE_TYPES.EMPTY) {
             const type = this.localPlayer.selectedBlock;
@@ -1586,7 +1665,8 @@ class GameEngine {
             if (count > 0) {
                 // If placing a Teleporter, name it!
                 if(type === TILE_TYPES.TELEPORTER) {
-                    const name = prompt("Name this Teleporter:", `Relay ${tx}-${ty}`);
+                    // --- MODAL REPLACEMENT ---
+                    const name = await CustomModal.show('prompt', "Teleporter Setup", "Name this Teleporter:", `Relay ${tx}-${ty}`);
                     if(!name) return; // Cancel build if canceled
 
                     this.localPlayer.teleporters.push({
@@ -2672,7 +2752,7 @@ class NetworkManager {
 
     publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
 
-    handleMessage(topic, message) {
+    async handleMessage(topic, message) {
         let msg;
         try { msg = JSON.parse(message.toString()); } catch(e) { return; }
         if (msg.id === Game.localPlayer.id && msg.type !== 'kick') return;
@@ -2813,7 +2893,11 @@ class NetworkManager {
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
         else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#f55"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
-            if (msg.target === Game.localPlayer.id) { alert(UI.formatMsg('You', 'kick')); location.reload(); }
+            if (msg.target === Game.localPlayer.id) { 
+                // --- MODAL REPLACEMENT ---
+                await CustomModal.show('alert', "Kicked", UI.formatMsg('You', 'kick'));
+                location.reload(); 
+            }
             else {
                 if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "red");
                 delete Game.remotePlayers[msg.target];
@@ -3057,22 +3141,10 @@ class UIManager {
         });
     }
 
-    removeCustomServer(url) {
-        if(!confirm(`Remove custom server?\n${url}`)) return;
-        this.customServers = this.customServers.filter(s => s !== url);
-        localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
-
-        // If the removed server was the active one, switch to default
-        if(Game.settings.broker === url) {
-            this.selectServer(this.defaultServers[0]);
-        } else {
-            this.refreshServerList();
-        }
-        this.showToast("Server Removed", "normal");
-    }
-
-    editCustomServer(oldUrl) {
-        const newUrl = prompt("Edit Server URL:", oldUrl);
+    async editCustomServer(oldUrl) {
+        // --- MODAL REPLACEMENT ---
+        const newUrl = await CustomModal.show('prompt', "Edit Server", "Enter new Server URL:", oldUrl);
+        
         if(newUrl && newUrl !== oldUrl) {
             if(newUrl.startsWith('ws://') || newUrl.startsWith('wss://')) {
                 const idx = this.customServers.indexOf(oldUrl);
@@ -3120,10 +3192,14 @@ class UIManager {
         }
     }
 
-    removeCustomServer(url) {
-        const index = this.customServers.indexOf(url);
-        if (index > -1) {
-            if (confirm(`Remove custom server: ${url}?`)) {
+    async removeCustomServer(url) {
+        // --- MODAL REPLACEMENT ---
+        // Handles both calls (there was a duplicate in original code, this fixes it)
+        const confirm = await CustomModal.show('confirm', "Remove Server", `Remove custom server: ${url}?`);
+        
+        if (confirm) {
+            const index = this.customServers.indexOf(url);
+            if (index > -1) {
                 this.customServers.splice(index, 1);
                 localStorage.setItem('mm_custom_servers', JSON.stringify(this.customServers));
 
@@ -3357,8 +3433,10 @@ class UIManager {
 
 class AdminSystem {
     kick(id) { Network.kickUser(id); delete Game.remotePlayers[id]; UI.updatePlayerList(); }
-    promote(id) {
-        if(confirm("Pass Admin privileges to this user? You will lose Admin status.")) {
+    async promote(id) {
+        // --- MODAL REPLACEMENT ---
+        const confirm = await CustomModal.show('confirm', "Promote User", "Pass Admin privileges to this user? You will lose Admin status.");
+        if(confirm) {
             Network.broadcastPromote(id);
         }
     }
@@ -3417,7 +3495,8 @@ class SaveSystem {
             return;
         }
 
-        const name = prompt("Enter Save Name:", "New World " + new Date().toLocaleTimeString());
+        // --- MODAL REPLACEMENT ---
+        const name = await CustomModal.show('prompt', "New Save", "Enter Save Name:", "New World " + new Date().toLocaleTimeString());
         if(!name) return;
 
         const id = Date.now();
@@ -3546,7 +3625,10 @@ class SaveSystem {
     }
 
     static async deleteGame(id) {
-        if(!confirm("Delete this save forever?")) return;
+        // --- MODAL REPLACEMENT ---
+        const confirm = await CustomModal.show('confirm', "Delete Save", "Delete this save forever?");
+        if(!confirm) return;
+        
         await this.initDB();
         try {
             const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
