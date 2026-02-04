@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>Mega Miner Online is a multiplayer mining game built with HTML5, JavaScript, and MQTT for real-time networking.</li>
-    <li>Features include procedurally generated maps, mining mechanics, vehicle upgrades, shop system, and admin controls.</li>
-    <li>Players can explore, mine resources, build structures, trade with others, and save/load game progress using IndexedDB.</li>
-    <li>The game includes a dynamic day/night cycle, weather effects, and a minimap for navigation.</li>
+    <li>Mobile-optimized controls with D-pad and action buttons for portrait and landscape modes</li>
+    <li>Admin system with host election, player promotion, and map synchronization across clients</li>
+    <li>Save system using IndexedDB with autosave, manual saves, and import/export functionality</li>
+    <li>Persistent player statistics including money, upgrades, and vehicle customization</li>
+    <li>Server list with custom server support and real-time status checking</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); ... } }</code>
-    <code>class NetworkManager { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } }</code>
+    <code>const pseudoRandom = (x, y) => { return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1; };</code>
+    <code>const clamp = (num, min, max) => Math.min(Math.max(num, min), max);</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated worlds, mine resources, build structures, and trade with others. The game features real-time networking via MQTT, vehicle upgrades, a shop system, and admin controls. Players can save their progress locally and sync maps with other players in the same room.</p>
+  <p>Mega Miner Online is a multiplayer mining game with procedurally generated worlds, featuring mobile controls, admin systems, and persistent player progress. The game includes a save system using IndexedDB, real-time synchronization through MQTT, and a comprehensive shop system with upgrades and items. Players can mine resources, build structures, and interact with others in a shared underground environment.</p>
 </section>
