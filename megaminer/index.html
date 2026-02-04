@@ -1641,7 +1641,7 @@ class GameEngine {
 
         // Damage players
         const p = this.localPlayer;
-        if (Math.abs(p.gridX - cx) < radius && Math.abs(p.gridY - cy) < radius) {
+        if (Math.abs(p.gridX - cx) < 4 && Math.abs(p.gridY - cy) < 4) {
             p.hull -= 50;
             UI.showToast("CAUGHT IN EXPLOSION!", "error");
         }
@@ -2566,40 +2566,42 @@ class NetworkManager {
         let n = now();
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
-            const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
-            UI.addMessage("System", msg, "#888");
-            Sound.playChat('leave');
-            delete Game.remotePlayers[id];
-            UI.updatePlayerList();
-            // Removed updateAdminStatus, checking health in Game loop
-        }
-    });
-    if (n - this.lastHeartbeat > 1000) {
-        this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
+                const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
+                UI.addMessage("System", msg, "#888");
+                Sound.playChat('leave');
+                delete Game.remotePlayers[id];
+                UI.updatePlayerList();
+                // Removed updateAdminStatus, checking health in Game loop
+            }
+        });
+        if (n - this.lastHeartbeat > 1000) {
+            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
 
-        // --- NEW: Admin Heartbeat ---
-        if (Game.isAdmin) {
-             this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
-        }
+            // --- NEW: Admin Heartbeat ---
+            if (Game.isAdmin) {
+                this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
+            }
 
-        this.lastHeartbeat = n;
+            this.lastHeartbeat = n;
+        }
     }
-}
 
-broadcastHostClaim() {
-    this.publish('ctrl', { type: 'claim_host', id: Game.localPlayer.id });
-}
+    broadcastHostClaim() {
+        this.publish('ctrl', { type: 'claim_host', id: Game.localPlayer.id });
+    }
 
-broadcastPromote(targetId) {
-    this.publish('ctrl', { type: 'promote_host', target: targetId, from: Game.localPlayer.id });
-    Game.isAdmin = false;
-    Game.hostId = targetId;
-    Game.lastHostHeartbeat = Date.now(); // Trust the new guy
-    UI.showToast("Admin Transferred", "normal");
-    UI.updateAdminPanel();
-}
+    broadcastExplosion(x, y, r) { this.publish('map', { type: 'explode', x, y, r }); }
 
-broadcastMove() {
+    broadcastPromote(targetId) {
+        this.publish('ctrl', { type: 'promote_host', target: targetId, from: Game.localPlayer.id });
+        Game.isAdmin = false;
+        Game.hostId = targetId;
+        Game.lastHostHeartbeat = Date.now(); // Trust the new guy
+        UI.showToast("Admin Transferred", "normal");
+        UI.updateAdminPanel();
+    }
+
+    broadcastMove() {
         const p = Game.localPlayer;
         // FIX: Added joinedAt to move packets so late joiners see my timestamp
         this.publish('pos', {
