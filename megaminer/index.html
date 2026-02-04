@@ -786,20 +786,20 @@ const TILE_PROPS = {
     [TILE_TYPES.STONE]: { name: "Stone", color: '#7f8c8d', hardness: 3, value: 0, tier: 1 },
     [TILE_TYPES.HARD_STONE]: { name: "Dense Stone", color: '#525a5b', hardness: 6, value: 0, tier: 2 },
     [TILE_TYPES.DEEP_SLATE]: { name: "Deep Slate", color: '#2c3e50', hardness: 10, value: 0, tier: 3 },
-    [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 },
-    [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 4, value: 50, tier: 1 },
-    [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 6, value: 150, tier: 2 },
-    [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 10, value: 500, tier: 3 },
-    [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 12, value: 800, tier: 3 },
-    [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 15, value: 1200, tier: 4 },
-    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 2, value: 0, tier: 0 },
-    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 0, tier: 99 },
+    [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0, trashExclude: true },
+    [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 4, value: 50, tier: 1, trashExclude: true },
+    [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 6, value: 150, tier: 2, trashExclude: true },
+    [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 10, value: 500, tier: 3, trashExclude: true },
+    [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 12, value: 800, tier: 3, trashExclude: true },
+    [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 15, value: 1200, tier: 4, trashExclude: true },
+    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 2, value: 0, tier: 0, trashExclude: true },
+    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 0, tier: 99, trashExclude: true },
     // New Items
-    [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0 },
-    [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0 },
-    [TILE_TYPES.TELEPORTER]: { name: "Teleporter", color: '#9b59b6', hardness: 5, value: 0, tier: 0 },
-    [TILE_TYPES.REPAIR_KIT]: { name: "Repair Kit", color: '#2ecc71', value: 0, consumable: true },
-    [TILE_TYPES.FUEL_VOUCHER]: { name: "Fuel Voucher", color: '#e67e22', value: 0, consumable: true },
+    [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0, trashExclude: true },
+    [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0, trashExclude: true },
+    [TILE_TYPES.TELEPORTER]: { name: "Teleporter", color: '#9b59b6', hardness: 5, value: 0, tier: 0, trashExclude: true },
+    [TILE_TYPES.REPAIR_KIT]: { name: "Repair Kit", color: '#2ecc71', value: 0, consumable: true, trashExclude: true },
+    [TILE_TYPES.FUEL_VOUCHER]: { name: "Fuel Voucher", color: '#e67e22', value: 0, consumable: true, trashExclude: true },
 };
 
 const MSGS = {
@@ -1815,7 +1815,7 @@ class GameEngine {
             let prop = TILE_PROPS[type];
 
             // Trash if value is 0, but keep Casings (building blocks)
-            if (count > 0 && prop.value === 0 && type !== TILE_TYPES.CASING) {
+            if (count > 0 && prop.value === 0 && type !== TILE_TYPES.CASING && !TILE_PROPS[type].trashExclude) {
                 p.inventory[type] = 0;
                 p.cargo -= count;
                 totalTrashed += count;
