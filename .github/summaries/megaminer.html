@@ -1,21 +1,16 @@
 <section>
   <ul>
-    <li>Mobile controls with D-pad and action buttons for touch devices</li>
-    <li>Multiplayer mining game using MQTT for real-time synchronization</li>
-    <li>Procedural terrain generation with multiple ore types and depth-based resources</li>
-    <li>Building system allowing placement of structures and explosives</li>
-    <li>Teleportation network for fast travel between discovered relays</li>
-    <li>Admin system with host election, player management, and save control</li>
-    <li>IndexedDB save system with import/export capabilities</li>
-    <li>Dynamic lighting system with day/night cycle and sky rendering</li>
-    <li>Upgrades for drill tier, hull, fuel, cargo, heat resistance, and X-ray vision</li>
-    <li>Chat system with sound effects for player join/leave/death events</li>
+    <li>Mobile-optimized controls with D-pad and action buttons for touch devices.</li>
+    <li>Procedurally generated world with mining, building, and multiplayer support.</li>
+    <li>Real-time multiplayer via MQTT broker with chat, transfer, and admin features.</li>
+    <li>Persistent save system using IndexedDB with import/export functionality.</li>
+    <li>Shop system for upgrades, consumables, and vehicle customization.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>const Input = new InputManager();</code>
+    <code>const GameEngine = new GameEngine();</code>
+    <code>const Network = new NetworkManager();</code>
   </pre>
 
-  <p>This is a browser-based multiplayer mining game with mobile support. Players dig through procedurally generated terrain to find resources, build structures, and trade with others. The game features real-time synchronization via MQTT, a dynamic day/night cycle, and an admin system for host management. Players can upgrade their mining equipment, discover teleporters for fast travel, and manage their inventory at service stations.</p>
+  <p>This is a multiplayer mining game with mobile controls, real-time networking, and persistent saves. Players can mine resources, build structures, trade with others, and upgrade their equipment. The game features a procedurally generated world, day/night cycles, and admin tools for server management.</p>
 </section>
