@@ -1,16 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="img/amogus.png">
-    <title>Mega Miner Online - MQTT Multiplayer</title>
+    <title>Mega Miner Online - Mobile & Warfare Update</title>
     <!-- MQTT.js Library -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         /* CSS Reset & Normalization */
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; touch-action: none; }
 
         :root {
             --bg-color: #0d0d0d;
@@ -20,20 +19,133 @@
             --highlight: #f39c12;
             --danger: #c0392b;
             --success: #27ae60;
-
+            --control-height: 180px; /* Reserved space for mobile controls */
         }
-        body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; }
+        body { overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, monospace; color: var(--text-color); user-select: none; background: #000; }
 
+        /* Canvas resizing handled by JS, but default to full */
         canvas { display: block; width: 100vw; height: 100vh; }
+
         .noaliasing {
-            image-rendering: pixelated; /* Standard, modern approach */
-            image-rendering: -moz-crisp-edges; /* Firefox specific */
-            image-rendering: -webkit-optimize-contrast; /* Legacy WebKit */
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
         }
 
         /* UI Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .pointer-events-auto { pointer-events: auto; }
+
+        /* Mobile Controls Container */
+        #mobile-controls {
+            display: none; /* Hidden by default */
+            z-index: 150;
+        }
+
+        /* --- MOBILE MODE LAYOUTS --- */
+
+        /* Portrait: Controls at bottom, Canvas shorter */
+        @media (orientation: portrait) {
+            body #gear-btn{
+                font-size: 80px;
+            }
+            body.mobile-mode #mobile-controls {
+                position: fixed; bottom: 0; left: 0; width: 100%; height: var(--control-height);
+                background: #111; border-top: 2px solid #333;
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 10px 20px; pointer-events: auto;
+            }
+            body.mobile-mode canvas { height: calc(100vh - var(--control-height)); width: 100vw; }
+            body.mobile-mode #chat-container { bottom: calc(var(--control-height) + 20px); }
+        }
+
+        /* Landscape: Controls on sides, Canvas narrower in middle */
+        /* Landscape: Controls on sides, Canvas narrower in middle */
+        @media (orientation: landscape) {
+            body #gear-btn{
+                font-size: 80px;
+            }
+            body.mobile-mode #mobile-controls {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: transparent; pointer-events: none;
+                display: flex; justify-content: space-between; align-items: flex-end;
+                padding: 20px;
+            }
+
+            body.mobile-mode .d-pad, body.mobile-mode .action-pad {
+                pointer-events: auto;
+                background: rgba(20, 20, 20, 0.8);
+                border: 1px solid #444;
+                border-radius: 16px;
+                padding: 15px;
+                margin-bottom: 20px;
+                backdrop-filter: blur(4px);
+            }
+
+            /* Shift Game Canvas to center, avoiding overlap */
+            body.mobile-mode canvas {
+                position: absolute; top: 0; left: 200px;
+                width: calc(100vw - 400px); /* 200px buffer each side */
+                height: 100vh;
+            }
+
+            /* Update: Chat in Left Panel for Mobile Landscape */
+            body.mobile-mode #chat-container {
+                left: 10px;
+                bottom: 220px; /* Above the D-Pad */
+                width: 180px;  /* Fit in the 200px sidebar */
+                height: 120px;
+            }
+        }
+
+        /* D-PAD */
+        .d-pad {
+            width: 150px;
+            height: 150px;
+            position: relative;
+        }
+        .d-btn {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            color: #aaa;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+        }
+        .d-btn:active { background: var(--accent); color: white; }
+        .d-up { top: 0; left: 50px; }
+        .d-down { bottom: 0; left: 50px; }
+        .d-left { top: 50px; left: 0; }
+        .d-right { top: 50px; right: 0; }
+
+        /* Action Buttons */
+        .action-pad {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 160px;
+        }
+        .act-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .act-btn:active { background: var(--highlight); color: black; transform: scale(0.95); }
+        .act-btn i { font-size: 16px; margin-bottom: 2px; font-style: normal;}
 
         /* Gear Icon */
         #gear-btn { position: absolute; top: 10px; left: 10px; font-size: 30px; color: rgba(255,255,255,0.5); cursor: pointer; pointer-events: auto; z-index: 50; transition: all 0.3s; }
@@ -41,6 +153,9 @@
 
         /* Coords Display */
         #coords-display { position: absolute; top: 10px; left: 60px; font-size: 14px; color: #aaa; font-family: monospace; display: none; text-shadow: 1px 1px 0 #000; }
+
+        /* Mobile specific coords adjustment */
+        body.mobile-mode #coords-display { top: 40px; left: 10px; }
 
         /* Overheat Overlay */
         #heat-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; box-shadow: inset 0 0 0px var(--danger); transition: box-shadow 0.2s; opacity: 0; }
@@ -102,59 +217,34 @@
         .inv-trash { position: absolute; top: 0; right: 0; background: #c0392b; color: white; width: 15px; height: 15px; font-size: 10px; line-height: 15px; display: none; cursor: pointer; }
         .inv-trash:hover { filter: brightness(1.2); }
         .inv-item:hover .inv-trash { display: block; }
+
+        .inv-use-btn {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            background: var(--success); color: white;
+            font-size: 9px; font-weight: bold;
+            border: none; cursor: pointer;
+            z-index: 20;
+        }
+
         .stat-row { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid #333; padding: 2px 0; }
 
         .btn { background: var(--accent); color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; }
         .btn:hover { background: #3498db; filter: brightness(1.2); }
         .btn:disabled { background: #555; cursor: not-allowed; filter: none; }
         .btn-small { width: auto; padding: 4px 8px; font-size: 12px; margin-right: 5px; }
+        .btn-danger { background: var(--danger); }
         .btn-bind { background: #444; border: 1px solid #666; color: #fff; text-align: left; position: relative; }
         .btn-bind.binding { background: #c0392b; border-color: #e74c3c; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
         /* Credits Modal */
-        #credits-modal .credits-section {
-            margin-bottom: 25px;
-        }
-
-        #credits-modal h3 {
-            margin: 10px 0;
-            color: var(--accent);
-            font-size: 18px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .credit-entry {
-            margin-left: 15px;
-            margin-top: 8px;
-        }
-
-        .credit-entry strong {
-            color: var(--highlight);
-            font-size: 14px;
-        }
-
-        .credit-entry ul {
-            margin: 5px 0 10px 20px;
-            padding: 0;
-        }
-
-        .credit-entry li {
-            list-style: none;
-            font-size: 12px;
-            color: #ccc;
-            margin: 2px 0;
-        }
-
-        #credits-modal .simple-list li {
-            list-style: none;
-            margin: 4px 0;
-            color: #ccc;
-            font-size: 13px;
-        }
+        #credits-modal .credits-section { margin-bottom: 25px; }
+        #credits-modal h3 { margin: 10px 0; color: var(--accent); font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .credit-entry { margin-left: 15px; margin-top: 8px; }
+        .credit-entry strong { color: var(--highlight); font-size: 14px; }
+        .credit-entry ul { margin: 5px 0 10px 20px; padding: 0; }
+        .credit-entry li { list-style: none; font-size: 12px; color: #ccc; margin: 2px 0; }
 
         /* Server Status */
         .server-option { display: flex; justify-content: space-between; font-size: 12px; padding: 2px; }
@@ -183,22 +273,20 @@
         	background-size: 20px 35px;
           background-position: 0 0, 0 0, 10px 17.5px, 10px 17.5px, 0 0, 10px 17.5px;
           background-color: #362520;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          z-index: 50;
-          pointer-events: auto;
+          top: 0; left: 0; width: 100%; height: 100%;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          z-index: 50; pointer-events: auto;
         }
         #start-screen h1 { font-size: 48px; color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight); }
 
-        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; max-width: 800px;}
+        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; max-width: 800px; max-height: 90vh; overflow-y:auto; }
         .start-panel { width:300px; }
         .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; }
+
+        @media (max-width: 700px) {
+            .start-container { flex-direction: column; }
+            .server-panel { border-left: none; border-top: 1px solid #444; padding-left: 0; padding-top: 20px; }
+        }
 
         /* Server List Styles */
         .server-list-item { background:rgba(0,0,0,0.3); padding:8px; margin-bottom:5px; border:1px solid #333; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:0.2s; }
@@ -225,6 +313,21 @@
 <body>
 
     <canvas id="gameCanvas"></canvas>
+
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div class="d-btn d-up" data-key="up">&#8593;</div>
+            <div class="d-btn d-left" data-key="left">&#8592;</div>
+            <div class="d-btn d-right" data-key="right">&#8594;</div>
+            <div class="d-btn d-down" data-key="down">&#8595;</div>
+        </div>
+        <div class="action-pad">
+            <div class="act-btn" data-key="build" style="background:var(--highlight); color:black;"><i>B</i>BUILD</div>
+            <div class="act-btn" data-key="interact" style="background:var(--success);"><i>E</i>MENU</div>
+            <div class="act-btn" data-key="chat" style="background:#555;"><i>&#9166;</i>CHAT</div>
+            <div class="act-btn" data-key="transfer" style="background:#8e44ad;"><i>F</i>GIVE</div>
+        </div>
+    </div>
 
     <div id="ui-layer">
         <div id="heat-overlay"></div>
@@ -285,6 +388,11 @@
                         <label>Vehicle Color</label>
                         <input type="color" id="start-color" value="#3498db" style="height:40px;">
                     </div>
+                    <div class="form-group">
+                        <label style="display:inline-flex; align-items:center;">
+                            <input type="checkbox" id="mobile-toggle" onchange="Game.toggleMobile(this.checked)"> Enable Mobile Controls
+                        </label>
+                    </div>
                     <button class="btn" onclick="Game.init()">LAUNCH MISSION</button>
                     <button class="btn" style="margin-top:10px; background:#444;" onclick="UI.openSettings()">SETTINGS / IMPORT</button>
                 </div>
@@ -318,7 +426,7 @@
             <div class="dash-cols">
                 <div>
                     <h4 style="color:#aaa; border-bottom:1px solid #444;">INVENTORY / BUILD</h4>
-                    <p style="font-size:11px; color:#777;">Click item to Equip for Building (B). Hover to Trash (Shift+Click to Trash All).</p>
+                    <p style="font-size:11px; color:#777;">Click item to Equip. Consumables have a [USE] button. Hover to Trash.</p>
                     <button class="btn btn-small" style="background:#c0392b; width:100%; margin-bottom:10px;" onclick="Game.trashJunk()">TRASH ALL JUNK (Dirt/Stone)</button>
                     <div id="inv-grid" class="inv-grid"></div>
                     <div id="station-btn-container" style="margin-top:20px; display:none;">
@@ -348,10 +456,11 @@
             <h4 style="color:#aaa; border-bottom:1px solid #444;">SELL MINERALS</h4>
             <div id="sell-list" class="sell-list"></div>
 
-            <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">UPGRADES</h4>
+            <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">UPGRADES & SUPPLIES</h4>
             <div class="shop-grid">
+                <!-- Upgrades -->
                 <div class="shop-item">
-                    <h4>Diamond Drill</h4>
+                    <h4>Upgrade Drill</h4>
                     <p>Increases Mining Tier.</p>
                     <div class="cost" id="cost-drill"></div>
                     <button class="btn" id="btn-drill" onclick="Shop.buy('drill')">Upgrade</button>
@@ -392,6 +501,37 @@
                     <input type="color" id="shop-color-picker" style="width:100%; height:30px; margin-bottom:5px;">
                     <button class="btn" onclick="Shop.buy('paint')">Repaint ($100)</button>
                 </div>
+                <!-- New Items -->
+                 <div class="shop-item">
+                    <h4>Repair Kit</h4>
+                    <p>Restore 50 HP (Use in Inv).</p>
+                    <div class="cost">$50</div>
+                    <button class="btn" onclick="Shop.buy('repair_kit')">Buy</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Fuel Voucher</h4>
+                    <p>Restore 50 Fuel (Use in Inv).</p>
+                    <div class="cost">$50</div>
+                    <button class="btn" onclick="Shop.buy('fuel_voucher')">Buy</button>
+                </div>
+                 <div class="shop-item">
+                    <h4>TNT</h4>
+                    <p>Explosive charge. Range: 3.</p>
+                    <div class="cost">$200</div>
+                    <button class="btn" onclick="Shop.buy('tnt')">Buy</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Nuke</h4>
+                    <p>Massive destruction. Range: 10.</p>
+                    <div class="cost" style="color:#c0392b;">$5000</div>
+                    <button class="btn btn-danger" onclick="Shop.buy('nuke')">Buy</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Teleporter</h4>
+                    <p>Fast travel to surface.</p>
+                    <div class="cost">$1000</div>
+                    <button class="btn" onclick="Shop.buy('teleporter')">Buy</button>
+                </div>
             </div>
             <button class="btn" style="background:#555; margin-top:20px;" onclick="Shop.close()">Exit Station</button>
         </div>
@@ -411,6 +551,24 @@
             </div>
 
             <div class="form-group">
+                <label>Options</label>
+                <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                    <label style="display:inline-flex; align-items:center; color:#eee;">
+                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)"> Autosave
+                    </label>
+                    <label style="display:inline-flex; align-items:center; color:#eee;">
+                        <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
+                    </label>
+                     <label style="display:inline-flex; align-items:center; color:#eee;">
+                        <input type="checkbox" id="mobile-setting-toggle" onchange="Game.toggleMobile(this.checked)"> Mobile Controls
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="update-check-toggle" checked> Autocheck Updates (60s)
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label>Update Checker</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px;">
                     <button class="btn btn-small" style="width:auto;" onclick="UI.checkForUpdates()">Check For Updates</button>
@@ -425,22 +583,6 @@
             </div>
 
             <div class="form-group">
-                <label>Options</label>
-                <div style="display:flex; gap:15px;">
-                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
-                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)"> Autosave (60s)
-                    </label>
-                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
-                        <input type="checkbox" id="update-check-toggle" checked> Autocheck Updates (60s)
-                    </label>
-                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
-                        <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
-                    </label>
-                </div>
-                <button class="btn btn-small" style="margin-top:5px; background:#444;" onclick="Network.requestMap(Game.localPlayer.id)">Force Map Sync</button>
-            </div>
-
-            <div class="form-group">
                 <label>Save Management (IndexedDB)</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px;">
                     <button class="btn" style="flex:1; background:var(--success);" onclick="SaveSystem.createNewSave()">+ NEW SAVE</button>
@@ -451,7 +593,6 @@
                 </div>
                 <small style="color:#777;">Saves are unlimited. Green border indicates current session.</small>
             </div>
-
             <div class="form-group">
                 <label>Controls</label>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:12px;">
@@ -481,9 +622,7 @@
 
     <!-- Notification Area -->
     <div id="notification-area"></div>
-
 <script>
-//!summaryignore
 const $ = id => document.getElementById(id);
 
 // Robust UUID Generator (longer for collision avoidance)
@@ -513,10 +652,14 @@ const CONSTANTS = {
     FUEL_CONSUMPTION: 0.125, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
 };
 
+
 const TILE_TYPES = {
     EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, DEEP_SLATE: 5,
     COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11,
-    CASING: 20, BEDROCK: 99
+    CASING: 20, BEDROCK: 99,
+    // New Items
+    TNT: 50, NUKE: 51, TELEPORTER: 52,
+    REPAIR_KIT: 60, FUEL_VOUCHER: 61
 };
 
 const TILE_PROPS = {
@@ -533,7 +676,13 @@ const TILE_PROPS = {
     [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 12, value: 800, tier: 3 },
     [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 15, value: 1200, tier: 4 },
     [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 2, value: 0, tier: 0 },
-    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 0, tier: 99 }
+    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 0, tier: 99 },
+    // New Items
+    [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0 },
+    [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0 },
+    [TILE_TYPES.TELEPORTER]: { name: "Teleporter", color: '#9b59b6', hardness: 5, value: 0, tier: 0 },
+    [TILE_TYPES.REPAIR_KIT]: { name: "Repair Kit", color: '#2ecc71', value: 0, consumable: true },
+    [TILE_TYPES.FUEL_VOUCHER]: { name: "Fuel Voucher", color: '#e67e22', value: 0, consumable: true },
 };
 
 const MSGS = {
@@ -588,7 +737,7 @@ const MSGS = {
 };
 
 let initialTimestamp = null;
-//!endsummaryignore
+
 // --- SOUND ENGINE ---
 class SoundManager {
     constructor() {
@@ -791,6 +940,7 @@ class GameEngine {
         this.minimapCtx = this.minimapCanvas.getContext('2d');
 
         this.running = false;
+        this.isMobile = false;
 
         this.settings = {
             username: '',
@@ -826,19 +976,15 @@ class GameEngine {
         this.camera = { x: 0, y: 0 };
         this.zoom = 1.0;
         this.particles = [];
+        this.explosives = []; // Track active TNT/Nuke timers
         this.isAdmin = false;
-        this.hostId = null; // New tracking for host ID
+        this.hostId = null;
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
         this.lastActionTime = 0;
         this.lastAutosave = 0;
         this.fallHeight = 0;
-        this.lastCoordsX = -1;
-        this.lastCoordsY = -1;
-
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
-
-        this.hostId = null;
         this.lastHostHeartbeat = 0;
 
         this.loadStoredSettings();
@@ -919,17 +1065,13 @@ class GameEngine {
             UI.updateAdminPanel();
         }
     }
-
     loadStoredSettings() {
-        // Load username but default to blank string if nothing stored
-        if(localStorage.getItem('mm_username')) {
-            $('start-username').value = localStorage.getItem('mm_username');
-        } else {
-            $('start-username').value = ""; // Default blank
-        }
 
+        if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
         if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
         if(localStorage.getItem('mm_veh_color')) $('start-color').value = localStorage.getItem('mm_veh_color');
+        const showCoords = localStorage.getItem('mm_show_coords');
+        if(showCoords === 'true') { $('coords-toggle').checked = true; this.toggleCoords(true); }
 
         // Load broker from storage or use default if none
         const storedBroker = localStorage.getItem('mm_broker_url');
@@ -940,14 +1082,28 @@ class GameEngine {
             // Ensure input matches default if nothing stored
             $('setting-broker').value = this.settings.broker;
         }
-
-        const showCoords = localStorage.getItem('mm_show_coords');
-        if(showCoords === 'true') { $('coords-toggle').checked = true; this.toggleCoords(true); }
-
         const binds = localStorage.getItem('mm_keybinds');
         if(binds) {
             try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){console.error(e);}
         }
+
+        // Mobile setting
+        const mobile = localStorage.getItem('mm_mobile_mode') === 'true';
+        $('mobile-toggle').checked = mobile;
+        $('mobile-setting-toggle').checked = mobile;
+        this.toggleMobile(mobile);
+    }
+
+    toggleMobile(enabled) {
+        this.isMobile = enabled;
+        localStorage.setItem('mm_mobile_mode', enabled);
+
+        if (enabled) {
+            document.body.classList.add('mobile-mode');
+        } else {
+            document.body.classList.remove('mobile-mode');
+        }
+        this.resize();
     }
 
     // Helper to get base procedural for syncing
@@ -1132,8 +1288,20 @@ class GameEngine {
     }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        if (this.isMobile) {
+            if (window.innerWidth > window.innerHeight) {
+                // Landscape: 200px buffer on each side (400px total)
+                this.canvas.width = window.innerWidth - 400;
+                this.canvas.height = window.innerHeight;
+            } else {
+                // Portrait: Bottom bar
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight - 180; // 180px for controls
+            }
+        } else {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        }
     }
 
     generateMap() {
@@ -1169,7 +1337,6 @@ class GameEngine {
 
     update() {
         if (!this.running) return;
-
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
 
@@ -1183,25 +1350,21 @@ class GameEngine {
 
         if (dist > speed) {
             let angle = Math.atan2(dy, dx);
-            p.x += Math.cos(angle) * speed;
-            p.y += Math.sin(angle) * speed;
+            p.x += Math.cos(angle) * speed; p.y += Math.sin(angle) * speed;
             isMoving = true;
         } else {
             p.x = targetX; p.y = targetY; p.isDrilling = false;
-
-            // broken -- dont use yet
-            // if (this.fallHeight > 1 && !isMoving) {
-            //     Sound.playThud();
-            //     this.fallHeight = 0;
-            // }
-
             let ix = 0, iy = 0;
-            if (Input.keys[this.settings.keys.up]) iy = -1;
-            else if (Input.keys[this.settings.keys.down]) iy = 1;
-            else if (Input.keys[this.settings.keys.left]) ix = -1;
-            else if (Input.keys[this.settings.keys.right]) ix = 1;
+            // Input combining Keys + Virtual
+            if (Input.keys[this.settings.keys.up] || Input.virtual.up) iy = -1;
+            else if (Input.keys[this.settings.keys.down] || Input.virtual.down) iy = 1;
+            else if (Input.keys[this.settings.keys.left] || Input.virtual.left) ix = -1;
+            else if (Input.keys[this.settings.keys.right] || Input.virtual.right) ix = 1;
 
-            if (Input.keys[this.settings.keys.build] && (ix || iy)) {
+            // Build logic
+            const buildPressed = Input.keys[this.settings.keys.build] || Input.virtual.build;
+
+            if (buildPressed && (ix || iy)) {
                 if (now() - this.lastActionTime > 200) {
                     this.tryBuild(p.gridX + ix, p.gridY + iy);
                     this.lastActionTime = now();
@@ -1209,16 +1372,21 @@ class GameEngine {
             } else if (ix || iy) {
                 if (ix === 1) p.rotation = -90 * (Math.PI/180);
                 if (ix === -1) p.rotation = 90 * (Math.PI/180);
-                if (iy === 1) { p.rotation = 0; this.fallHeight++; }
-                if (iy === -1) { p.rotation = 180 * (Math.PI/180); this.fallHeight = 0; }
-                if (ix !== 0) this.fallHeight = 0;
+                if (iy === 1) p.rotation = 0;
+                if (iy === -1) p.rotation = 180 * (Math.PI/180);
 
                 let nx = p.gridX + ix;
                 let ny = p.gridY + iy;
-
                 if (nx >= 0 && nx < CONSTANTS.MAP_WIDTH && ny >= 4 && ny < CONSTANTS.MAP_HEIGHT) {
                     let tile = (ny < 0) ? TILE_TYPES.EMPTY : this.map[ny][nx];
-                    if (tile === TILE_TYPES.EMPTY) {
+
+                    // --- TELEPORTER LOGIC (Instant Travel) ---
+                    if (tile === TILE_TYPES.TELEPORTER) {
+                        $('prompt-msg').style.display = 'block';
+                        $('prompt-msg').innerText = "STAND HERE. PRESS E TO TELEPORT HOME";
+                    }
+
+                    if (tile === TILE_TYPES.EMPTY || tile === TILE_TYPES.TELEPORTER) {
                         p.gridX = nx; p.gridY = ny;
                         if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
                         Network.broadcastMove();
@@ -1237,77 +1405,114 @@ class GameEngine {
             }
         }
 
+        // Explosive Logic (Host Only)
+        if (this.isAdmin && this.explosives.length > 0) {
+            for (let i = this.explosives.length - 1; i >= 0; i--) {
+                let e = this.explosives[i];
+                e.timer--;
+                if (e.timer <= 0) {
+                    // BOOM
+                    Network.broadcastExplosion(e.x, e.y, e.range);
+                    this.explosives.splice(i, 1);
+                }
+            }
+        }
+
         Sound.updateEngine(isMoving ? speed : 0, p.isDrilling);
 
+        // Remote Interpolation
         Object.values(this.remotePlayers).forEach(rp => {
             if (rp.targetX !== undefined) {
-                let rdx = rp.targetX - rp.x;
-                let rdy = rp.targetY - rp.y;
+                let rdx = rp.targetX - rp.x; let rdy = rp.targetY - rp.y;
                 let rDist = Math.sqrt(rdx*rdx + rdy*rdy);
                 let rSpeed = rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
                 if (rDist > rSpeed) {
                     let rAngle = Math.atan2(rdy, rdx);
-                    rp.x += Math.cos(rAngle) * rSpeed;
-                    rp.y += Math.sin(rAngle) * rSpeed;
+                    rp.x += Math.cos(rAngle) * rSpeed; rp.y += Math.sin(rAngle) * rSpeed;
                 } else { rp.x = rp.targetX; rp.y = rp.targetY; }
             }
         });
 
-        // Heat Logic
+        // Heat & Prompt
         let depth = Math.max(0, p.gridY - 5);
         let heatThreshold = 100 + (p.heatResist * 50);
         if (depth > heatThreshold) {
             p.temp += 0.05;
-            if (p.temp > 100) {
-                p.temp = 100;
-                p.hull -= 0.1;
-                $('heat-overlay').style.opacity = (Math.sin(now()/100)+1)/4 + 0.3;
-            }
-        } else {
-            p.temp = Math.max(0, p.temp - 0.2);
-            $('heat-overlay').style.opacity = 0;
-        }
+            if (p.temp > 100) { p.temp = 100; p.hull -= 0.1; $('heat-overlay').style.opacity = (Math.sin(now()/100)+1)/4 + 0.3; }
+        } else { p.temp = Math.max(0, p.temp - 0.2); $('heat-overlay').style.opacity = 0; }
 
         $('prompt-msg').style.display = 'none';
+
+        // Check Teleporter interaction
+        if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
+             $('prompt-msg').style.display = 'block';
+             $('prompt-msg').innerText = "PRESS E TO TELEPORT HOME";
+        }
+
         if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 3) {
              $('prompt-msg').style.display = 'block';
              $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
         }
 
-        if (Input.keys[this.settings.keys.interact] && now() - this.lastActionTime > 500) {
-            UI.toggleDashboard();
+        const interactPressed = Input.keys[this.settings.keys.interact] || Input.virtual.interact;
+        if (interactPressed && now() - this.lastActionTime > 500) {
+            // Priority: Teleporter -> Station -> Dashboard
+            if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
+                p.gridX = this.stationGridX; p.gridY = this.stationGridY;
+                p.x = p.gridX * TS; p.y = p.gridY * TS;
+                UI.showToast("Teleported to Surface", "success");
+                Sound.playSuccess();
+                Network.broadcastMove();
+            } else {
+                UI.toggleDashboard();
+            }
             this.lastActionTime = now();
+            Input.virtual.interact = false; // consume
         }
 
-        p.fuel = clamp(p.fuel, 0, p.maxFuel);
-        p.hull = clamp(p.hull, 0, p.maxHull);
+        // Transfer Check
+        const transferPressed = Input.keys[this.settings.keys.transfer] || Input.virtual.transfer;
+        if (transferPressed && now() - this.lastActionTime > 1000) {
+            // Find nearest player
+            let nearest = null;
+            let minDst = 100; // range
+            Object.values(this.remotePlayers).forEach(rp => {
+                let d = Math.sqrt((rp.x - p.x)**2 + (rp.y - p.y)**2);
+                if(d < minDst) { minDst = d; nearest = rp; }
+            });
+
+            if(nearest) {
+                this.tryTransferFuel(nearest.id);
+            } else {
+                UI.showToast("No one nearby to transfer to!", "error");
+            }
+            this.lastActionTime = now();
+            Input.virtual.transfer = false;
+        }
+
+        // Mobile Action consumption
+        if (Input.virtual.chat && now() - this.lastActionTime > 200) {
+            $('chat-input').focus();
+            Input.virtual.chat = false;
+        }
+
+        p.fuel = clamp(p.fuel, 0, p.maxFuel); p.hull = clamp(p.hull, 0, p.maxHull);
         if (p.hull <= 0) this.respawn();
 
         this.camera.x += (p.x - this.camera.x) * 0.1;
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
-        // Auto-save stats periodically (every 5s)
         if (now() % 5000 < 20) this.saveLocalProgress();
-
-        if (now() % 60000 < 20 && document.getElementById('update-check-toggle').checked) {
-            UI.checkForUpdates();
-        }
-        if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin) {
-            // Save to current ID
-            if(SaveSystem.currentSaveId) {
-                SaveSystem.saveGame(SaveSystem.currentSaveId, null, true);
-                this.lastAutosave = now();
-            }
+        if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin && SaveSystem.currentSaveId) {
+            SaveSystem.saveGame(SaveSystem.currentSaveId, null, true); this.lastAutosave = now();
         }
 
         Network.update();
-        this.checkHostHealth(); // Run the election logic
+        this.checkHostHealth();
 
-        // Coords Update Optimized
         if (this.lastCoordsX !== p.gridX || this.lastCoordsY !== p.gridY) {
             $('coords-display').innerText = `X: ${p.gridX} Y: ${depth}`;
-            this.lastCoordsX = p.gridX;
-            this.lastCoordsY = p.gridY;
+            this.lastCoordsX = p.gridX; this.lastCoordsY = p.gridY;
         }
     }
 
@@ -1336,12 +1541,49 @@ class GameEngine {
                 Network.sendTileUpdate(tx, ty, type);
                 this.spawnParticle(tx * 32 + 16, ty * 32 + 16, '#95a5a6', 5);
                 Sound.playBuild();
+                // Host logic: Register explosive timer
+                if (this.isAdmin) {
+                    if (type === TILE_TYPES.TNT) this.explosives.push({x:tx, y:ty, range:3, timer: 120}); // 2s
+                    if (type === TILE_TYPES.NUKE) this.explosives.push({x:tx, y:ty, range:10, timer: 300}); // 5s
+                }
                 UI.showToast("Block Placed", "success");
                 UI.updateDashboard();
             } else {
                 UI.showToast("Out of blocks!", "error");
                 Sound.playError();
             }
+        }
+    }
+
+    // --- EXPLOSION ---
+    explode(cx, cy, radius) {
+        Sound.playExplosion();
+        // Shake camera
+        const shake = setInterval(() => {
+            this.camera.x += (Math.random()-0.5)*10;
+            this.camera.y += (Math.random()-0.5)*10;
+        }, 20);
+        setTimeout(() => clearInterval(shake), 300);
+
+        for (let y = cy - radius; y <= cy + radius; y++) {
+            for (let x = cx - radius; x <= cx + radius; x++) {
+                if (y > 4 && x >= 0 && x < CONSTANTS.MAP_WIDTH && y < CONSTANTS.MAP_HEIGHT) {
+                    if (Math.sqrt((x-cx)**2 + (y-cy)**2) <= radius) {
+                        if (this.map[y][x] !== TILE_TYPES.BEDROCK) {
+                            this.map[y][x] = TILE_TYPES.EMPTY;
+                            this.discovered[y][x] = 1; // Reveal area
+                            this.spawnParticle(x*32+16, y*32+16, '#ffaa00', 3);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Damage players
+        const p = this.localPlayer;
+        if (Math.abs(p.gridX - cx) < radius && Math.abs(p.gridY - cy) < radius) {
+            p.hull -= 50;
+            UI.showToast("CAUGHT IN EXPLOSION!", "error");
         }
     }
 
@@ -1871,6 +2113,18 @@ class GameEngine {
                 this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
                 this.ctx.beginPath(); this.ctx.moveTo(px, py); this.ctx.lineTo(px+ts, py+ts); this.ctx.moveTo(px+ts, py); this.ctx.lineTo(px, py+ts); this.ctx.stroke();
                 return;
+            }else if(type === TILE_TYPES.TNT) {
+                this.ctx.fillStyle = "#c0392b"; this.ctx.fillRect(px,py,ts,ts);
+                this.ctx.fillStyle = "white"; this.ctx.font="10px Arial"; this.ctx.textAlign="center"; this.ctx.fillText("TNT", px+16, py+20);
+                return;
+            }else if(type === TILE_TYPES.NUKE) {
+                this.ctx.fillStyle = "#2c3e50"; this.ctx.fillRect(px,py,ts,ts);
+                this.ctx.fillStyle = "#f1c40f"; this.ctx.beginPath(); this.ctx.arc(px+16,py+16,8,0,Math.PI*2); this.ctx.fill();
+                return;
+            }else if(type === TILE_TYPES.TELEPORTER) {
+                this.ctx.fillStyle = "#8e44ad"; this.ctx.fillRect(px,py,ts,ts);
+                this.ctx.strokeStyle = "#fff"; this.ctx.lineWidth=2; this.ctx.beginPath(); this.ctx.arc(px+16,py+16,10,0,Math.PI*2); this.ctx.stroke();
+                return;
             }
         }
 
@@ -1968,18 +2222,38 @@ class GameEngine {
 
     drawHUD() {
         const p = this.localPlayer;
-        const w = this.canvas.width; const h = this.canvas.height;
-        this.drawGauge(60, h - 60, 40, p.fuel, p.maxFuel, "FUEL", "#d35400");
-        this.drawGauge(160, h - 60, 40, p.hull, p.maxHull, "HULL", "#c0392b");
-        this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
-        this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
+        const w = this.canvas.width;
+        const h = this.canvas.height;
 
-        this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 20px monospace"; this.ctx.textAlign = "center"; this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
-        let depth = Math.floor(Math.max(0, p.gridY - 5));
-        this.ctx.fillStyle = "#aaa"; this.ctx.font = "14px monospace"; this.ctx.fillText(`Depth: ${depth}m | Drill Tier: ${p.drillTier}`, w/2, h - 55);
+        // Adjust gauge scale and position for mobile
+        const gaugeR = this.isMobile ? 30 : 40;
+        const fontSize = this.isMobile ? "10px" : "12px";
+        const yPos = h - (gaugeR * 1.5); // Sits just above bottom of canvas
+        const xStep = this.isMobile ? (w / 4) : 100; // Spread evenly or fixed
+
+        if (this.isMobile) {
+            // Even spread across top of controls
+            this.drawGauge(w*0.15, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400");
+            this.drawGauge(w*0.38, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b");
+            this.drawGauge(w*0.62, yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60");
+            this.drawGauge(w*0.85, yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c");
+
+            // Money top center
+            this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 16px monospace"; this.ctx.textAlign = "center";
+            this.ctx.fillText("$ " + Math.floor(p.money), w/2, 30);
+        } else {
+            // Desktop layout (bottom corners)
+            this.drawGauge(60, h - 60, 40, p.fuel, p.maxFuel, "FUEL", "#d35400");
+            this.drawGauge(160, h - 60, 40, p.hull, p.maxHull, "HULL", "#c0392b");
+            this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
+            this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
+
+            this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 20px monospace"; this.ctx.textAlign = "center";
+            this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
+        }
     }
 
-    drawGauge(x, y, r, val, max, label, color) {
+    drawGauge(x, y, r, val, max, label, color) { /* Same as before */
         const ctx = this.ctx;
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fill();
         ctx.lineWidth = 3; ctx.strokeStyle = "#444"; ctx.stroke();
@@ -2006,7 +2280,8 @@ class ShopSystem {
     constructor() {
         this.prices = {
             drill: [500, 2000, 10000, 50000],
-            hull: 200, fuel: 200, cargo: 100, cool: 1000, xray: 2000
+            hull: 200, fuel: 200, cargo: 100, cool: 1000, xray: 2000,
+            repair_kit: 50, fuel_voucher: 50, tnt: 200, nuke: 5000, teleporter: 1000
         };
     }
     open() { $('shop-modal').classList.add('active'); this.updateUI(); }
@@ -2119,6 +2394,47 @@ class ShopSystem {
     }
 
     buy(item) {
+        const p = Game.localPlayer;
+        let cost = 0;
+        let success = false;
+
+        // Item specific logic
+        if (item === 'repair_kit' || item === 'fuel_voucher') {
+            cost = this.prices[item];
+            if (p.money >= cost) {
+                p.money -= cost;
+                let type = (item === 'repair_kit') ? TILE_TYPES.REPAIR_KIT : TILE_TYPES.FUEL_VOUCHER;
+                p.inventory[type] = (p.inventory[type] || 0) + 1;
+                UI.showToast(`Bought ${item.replace('_', ' ')}`, "success");
+                success = true;
+            }
+        } else if (item === 'tnt' || item === 'nuke' || item === 'teleporter') {
+            cost = this.prices[item];
+            if (p.money >= cost) {
+                p.money -= cost;
+                let type = (item === 'tnt') ? TILE_TYPES.TNT : (item === 'nuke' ? TILE_TYPES.NUKE : TILE_TYPES.TELEPORTER);
+                // Explosives count towards cargo weight? Yes.
+                p.cargo++;
+                p.inventory[type] = (p.inventory[type] || 0) + 1;
+                UI.showToast(`Bought ${item.toUpperCase()}`, "success");
+                success = true;
+            }
+        } else {
+             // Standard upgrades...
+             this.buyUpgrade(item);
+             return;
+        }
+
+        if(success) {
+            Game.saveLocalProgress();
+            this.updateUI();
+            UI.updateDashboard();
+        } else {
+             if (item !== 'drill' && item !== 'hull') UI.showToast("Not enough money!", "error");
+        }
+    }
+
+    buyUpgrade(item) {
         const p = Game.localPlayer;
         let cost = 0;
         let success = false;
@@ -2450,13 +2766,21 @@ broadcastMove() {
         else if (msg.type === 'ctrl' && msg.type === 'transfer_admin' && msg.to === Game.localPlayer.id) {
             Game.promoteToAdmin();
         }
+        else if (msg.type === 'explode') {
+            Game.explode(msg.x, msg.y, msg.r)
+        }
     }
 }
 
 // --- INPUT ---
 
 class InputManager {
-    constructor() { this.keys = {}; this.bindMode = null; }
+    constructor() {
+        this.keys = {};
+        this.virtual = { up: false, down: false, left: false, right: false, build: false, interact: false, chat: false, transfer: false };
+        this.bindMode = null;
+    }
+
     init() {
         window.addEventListener('keydown', e => {
             Sound.init();
@@ -2476,22 +2800,17 @@ class InputManager {
             if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat) e.preventDefault();
         });
         window.addEventListener('keyup', e => this.keys[e.key] = false);
-        $('chat-input').addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-                let val = e.target.value.trim();
-                if (val) {
-                    if(val.startsWith('/')) { this.handleCommand(val); }
-                    else {
-                        // Display own message immediately
-                        UI.addMessage(Game.settings.username, val);
-                        Network.sendChat(val);
-                    }
-                    e.target.value = "";
-                }
-                e.target.blur();
-                $('gameCanvas').focus();
-            }
-            e.stopPropagation();
+
+        // Touch / Mouse Events for Virtual Controls
+        const bindTouch = (elem, key) => {
+            const start = (e) => { e.preventDefault(); this.virtual[key] = true; elem.style.opacity = '0.5'; };
+            const end = (e) => { e.preventDefault(); this.virtual[key] = false; elem.style.opacity = '1'; };
+            elem.addEventListener('mousedown', start); elem.addEventListener('mouseup', end); elem.addEventListener('mouseleave', end);
+            elem.addEventListener('touchstart', start); elem.addEventListener('touchend', end);
+        };
+
+        document.querySelectorAll('.d-btn, .act-btn').forEach(btn => {
+            bindTouch(btn, btn.getAttribute('data-key'));
         });
     }
 
@@ -2789,6 +3108,8 @@ class UIManager {
                         UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
                     }
                 }
+            } else {
+                UI.showToast("Can't check updates on file:// URLs", "normal");
             }
         } catch (e) { console.error('Update check error:', e); }
     }
@@ -2803,14 +3124,28 @@ class UIManager {
         }
     }
 
+    // Use Consumable Logic
+    useItem(type) {
+        const p = Game.localPlayer;
+        if ((p.inventory[type] || 0) > 0) {
+            p.inventory[type]--;
+            if (type === TILE_TYPES.REPAIR_KIT) {
+                p.hull = Math.min(p.maxHull, p.hull + 50);
+                this.showToast("Used Repair Kit (+50 HP)", "success");
+            } else if (type === TILE_TYPES.FUEL_VOUCHER) {
+                p.fuel = Math.min(p.maxFuel, p.fuel + 50);
+                this.showToast("Used Fuel Voucher (+50 Fuel)", "success");
+            }
+            this.updateDashboard();
+        }
+    }
+
     updateDashboard() {
         const p = Game.localPlayer;
-        // Inventory
         const grid = $('inv-grid');
         grid.innerHTML = '';
 
-        let types = Object.keys(p.inventory).map(Number).sort((a,b) => a-b);
-        if(p.inventory[TILE_TYPES.CASING] === undefined) p.inventory[TILE_TYPES.CASING] = 0;
+        let types = Object.keys(p.inventory).map(Number);
         if(!types.includes(TILE_TYPES.CASING)) types.push(TILE_TYPES.CASING);
 
         types.forEach(type => {
@@ -2819,46 +3154,34 @@ class UIManager {
                 let div = document.createElement('div');
                 div.className = `inv-item ${p.selectedBlock == type ? 'active' : ''}`;
                 div.style.color = TILE_PROPS[type].color || '#fff';
-                div.innerHTML = `
-                    ${TILE_PROPS[type].name}<span class="inv-count">${count}</span>
-                    <div class="inv-trash" onclick="event.stopPropagation(); Game.trashBlock(${type}, event.shiftKey)">x</div>
-                `;
-                if(p.selectedBlock == type) {
-                    div.innerHTML += '<div style="font-size:8px; color:#2ecc71;">[EQUIPPED]</div>';
+
+                let html = `${TILE_PROPS[type].name}<span class="inv-count">${count}</span>`;
+                html += `<div class="inv-trash" onclick="event.stopPropagation(); Game.trashBlock(${type}, event.shiftKey)">x</div>`;
+
+                // Add USE button for consumables
+                if (TILE_PROPS[type].consumable) {
+                    html += `<button class="inv-use-btn" onclick="event.stopPropagation(); UI.useItem(${type})">USE</button>`;
                 }
-                div.onclick = () => { p.selectedBlock = parseInt(type); UI.updateDashboard(); Sound.playTone(400, 'sine', 0.05); };
+
+                div.innerHTML = html;
+
+                // Only equip non-consumables
+                if (!TILE_PROPS[type].consumable) {
+                    div.onclick = () => { p.selectedBlock = parseInt(type); UI.updateDashboard(); };
+                }
                 grid.appendChild(div);
             }
         });
 
-        // Stats
-        let elapsed = Math.floor((now() - p.stats.startTime) / 1000);
-        let mins = Math.floor(elapsed / 60);
-        let secs = elapsed % 60;
-        let html = `
-            <div class="stat-row"><span>Time Played:</span><span>${mins}m ${secs}s</span></div>
-            <div class="stat-row"><span>Total Blocks Mined:</span><span>${p.stats.totalMined}</span></div>
-            <div class="stat-row"><span>Max Depth Reached:</span><span>${Math.floor(Math.max(0, p.gridY-5))}m</span></div>
+        // Stats update
+        $('stats-container').innerHTML = `
+            <div class="stat-row"><span>Mined:</span><span>${p.stats.totalMined}</span></div>
+            <div class="stat-row"><span>Depth:</span><span>${Math.floor(Math.max(0, p.gridY-5))}m</span></div>
         `;
-        let sorted = Object.keys(p.stats.blocksMined).sort((a,b) => p.stats.blocksMined[b] - p.stats.blocksMined[a]).slice(0,3);
-        sorted.forEach(t => {
-            html += `<div class="stat-row"><span>${TILE_PROPS[t].name}:</span><span>${p.stats.blocksMined[t]}</span></div>`;
-        });
-        $('stats-container').innerHTML = html;
-
         // Leaderboard
         let players = Object.values(Game.remotePlayers).concat(p);
-        players.forEach(pl => pl.score = Math.floor((pl.gridY || 0) + (pl.money||0)/10));
-        players.sort((a,b) => b.score - a.score);
-
-        let lbHtml = "";
-        players.forEach((pl, i) => {
-            // Show ID if username missing
-            const name = pl.username || `ID: ${pl.id.substr(0,5)}`;
-            lbHtml += `<div class="stat-row"><span>${i+1}. ${name}</span><span>${pl.score} pts</span></div>`;
-        });
-        $('leaderboard-container').innerHTML = lbHtml;
-
+        players.sort((a,b)=>(b.gridY||0)-(a.gridY||0));
+        $('leaderboard-container').innerHTML = players.map((pl, i)=>`<div class="stat-row"><span>${i+1}.${pl.username}</span><span>${pl.gridY||0}m</span></div>`).join('');
         $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 3) ? 'block' : 'none';
     }
 
@@ -3346,14 +3669,6 @@ const creditsData = {
         }
     ],
 
-    // pictures: [
-    //     // { author: "Jane Doe", items: ["Sky texture", "Moon texture"] },
-    // ],
-
-    // sfx: [
-    //     // { source: "Jane Doe", items: ["Footsteps", "Door creak"] },
-    // ],
-
     specialThanks: [
         "My friends",
         "Playtesters",
@@ -3365,7 +3680,6 @@ const creditsData = {
 Sound.loadSettings()
 // bruh
 document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
-//!endsummaryignore
 </script>
 </body>
 </html>
