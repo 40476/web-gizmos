@@ -340,19 +340,18 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>Mobile-optimized controls with D-pad and action buttons for portrait and landscape modes</li>
-    <li>Admin system with host election, player promotion, and map synchronization across clients</li>
-    <li>Save system using IndexedDB with autosave, manual saves, and import/export functionality</li>
-    <li>Persistent player statistics including money, upgrades, and vehicle customization</li>
-    <li>Server list with custom server support and real-time status checking</li>
+    <li>Real-time multiplayer mining game with procedural world generation</li>
+    <li>Mobile-optimized controls with D-pad and action buttons</li>
+    <li>Dynamic day/night cycle with sun, moon, and starfield rendering</li <li>Upgrade system for drills, cargo, fuel, and hull capacity</li>
+    <li>Teleporter network for fast travel and multiplayer interaction</li>
   </ul>
 
   <pre>
-    <code>const pseudoRandom = (x, y) => { return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1; };</code>
-    <code>const clamp = (num, min, max) => Math.min(Math.max(num, min), max);</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, BEDROCK: 99 };</code>
+    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, SPEED_NORMAL: 1.75, FUEL_CONSUMPTION: 0.125 };</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game with procedurally generated worlds, featuring mobile controls, admin systems, and persistent player progress. The game includes a save system using IndexedDB, real-time synchronization through MQTT, and a comprehensive shop system with upgrades and items. Players can mine resources, build structures, and interact with others in a shared underground environment.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring procedurally generated worlds, real-time player interaction, and extensive upgrade systems. Players dig through layers of earth to discover valuable resources while managing fuel, cargo space, and vehicle durability. The game includes a comprehensive shop system, teleporter network, and mobile-optimized controls for seamless gameplay across devices.</p>
 </section>
       </section>
     
