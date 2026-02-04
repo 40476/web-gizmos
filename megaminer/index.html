@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="img/amogus.png">
     <title>Mega Miner Online - Mobile & Warfare Update</title>
-    <!-- MQTT.js Library -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- TODO: move this to a shared dir for the other programs -->
+    <script src="lib/mqtt.min.js"></script>
     <style>
         /* CSS Reset & Normalization */
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -283,7 +283,7 @@
         }
         #start-screen h1 { font-size: 48px; color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight); }
 
-        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; width: 95%; max-width: 800px; max-height: 90vh; overflow-y:auto; -webkit-overflow-scrolling: touch; }
+        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; max-width: 800px; max-height: 90vh; overflow-y:auto; -webkit-overflow-scrolling: touch; }
         .start-panel { width:300px; flex-shrink: 0; }
         .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; flex-shrink: 0; }
 
