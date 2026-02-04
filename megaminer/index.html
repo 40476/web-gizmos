@@ -3136,9 +3136,9 @@ class UIManager {
             }
 
             item.innerHTML = `
-                <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
+                <div style="display:flex; align-items:center; flex:1;">
                     <div class="server-status-icon" id="status-${btoa(url).replace(/=/g,'')}"><div class="spin-loader"></div></div>
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
+                    <span style="white-space:nowrap; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
                 </div>
                 ${buttonsHtml}
             `;
