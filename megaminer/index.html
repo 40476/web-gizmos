@@ -1816,6 +1816,13 @@ class GameEngine {
                 if (y > 4 && x >= 0 && x < CONSTANTS.MAP_WIDTH && y < CONSTANTS.MAP_HEIGHT) {
                     if (Math.sqrt((x-cx)**2 + (y-cy)**2) <= radius) {
                         if (this.map[y][x] !== TILE_TYPES.BEDROCK) {
+                            
+                            if (this.map[y][x] >= TILE_TYPES.COAL && this.map[y][x] <= TILE_TYPES.RUBY) {
+                                const oreType = this.map[y][x];
+                                if (!this.localPlayer.inventory[oreType]) this.localPlayer.inventory[oreType] = 0;
+                                this.localPlayer.inventory[oreType]++;
+                            }
+                            
                             this.map[y][x] = TILE_TYPES.EMPTY;
                             this.discovered[y][x] = 1; // Reveal area
                             this.spawnParticle(x*32+16, y*32+16, '#ffaa00', 3);
