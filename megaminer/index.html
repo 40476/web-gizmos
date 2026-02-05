@@ -3757,7 +3757,7 @@ class SaveSystem {
         }
 
         // 3. Also check for worlds that exist on Cloud but NOT on local
-        const files = await puter.fs.list('/Documents/MegaMinerSaves');
+        const files = await puter.fs.readdir('/Documents/MegaMinerSaves');
         for (const file of files) {
             const fileId = parseInt(file.name.replace('mm_world_', '').replace('.json', ''));
             const existsLocally = metas.find(m => m.id === fileId);
