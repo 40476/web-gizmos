@@ -3905,7 +3905,7 @@ class SaveSystem {
             }
 
             // Re-sync the list automatically after they log in
-            await this.syncSaveListFromCloud();
+            await this.smartSyncAll();
         } catch (e) {
             console.error("Login failed:", e);
             UI.showToast("Cloud login cancelled", "normal");
