@@ -1,17 +1,16 @@
 <section>
   <ul>
-    <li>Mega Miner Online is a multiplayer mining game with procedurally generated worlds.</li>
-    <li>Players can mine resources, upgrade equipment, build structures, and trade with others in real-time.</li>
-    <li>The game features a day/night cycle, dynamic weather, and a station for buying upgrades and selling ores.</li>
-    <li>Mobile controls and touch support are available, along with customizable keybindings.</li>
-    <li>Saves are stored locally with optional cloud sync via Puter for cross-device access.</li>
+    <li>HTML5 browser game with real-time multiplayer using MQTT/WebSockets</li>
+    <li>Mobile-optimized with virtual D-pad and action buttons</li>
+    <li>Procedural voxel-style mining with over 20 block types</li>
+    <li>Persistent progression system with upgrades, inventory, and shop</li>
+    <li>Cloud save integration via PuterFS with conflict resolution</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = new GameEngine();</code>
-    <code>const Input = new InputManager();</code>
-    <code>const Network = new NetworkManager();</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 1, value: 0, tier: 0 } };</code>
+    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, ... }; } }</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated worlds, mine resources, upgrade equipment, and trade with others in real-time. The game features a day/night cycle, dynamic weather, and a station for buying upgrades and selling ores. Mobile controls and touch support are available, along with customizable keybindings. Saves are stored locally with optional cloud sync via Puter for cross-device access.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time WebSocket connectivity, mobile controls, and persistent progression. Players explore procedurally generated underground worlds, mine various ores, upgrade their equipment, and trade resources with others. The game includes a comprehensive save system with cloud synchronization, an in-game shop for upgrades and consumables, and a dynamic day/night cycle with weather effects.</p>
 </section>
