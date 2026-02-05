@@ -1,19 +1,16 @@
 <section>
   <ul>
-    <li>HTML5 web game with multiplayer mining and building mechanics</li>
-    <li>Real-time multiplayer via MQTT broker for player synchronization</li>
-    <li>Mobile-optimized controls with touch support and adaptive UI</li>
-    <li>Procedural world generation with layered terrain and ore distribution</li>
-    <li>Save system with local IndexedDB storage and cloud sync via Puter</li>
-    <li>Admin features including player management and world control</li>
-    <li>Shop system for upgrades, consumables, and vehicle customization</li>
-    <li>Day/night cycle, minimap, and particle effects for visual polish</li>
+    <li>Multiplayer mining game with real-time sync via MQTT broker.</li>
+    <li>Procedural world generation with ores, upgrades, and building mechanics.</li>
+    <li>Mobile-optimized controls with touch D-pad and action buttons.</li>
+    <li>Cloud save system using Puter for cross-device persistence.</li>
+    <li>Admin features including player management and world control.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
-    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } };</code>
+    <code>const GameEngine = class { constructor() { /* game state, map, players */ } };</code>
+    <code>const NetworkManager = class { constructor() { /* MQTT client, message handling */ } };</code>
   </pre>
 
-  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time player synchronization, procedural world generation, and cross-platform support. Players dig for resources, build structures, trade with others, and manage upgrades in a persistent shared world. The game includes a robust save system, admin controls, and mobile-optimized touch controls for accessibility.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time synchronization, procedural world generation, and cross-platform play. Players can mine resources, upgrade equipment, build structures, and interact with others in a shared underground environment. The game includes cloud save functionality, mobile controls, and an admin system for world management.</p>
 </section>
