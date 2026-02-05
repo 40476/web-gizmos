@@ -3807,7 +3807,7 @@ class SaveSystem {
         }
 
         this.renderSaveList();
-        if (updates > 0) {
+        if (counts.uploaded + counts.downloaded > 0) {
             UI.showToast(`Sync Complete: ${counts.uploaded} uploaded, ${counts.downloaded} downloaded.`, "success");
         } else {
             UI.showToast("Worlds are already in sync.", "normal");
