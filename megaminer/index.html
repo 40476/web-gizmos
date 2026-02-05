@@ -2787,6 +2787,20 @@ class CloudManager {
             return "error";
         }
     }
+    
+    // Delete with app-xxx support
+    delete(id){
+        const fileName = this.getFileName(id);
+        const paths = [`/Documents/MegaMinerSaves/${fileName}`, `./${fileName}`];
+        paths.forEach(async (path) => {
+            try {
+                await puter.fs.delete(path);
+                console.log(`Deleted save file at: ${path}`);
+            } catch (e) {
+                console.warn(`Failed to delete save file at: ${path}\n(This is normal as long as you dont see this error twice for a save)`, e);
+            }
+        });
+    }
 
     // Fallback method to save into the 'app-xxx' folder if /Documents is blocked
     static async uploadToSandbox(id, data) {
