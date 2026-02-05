@@ -340,19 +340,19 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>Multiplayer mining game with real-time sync using MQTT.</li>
-    <li>Procedurally generated 1000x2000 tile map with ores, stations, and explosives.</li>
-    <li>Upgrade system for drills, hull, fuel, cargo, and special abilities.</li>
-    <li>Cloud save integration via Puter for cross-device persistence.</li>
-    <li>Mobile-optimized controls with touch D-pad and action buttons.</li>
+    <li>Browser-based multiplayer mining game with real-time player interactions</li>
+    <li>Procedurally generated underground worlds with various ore types and mining tiers</li>
+    <li>Mobile-optimized touch controls and desktop keyboard controls</li>
+    <li>Shop system for upgrades, consumables, and vehicle customization</li>
+    <li>Save system with local IndexedDB storage and cloud synchronization</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11 };</code>
-    <code>const CONSTANTS = { MAP_WIDTH: 1000, MAP_HEIGHT: 2000, TILE_SIZE: 32 };</code>
+    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } };</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 1, value: 0, tier: 0 } };</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining adventure where players dig for resources, upgrade equipment, and explore procedurally generated worlds. The game features real-time multiplayer via MQTT, cloud saves through Puter, and both desktop and mobile controls. Players can mine ores, build structures, use explosives, and discover teleporters while managing fuel, hull integrity, and cargo capacity.</p>
+  <p>Mega Miner Online is a multiplayer mining game where players dig through procedurally generated underground worlds, collect resources, and upgrade their equipment. The game features real-time multiplayer interaction, a shop system for purchasing upgrades and consumables, and both mobile and desktop controls. Players can save their progress locally or sync to the cloud, and the game includes a dynamic day-night cycle and various ore types with different mining tiers.</p>
 </section>
       </section>
     
