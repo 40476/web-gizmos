@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Multiplayer mining game with real-time sync via MQTT broker</li>
-    <li>Procedurally generated 1000x2000 tile map with various ores and terrain</li>
-    <li>Upgrades, inventory, fuel management, and heat resistance mechanics</li>
-    <li>Mobile controls with D-pad and action buttons for touch devices</li>
-    <li>Save system with local IndexedDB storage and cloud sync via Puter</li>
+    <li>Mega Miner Online is a multiplayer mining game with real-time chat and cross-platform support.</li>
+    <li>Features include procedurally generated maps, vehicle upgrades, fuel management, and explosive tools.</li>
+    <li>Players can build structures, trade resources, and discover teleporters for fast travel.</li>
+    <li>The game includes a shop system for buying upgrades, consumables, and cosmetic changes.</li>
+    <li>Cloud sync allows saving progress across devices using Puter's file system.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, BEDROCK: 99 };</code>
-    <code>const CONSTANTS = { TILE_SIZE: 32, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0 };</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ... };</code>
+    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: 0, gridY: 0, fuel: 100, hull: 100, ... }; } }</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game where players dig through procedurally generated terrain to find valuable ores. The game features real-time multiplayer through MQTT, upgrade systems, mobile controls, and persistent save functionality with cloud sync. Players can mine, build structures, trade resources, and explore an expansive underground world while managing fuel, hull integrity, and heat levels.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring procedurally generated worlds, real-time multiplayer interaction, and extensive vehicle customization. Players can mine resources, build structures, trade with others, and discover teleporters while managing fuel and vehicle health. The game includes a shop system for upgrades, cloud synchronization across devices, and cross-platform support with mobile controls. Built with HTML5 Canvas, WebSockets/MQTT for networking, and IndexedDB for local storage.</p>
 </section>
