@@ -163,8 +163,6 @@
     
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
     
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-    
       <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
     
       <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
@@ -172,6 +170,8 @@
       <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
+    
+      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
     
 
     <button id="themeToggle">Toggle Theme</button>
@@ -335,27 +335,6 @@
 </section>
       </section>
     
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        <section>
-  <ul>
-    <li>Multiplayer mining game with real-time sync via MQTT broker.</li>
-    <li>Procedural world generation with ores, upgrades, and building mechanics.</li>
-    <li>Mobile-optimized controls with touch D-pad and action buttons.</li>
-    <li>Cloud save system using Puter for cross-device persistence.</li>
-    <li>Admin features including player management and world control.</li>
-  </ul>
-
-  <pre>
-    <code>const GameEngine = class { constructor() { /* game state, map, players */ } };</code>
-    <code>const NetworkManager = class { constructor() { /* MQTT client, message handling */ } };</code>
-  </pre>
-
-  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time synchronization, procedural world generation, and cross-platform play. Players can mine resources, upgrade equipment, build structures, and interact with others in a shared underground environment. The game includes cloud save functionality, mobile controls, and an admin system for world management.</p>
-</section>
-      </section>
-    
       <section class="app-section" data-name="animeboydownloader">
         <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
         <h2>animeboydownloader</h2>
@@ -429,6 +408,27 @@
   </pre>
 
   <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
+        <h2>megaminer</h2>
+        <section>
+  <ul>
+    <li>2D multiplayer mining game with real-time player interaction</li>
+    <li>Procedurally generated infinite map with various ores and building blocks</li>
+    <li>Mobile-optimized touch controls and desktop keyboard support</li>
+    <li>Local and cloud save system with automatic sync</li>
+    <li>Admin/host controls for server management and map editing</li>
+  </ul>
+
+  <pre>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, BEDROCK: 99 };</code>
+    <code>class GameEngine { constructor() { this.running = false; this.localPlayer = { id: uuid(), gridX: 500, gridY: 4, x: 0, y: 0, fuel: 100, hull: 100, cargo: 0, money: 0, inventory: {} }; } }</code>
+  </pre>
+
+  <p>Mega Miner Online is a browser-based multiplayer mining game where players dig through procedurally generated terrain to collect resources, build structures, and interact with other players in real-time. The game features both desktop and mobile controls, a comprehensive shop system for upgrades and items, and persistent save functionality with cloud synchronization. Players can host servers, transfer admin privileges, and explore an infinite underground world filled with various ores and building materials.</p>
 </section>
       </section>
     
