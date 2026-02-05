@@ -1816,11 +1816,15 @@ class GameEngine {
                 if (y > 4 && x >= 0 && x < CONSTANTS.MAP_WIDTH && y < CONSTANTS.MAP_HEIGHT) {
                     if (Math.sqrt((x-cx)**2 + (y-cy)**2) <= radius) {
                         if (this.map[y][x] !== TILE_TYPES.BEDROCK) {
-                            
+                            // console.debug(`Explosion affects tile at (${x},${y}) of type ${TILE_PROPS[this.map[y][x]].name}`);
                             if (this.map[y][x] >= TILE_TYPES.COAL && this.map[y][x] <= TILE_TYPES.RUBY) {
                                 const oreType = this.map[y][x];
-                                if (!this.localPlayer.inventory[oreType]) this.localPlayer.inventory[oreType] = 0;
-                                this.localPlayer.inventory[oreType]++;
+                                console.debug(`Collecting ore: ${TILE_PROPS[oreType].name} (id: ${oreType}) from explosion`);
+                                this.localPlayer.inventory[oreType]= (this.localPlayer.inventory[oreType] || 0) + 1;
+                                this.localPlayer.stats.blocksMined[oreType]= (this.localPlayer.stats.blocksMined[oreType] || 0) + 1;
+                                this.localPlayer.stats.totalMined++;
+                                this.localPlayer.cargo++;
+                                UI.updateDashboard();
                             }
                             
                             this.map[y][x] = TILE_TYPES.EMPTY;
@@ -2679,7 +2683,7 @@ class ShopSystem {
         let success = false;
 
         // Item specific logic
-        if (item === 'repair_kit' || item === 'fuel_voucher') {
+        if (item === 'repair_kit' || item === 'fuel_voucher' && p.cargo < p.maxCargo) {
             cost = this.prices[item];
             if (p.money >= cost) {
                 p.money -= cost;
@@ -2690,7 +2694,7 @@ class ShopSystem {
             }
         } else if (item === 'tnt' || item === 'nuke' || item === 'teleporter') {
             cost = this.prices[item];
-            if (p.money >= cost) {
+            if (p.money >= cost && p.cargo < p.maxCargo) {
                 p.money -= cost;
                 let type = (item === 'tnt') ? TILE_TYPES.TNT : (item === 'nuke' ? TILE_TYPES.NUKE : TILE_TYPES.TELEPORTER);
                 // Explosives count towards cargo weight? Yes.
@@ -2709,6 +2713,8 @@ class ShopSystem {
             Game.saveLocalProgress();
             this.updateUI();
             UI.updateDashboard();
+        } else if(p.cargo >= p.maxCargo) {
+            UI.showToast("Cargo is full!", "error");
         } else {
              if (item !== 'drill' && item !== 'hull') UI.showToast("Not enough money!", "error");
         }
@@ -3789,6 +3795,11 @@ class SaveSystem {
         this.cloudSyncEnabled = (cs === 'true');
         const cloudCheck = $('cloudSync-auto');
         if(cloudCheck) cloudCheck.checked = this.cloudSyncEnabled;
+    }
+
+    static toggleAutosave(val) {
+        this.autosaveEnabled = val;
+        localStorage.setItem('mm_autosave_setting', val);
     }
 
     static toggleCloudSync(val) {
