@@ -2723,21 +2723,42 @@ class CloudManager {
 
     static async upload(id, data) {
         try {
-            if (typeof puter === 'undefined') {
-                console.error("Puter SDK missing from page");
-                return false;
+            if (typeof puter === 'undefined') return false;
+
+            // 1. Force a check: Is the user logged in?
+            // Anonymous guests usually cannot write to /Documents
+            if (!(await puter.auth.isSignedIn())) {
+                console.warn("User not signed in. Redirecting to Sandbox.");
+                return await this.uploadToSandbox(id, data);
             }
 
             const fileName = this.getFileName(id);
+            const path = `/Documents/MegaMinerSaves/${fileName}`;
             const serialized = JSON.stringify(data);
 
-            // Ensure we use the root path explicitly
-            await puter.fs.write(`./${fileName}`, serialized);
+            // 2. Ensure directory exists
+            await puter.fs.mkdir('/Documents/MegaMinerSaves', { recursive: true });
 
-            console.log("✅ Cloud Upload Successful:", fileName);
+            // 3. Write file
+            await puter.fs.write(path, serialized);
+
+            console.log("✅ Global Cloud Upload Successful:", path);
             return true;
         } catch (err) {
             console.error("❌ Cloud Upload Failed:", err);
+            // If global fails, fallback to sandbox so the save isn't lost
+            return await this.uploadToSandbox(id, data);
+        }
+    }
+
+    // Fallback method to save into the 'app-xxx' folder if /Documents is blocked
+    static async uploadToSandbox(id, data) {
+        try {
+            const fileName = this.getFileName(id);
+            await puter.fs.write(fileName, JSON.stringify(data));
+            console.log("⚠️ Saved to Sandbox (Only available on this device)");
+            return true;
+        } catch (e) {
             return false;
         }
     }
@@ -2747,10 +2768,18 @@ class CloudManager {
             if (typeof puter === 'undefined') return null;
 
             const fileName = this.getFileName(id);
-            const fileItem = await puter.fs.read(fileName);
-            // fileItem.text() is correct for the modern Puter SDK
-            const content = await fileItem.text();
+            const globalPath = `/Documents/MegaMinerSaves/${fileName}`;
 
+            let fileItem;
+            try {
+                // Try global first
+                fileItem = await puter.fs.read(globalPath);
+            } catch (e) {
+                // Fallback to sandbox
+                fileItem = await puter.fs.read(fileName);
+            }
+
+            const content = await fileItem.text();
             return JSON.parse(content);
         } catch (err) {
             if (err.code === 404) return null;
