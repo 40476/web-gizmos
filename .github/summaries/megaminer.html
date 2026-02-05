@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Mobile-optimized controls with D-pad and action buttons for touchscreens.</li>
-    <li>Real-time multiplayer using MQTT for low-latency synchronization.</li>
-    <li>Procedural map generation with seeded RNG for consistent worlds across clients.</li>
-    <li>Save system using IndexedDB with import/export functionality and autosave.</li>
-    <li>Admin features including player kicking, admin promotion, and map control.</li>
+    <li>2D multiplayer mining game with real-time multiplayer, procedural world generation, and local save system.</li>
+    <li>Features include: drilling, building, trading, admin controls, shop upgrades, and cross-device cloud sync.</li>
+    <li>Mobile-optimized with touch controls, responsive UI, and in-game chat system.</li>
+    <li>Uses MQTT for networking, IndexedDB for local saves, and Puter SDK for cloud storage.</li>
+    <li>Advanced rendering with day/night cycles, particle effects, and detailed tile textures.</li>
   </ul>
 
   <pre>
-    <code>const uuid = () => { if (typeof crypto !== 'undefined' && crypto.randomUUID) { return crypto.randomUUID(); } return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); };</code>
-    <code>const pseudoRandom = (x, y) => { return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1; };</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 1.75, MAP_WIDTH: 1000 };</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game with mobile controls, real-time synchronization, and persistent save systems. Players explore procedurally generated worlds, mine resources, and interact through an admin-controlled network using MQTT. The game features a day-night cycle, explosion mechanics, and a shop system for upgrades and items.</p>
+  <p>Mega Miner Online is a multiplayer 2D mining game featuring real-time networking, procedural world generation, and comprehensive save systems. Players can drill, build, trade, and upgrade their mining equipment while exploring a vast underground world with day/night cycles and detailed graphics. The game supports both desktop and mobile play with responsive controls and includes admin features, in-game chat, and cloud synchronization across devices.</p>
 </section>
