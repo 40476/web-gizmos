@@ -714,11 +714,11 @@
                 <label>Cloud Sync</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px; flex-wrap: wrap;">
                     <button class="btn" style="flex:1; background:#8e44ad; min-width: 140px;" onclick="SaveSystem.syncSaveListFromCloud()">
-                        ☁️ FETCH CLOUD SAVES
+                        FETCH CLOUD SAVES
                     </button>
 
-                    <button class="btn" style="flex:1; background:#2980b9;" onclick="SaveSystem.saveCurrent()">
-                        Sync Current
+                    <button class="btn" style="flex:1; background:#2980b9;" onclick="SaveSystem.smartSyncAll()">
+                        Sync All
                     </button>
 
                     <button class="btn" style="flex:1; background:#444;" onclick="SaveSystem.loadLinkCode()">
@@ -2721,70 +2721,58 @@ class CloudManager {
         return `mm_world_${id}.json`;
     }
 
-    static async upload(id, data) {
+    static async syncWithConflictCheck(id, localData) {
         try {
-            if (typeof puter === 'undefined') return false;
-
-            // 1. Force a check: Is the user logged in?
-            // Anonymous guests usually cannot write to /Documents
-            if (!(await puter.auth.isSignedIn())) {
-                console.warn("User not signed in. Redirecting to Sandbox.");
-                return await this.uploadToSandbox(id, data);
-            }
-
             const fileName = this.getFileName(id);
             const path = `/Documents/MegaMinerSaves/${fileName}`;
-            const serialized = JSON.stringify(data);
 
-            // 2. Ensure directory exists
-            await puter.fs.mkdir('/Documents/MegaMinerSaves', { recursive: true });
+            // 1. Fetch Cloud version to check timestamp
+            let cloudData = null;
+            try {
+                const fileItem = await puter.fs.read(path);
+                cloudData = JSON.parse(await fileItem.text());
+            } catch (e) {
+                // No cloud file yet, safe to upload
+                return await this.upload(id, localData);
+            }
 
-            // 3. Write file
-            await puter.fs.write(path, serialized);
+            // 2. Compare Timestamps
+            if (cloudData.timestamp > localData.timestamp) {
+                console.log(`Cloud is newer for ${id}. Downloading...`);
+                UI.showToast("Cloud version is newer, updating...", "info");
 
-            console.log("✅ Global Cloud Upload Successful:", path);
-            return true;
+                // Inject cloud data into local DB and reload
+                await SaveSystem.injectIntoLocal(cloudData);
+
+                // If this is the world we are currently playing, reload it
+                if (SaveSystem.currentSaveId === id) {
+                    await SaveSystem.loadGame(id, true);
+                }
+                return "downloaded";
+            } else if (localData.timestamp > cloudData.timestamp) {
+                console.log(`Local is newer for ${id}. Uploading...`);
+                await this.upload(id, localData);
+                return "uploaded";
+            }
+
+            return "synced"; // Perfectly in sync
         } catch (err) {
-            console.error("❌ Cloud Upload Failed:", err);
-            // If global fails, fallback to sandbox so the save isn't lost
-            return await this.uploadToSandbox(id, data);
-        }
-    }
-
-    // Fallback method to save into the 'app-xxx' folder if /Documents is blocked
-    static async uploadToSandbox(id, data) {
-        try {
-            const fileName = this.getFileName(id);
-            await puter.fs.write(fileName, JSON.stringify(data));
-            console.log("⚠️ Saved to Sandbox (Only available on this device)");
-            return true;
-        } catch (e) {
+            console.error("Conflict Check Failed:", err);
             return false;
         }
     }
 
-    static async download(id) {
+    static async upload(id, data) {
         try {
-            if (typeof puter === 'undefined') return null;
-
             const fileName = this.getFileName(id);
-            const globalPath = `/Documents/MegaMinerSaves/${fileName}`;
-
-            let fileItem;
-            try {
-                // Try global first
-                fileItem = await puter.fs.read(globalPath);
-            } catch (e) {
-                // Fallback to sandbox
-                fileItem = await puter.fs.read(fileName);
-            }
-
-            const content = await fileItem.text();
-            return JSON.parse(content);
-        } catch (err) {
-            if (err.code === 404) return null;
-            console.error("Cloud Download Failed:", err);
-            return null;
+            const path = `/Documents/MegaMinerSaves/${fileName}`;
+            await puter.fs.mkdir('/Documents/MegaMinerSaves', { recursive: true });
+            await puter.fs.write(path, JSON.stringify(data));
+            return true;
+        } catch (e) {
+            // Fallback to sandbox if Documents is locked
+            await puter.fs.write(this.getFileName(id), JSON.stringify(data));
+            return true;
         }
     }
 }
@@ -3702,6 +3690,55 @@ class SaveSystem {
     static toggleCloudSync(val) {
         this.cloudSyncEnabled = val;
         localStorage.setItem('mm_cloudsync_setting', val);
+    }
+
+    static async smartSyncAll() {
+        UI.showToast("Checking cloud for updates...", "info");
+
+        // 1. Get all local save metadata
+        await this.initDB();
+        const metas = await new Promise(resolve => {
+            const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").getAll();
+            req.onsuccess = () => resolve(req.result);
+        });
+
+        let updates = 0;
+
+        // 2. Loop through every local world
+        for (const meta of metas) {
+            // Get the full local data
+            const localData = await new Promise(resolve => {
+                const req = this.db.transaction("saves", "readonly").objectStore("saves").get(meta.id);
+                req.onsuccess = () => resolve(req.result);
+            });
+
+            if (localData) {
+                const result = await CloudManager.syncWithConflictCheck(meta.id, localData);
+                if (result === "downloaded" || result === "uploaded") updates++;
+            }
+        }
+
+        // 3. Also check for worlds that exist on Cloud but NOT on local
+        const files = await puter.fs.list('/Documents/MegaMinerSaves');
+        for (const file of files) {
+            const fileId = parseInt(file.name.replace('mm_world_', '').replace('.json', ''));
+            const existsLocally = metas.find(m => m.id === fileId);
+
+            if (!existsLocally) {
+                const cloudData = await CloudManager.download(fileId);
+                if (cloudData) {
+                    await this.injectIntoLocal(cloudData);
+                    updates++;
+                }
+            }
+        }
+
+        if (updates > 0) {
+            this.renderSaveList();
+            UI.showToast(`Sync complete: ${updates} worlds updated.`, "success");
+        } else {
+            UI.showToast("All worlds are already in sync.", "normal");
+        }
     }
 
     static async saveGame(id, name = null, isAuto = false) {
