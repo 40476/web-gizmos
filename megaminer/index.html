@@ -2744,6 +2744,10 @@ class CloudManager {
     }
 
     static async syncWithConflictCheck(id, localData) {
+        if(!puter.whoami){
+            console.warn("No puter user detected, skipping cloud sync.");
+            return;
+        }
         try {
             const fileName = this.getFileName(id);
             let cloudData = null;
@@ -2788,8 +2792,12 @@ class CloudManager {
         }
     }
     
-    // Delete with app-xxx support
-    delete(id){
+    // hey autocomplete
+    static async delete(id) {
+        if(!puter.whoami){
+            console.warn("No puter user detected, skipping cloud delete.");
+            return;
+        }
         const fileName = this.getFileName(id);
         const paths = [`/Documents/MegaMinerSaves/${fileName}`, `./${fileName}`];
         paths.forEach(async (path) => {
@@ -2804,6 +2812,10 @@ class CloudManager {
 
     // Fallback method to save into the 'app-xxx' folder if /Documents is blocked
     static async uploadToSandbox(id, data) {
+        if(!puter.whoami){
+            console.warn("No puter user detected, skipping cloud upload.");
+            return;
+        }
         try {
             const fileName = this.getFileName(id);
             await puter.fs.write(fileName, JSON.stringify(data));
@@ -2815,6 +2827,10 @@ class CloudManager {
     }
 
     static async download(id) {
+        if(!puter.whoami){
+            console.warn("No puter user detected, skipping cloud download.");
+            return;
+        }
         try {
             if (typeof puter === 'undefined') return null;
 
@@ -2840,6 +2856,10 @@ class CloudManager {
     }
 
     static async upload(id, data) {
+        if(!puter.whoami){
+            console.warn("No puter user detected, skipping cloud upload.");
+            return;
+        }
         try {
             const fileName = this.getFileName(id);
             const path = `/Documents/MegaMinerSaves/${fileName}`;
