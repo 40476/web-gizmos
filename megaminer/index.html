@@ -1935,7 +1935,7 @@ class GameEngine {
         let cy = this.canvas.height / 2;
         this.ctx.translate(cx, cy);
         this.ctx.scale(this.zoom, this.zoom);
-        this.ctx.translate(-Math.floor(this.camera.x), -Math.floor(this.camera.y));
+        this.ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
         const viewW = (this.canvas.width / this.zoom);
         const viewH = (this.canvas.height / this.zoom);
@@ -1947,6 +1947,7 @@ class GameEngine {
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
         const visionRad = this.localPlayer.xrayRange;
+        const visionRadSq = visionRad * visionRad;
 
         /// -------------------------------
         // WORLD TIME (host-based)
@@ -2106,11 +2107,13 @@ class GameEngine {
         this.drawStation();
 
         for (let y = Math.max(0, startRow); y <= Math.min(CONSTANTS.MAP_HEIGHT-1, endRow); y++) {
+            const dy = y - pcy;
+            const dySq = dy * dy; // Calculate Y-squared once per row
             for (let x = Math.max(0, startCol); x <= Math.min(CONSTANTS.MAP_WIDTH-1, endCol); x++) {
                 let dx = x - pcx; let dy = y - pcy;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                let visible = dist <= visionRad;
-                if (dist <= this.localPlayer.xrayRange) this.discovered[y][x] = 1;
+                const distSq = dx * dx + dySq;
+                let visible = distSq <= visionRadSq;
+                if (visible) this.discovered[y][x] = 1;
                 let tile = this.map[y][x];
 
                 if (visible) this.drawProceduralTile(x, y, tile, !visible);
@@ -2321,11 +2324,11 @@ class GameEngine {
         if(!isOre){
             // --- STANDARD BLOCKS ---
             this.ctx.fillStyle = prop.color;
-            this.ctx.fillRect(px, py, ts, ts);
+            this.ctx.fillRect(px, py, ts + 1, ts + 1);
 
             if (type === TILE_TYPES.EMPTY && y>=5) {
                 this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
-                this.ctx.fillRect(px, py, ts, ts);
+                this.ctx.fillRect(px, py, ts + 1, ts + 1);
 
                 // Add some small pebbles/debris
                 if(this.settings.graphicsQuality > 2){
@@ -4139,7 +4142,7 @@ class SaveSystem {
 
             div.innerHTML = `
                 <div class="save-slot-info">
-                    <strong>${meta.name}</strong> ${isActive ? '<span style="color:var(--success)">(Current)</span>' : ''}<br>
+                    <strong>${meta.name}</strong> ${isActive ? '<span style="color:var(--success)">(Current)</span>' : ''}  ${Date.now() - meta.timestamp <= 30 * 60 * 1000 ? '<span style="color:var(--success)">(Recent)</span>' : ''}<br>
                     <span style="font-size:10px; color:#999">${dateStr}</span>
                 </div>
                 <div class="save-slot-actions">
