@@ -2726,7 +2726,7 @@ class CloudManager {
             const fileName = this.getFileName(id);
             let cloudData = null;
 
-            // 1. Try Global Documents first, then Sandbox
+            // Try to find the file in Global first, then Sandbox
             const paths = [`/Documents/MegaMinerSaves/${fileName}`, `./${fileName}`];
             for (const path of paths) {
                 try {
@@ -2736,34 +2736,32 @@ class CloudManager {
                 } catch (e) { continue; }
             }
 
-            // 2. No cloud file exists -> Push local to cloud
             if (!cloudData) {
                 await this.upload(id, localData);
                 return "uploaded";
             }
 
-            // 3. FORCE Number comparison
+            // FORCE numeric comparison for timestamps
             const cloudTime = Number(cloudData.timestamp || 0);
             const localTime = Number(localData.timestamp || 0);
 
             if (cloudTime > localTime) {
-                // Cloud is newer -> Download and overwrite local
+                console.log(`Cloud is newer (${cloudTime} > ${localTime}). Downloading...`);
                 await SaveSystem.injectIntoLocal(cloudData);
 
-                // Reload if currently playing
                 if (SaveSystem.currentSaveId === id) {
                     await SaveSystem.loadGame(id, true);
                 }
                 return "downloaded";
             } else if (localTime > cloudTime) {
-                // Local is newer -> Upload to cloud
+                console.log(`Local is newer (${localTime} > ${cloudTime}). Uploading...`);
                 await this.upload(id, localData);
                 return "uploaded";
             }
 
             return "synced";
         } catch (err) {
-            console.error("Conflict check failed:", err);
+            console.error("Conflict check error:", err);
             return "error";
         }
     }
@@ -2813,7 +2811,7 @@ class CloudManager {
             await puter.fs.write(path, JSON.stringify(data));
             return true;
         } catch (e) {
-            // Fallback to sandbox if Documents is locked
+            // Fallback to Sandbox if Documents is Forbidden
             await puter.fs.write(this.getFileName(id), JSON.stringify(data));
             return true;
         }
@@ -3739,7 +3737,7 @@ class SaveSystem {
         UI.showToast("Starting Smart Sync...", "info");
         await this.initDB();
 
-        // Get all local world IDs
+        // 1. Get Local IDs
         const metas = await new Promise(resolve => {
             const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").getAll();
             req.onsuccess = () => resolve(req.result || []);
@@ -3747,7 +3745,7 @@ class SaveSystem {
 
         let counts = { uploaded: 0, downloaded: 0, synced: 0 };
 
-        // Part A: Check existing local worlds
+        // 2. Sync Existing Local Worlds
         for (const meta of metas) {
             const localData = await new Promise(resolve => {
                 const req = this.db.transaction("saves", "readonly").objectStore("saves").get(meta.id);
@@ -3760,11 +3758,27 @@ class SaveSystem {
             }
         }
 
-        // Part B: Find worlds on Cloud that aren't on this device at all
-        const cloudFiles = await this.getAnyCloudFiles();
-        for (const file of cloudFiles) {
+        // 3. Discover "New" Worlds on Cloud
+        let allCloudItems = [];
+        try {
+            const docs = await puter.fs.readdir('/Documents/MegaMinerSaves');
+            allCloudItems = [...allCloudItems, ...docs];
+        } catch(e) {}
+        try {
+            const sandbox = await puter.fs.readdir('./');
+            allCloudItems = [...allCloudItems, ...sandbox];
+        } catch(e) {}
+
+        // Filter out duplicates and non-save files
+        const uniqueFiles = allCloudItems.filter((item, index, self) =>
+            item.name.startsWith('mm_world_') &&
+            index === self.findIndex((t) => t.name === item.name)
+        );
+
+        for (const file of uniqueFiles) {
             const fileId = parseInt(file.name.replace('mm_world_', '').replace('.json', ''));
             if (!metas.find(m => m.id === fileId)) {
+                console.log("Found new world in cloud:", fileId);
                 const data = await CloudManager.download(fileId);
                 if (data) {
                     await this.injectIntoLocal(data);
@@ -3774,12 +3788,11 @@ class SaveSystem {
         }
 
         this.renderSaveList();
-        const totalChanges = counts.uploaded + counts.downloaded;
-
-        if (totalChanges > 0) {
-            UI.showToast(`Sync Complete! ${totalChanges} updates applied.`, "success");
+        const updates = counts.uploaded + counts.downloaded;
+        if (updates > 0) {
+            UI.showToast(`Sync Complete: ${updates} changes applied.`, "success");
         } else {
-            UI.showToast("Everything is already in sync.", "normal");
+            UI.showToast("Worlds are already in sync.", "normal");
         }
     }
 
@@ -3916,11 +3929,11 @@ class SaveSystem {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
 
-            // Reconstruct meta from the full data
+            // Use the timestamp from the CLOUD data, not the current time
             const metaData = {
                 id: data.id,
-                name: data.name || `Cloud Save ${data.id}`,
-                timestamp: data.timestamp || Date.now()
+                name: data.name || `World ${data.id}`,
+                timestamp: data.timestamp // This is the Date.now() you just added!
             };
 
             tx.objectStore("saves").put(data);
