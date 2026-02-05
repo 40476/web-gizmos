@@ -655,6 +655,13 @@
             </div>
 
             <div class="form-group">
+                <label>Graphics Settings</label>
+                <div style="font-size:12px; display:grid; grid-template-columns: 1fr 3fr 1fr; gap:10px; align-items:center;">
+                    <span>Graphics Quality</span> <input type="range" id="graphicsQuality" min="1" max="3" step="1" value="1" oninput="Game.setGraphicsQuality(this.value)">
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label>Options</label>
                 <div style="display:flex; gap:15px; flex-wrap:wrap;">
                     <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
@@ -1275,7 +1282,7 @@ class GameEngine {
         }
     }
     loadStoredSettings() {
-
+        if(localStorage.getItem('mm_graphics_quality')) $('graphicsQuality').value = localStorage.getItem('mm_graphics_quality');
         if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
         if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
         if(localStorage.getItem('mm_veh_color')) $('start-color').value = localStorage.getItem('mm_veh_color');
@@ -1369,6 +1376,12 @@ class GameEngine {
         }
     }
 
+    setGraphicsQuality(quality){
+        this.settings.graphicsQuality = quality;
+        localStorage.setItem('mm_graphics_quality',quality);
+        console.debug("graphics set to: " + quality +"\nlocalStorage value is:" + localStorage.getItem('mm_graphics_quality'));
+    }
+
     init() {
         this.settings.username = $('start-username').value || 'Miner';
         this.localPlayer.username = this.settings.username;
@@ -1376,7 +1389,7 @@ class GameEngine {
         this.settings.room = ($('start-room').value || 'public').trim();
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
-
+        this.settings.graphicsQuality = $('graphicsQuality').value || 3;
         // Reset admin on init
         this.isAdmin = false;
 
@@ -2265,7 +2278,8 @@ class GameEngine {
 
         // --- ORE RENDERING (Detailed) ---
         if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
-        isOre=true
+
+            isOre=true
             // Stone background
             this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
             this.ctx.fillRect(px, py, ts, ts);
@@ -2298,7 +2312,7 @@ class GameEngine {
                 this.ctx.fillRect(cx + sp.dx, cy + sp.dy, sp.s, sp.s);
             }
 
-            if ((now() + Math.floor(pseudoRandom(x, y) * 2000)) % 2000 < 200) {
+            if (this.settings.graphicsQuality > 2 && ((now() + Math.floor(pseudoRandom(x, y) * 2000)) % 2000 < 200)) {
                 this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
                 this.ctx.fillRect(cx - 1, cy - 1, 2, 2);
             }
@@ -2314,33 +2328,43 @@ class GameEngine {
                 this.ctx.fillRect(px, py, ts, ts);
 
                 // Add some small pebbles/debris
-                this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
-                if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
-                if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
-                if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
-                bevel=false;
+                if(this.settings.graphicsQuality > 2){
+                    this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
+                    if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
+                    if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
+                    if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
+                    bevel=false;
+                }
             }
             else if (type === TILE_TYPES.EMPTY && y<5) {
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
                 return
             }
-            else if (type === TILE_TYPES.DIRT) {
+            else if (this.settings.graphicsQuality > 2 && type === TILE_TYPES.DIRT) {
                 this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
                 if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
                 if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
                 if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
-            } else if (type === TILE_TYPES.GRASS) {
-                this.ctx.fillStyle = '#2ecc71'; this.ctx.fillRect(px, py, ts, 6);
-                this.ctx.fillStyle = 'rgba(0,0,0,0.1)'; this.ctx.fillRect(px, py+6, ts, ts-6);
-            } else if (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE) {
+            } else if (this.settings.graphicsQuality > 1 && type === TILE_TYPES.GRASS) {
+                this.ctx.fillStyle = '#2ecc71';
+                this.ctx.fillRect(px, py, ts, 6);
+                this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                this.ctx.fillRect(px, py+6, ts, ts-6);
+            } else if (this.settings.graphicsQuality > 2 && (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE)) {
                 const r0 = pseudoRandom(x, y);
                 const r1 = pseudoRandom(x + 17, y + 3);
                 const r2 = pseudoRandom(x - 9, y + 11);
                 const r3 = pseudoRandom(x + 4, y - 6);
                 this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                if(n1 > 0.3) { this.ctx.fillRect(px+(r0*5), py+(r2*5), 10, 6); this.ctx.fillRect(px+(r1*18), py+(r3*18), 10, 6); }
+                if(n1 > 0.3) {
+                    this.ctx.fillRect(px+(r0*5), py+(r2*5), 10, 6);
+                    this.ctx.fillRect(px+(r1*18), py+(r3*18), 10, 6);
+                }
                 this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                this.ctx.beginPath(); this.ctx.moveTo(px+(ts*r2), py+(ts*r1)); this.ctx.lineTo(px+(ts*r3), py+(ts*r0)); this.ctx.stroke();
+                this.ctx.beginPath();
+                this.ctx.moveTo(px+(ts*r2), py+(ts*r1));
+                this.ctx.lineTo(px+(ts*r3), py+(ts*r0));
+                this.ctx.stroke();
             } else if (type === TILE_TYPES.CASING) {
                 this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
                 this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
@@ -2375,7 +2399,7 @@ class GameEngine {
         }
 
         // Bevel for all
-        if(bevel){
+        if(this.settings.graphicsQuality > 1 && bevel){
           this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
           this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
         }
