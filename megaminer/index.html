@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="img/amogus.png">
-    <title>Mega Miner Online - Mobile & Warfare Update</title>
+    <title>Mega Miner Online</title>
     <!-- TODO: move this to a shared dir for the other programs -->
-    <script src="lib/mqtt.min.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://js.puter.com/v2/"></script>
     <style>
         /* CSS Reset & Normalization */
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -656,17 +657,20 @@
             <div class="form-group">
                 <label>Options</label>
                 <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                    <label style="display:inline-flex; align-items:center; color:#eee;">
-                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)"> Autosave
-                    </label>
-                    <label style="display:inline-flex; align-items:center; color:#eee;">
-                        <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)"> Show Coordinates
-                    </label>
-                     <label style="display:inline-flex; align-items:center; color:#eee;">
-                        <input type="checkbox" id="mobile-setting-toggle" onchange="Game.toggleMobile(this.checked)"> Mobile Controls
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)">&nbsp;&nbsp;Autosave
                     </label>
                     <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
-                        <input type="checkbox" id="update-check-toggle" checked> Autocheck Updates (60s)
+                        <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)">&nbsp;&nbsp;Show Coordinates
+                    </label>
+                     <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="mobile-setting-toggle" onchange="Game.toggleMobile(this.checked)">&nbsp;&nbsp;Mobile Controls
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="update-check-toggle" checked>&nbsp;&nbsp;Autocheck Updates (60s)
+                    </label>
+                    <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
+                        <input type="checkbox" id="cloudSync-auto" checked>&nbsp;&nbsp;Automatically Sync to Cloud
                     </label>
                 </div>
             </div>
@@ -686,7 +690,7 @@
             </div>
 
             <div class="form-group">
-                <label>Save Management (IndexedDB)</label>
+                <label>Save Management</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px;">
                     <button class="btn" style="flex:1; background:var(--success);" onclick="SaveSystem.createNewSave()">+ NEW SAVE</button>
                     <button class="btn" style="flex:1;" onclick="SaveSystem.saveCurrent()">SAVE CURRENT</button>
@@ -694,8 +698,40 @@
                 <div id="save-list-wrapper" class="save-list-wrapper">
                     <!-- Saves injected here -->
                 </div>
-                <small style="color:#777;">Saves are unlimited. Green border indicates current session.</small>
+                <small style="color:#777;">Green border indicates current session.</small>
             </div>
+
+
+            <div class="form-group">
+                <label>Backup Data (File)</label>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <button class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">Load Save from File</button>
+                </div>
+                <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
+            </div>
+
+            <div class="form-group">
+                <label>Cloud Sync</label>
+                <div style="display:flex; gap:5px; margin-bottom:5px; flex-wrap: wrap;">
+                    <button class="btn" style="flex:1; background:#8e44ad; min-width: 140px;" onclick="SaveSystem.syncSaveListFromCloud()">
+                        ☁️ FETCH CLOUD SAVES
+                    </button>
+
+                    <button class="btn" style="flex:1; background:#2980b9;" onclick="SaveSystem.saveCurrent()">
+                        Sync Current
+                    </button>
+
+                    <button class="btn" style="flex:1; background:#444;" onclick="SaveSystem.loadLinkCode()">
+                        Link Device
+                    </button>
+                </div>
+                <div id="cloud-status" style="font-size:11px; color:#aaa; display:flex; justify-content:space-between;">
+                    <span>Status: Connected (Puter)</span>
+                    <span id="cloud-bin-display" style="font-family:monospace;"></span>
+                </div>
+                <small style="color:#666;">Fetch Cloud Saves to see worlds from other devices.</small>
+            </div>
+
             <div class="form-group">
                 <label>Controls</label>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:12px;">
@@ -711,13 +747,6 @@
                 <small>Hold BUILD + Arrow to place Equipped block. Mouse Wheel to Zoom.</small>
             </div>
 
-            <div class="form-group">
-                <label>Backup Data (File)</label>
-                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                    <button class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">Load Save from File</button>
-                </div>
-                <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
-            </div>
             <div id="credits"></div>
             <button class="btn" onclick="UI.closeSettings()">Close</button>
         </div>
@@ -1076,6 +1105,13 @@ class SoundManager {
     playSuccess() { this.playTone(800, 'sine', 0.1); setTimeout(()=>this.playTone(1200, 'sine', 0.2), 100); }
     playBuild() { this.playTone(300, 'square', 0.1); }
     playThud() { this.playTone(80, 'square', 0.1, 0.3); }
+
+    playExplosion() {
+      // Simple explosion synth
+      if(!this.ctx) return;
+      this.playTone(100, 'sawtooth', 0.5, 0.5);
+      this.playTone(50, 'square', 0.6, 0.5);
+    }
 
     playNextMusic() {
       try{
@@ -2680,6 +2716,47 @@ class ShopSystem {
     }
 }
 
+class CloudManager {
+    static getFileName(id) {
+        return `mm_world_${id}.json`;
+    }
+
+    static async upload(id, data) {
+        try {
+            if (typeof puter === 'undefined') return;
+
+            // Remove puter.ready() - it's usually not a function
+            const fileName = this.getFileName(id);
+            const serialized = JSON.stringify(data);
+
+            // Puter.js standard write
+            await puter.fs.write(fileName, serialized);
+            console.log(`Cloud: Saved world ${id}`);
+            return true;
+        } catch (err) {
+            console.error("Cloud Upload Failed:", err);
+            return false;
+        }
+    }
+
+    static async download(id) {
+        try {
+            if (typeof puter === 'undefined') return null;
+
+            const fileName = this.getFileName(id);
+            const fileItem = await puter.fs.read(fileName);
+            // fileItem.text() is correct for the modern Puter SDK
+            const content = await fileItem.text();
+
+            return JSON.parse(content);
+        } catch (err) {
+            if (err.code === 404) return null;
+            console.error("Cloud Download Failed:", err);
+            return null;
+        }
+    }
+}
+
 // --- NETWORK (MQTT) ---
 class NetworkManager {
     constructor() {
@@ -3572,10 +3649,175 @@ class AdminSystem {
 
 class SaveSystem {
     static autosaveEnabled = true;
+    static cloudSyncEnabled = false; // New property
     static currentSaveId = null;
     static db = null;
     static dbPromise = null;
 
+    static init() {
+        const as = localStorage.getItem('mm_autosave_setting');
+        if(as !== null) this.autosaveEnabled = (as === 'true');
+        $('autosave-toggle').checked = this.autosaveEnabled;
+        $('cloudSync-auto').onchange = (e) => SaveSystem.toggleCloudSync(e.target.checked);
+
+        // --- CLOUD INIT ---
+        const cs = localStorage.getItem('mm_cloudsync_setting');
+        this.cloudSyncEnabled = (cs === 'true');
+        const cloudCheck = $('cloudSync-auto');
+        if(cloudCheck) cloudCheck.checked = this.cloudSyncEnabled;
+    }
+
+    static toggleCloudSync(val) {
+        this.cloudSyncEnabled = val;
+        localStorage.setItem('mm_cloudsync_setting', val);
+    }
+
+    static async saveGame(id, name = null, isAuto = false) {
+        if (Network.client && Network.client.connected && !Game.isAdmin) return;
+
+        try {
+            await this.initDB();
+
+            let finalName = name;
+            if(!finalName) {
+                const existing = await this.getMeta(id);
+                finalName = existing ? existing.name : `Save ${id}`;
+            }
+
+            const cleanPlayer = JSON.parse(JSON.stringify(Game.localPlayer));
+            const cleanMap = JSON.parse(JSON.stringify(Game.map));
+            const cleanDiscovered = Game.discovered.map(r => Array.from(r));
+
+            const fullData = {
+                id: id,
+                name: finalName, // Added name to fullData for cloud context
+                player: cleanPlayer,
+                map: cleanMap,
+                discovered: cleanDiscovered,
+                banned: Game.bannedIds,
+                timestamp: Date.now()
+            };
+
+            const metaData = {
+                id: id,
+                name: finalName,
+                timestamp: Date.now()
+            };
+
+            // 1. LOCAL SAVE (IndexedDB)
+            await new Promise((resolve, reject) => {
+                const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
+                tx.objectStore("saves").put(fullData);
+                tx.objectStore("save_meta").put(metaData);
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+
+            localStorage.setItem('mm_last_save_id', id);
+
+            // 2. CLOUD SYNC (If enabled)
+            // We check the property or the DOM element directly
+            const isCloudActive = $('cloudSync-auto') ? $('cloudSync-auto').checked : this.cloudSyncEnabled;
+
+            if (isCloudActive) {
+                // Pass the specific ID so it creates a unique file
+                if (isAuto) {
+                    CloudManager.upload(id, fullData);
+                } else {
+                    await CloudManager.upload(id, fullData);
+                }
+            }
+
+            if (!isAuto) {
+                UI.showToast(`Saved "${finalName}"`, "success");
+                this.renderSaveList();
+            }
+
+        } catch (e) {
+            console.error("Error saving game", e);
+            if (!isAuto) UI.showToast("Save Failed", "error");
+        }
+    }
+
+    static async syncSaveListFromCloud() {
+        UI.showToast("Fetching cloud worlds...", "info");
+        try {
+            // 'readdir' is the standard method for Puter.js
+            const files = await puter.fs.readdir('.');
+            const worldFiles = files.filter(f => f.name.startsWith('mm_world_'));
+
+            for (const file of worldFiles) {
+                const fileId = file.name.replace('mm_world_', '').replace('.json', '');
+                const data = await CloudManager.download(fileId);
+
+                if (data && data.id) {
+                    await this.injectIntoLocal(data);
+                }
+            }
+            this.renderSaveList();
+            UI.showToast("Cloud worlds synced!", "success");
+        } catch (e) {
+            console.error("Fetch Error:", e);
+            UI.showToast("Failed to sync list", "error");
+        }
+    }
+
+    static async loadLinkCode() {
+        try {
+            // In Puter, 'Linking' is just signing in.
+            // Once they sign in, their 'Guest' saves are migrated to their account.
+            UI.showToast("Opening Puter Login...", "info");
+            await puter.auth.signIn();
+
+            // Refresh the UI after login
+            if (typeof Cloud !== 'undefined' && Cloud.updateStatusDisplay) {
+                await Cloud.updateStatusDisplay();
+            }
+
+            // Re-sync the list automatically after they log in
+            await this.syncSaveListFromCloud();
+        } catch (e) {
+            console.error("Login failed:", e);
+            UI.showToast("Cloud login cancelled", "normal");
+        }
+    }
+
+    static async injectIntoLocal(data) {
+        await this.initDB();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
+
+            // Reconstruct meta from the full data
+            const metaData = {
+                id: data.id,
+                name: data.name || `Cloud Save ${data.id}`,
+                timestamp: data.timestamp || Date.now()
+            };
+
+            tx.objectStore("saves").put(data);
+            tx.objectStore("save_meta").put(metaData);
+
+            tx.oncomplete = () => resolve();
+            tx.onerror = (e) => reject(e);
+        });
+    }
+
+    // New helper method to bridge with the Puter logic
+    static async triggerCloudUpload(data) {
+        try {
+            if (typeof puter === 'undefined') return;
+
+            // Note: 10MB JSON.stringify can be heavy on the main thread.
+            const serialized = JSON.stringify(data);
+
+            // Using Puter FS (File System) which is better for 10MB than KV
+            await puter.fs.write('cloud_save_main.json', serialized);
+            console.log("Cloud Sync: Success");
+        } catch (err) {
+            console.error("Cloud Sync: Failed", err);
+            // We don't show a toast on every autosave failure to avoid spamming
+        }
+    }
     static async initDB() {
         if (!this.dbPromise) {
             this.dbPromise = new Promise((resolve, reject) => {
@@ -3601,17 +3843,6 @@ class SaveSystem {
             });
         }
         this.db = await this.dbPromise;
-    }
-
-    static init() {
-        const as = localStorage.getItem('mm_autosave_setting');
-        if(as !== null) this.autosaveEnabled = (as === 'true');
-        $('autosave-toggle').checked = this.autosaveEnabled;
-    }
-
-    static toggleAutosave(val) {
-        this.autosaveEnabled = val;
-        localStorage.setItem('mm_autosave_setting', val);
     }
 
     // --- CORE SAVE LOGIC ---
@@ -3645,67 +3876,6 @@ class SaveSystem {
             await this.saveGame(this.currentSaveId);
         } else {
             this.createNewSave();
-        }
-    }
-
-    static async saveGame(id, name = null, isAuto = false) {
-        // PROTECTION: Redundant check for internal calls
-        if (Network.client && Network.client.connected && !Game.isAdmin) {
-            return;
-        }
-
-        try {
-            await this.initDB();
-
-            // If name is null, try to fetch existing name or default
-            let finalName = name;
-            if(!finalName) {
-                const existing = await this.getMeta(id);
-                finalName = existing ? existing.name : `Save ${id}`;
-            }
-
-            const cleanPlayer = JSON.parse(JSON.stringify(Game.localPlayer));
-            const cleanMap = JSON.parse(JSON.stringify(Game.map));
-            const cleanDiscovered = Game.discovered.map(r => Array.from(r));
-
-            const fullData = {
-                id: id,
-                player: cleanPlayer,
-                map: cleanMap,
-                discovered: cleanDiscovered,
-                banned: Game.bannedIds,
-                timestamp: Date.now()
-            };
-
-            const metaData = {
-                id: id,
-                name: finalName,
-                timestamp: Date.now()
-            };
-
-            await new Promise((resolve, reject) => {
-                const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
-
-                // Save heavy data
-                tx.objectStore("saves").put(fullData);
-                // Save meta data
-                tx.objectStore("save_meta").put(metaData);
-
-                tx.oncomplete = () => resolve();
-                tx.onerror = (e) => reject(e);
-            });
-
-            // Remember this as the last used save
-            localStorage.setItem('mm_last_save_id', id);
-
-            if (!isAuto) {
-                UI.showToast(`Saved "${finalName}"`, "success");
-                this.renderSaveList();
-            }
-
-        } catch (e) {
-            console.error("Error saving game", e);
-            if (!isAuto) UI.showToast("Save Failed", "error");
         }
     }
 
@@ -3753,7 +3923,6 @@ class SaveSystem {
     }
 
     static async deleteGame(id) {
-        // --- MODAL REPLACEMENT ---
         const confirm = await CustomModal.show('confirm', "Delete Save", "Delete this save forever?");
         if(!confirm) return;
 
@@ -3762,7 +3931,11 @@ class SaveSystem {
             const tx = this.db.transaction(["saves", "save_meta"], "readwrite");
             tx.objectStore("saves").delete(id);
             tx.objectStore("save_meta").delete(id);
-            tx.oncomplete = () => {
+
+            tx.oncomplete = async () => {
+                // Clean up cloud as well
+                await CloudManager.delete(id);
+
                 UI.showToast("Save Deleted", "normal");
                 this.renderSaveList();
                 if(this.currentSaveId === id) this.currentSaveId = null;
@@ -3988,6 +4161,7 @@ const Network = new NetworkManager();
 const UI = new UIManager();
 const Admin = new AdminSystem();
 const Shop = new ShopSystem();
+const Cloud = new CloudManager();
 
 // Init Save System
 SaveSystem.init();
@@ -3998,6 +4172,7 @@ window.UI = UI;
 window.SaveSystem = SaveSystem;
 window.Admin = Admin;
 window.Shop = Shop;
+window.Cloud = Cloud;
 window.Input = Input;
 window.Sound = Sound;
 //patrickdearteaga.com,
