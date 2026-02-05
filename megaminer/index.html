@@ -3733,35 +3733,52 @@ class SaveSystem {
     static async smartSyncAll() {
         UI.showToast("Checking cloud for updates...", "info");
 
-        // 1. Get all local save metadata
+        // 1. Get all local save metadata from IndexedDB
         await this.initDB();
         const metas = await new Promise(resolve => {
             const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").getAll();
-            req.onsuccess = () => resolve(req.result);
+            req.onsuccess = () => resolve(req.result || []);
         });
 
         let updates = 0;
 
-        // 2. Loop through every local world
+        // 2. Loop through every local world and check for cloud conflicts/updates
         for (const meta of metas) {
-            // Get the full local data
             const localData = await new Promise(resolve => {
                 const req = this.db.transaction("saves", "readonly").objectStore("saves").get(meta.id);
                 req.onsuccess = () => resolve(req.result);
             });
 
             if (localData) {
+                // syncWithConflictCheck now handles its own path fallbacks internally
                 const result = await CloudManager.syncWithConflictCheck(meta.id, localData);
                 if (result === "downloaded" || result === "uploaded") updates++;
             }
         }
 
-        // 3. Also check for worlds that exist on Cloud but NOT on local
-        const files = await puter.fs.readdir('/Documents/MegaMinerSaves');
-        for (const file of files) {
+        // 3. Check for "New" worlds on the cloud that don't exist locally
+        let cloudFiles = [];
+        try {
+            // Primary attempt: Global Documents folder
+            cloudFiles = await puter.fs.readdir('/Documents/MegaMinerSaves');
+        } catch (e) {
+            console.warn("Global directory inaccessible, falling back to Sandbox.");
+            try {
+                // Fallback attempt: Local App Sandbox
+                cloudFiles = await puter.fs.readdir('.');
+            } catch (err) {
+                console.error("Cloud directory read failed completely:", err);
+            }
+        }
+
+        // Filter only for our world save files
+        const worldFiles = cloudFiles.filter(f => f.name.startsWith('mm_world_'));
+
+        for (const file of worldFiles) {
             const fileId = parseInt(file.name.replace('mm_world_', '').replace('.json', ''));
             const existsLocally = metas.find(m => m.id === fileId);
 
+            // If it exists in cloud but not on this device, download it
             if (!existsLocally) {
                 const cloudData = await CloudManager.download(fileId);
                 if (cloudData) {
@@ -3771,6 +3788,7 @@ class SaveSystem {
             }
         }
 
+        // Final UI Update
         if (updates > 0) {
             this.renderSaveList();
             UI.showToast(`Sync complete: ${updates} worlds updated.`, "success");
