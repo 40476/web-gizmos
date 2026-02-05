@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Browser-based multiplayer mining game with procedurally generated worlds</li>
-    <li>Supports both desktop and mobile controls with touch-friendly UI</li>
-    <li>Features real-time multiplayer via MQTT with admin roles and map synchronization</li>
-    <li>Includes shop system, inventory management, and cloud save functionality</li>
-    <li>Uses IndexedDB for local storage and Puter cloud for cross-device saves</li>
+    <li>Multiplayer mining game with real-time sync using MQTT.</li>
+    <li>Procedurally generated 1000x2000 tile map with ores, stations, and explosives.</li>
+    <li>Upgrade system for drills, hull, fuel, cargo, and special abilities.</li>
+    <li>Cloud save integration via Puter for cross-device persistence.</li>
+    <li>Mobile-optimized controls with touch D-pad and action buttons.</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = { localPlayer: { id: uuid(), x: 0, y: 0, fuel: 100 }, map: [], remotePlayers: {} };</code>
-    <code>class NetworkManager { client = mqtt.connect(broker, options); broadcastMove() { publish('pos', { type: 'move', id, x, y }); } }</code>
+    <code>const TILE_TYPES = { DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11 };</code>
+    <code>const CONSTANTS = { MAP_WIDTH: 1000, MAP_HEIGHT: 2000, TILE_SIZE: 32 };</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game where players dig for resources, upgrade equipment, and trade with others. The game features procedural world generation, real-time multiplayer via MQTT, mobile-friendly controls, and cloud saves. Players can build structures, use explosives, and travel between discovered teleporters while managing fuel, cargo, and health in a persistent underground world.</p>
+  <p>Mega Miner Online is a multiplayer mining adventure where players dig for resources, upgrade equipment, and explore procedurally generated worlds. The game features real-time multiplayer via MQTT, cloud saves through Puter, and both desktop and mobile controls. Players can mine ores, build structures, use explosives, and discover teleporters while managing fuel, hull integrity, and cargo capacity.</p>
 </section>
