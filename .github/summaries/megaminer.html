@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>HTML5 browser game with real-time multiplayer using MQTT/WebSockets</li>
-    <li>Mobile-optimized with virtual D-pad and action buttons</li>
-    <li>Procedural voxel-style mining with over 20 block types</li>
-    <li>Persistent progression system with upgrades, inventory, and shop</li>
-    <li>Cloud save integration via PuterFS with conflict resolution</li>
+    <li>Browser-based multiplayer mining game with procedurally generated worlds</li>
+    <li>Supports both desktop and mobile controls with touch-friendly UI</li>
+    <li>Features real-time multiplayer via MQTT with admin roles and map synchronization</li>
+    <li>Includes shop system, inventory management, and cloud save functionality</li>
+    <li>Uses IndexedDB for local storage and Puter cloud for cross-device saves</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 1, value: 0, tier: 0 } };</code>
-    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, ... }; } }</code>
+    <code>const GameEngine = { localPlayer: { id: uuid(), x: 0, y: 0, fuel: 100 }, map: [], remotePlayers: {} };</code>
+    <code>class NetworkManager { client = mqtt.connect(broker, options); broadcastMove() { publish('pos', { type: 'move', id, x, y }); } }</code>
   </pre>
 
-  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time WebSocket connectivity, mobile controls, and persistent progression. Players explore procedurally generated underground worlds, mine various ores, upgrade their equipment, and trade resources with others. The game includes a comprehensive save system with cloud synchronization, an in-game shop for upgrades and consumables, and a dynamic day/night cycle with weather effects.</p>
+  <p>Mega Miner Online is a multiplayer mining game where players dig for resources, upgrade equipment, and trade with others. The game features procedural world generation, real-time multiplayer via MQTT, mobile-friendly controls, and cloud saves. Players can build structures, use explosives, and travel between discovered teleporters while managing fuel, cargo, and health in a persistent underground world.</p>
 </section>
