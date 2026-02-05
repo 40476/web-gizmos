@@ -1,16 +1,19 @@
 <section>
   <ul>
-    <li>Mega Miner Online is a multiplayer mining game with real-time chat and cross-platform support.</li>
-    <li>Features include procedurally generated maps, vehicle upgrades, fuel management, and explosive tools.</li>
-    <li>Players can build structures, trade resources, and discover teleporters for fast travel.</li>
-    <li>The game includes a shop system for buying upgrades, consumables, and cosmetic changes.</li>
-    <li>Cloud sync allows saving progress across devices using Puter's file system.</li>
+    <li>HTML5 web game with multiplayer mining and building mechanics</li>
+    <li>Real-time multiplayer via MQTT broker for player synchronization</li>
+    <li>Mobile-optimized controls with touch support and adaptive UI</li>
+    <li>Procedural world generation with layered terrain and ore distribution</li>
+    <li>Save system with local IndexedDB storage and cloud sync via Puter</li>
+    <li>Admin features including player management and world control</li>
+    <li>Shop system for upgrades, consumables, and vehicle customization</li>
+    <li>Day/night cycle, minimap, and particle effects for visual polish</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ... };</code>
-    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: 0, gridY: 0, fuel: 100, hull: 100, ... }; } }</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
+    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } };</code>
   </pre>
 
-  <p>Mega Miner Online is a browser-based multiplayer mining game featuring procedurally generated worlds, real-time multiplayer interaction, and extensive vehicle customization. Players can mine resources, build structures, trade with others, and discover teleporters while managing fuel and vehicle health. The game includes a shop system for upgrades, cloud synchronization across devices, and cross-platform support with mobile controls. Built with HTML5 Canvas, WebSockets/MQTT for networking, and IndexedDB for local storage.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time player synchronization, procedural world generation, and cross-platform support. Players dig for resources, build structures, trade with others, and manage upgrades in a persistent shared world. The game includes a robust save system, admin controls, and mobile-optimized touch controls for accessibility.</p>
 </section>
