@@ -2723,18 +2723,21 @@ class CloudManager {
 
     static async upload(id, data) {
         try {
-            if (typeof puter === 'undefined') return;
+            if (typeof puter === 'undefined') {
+                console.error("Puter SDK missing from page");
+                return false;
+            }
 
-            // Remove puter.ready() - it's usually not a function
             const fileName = this.getFileName(id);
             const serialized = JSON.stringify(data);
 
-            // Puter.js standard write
-            await puter.fs.write(fileName, serialized);
-            console.log(`Cloud: Saved world ${id}`);
+            // Ensure we use the root path explicitly
+            await puter.fs.write(`./${fileName}`, serialized);
+
+            console.log("✅ Cloud Upload Successful:", fileName);
             return true;
         } catch (err) {
-            console.error("Cloud Upload Failed:", err);
+            console.error("❌ Cloud Upload Failed:", err);
             return false;
         }
     }
@@ -3740,25 +3743,30 @@ class SaveSystem {
     }
 
     static async syncSaveListFromCloud() {
-        UI.showToast("Fetching cloud worlds...", "info");
+        UI.showToast("Searching cloud...", "info");
         try {
-            // 'readdir' is the standard method for Puter.js
+            // Try 'list' which is the standard v2 method
             const files = await puter.fs.readdir('.');
+            console.log("Files found in cloud:", files); // CHECK YOUR CONSOLE FOR THIS
+
             const worldFiles = files.filter(f => f.name.startsWith('mm_world_'));
+
+            if (worldFiles.length === 0) {
+                UI.showToast("No cloud saves found for this account.", "warning");
+                return;
+            }
 
             for (const file of worldFiles) {
                 const fileId = file.name.replace('mm_world_', '').replace('.json', '');
                 const data = await CloudManager.download(fileId);
-
-                if (data && data.id) {
-                    await this.injectIntoLocal(data);
-                }
+                if (data) await this.injectIntoLocal(data);
             }
+
             this.renderSaveList();
-            UI.showToast("Cloud worlds synced!", "success");
+            UI.showToast(`Synced ${worldFiles.length} worlds!`, "success");
         } catch (e) {
             console.error("Fetch Error:", e);
-            UI.showToast("Failed to sync list", "error");
+            UI.showToast("Cloud search failed", "error");
         }
     }
 
@@ -3934,7 +3942,11 @@ class SaveSystem {
 
             tx.oncomplete = async () => {
                 // Clean up cloud as well
-                await CloudManager.delete(id);
+                try{
+                    await CloudManager.delete(id);
+                }catch(e){
+                    console.error(e);
+                }
 
                 UI.showToast("Save Deleted", "normal");
                 this.renderSaveList();
