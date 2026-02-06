@@ -4015,14 +4015,12 @@ class SaveSystem {
 
             localStorage.setItem('mm_last_save_id', id);
 
-            // 2. CLOUD SYNC (If enabled)
-            // We check the property or the DOM element directly
-            const isCloudActive =;
-
             if ($('update-check-toggle') ? $('update-check-toggle').checked : this.updateCheckEnabled) {
                 UI.checkForUpdates();
             }
 
+            // 2. CLOUD SYNC (If enabled)
+            // We check the property or the DOM element directly
             if ($('cloudSync-auto') ? $('cloudSync-auto').checked : this.cloudSyncEnabled) {
                 if(puter.whoami){
                   this.smartSyncAll();
