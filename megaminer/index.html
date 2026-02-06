@@ -665,7 +665,7 @@
                 <label>Options</label>
                 <div style="display:flex; gap:15px; flex-wrap:wrap;">
                     <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
-                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)">&nbsp;&nbsp;Autosave
+                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)" checked >&nbsp;&nbsp;Autosave
                     </label>
                     <label style="display:inline-flex; align-items:center; text-transform:none; color:#eee;">
                         <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)">&nbsp;&nbsp;Show Coordinates
@@ -2409,7 +2409,7 @@ class GameEngine {
                 this.ctx.fillRect(px, py, ts, 6);
                 this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
                 this.ctx.fillRect(px, py+6, ts, ts-6);
-            } else if (this.settings.graphicsQuality > 2 && (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE || TILE_TYPES.DEEP_SLATE)) {
+            } else if (this.settings.graphicsQuality > 2 && (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE || type === TILE_TYPES.DEEP_SLATE)) {
                 const r0 = pseudoRandom(x, y);
                 const r1 = pseudoRandom(x + 17, y + 3);
                 const r2 = pseudoRandom(x - 9, y + 11);
@@ -3630,6 +3630,11 @@ class UIManager {
         this.refreshServerList();
     }
 
+    static toggleUpdateCheck(val) {
+        this.updateCheckEnabled = val;
+        localStorage.setItem('mm_autocheck_update_setting', val);
+    }
+
     async checkForUpdates() {
         try {
             if (location.protocol!=='file:'){
@@ -3841,12 +3846,20 @@ class SaveSystem {
         if(as !== null) this.autosaveEnabled = (as === 'true');
         $('autosave-toggle').checked = this.autosaveEnabled;
         $('cloudSync-auto').onchange = (e) => SaveSystem.toggleCloudSync(e.target.checked);
+        $('update-check-toggle').onchange = (e) => UI.toggleUpdateCheck(e.target.checked);
 
         // --- CLOUD INIT ---
         const cs = localStorage.getItem('mm_cloudsync_setting');
         this.cloudSyncEnabled = (cs === 'true');
         const cloudCheck = $('cloudSync-auto');
         if(cloudCheck) cloudCheck.checked = this.cloudSyncEnabled;
+
+        // --- UPDATE-CHECK INIT ---
+        const uc = localStorage.getItem('mm_autocheck_update_setting');
+        this.updateCheckEnabled = (uc === 'true');
+        const updateCheck = $('update-check-toggle');
+        if(updateCheck) updateCheck.checked = this.updateCheckEnabled;
+
     }
 
     static toggleAutosave(val) {
@@ -3980,10 +3993,11 @@ class SaveSystem {
             // 2. CLOUD SYNC (If enabled)
             // We check the property or the DOM element directly
             const isCloudActive = $('cloudSync-auto') ? $('cloudSync-auto').checked : this.cloudSyncEnabled;
+            if (this.update) {
+            }
 
             if (isCloudActive) {
                 if(puter.whoami){
-                  // Pass the specific ID so it creates a unique file
                   this.smartSyncAll();
                 } else {
                   UI.showToast('Log in with Puter to use cloud sync','normal');
