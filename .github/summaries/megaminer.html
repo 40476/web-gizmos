@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Mega Miner Online is a multiplayer mining game where players dig for ores, build structures, and trade resources.</li>
-    <li>Features include procedurally generated maps, real-time multiplayer via MQTT, an in-game shop, and cloud save functionality.</li>
-    <li>Mobile controls are available with on-screen D-pad and action buttons, while desktop uses keyboard input.</li>
-    <li>Players can upgrade their drill, hull, fuel, and cargo capacity, and discover teleporters for fast travel.</li>
-    <li>The game includes admin controls for server management, save/load systems, and mod support.</li>
+    <li>Multiplayer mining game with real-time synchronization using MQTT broker.</li>
+    <li>Procedural map generation with ores, tools, upgrades, and station shop.</li>
+    <li>Mobile controls, chat system, admin features, and cloud save functionality.</li>
+    <li>Sound engine with music, sfx, and dynamic engine sounds based on player actions.</li>
+    <li>Teleporter network for fast travel and persistent player statistics.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, BEDROCK: 99 };</code>
-    <code>const GameEngine = new GameEngine(); const Network = new NetworkManager(); const UI = new UIManager();</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
+    <code>class SoundManager { playMining() { /* noise buffer synthesis */ } playExplosion() { /* explosion synth */ } };</code>
   </pre>
 
-  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time resource gathering, trading, and building mechanics. Players explore procedurally generated caves, upgrade their equipment, and interact with others through an MQTT-based networking system. The game supports both desktop and mobile play with responsive controls, cloud saves, and admin features for server management.</p>
+  <p>Mega Miner Online is a collaborative mining game where players dig for resources, upgrade equipment, and build structures. The game features real-time multiplayer through MQTT, procedural world generation, and a comprehensive upgrade system. Players can teleport using discovered relays, manage inventory, and interact with others through chat. The game includes sound effects, music, and mobile controls for an engaging experience across devices.</p>
 </section>
