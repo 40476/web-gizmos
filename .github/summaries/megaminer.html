@@ -1,18 +1,16 @@
 <section>
   <ul>
-    <li>Browser-based multiplayer mining game with real-time sync via MQTT</li>
-    <li>Procedural terrain generation with resource tiers (dirt, coal, iron, gold, diamond, etc.)</li>
-    <li>Mobile-optimized controls with D-pad and action buttons</li>
-    <li>Upgrade system for drill, hull, fuel, cargo, and special abilities</li>
-    <li>Cloud save system using Puter for cross-device persistence</li>
-    <li>Admin features including player kicking and world management</li>
+    <li>Browser-based multiplayer mining game with real-time WebSocket communication.</li>
+    <li>Procedurally generated infinite map with various ore types and mining mechanics.</li>
+    <li>Mobile-optimized controls with virtual D-pad and action buttons.</li>
+    <li>Shop system for upgrades, repairs, and item purchases using in-game currency.</li>
+    <li>Save system with IndexedDB and cloud sync capabilities via Puter API.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
-    <code>const GameEngine = { init(), update(), draw(), loop() };</code>
-    <code>const NetworkManager = { connect(), broadcastMove(), broadcastDeath() };</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>const MSGS = { join: ["spawned in.", "slid into the server."] };</code>
   </pre>
 
-  <p>Mega Miner Online is a collaborative browser mining game where players dig for resources, upgrade equipment, and explore procedurally generated terrain. The game features real-time multiplayer via MQTT, mobile controls, a shop system for upgrades, and cloud saves using Puter for cross-device persistence. Players can build structures, transfer fuel, and manage their inventory while competing on leaderboards.</p>
+  <p>MultiMiner is a real-time multiplayer mining game where players explore procedurally generated terrain, mine various ores, upgrade equipment, and trade with others. The game features cross-platform support with mobile controls, persistent save systems, and cloud synchronization through the Puter API. Players can join public rooms, build structures, and manage resources while competing on leaderboards.</p>
 </section>
