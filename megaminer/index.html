@@ -4017,11 +4017,13 @@ class SaveSystem {
 
             // 2. CLOUD SYNC (If enabled)
             // We check the property or the DOM element directly
-            const isCloudActive = $('cloudSync-auto') ? $('cloudSync-auto').checked : this.cloudSyncEnabled;
-            if (this.update) {
+            const isCloudActive =;
+
+            if ($('update-check-toggle') ? $('update-check-toggle').checked : this.updateCheckEnabled) {
+                UI.checkForUpdates();
             }
 
-            if (isCloudActive) {
+            if ($('cloudSync-auto') ? $('cloudSync-auto').checked : this.cloudSyncEnabled) {
                 if(puter.whoami){
                   this.smartSyncAll();
                 } else {
