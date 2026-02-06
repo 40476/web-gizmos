@@ -3792,6 +3792,12 @@ class UIManager {
     toggleUpdateCheck(val) {
         this.updateCheckEnabled = val;
         localStorage.setItem('mm_autocheck_update_setting', val);
+        if (val===true){
+            if (this.updateChecker) clearInterval(this.updateChecker);
+            this.updateChecker=setInterval(UI.checkForUpdates,60000);
+        }else{
+            clearInterval(this.updateChecker)
+        }
     }
 
     async checkForUpdates() {
@@ -4062,6 +4068,7 @@ class SaveSystem {
         if(as !== null) this.autosaveEnabled = (as === 'true');
         $('autosave-toggle').checked = this.autosaveEnabled;
         $('cloudSync-auto').onchange = (e) => SaveSystem.toggleCloudSync(e.target.checked);
+        UI.toggleUpdateCheck($('update-check-toggle').checked);
         $('update-check-toggle').onchange = (e) => UI.toggleUpdateCheck(e.target.checked);
 
         // --- CLOUD INIT ---
@@ -4205,10 +4212,6 @@ class SaveSystem {
             });
 
             localStorage.setItem('mm_last_save_id', id);
-
-            if ($('update-check-toggle') ? $('update-check-toggle').checked : this.updateCheckEnabled) {
-                UI.checkForUpdates();
-            }
 
             // 2. CLOUD SYNC (If enabled)
             // We check the property or the DOM element directly
