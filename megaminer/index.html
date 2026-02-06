@@ -3630,7 +3630,7 @@ class UIManager {
         this.refreshServerList();
     }
 
-    static toggleUpdateCheck(val) {
+    toggleUpdateCheck(val) {
         this.updateCheckEnabled = val;
         localStorage.setItem('mm_autocheck_update_setting', val);
     }
