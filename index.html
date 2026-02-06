@@ -163,6 +163,8 @@
     
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
     
+      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
+    
       <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
     
       <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
@@ -170,8 +172,6 @@
       <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
-    
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
     
 
     <button id="themeToggle">Toggle Theme</button>
@@ -335,6 +335,26 @@
 </section>
       </section>
     
+      <section class="app-section" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
+        <h2>megaminer</h2>
+        <section>
+  <ul>
+    <li>Online multiplayer mining game with procedurally generated caves and real-time player interaction.</li>
+    <li>Mobile-optimized controls including touch D-pad and action buttons for building, mining, and chat.</li>
+    <li>Persistent world saves with cloud sync via Puter, admin tools, and server browser for multiplayer rooms.</li>
+    <li>Upgradable equipment, shop system, and dynamic lighting with day/night cycle and heat mechanics.</li>
+  </ul>
+
+  <pre>
+    <code>const Game = new GameEngine();</code>
+    <code>const Input = new InputManager();</code>
+  </pre>
+
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time cave exploration, resource gathering, and social interaction. Players can dig procedurally generated caves, upgrade their equipment, trade with others, and build structures in a shared world. The game includes mobile-optimized touch controls, persistent cloud saves, and a complete admin system for room management.</p>
+</section>
+      </section>
+    
       <section class="app-section" data-name="animeboydownloader">
         <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
         <h2>animeboydownloader</h2>
@@ -408,26 +428,6 @@
   </pre>
 
   <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        <section>
-  <ul>
-    <li>Mega Miner Online is a multiplayer mining game with procedurally generated worlds and real-time synchronization via MQTT.</li>
-    <li>Features include building, crafting, upgrades, a shop system, teleportation, and cloud save support through Puter integration.</li>
-    <li>Supports both desktop and mobile controls with responsive UI layouts for portrait and landscape orientations.</li>
-    <li>Includes admin/host controls for managing servers, player promotions, and map synchronization.</li>
-  </ul>
-
-  <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99, TNT: 50, NUKE: 51, TELEPORTER: 52, REPAIR_KIT: 60, FUEL_VOUCHER: 61 };</code>
-    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, x: 0, y: 0, fuel: 100, maxFuel: 100, hull: 100, maxHull: 100, cargo: 0, maxCargo: 50, money: 0, temp: 0, maxTemp: 100, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 6, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; this.map = []; this.discovered = []; this.remotePlayers = {}; this.camera = { x: 0, y: 0 }; this.zoom = 1.0; this.particles = []; this.explosives = []; this.isAdmin = false; this.hostId = null; this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]'); this.lastActionTime = 0; this.lastAutosave = 0; this.fallHeight = 0; this.stationGridX = CONSTANTS.MAP_WIDTH / 2; this.stationGridY = 4; this.lastHostHeartbeat = 0; } }</code>
-  </pre>
-
-  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated worlds, mine resources, and build structures. The game features real-time multiplayer synchronization through MQTT, a comprehensive shop system with upgrades, teleportation mechanics, and cloud save functionality via Puter integration. It supports both desktop and mobile platforms with responsive controls and includes admin/host management tools for server administration.</p>
 </section>
       </section>
     
