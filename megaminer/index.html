@@ -3036,45 +3036,54 @@ class NetworkManager {
     }
 
     sendMapDiff(toId) {
-        // Optimization: Use Arrays [x,y,v] instead of Objects {x,y,v} to reduce JSON size by ~40%
+        // 1. Flatten the array. [x, y, v, x, y, v...]
+        // This saves massive JSON overhead compared to [[x,y,v], [x,y,v]]
         let diffs = [];
+
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
             for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
+                // Optimization: If possible, check Game.isChunkModified(x,y) before checking tiles
                 let base = Game.getProceduralTile(x, y);
-                // Note: Game.map is the truth. If it differs from procedural base, send it.
                 if (Game.map[y][x] !== base) {
-                    diffs.push([x, y, Game.map[y][x]]);
+                    diffs.push(x, y, Game.map[y][x]); // Push individual values
                 }
             }
         }
 
-        console.log(`Sending Map Diff: ${diffs.length} tiles to ${toId}`);
+        const tileCount = diffs.length / 3;
+        console.log(`Sending Map Diff: ${tileCount} tiles to ${toId}`);
 
-        // Protocol: Start -> Chunks -> End
-        this.publish('map', { type: 'map_start', to: toId, count: diffs.length });
+        this.publish('map', { type: 'map_start', to: toId, count: tileCount });
 
-        if(diffs.length > 0) {
-            // FIX: Throttled sending to prevent network flood
-            // Lowered chunk size and increased delay for stability
-            const CHUNK_SIZE = 32;
-            let i = 0;
-
-            const sendLoop = setInterval(() => {
-                if (i >= diffs.length) {
-                    clearInterval(sendLoop);
-                    this.publish('map', { type: 'map_end', to: toId });
-                    return;
-                }
-                const chunk = diffs.slice(i, i+CHUNK_SIZE);
-                this.publish('map', { type: 'sync', data: chunk, to: toId });
-                i += CHUNK_SIZE;
-            }, 30); // 30ms delay
-        } else {
-             // Small delay to ensure order in some brokers even if empty
-             setTimeout(() => {
-                 this.publish('map', { type: 'map_end', to: toId });
-             }, 100);
+        if (diffs.length === 0) {
+            this.publish('map', { type: 'map_end', to: toId });
+            return;
         }
+
+        // 2. Optimization: Increase Chunk Size
+        // 32 items is too small (high packet overhead).
+        // 500-1000 items is a better balance for modern networks.
+        const ITEMS_PER_TILE = 3;
+        const TILES_PER_CHUNK = 500;
+        const CHUNK_SIZE = TILES_PER_CHUNK * ITEMS_PER_TILE;
+
+        let offset = 0;
+
+        const sendLoop = setInterval(() => {
+            if (offset >= diffs.length) {
+                clearInterval(sendLoop);
+                this.publish('map', { type: 'map_end', to: toId });
+                return;
+            }
+
+            // Slice the flat array
+            const chunk = diffs.slice(offset, offset + CHUNK_SIZE);
+
+            // Send flat array. Client must read in steps of 3.
+            this.publish('map', { type: 'sync', data: chunk, to: toId, flat: true });
+
+            offset += CHUNK_SIZE;
+        }, 20); // Slightly faster tick
     }
 
     publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
@@ -3194,21 +3203,44 @@ class NetworkManager {
              UI.showToast(`Receiving Map Data (${count} tiles)...`, "normal");
         }
         else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
-            // Apply Map Sync
             if (Array.isArray(msg.data)) {
-                msg.data.forEach(d => {
-                    // Optimized: d is now [x, y, v]
-                    // We handle both object (legacy) and array (new) just in case
-                    let x, y, v;
-                    if (Array.isArray(d)) { [x, y, v] = d; }
-                    else { x = d.x; y = d.y; v = d.v; }
+                // Optimization: Detect if this is a Flat Array (Level 1 Optimization)
+                // If the first element is a number, it's likely flat [x,y,v, x,y,v...]
+                // If the first element is an object/array, it's legacy [[x,y,v]...]
+                const isFlat = typeof msg.data[0] === 'number';
 
-                    if (Game.map[y] !== undefined && Game.map[y][x] !== undefined) {
-                        Game.map[y][x] = v;
-                        // Auto discover synced changes so we can see them on minimap
-                        Game.discovered[y][x] = 1;
+                if (isFlat) {
+                    // --- NEW EFFICIENT WAY ---
+                    // Iterate by 3s
+                    for (let i = 0; i < msg.data.length; i += 3) {
+                        const x = msg.data[i];
+                        const y = msg.data[i+1];
+                        const v = msg.data[i+2];
+
+                        // Fast boundary check (optional if you trust server)
+                        if (Game.map[y] && Game.map[y][x] !== undefined) {
+                            Game.map[y][x] = v;
+                            Game.discovered[y][x] = 1;
+                        }
                     }
-                });
+                } else {
+                    // --- LEGACY WAY (Keep for safety) ---
+                    msg.data.forEach(d => {
+                        let x, y, v;
+                        if (Array.isArray(d)) { [x, y, v] = d; }
+                        else { x = d.x; y = d.y; v = d.v; } // Handle {x,y,v} objects
+
+                        if (Game.map[y] && Game.map[y][x] !== undefined) {
+                            Game.map[y][x] = v;
+                            Game.discovered[y][x] = 1;
+                        }
+                    });
+                }
+
+                // Critical Optimization:
+                // Don't redraw the minimap inside the loop!
+                // Flag it to update ONCE after processing the whole chunk.
+                if (Game.renderer) Game.renderer.markMapDirty();
             }
         }
         else if (msg.type === 'map_end' && msg.to === Game.localPlayer.id) {
@@ -3482,7 +3514,6 @@ class UIManager {
             SaveSystem.smartSyncAll();
         } else {
             console.warn("No puter user detected, skipping cloud sync.");
-            return;
         }
 
         const list = $('server-list-sidebar');
@@ -3674,7 +3705,7 @@ class UIManager {
                     // Optional: Update the stored timestamp so we don't spam the user
                     // this.initialTimestamp = newTimestamp;
                 }else{
-                    console.log('no updates')
+                    console.log('No updates')
                 }
             }
 
