@@ -3478,9 +3478,16 @@ class UIManager {
 
     // --- SERVER LIST LOGIC ---
     refreshServerList() {
+        if(puter.whoami){
+            SaveSystem.smartSyncAll();
+        } else {
+            console.warn("No puter user detected, skipping cloud sync.");
+            return;
+        }
+        
         const list = $('server-list-sidebar');
         list.innerHTML = '';
-
+        
         // Render helper
         const renderItem = (url, isCustom) => {
             const isActive = url === Game.settings.broker;
@@ -3490,10 +3497,10 @@ class UIManager {
             let buttonsHtml = '';
             if(isCustom) {
                 buttonsHtml = `
-                   <div class="server-actions">
-                       <button class="btn btn-small" style="padding:2px 5px; background:#444; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.editCustomServer('${url}')" title="Edit">&#9998;</button>
-                       <button class="btn btn-small" style="padding:2px 5px; background:#c0392b; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')" title="Remove">&times;</button>
-                   </div>
+                    <div class="server-actions">
+                        <button class="btn btn-small" style="padding:2px 5px; background:#444; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.editCustomServer('${url}')" title="Edit">&#9998;</button>
+                        <button class="btn btn-small" style="padding:2px 5px; background:#c0392b; font-size:10px; margin:0;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')" title="Remove">&times;</button>
+                    </div>
                 `;
             }
 
@@ -3975,11 +3982,11 @@ class SaveSystem {
             const isCloudActive = $('cloudSync-auto') ? $('cloudSync-auto').checked : this.cloudSyncEnabled;
 
             if (isCloudActive) {
-                // Pass the specific ID so it creates a unique file
-                if (isAuto) {
-                    CloudManager.upload(id, fullData);
+                if(puter.whoami){
+                  // Pass the specific ID so it creates a unique file
+                  this.smartSyncAll();
                 } else {
-                    await CloudManager.upload(id, fullData);
+                  UI.showToast('Log in with Puter to use cloud sync','normal');
                 }
             }
 
