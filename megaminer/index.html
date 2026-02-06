@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2410,7 +2409,7 @@ class GameEngine {
                 this.ctx.fillRect(px, py, ts, 6);
                 this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
                 this.ctx.fillRect(px, py+6, ts, ts-6);
-            } else if (this.settings.graphicsQuality > 2 && (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE)) {
+            } else if (this.settings.graphicsQuality > 2 && (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE || TILE_TYPES.DEEP_SLATE)) {
                 const r0 = pseudoRandom(x, y);
                 const r1 = pseudoRandom(x + 17, y + 3);
                 const r2 = pseudoRandom(x - 9, y + 11);
