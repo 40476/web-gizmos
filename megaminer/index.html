@@ -3835,7 +3835,7 @@ class UIManager {
 
                     UI.showToast("New Version Available!", "normal");
                     UI.addMessage("System", `Update detected! (${newTimestamp}) Please save and refresh.`, "#0f0", 9999999);
-
+                    if(!Game.running) location.reload();
                     // Optional: Update the stored timestamp so we don't spam the user
                     // this.initialTimestamp = newTimestamp;
                 }else{
