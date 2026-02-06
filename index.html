@@ -416,19 +416,18 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>HTML5 game with canvas rendering, procedural terrain generation, and multiplayer via MQTT</li>
-    <li>Mobile-optimized with touch controls, responsive layouts, and device-specific UI adjustments</li>
-    <li>Local save system with IndexedDB, cloud sync via Puter FS, and import/export functionality</li>
-    <li>Admin system for host controls, player management, and world synchronization</li>
-    <li>Shop system with upgrades, consumables, and in-game economy</li>
+    <li>Mega Miner Online is a multiplayer mining game with procedurally generated worlds and real-time synchronization via MQTT.</li>
+    <li>Features include building, crafting, upgrades, a shop system, teleportation, and cloud save support through Puter integration.</li>
+    <li>Supports both desktop and mobile controls with responsive UI layouts for portrait and landscape orientations.</li>
+    <li>Includes admin/host controls for managing servers, player promotions, and map synchronization.</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
-    <code>const GameEngine = new GameEngine(); const Network = new NetworkManager();</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99, TNT: 50, NUKE: 51, TELEPORTER: 52, REPAIR_KIT: 60, FUEL_VOUCHER: 61 };</code>
+    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, x: 0, y: 0, fuel: 100, maxFuel: 100, hull: 100, maxHull: 100, cargo: 0, maxCargo: 50, money: 0, temp: 0, maxTemp: 100, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 6, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; this.map = []; this.discovered = []; this.remotePlayers = {}; this.camera = { x: 0, y: 0 }; this.zoom = 1.0; this.particles = []; this.explosives = []; this.isAdmin = false; this.hostId = null; this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]'); this.lastActionTime = 0; this.lastAutosave = 0; this.fallHeight = 0; this.stationGridX = CONSTANTS.MAP_WIDTH / 2; this.stationGridY = 4; this.lastHostHeartbeat = 0; } }</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game built with HTML5 Canvas and MQTT networking. Players dig through procedurally generated terrain, collect resources, upgrade equipment, and interact with others in real-time. The game features responsive design with mobile controls, a comprehensive save system with cloud sync, and an admin system for host management.</p>
+  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated worlds, mine resources, and build structures. The game features real-time multiplayer synchronization through MQTT, a comprehensive shop system with upgrades, teleportation mechanics, and cloud save functionality via Puter integration. It supports both desktop and mobile platforms with responsive controls and includes admin/host management tools for server administration.</p>
 </section>
       </section>
     
