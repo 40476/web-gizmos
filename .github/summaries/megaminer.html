@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>Online multiplayer mining game with procedurally generated caves and real-time player interaction.</li>
-    <li>Mobile-optimized controls including touch D-pad and action buttons for building, mining, and chat.</li>
-    <li>Persistent world saves with cloud sync via Puter, admin tools, and server browser for multiplayer rooms.</li>
-    <li>Upgradable equipment, shop system, and dynamic lighting with day/night cycle and heat mechanics.</li>
+    <li>Browser-based multiplayer mining game with real-time synchronization.</li>
+    <li>Procedurally generated infinite map with ore types (coal, iron, gold, diamond, etc.).</li>
+    <li>Upgrade system for drills, hull, fuel, cargo, and special abilities.</li>
+    <li>Mobile-optimized controls with virtual D-pad and action buttons.</li>
+    <li>Save/load system with cloud sync via Puter file system.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>const Input = new InputManager();</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>class NetworkManager { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } }</code>
   </pre>
 
-  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time cave exploration, resource gathering, and social interaction. Players can dig procedurally generated caves, upgrade their equipment, trade with others, and build structures in a shared world. The game includes mobile-optimized touch controls, persistent cloud saves, and a complete admin system for room management.</p>
+  <p>Mega Miner Online is a collaborative browser mining game featuring real-time multiplayer, procedurally generated worlds, and extensive upgrade systems. Players can mine various ores, build structures, and manage resources while exploring an infinite underground map. The game includes mobile controls, cloud save functionality, and a shop system for purchasing upgrades and consumables.</p>
 </section>
