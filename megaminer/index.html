@@ -3782,10 +3782,40 @@ class UIManager {
             <div class="stat-row"><span>Current Money:</span><span>\$${p.money}</span></div>
         `;
         // Leaderboard
-        let players = Object.values(Game.remotePlayers).concat(p);
-        players.sort((a,b)=>(b.stats.totalMined||0)-(a.stats.totalMinedY||0));
-        $('leaderboard-container').innerHTML = players.map((pl, i)=>`<div class="stat-row"><span>${i+1}. ${pl.username}</span><span>${pl.stats.totalMined||0} blocks</span></div>`).join('');
-        $('station-btn-container').style.display = (p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 3) ? 'block' : 'none';
+        // 1. SAFETY: Handle Game.remotePlayers being null/undefined
+        const remote = Game.remotePlayers ? Object.values(Game.remotePlayers) : [];
+
+        // 2. FILTER: Combine with 'p', but remove any null/undefined entries immediately
+        // We also ensure every player has a .stats object before trying to sort them
+        let players = remote.concat(p || []).filter(pl => pl && pl.stats);
+
+        // 3. SORT: Now safe because we filtered above
+        players.sort((a, b) => {
+            // Fix: Your original code had 'totalMinedY' (likely a typo)
+            return (b.stats.totalMined || 0) - (a.stats.totalMined || 0);
+        });
+
+        // 4. RENDER: Add checks for the DOM element and property fallbacks
+        const lbContainer = $('leaderboard-container');
+        if (lbContainer) {
+            lbContainer.innerHTML = players.map((pl, i) => {
+                // Fallback to "Unknown" and 0 if data is missing
+                const name = pl.username || "Unknown";
+                const score = pl.stats.totalMined || 0;
+                return `<div class="stat-row"><span>${i+1}. ${name}</span><span>${score} blocks</span></div>`;
+            }).join('');
+        }
+
+        // 5. BUTTON LOGIC: Guard clause for 'p'
+        const btnContainer = $('station-btn-container');
+        if (btnContainer) {
+            // If 'p' doesn't exist yet, hide the button safely
+            if (p && p.gridY === Game.stationGridY && Math.abs(p.gridX - Game.stationGridX) < 3) {
+                btnContainer.style.display = 'block';
+            } else {
+                btnContainer.style.display = 'none';
+            }
+        }
     }
 
     updatePlayerList() {
