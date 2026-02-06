@@ -163,8 +163,6 @@
     
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
     
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-    
       <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
     
       <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
@@ -172,6 +170,8 @@
       <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
+    
+      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
     
 
     <button id="themeToggle">Toggle Theme</button>
@@ -335,27 +335,6 @@
 </section>
       </section>
     
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        <section>
-  <ul>
-    <li>Multiplayer mining game with real-time collaboration and competitive gameplay</li>
-    <li>Procedurally generated infinite world with diverse ore types and upgradeable mining equipment</li>
-    <li>Cross-platform support including mobile touch controls and desktop keyboard/mouse input</li>
-    <li>Persistent save system with cloud sync and local IndexedDB storage</li>
-    <li>Admin/host system for server management and world control</li>
-  </ul>
-
-  <pre>
-    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, x: 0, y: 0, fuel: 100, maxFuel: 100, hull: 100, maxHull: 100, cargo: 0, maxCargo: 50, money: 0, temp: 0, maxTemp: 100, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 6, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; this.map = []; this.discovered = []; this.remotePlayers = {}; this.camera = { x: 0, y: 0 }; this.zoom = 1.0; this.particles = []; this.explosives = []; this.isAdmin = false; this.hostId = null; this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]'); this.lastActionTime = 0; this.lastAutosave = 0; this.fallHeight = 0; this.stationGridX = CONSTANTS.MAP_WIDTH / 2; this.stationGridY = 4; this.lastHostHeartbeat = 0; this.loadStoredSettings(); } }</code>
-    <code>class NetworkManager { constructor() { this.client = null; this.baseTopic = 'mm_online/'; this.lastHeartbeat = 0; this.lastSyncToast = 0; } connect() { Game.logConnection(`Connecting to broker ${Game.settings.broker}...`); const broker = Game.settings.broker; const options = { clientId: 'mm_' + Game.localPlayer.id, keepalive: 60, clean: true, reconnectPeriod: 1000 }; try { this.client = mqtt.connect(broker, options); } catch (e) { Game.logConnection("Error creating client: " + e); } this.client.on('connect', () => { Game.logConnection("Connected. Subscribing..."); this.client.subscribe(`${this.baseTopic}${Game.settings.room}/#`, (err) => { if(!err) { Game.logConnection("Subscribed. Joining room..."); this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt }); Game.finishConnection(); Sound.playSuccess(); this.broadcastMove(); } else { Game.logConnection("Sub Error: " + err); } }); }); this.client.on('offline', () => { $('disconnect-msg').style.display = 'block'; }); this.client.on('reconnect', () => { $('disconnect-msg').style.display = 'none'; }); this.client.on('message', (topic, message) => this.handleMessage(topic, message)); } }</code>
-  </pre>
-
-  <p>Mega Miner Online is a multiplayer mining game featuring procedurally generated worlds, real-time collaboration, and competitive gameplay. Players can explore infinite underground environments, mine various ore types, upgrade their equipment, and trade resources with other players. The game includes a comprehensive save system with cloud synchronization, admin controls for server management, and cross-platform support for both desktop and mobile devices.</p>
-</section>
-      </section>
-    
       <section class="app-section" data-name="animeboydownloader">
         <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
         <h2>animeboydownloader</h2>
@@ -429,6 +408,26 @@
   </pre>
 
   <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
+        <h2>megaminer</h2>
+        <section>
+  <ul>
+    <li>2D multiplayer mining game with real-time physics and procedural terrain generation</li>
+    <li>Cross-platform support with mobile controls, chat, and admin features</li>
+    <li>Persistent save system with cloud sync and moddable upgrade shop</li>
+    <li>Dynamic lighting, minimap, and particle effects for immersive gameplay</li>
+  </ul>
+
+  <pre>
+    <code>const GameEngine = { localPlayer: { x: 0, y: 0, fuel: 100, hull: 100 }, map: [], remotePlayers: {} }</code>
+    <code>class NetworkManager { connect() { mqtt.connect(broker); } broadcastMove() { publish('pos', data); } }</code>
+  </pre>
+
+  <p>Mega Miner Online is a browser-based multiplayer mining adventure where players dig for resources, upgrade equipment, and collaborate or compete in real-time. The game features procedural world generation, persistent saves, and a fully functional shop system with upgrades, explosives, and teleporters. Built with HTML5 Canvas, MQTT networking, and IndexedDB for offline functionality.</p>
 </section>
       </section>
     
