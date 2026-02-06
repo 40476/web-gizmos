@@ -1202,6 +1202,18 @@ class SoundManager {
         osc.stop(this.ctx.currentTime + duration);
     }
 
+    // Add this inside your SoundManager class
+    playTimerBlip(urgencyLevel) {
+        if (!this.ctx) return;
+
+        // urgencyLevel should be between 0 (start) and 1 (about to explode)
+        // Pitch goes from 800Hz to 1200Hz
+        const freq = 800 + (urgencyLevel * 400);
+
+        // Very short duration (0.05s) for a crisp "blip"
+        this.playTone(freq, 'sine', 0.05, 0.3);
+    }
+
     playMining() {
         if (!this.ctx || !this.noiseBuffer) return;
         const t = this.ctx.currentTime;
@@ -1771,10 +1783,22 @@ class GameEngine {
         if (this.isAdmin && this.explosives.length > 0) {
             for (let i = this.explosives.length - 1; i >= 0; i--) {
                 let e = this.explosives[i];
-                e.timer--;
-                if (e.timer <= 0) {
-                    // BOOM
-                    Network.broadcastExplosion(e.x, e.y, e.range);
+
+                // 1. SETUP: Convert the duration (ms) to a specific finish time
+                // We check 'if (!e.doneAt)' so this only runs the very first time we see the bomb
+                if (!e.doneAt) {
+                    e.doneAt = Date.now() + e.timer;
+                }
+
+                // 2. BROADCAST: Send the event immediately
+                if (!e.sent) {
+                    // We send 'e.timer' (e.g. 3000ms) so the client knows how long the animation is
+                    Network.broadcastExplosion(e.x, e.y, e.range, e.timer);
+                    e.sent = true;
+                }
+
+                // 3. CLEANUP: Check if the current real time has passed the finish time
+                if (Date.now() >= e.doneAt) {
                     this.explosives.splice(i, 1);
                 }
             }
@@ -1917,8 +1941,8 @@ class GameEngine {
                 Sound.playBuild();
                 // Host logic: Register explosive timer
                 if (this.isAdmin) {
-                    if (type === TILE_TYPES.TNT) this.explosives.push({x:tx, y:ty, range:3, timer: 120}); // 2s
-                    if (type === TILE_TYPES.NUKE) this.explosives.push({x:tx, y:ty, range:10, timer: 300}); // 5s
+                    if (type === TILE_TYPES.TNT) this.explosives.push({x:tx, y:ty, range:3, timer: 2000}); // 2s
+                    if (type === TILE_TYPES.NUKE) this.explosives.push({x:tx, y:ty, range:10, timer: 5000}); // 5s
                 }
                 UI.showToast("Block Placed", "success");
                 UI.updateDashboard();
@@ -1929,47 +1953,88 @@ class GameEngine {
         }
     }
 
+    startCountdownEffect(durationMs) {
+        const startTime = Date.now();
+        const endTime = startTime + durationMs;
+
+        const tick = () => {
+            const now = Date.now();
+            const remaining = endTime - now;
+
+            // Stop if we are out of time (Explosion logic handles the boom)
+            if (remaining <= 0) return;
+
+            // 1. Calculate Urgency (0.0 = Start, 1.0 = End)
+            // We use this to pitch-shift the sound up
+            const urgency = 1 - (remaining / durationMs);
+
+            // 2. Play Sound
+            Sound.playTimerBlip(urgency);
+
+            // 3. Calculate delay until NEXT blip
+            // The closer we are to 0, the shorter the delay.
+            // Example logic:
+            // > 2000ms left: Beep every 800ms
+            // > 1000ms left: Beep every 400ms
+            // > 0ms left:    Beep every 100ms
+
+            let nextDelay = 800; // Default slow beep
+            if (remaining < 500) nextDelay = 50;        // Panic mode!
+            else if (remaining < 1500) nextDelay = 150; // Fast
+            else if (remaining < 3000) nextDelay = 400; // Medium
+
+            // Schedule the next beep
+            setTimeout(tick, nextDelay);
+        };
+
+        // Start the loop
+        tick();
+    }
+
     // --- EXPLOSION ---
-    explode(cx, cy, radius) {
-        Sound.playExplosion();
-        // Shake camera
-        const shake = setInterval(() => {
-            this.camera.x += (Math.random()-0.5)*10;
-            this.camera.y += (Math.random()-0.5)*10;
-        }, 20);
-        setTimeout(() => clearInterval(shake), 300);
+    explode(cx, cy, radius, delay) {
+        this.startCountdownEffect(delay);
+        setTimeout(function(){
+            Sound.playExplosion();
+            // Shake camera
+            const shake = setInterval(() => {
+                Game.camera.x += (Math.random()-0.5)*10;
+                Game.camera.y += (Math.random()-0.5)*10;
+            }, 20);
+            setTimeout(() => clearInterval(shake), 300);
 
-        for (let y = cy - radius; y <= cy + radius; y++) {
-            for (let x = cx - radius; x <= cx + radius; x++) {
-                if (y > 4 && x >= 0 && x < CONSTANTS.MAP_WIDTH && y < CONSTANTS.MAP_HEIGHT) {
-                    if (Math.sqrt((x-cx)**2 + (y-cy)**2) <= radius) {
-                        if (this.map[y][x] !== TILE_TYPES.BEDROCK) {
-                            // console.debug(`Explosion affects tile at (${x},${y}) of type ${TILE_PROPS[this.map[y][x]].name}`);
-                            if (this.map[y][x] >= TILE_TYPES.COAL && this.map[y][x] <= TILE_TYPES.RUBY) {
-                                const oreType = this.map[y][x];
-                                console.debug(`Collecting ore: ${TILE_PROPS[oreType].name} (id: ${oreType}) from explosion`);
-                                this.localPlayer.inventory[oreType]= (this.localPlayer.inventory[oreType] || 0) + 1;
-                                this.localPlayer.stats.blocksMined[oreType]= (this.localPlayer.stats.blocksMined[oreType] || 0) + 1;
-                                this.localPlayer.stats.totalMined++;
-                                this.localPlayer.cargo++;
-                                UI.updateDashboard();
+            for (let y = cy - radius; y <= cy + radius; y++) {
+                for (let x = cx - radius; x <= cx + radius; x++) {
+                    if (y > 4 && x >= 0 && x < CONSTANTS.MAP_WIDTH && y < CONSTANTS.MAP_HEIGHT) {
+                        if (Math.sqrt((x-cx)**2 + (y-cy)**2) <= radius) {
+                            if (Game.map[y][x] !== TILE_TYPES.BEDROCK) {
+                                // console.debug(`Explosion affects tile at (${x},${y}) of type ${TILE_PROPS[Game.map[y][x]].name}`);
+                                if (Game.map[y][x] >= TILE_TYPES.COAL && Game.map[y][x] <= TILE_TYPES.RUBY) {
+                                    const oreType = Game.map[y][x];
+                                    console.debug(`Collecting ore: ${TILE_PROPS[oreType].name} (id: ${oreType}) from explosion`);
+                                    Game.localPlayer.inventory[oreType]= (Game.localPlayer.inventory[oreType] || 0) + 1;
+                                    Game.localPlayer.stats.blocksMined[oreType]= (Game.localPlayer.stats.blocksMined[oreType] || 0) + 1;
+                                    Game.localPlayer.stats.totalMined++;
+                                    Game.localPlayer.cargo++;
+                                    UI.updateDashboard();
+                                }
+
+                                Game.map[y][x] = TILE_TYPES.EMPTY;
+                                Game.discovered[y][x] = 1; // Reveal area
+                                Game.spawnParticle(x*32+16, y*32+16, '#ffaa00', 3);
                             }
-
-                            this.map[y][x] = TILE_TYPES.EMPTY;
-                            this.discovered[y][x] = 1; // Reveal area
-                            this.spawnParticle(x*32+16, y*32+16, '#ffaa00', 3);
                         }
                     }
                 }
             }
-        }
 
-        // Damage players
-        const p = this.localPlayer;
-        if (Math.abs(p.gridX - cx) < 4 && Math.abs(p.gridY - cy) < 4) {
-            p.hull -= 50;
-            UI.showToast("CAUGHT IN EXPLOSION!", "error");
-        }
+            // Damage players
+            const p = Game.localPlayer;
+            if (Math.abs(p.gridX - cx) < 4 && Math.abs(p.gridY - cy) < 4) {
+                p.hull -= 50;
+                UI.showToast("CAUGHT IN EXPLOSION!", "error");
+            }
+        },delay);
     }
 
     trashBlock(type, all=false) {
@@ -3125,7 +3190,7 @@ class NetworkManager {
         this.publish('ctrl', { type: 'claim_host', id: Game.localPlayer.id });
     }
 
-    broadcastExplosion(x, y, r) { this.publish('map', { type: 'explode', x, y, r }); }
+    broadcastExplosion(x, y, r, t) { this.publish('map', { type: 'explode', x, y, r, t }); }
 
     broadcastPromote(targetId) {
         this.publish('ctrl', { type: 'promote_host', target: targetId, from: Game.localPlayer.id });
@@ -3400,7 +3465,7 @@ class NetworkManager {
             Game.promoteToAdmin();
         }
         else if (msg.type === 'explode') {
-            Game.explode(msg.x, msg.y, msg.r)
+            Game.explode(msg.x, msg.y, msg.r, msg.t)
         }
     }
 }
