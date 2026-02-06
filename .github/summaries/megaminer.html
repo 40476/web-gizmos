@@ -1,16 +1,15 @@
 <section>
   <ul>
-    <li>Browser-based multiplayer mining game with real-time synchronization.</li>
-    <li>Procedurally generated infinite map with ore types (coal, iron, gold, diamond, etc.).</li>
-    <li>Upgrade system for drills, hull, fuel, cargo, and special abilities.</li>
-    <li>Mobile-optimized controls with virtual D-pad and action buttons.</li>
-    <li>Save/load system with cloud sync via Puter file system.</li>
+    <li>Mega Miner Online is a multiplayer mining game with real-time multiplayer, procedurally generated worlds, and a shop system.</li>
+    <li>Features include vehicle upgrades, teleporters, explosives, fuel management, and cross-device cloud saves via Puter.</li>
+    <li>Players can build structures, mine resources, transfer fuel between players, and manage inventories in a shared persistent world.</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
-    <code>class NetworkManager { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } }</code>
+    <code>const Game = new GameEngine();</code>
+    <code>const Network = new NetworkManager();</code>
+    <code>const SaveSystem = new SaveSystem();</code>
   </pre>
 
-  <p>Mega Miner Online is a collaborative browser mining game featuring real-time multiplayer, procedurally generated worlds, and extensive upgrade systems. Players can mine various ores, build structures, and manage resources while exploring an infinite underground map. The game includes mobile controls, cloud save functionality, and a shop system for purchasing upgrades and consumables.</p>
+  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated underground worlds, mine resources, upgrade their vehicles, and build structures. The game features real-time multiplayer via MQTT, a shop system for upgrades, teleporters for fast travel, and cloud saves through Puter. Players can transfer fuel between each other, use explosives, and manage inventories while competing for resources in a shared persistent world.</p>
 </section>
