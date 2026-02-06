@@ -1,17 +1,16 @@
 <section>
   <ul>
-    <li>Multiplayer mining game with real-time sync via MQTT</li>
-    <li>Procedural map generation with different ore tiers</li>
-    <li>Shop system for upgrades, fuel, and building materials</li>
-    <li>Save/load system with IndexedDB and cloud sync</li>
-    <li>Mobile controls with virtual D-pad and action buttons</li>
-    <li>Admin system for kicking players and transferring host</li>
+    <li>HTML5 game with canvas rendering, procedural terrain generation, and multiplayer via MQTT</li>
+    <li>Mobile-optimized with touch controls, responsive layouts, and device-specific UI adjustments</li>
+    <li>Local save system with IndexedDB, cloud sync via Puter FS, and import/export functionality</li>
+    <li>Admin system for host controls, player management, and world synchronization</li>
+    <li>Shop system with upgrades, consumables, and in-game economy</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = class { update() { /* game loop logic */ } draw() { /* render tiles, players */ } };</code>
-    <code>class NetworkManager { connect() { /* MQTT setup */ } handleMessage() { /* message routing */ } };</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>const GameEngine = new GameEngine(); const Network = new NetworkManager();</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining adventure where players dig for ores, upgrade equipment, and build structures together. The game features procedural map generation, real-time multiplayer via MQTT, a shop for upgrades, and cloud save functionality. Players can mine different ore tiers, transfer fuel between players, and use explosives for large-scale mining operations.</p>
+  <p>Mega Miner Online is a multiplayer mining game built with HTML5 Canvas and MQTT networking. Players dig through procedurally generated terrain, collect resources, upgrade equipment, and interact with others in real-time. The game features responsive design with mobile controls, a comprehensive save system with cloud sync, and an admin system for host management.</p>
 </section>
