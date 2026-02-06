@@ -3637,28 +3637,48 @@ class UIManager {
 
     async checkForUpdates() {
         try {
-            if (location.protocol!=='file:'){
-                if (!initialTimestamp) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('_t', Date.now());
-                    const headRes = await fetch(url.toString(), { method: 'HEAD' });
-                    initialTimestamp = headRes.headers.get('last-modified');
-                    console.log("current version is :", initialTimestamp);
-                }else{
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('_t', Date.now());
-                    const headRes = await fetch(url.toString(), { method: 'HEAD' });
-                    const currentTimestamp = headRes.headers.get('last-modified');
-
-                    if (currentTimestamp && currentTimestamp !== initialTimestamp) {
-                        UI.showToast("New Version Available!", "normal");
-                        UI.addMessage("System", `Update detected! (${currentTimestamp}) Please save and refresh.`, "#0f0", 9999999);
-                    }
-                }
-            } else {
+            // 1. Check if we are checking a file or a valid web server
+            if (location.protocol === 'file:') {
                 UI.showToast("Can't check updates on file:// URLs", "normal");
+                return;
             }
-        } catch (e) { console.error('Update check error:', e); }
+
+            // Setup the URL with a cache-busting timestamp
+            const url = new URL(window.location.href);
+            url.searchParams.set('_t', Date.now());
+
+            // 2. Perform the HEAD request
+            const headRes = await fetch(url.toString(), { method: 'HEAD' });
+
+            // 3. Get the header and ensure it actually exists
+            const newTimestamp = headRes.headers.get('last-modified');
+
+            if (!newTimestamp) {
+                console.warn("Server did not return a Last-Modified header. Cannot check for updates.");
+                return;
+            }
+
+            // 4. Handle the Logic (using 'this.' to persist data)
+            if (!this.initialTimestamp) {
+                // First run: just save the timestamp
+                this.initialTimestamp = newTimestamp;
+                console.log("Initial version set to:", this.initialTimestamp);
+            } else {
+                // Subsequent runs: Compare
+                if (newTimestamp !== this.initialTimestamp) {
+                    console.log(`Update detected: ${this.initialTimestamp} -> ${newTimestamp}`);
+
+                    UI.showToast("New Version Available!", "normal");
+                    UI.addMessage("System", `Update detected! (${newTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+
+                    // Optional: Update the stored timestamp so we don't spam the user
+                    // this.initialTimestamp = newTimestamp;
+                }
+            }
+
+        } catch (e) {
+            console.error('Update check error:', e);
+        }
     }
 
     toggleDashboard() {
@@ -3777,7 +3797,7 @@ class UIManager {
         if(p.teleporters && p.teleporters.length > 0) {
             // Sort by depth
             p.teleporters.sort((a,b) => a.y - b.y).forEach(t => {
-                if (((t.y < 0) ? TILE_TYPES.EMPTY : Game.map[t.y][t.x])===TILE_TYPES.TELEPORTER) {
+                if (((t.y < 0) ? TILE_TYPES.EMPTY : Game.map[t.y][t.x]) === TILE_TYPES.TELEPORTER) {
                     const btn = document.createElement('button');
                     btn.className = 'btn';
                     btn.style.background = '#8e44ad';
