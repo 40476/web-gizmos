@@ -43,13 +43,13 @@
             --ui-scale: 1.2;
 
             /* Individual Sizes (Calculated based on scale) */
-            --fs-tiny:   calc(10px * var(--ui-scale));  /* Inventory counts, small labels */
-            --fs-xs:     calc(11px * var(--ui-scale));  /* Server lists, meta data */
-            --fs-sm:     calc(12px * var(--ui-scale));  /* Chat, buttons, descriptions */
-            --fs-base:   calc(14px * var(--ui-scale));  /* Standard reading text, coords */
-            --fs-md:     calc(16px * var(--ui-scale));  /* Icons inside buttons */
-            --fs-lg:     calc(18px * var(--ui-scale));  /* Section headers */
-            --fs-xl:     calc(20px * var(--ui-scale));  /* Prompts, Important notifications */
+            --fs-tiny:   calc(12px * var(--ui-scale));  /* Inventory counts, small labels */
+            --fs-xs:     calc(13px * var(--ui-scale));  /* Server lists, meta data */
+            --fs-sm:     calc(14px * var(--ui-scale));  /* Chat, buttons, descriptions */
+            --fs-base:   calc(16px * var(--ui-scale));  /* Standard reading text, coords */
+            --fs-md:     calc(18px * var(--ui-scale));  /* Icons inside buttons */
+            --fs-lg:     calc(20px * var(--ui-scale));  /* Section headers */
+            --fs-xl:     calc(22px * var(--ui-scale));  /* Prompts, Important notifications */
             --fs-icon:   calc(24px * var(--ui-scale));  /* D-Pad Arrows */
             --fs-gear:   calc(30px * var(--ui-scale));  /* Settings Icon */
             --fs-title:  calc(32px * var(--ui-scale));  /* Disconnect messages */
@@ -1668,10 +1668,8 @@ class GameEngine {
                 this.canvas.height = window.innerHeight - 180; // 180px for controls
             }
         } else {
-            // const dpr = window.devicePixelRatio || 1;
-            const dpr = 1;
-            this.canvas.width = window.innerWidth * dpr;
-            this.canvas.height = window.innerHeight * dpr;
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
         }
     }
 
@@ -2591,6 +2589,7 @@ class GameEngine {
                     if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
                     if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
                 }
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
                 bevel=false;
             }
             else if (type === TILE_TYPES.EMPTY && y<5) {
@@ -2653,6 +2652,7 @@ class GameEngine {
                 this.ctx.arc(px+16,py+16,10,0,Math.PI*2);
                 this.ctx.stroke();
             }
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
         }
 
         // Bevel for all
@@ -2676,7 +2676,7 @@ class GameEngine {
         this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
         this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
         if (!isLocal) {
-            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '10px Geo'; this.ctx.textAlign = 'center';
+            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = getFontSize('--fs-md') + ' Geo'; this.ctx.textAlign = 'center';
             this.ctx.shadowColor="black"; this.ctx.shadowBlur=2;
             this.ctx.fillText(p.username || "Unknown", 0, -20);
             this.ctx.shadowBlur=0;
@@ -2753,8 +2753,7 @@ class GameEngine {
         const h = this.canvas.height;
 
         // Adjust gauge scale and position for mobile
-        const gaugeR = this.isMobile ? 30 : 40;
-        const fontSize = this.isMobile ? "10px" : "12px";
+        const gaugeR = this.isMobile ? 35 : 60;
         const yPos = h - (gaugeR * 1.5); // Sits just above bottom of canvas
         const xStep = this.isMobile ? (w / 4) : 100; // Spread evenly or fixed
 
@@ -2766,7 +2765,7 @@ class GameEngine {
             this.drawGauge(w*0.85, yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c");
 
             // Money top center
-            this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 16px Geo"; this.ctx.textAlign = "center";
+            this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold " + getFontSize('--fs-title') + " Geo"; this.ctx.textAlign = "center";
             this.ctx.fillText("$ " + Math.floor(p.money), w/2, 30);
         } else {
             // Desktop layout (bottom corners)
@@ -2775,7 +2774,7 @@ class GameEngine {
             this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
             this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
 
-            this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold 20px Geo"; this.ctx.textAlign = "center";
+            this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold " + getFontSize('--fs-title') + " Geo"; this.ctx.textAlign = "center";
             this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
         }
     }
@@ -2788,7 +2787,7 @@ class GameEngine {
         const pct = clamp(val / max, 0, 1);
         const current = start + (end - start) * pct;
         ctx.beginPath(); ctx.arc(x, y, r - 5, start, current); ctx.strokeStyle = color; ctx.lineWidth = 6; ctx.stroke();
-        ctx.fillStyle = "#fff"; ctx.font = "bold 20px Geo"; ctx.textAlign = "center";
+        ctx.fillStyle = "#fff"; ctx.font = "bold " + getFontSize('--fs-md') + " Geo"; ctx.textAlign = "center";
         ctx.fillText(label, x, y + 15); ctx.fillText(Math.floor(val), x, y - 5);
     }
 
@@ -4727,6 +4726,21 @@ function generateCreditsHTML(data) {
 
     return html;
 }
+
+function parseCSSCalc(calcString) {
+    // Remove calc() wrapper and evaluate
+    const expression = calcString.replace(/^calc\(|\)$/g, '');
+    
+    // Simple evaluation for basic multiplication
+    if (expression.includes('*')) {
+        const parts = expression.split('*').map(p => p.trim());
+        const left = parseFloat(parts[0]);
+        const right = parseFloat(parts[1]);
+        return left * right;
+    }
+}
+
+function getFontSize(varName) { return parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName))+'px'; }
 
 // --- INSTANTIATION ---
 const Game = new GameEngine();
