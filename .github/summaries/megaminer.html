@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>Browser-based multiplayer mining game with real-time voxel exploration.</li>
-    <li>Features procedurally generated maps, player progression, and resource trading.</li>
-    <li>Includes mobile controls, chat, admin tools, and cloud save functionality.</li>
-    <li>Uses MQTT for real-time multiplayer networking and IndexedDB for local persistence.</li>
+    <li>Mega Miner Online is a multiplayer mining game where players dig for ores, build structures, and trade resources.</li>
+    <li>Features include procedurally generated maps, real-time multiplayer via MQTT, an in-game shop, and cloud save functionality.</li>
+    <li>Mobile controls are available with on-screen D-pad and action buttons, while desktop uses keyboard input.</li>
+    <li>Players can upgrade their drill, hull, fuel, and cargo capacity, and discover teleporters for fast travel.</li>
+    <li>The game includes admin controls for server management, save/load systems, and mod support.</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = class { constructor() { /*... */ } };</code>
-    <code>const NetworkManager = class { constructor() { /*... */ } };</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, BEDROCK: 99 };</code>
+    <code>const GameEngine = new GameEngine(); const Network = new NetworkManager(); const UI = new UIManager();</code>
   </pre>
 
-  <p>Mega Miner Online is a real-time multiplayer mining game built with HTML5 Canvas and WebSockets. Players explore procedurally generated voxel worlds, mine resources, upgrade equipment, and trade with others. The game features mobile controls, chat systems, admin tools, and cloud synchronization for cross-device saves.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time resource gathering, trading, and building mechanics. Players explore procedurally generated caves, upgrade their equipment, and interact with others through an MQTT-based networking system. The game supports both desktop and mobile play with responsive controls, cloud saves, and admin features for server management.</p>
 </section>
