@@ -340,20 +340,19 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>HTML5 game with real-time multiplayer mining gameplay using MQTT for networking</li>
-    <li>Procedural world generation with ores, building mechanics, and shop system</li>
-    <li>Mobile-optimized controls with touch D-pad and action buttons</li>
-    <li>Save system with local IndexedDB storage and cloud sync via Puter FS</li>
-    <li>Admin features for host management, player kicking, and world administration</li>
+    <li>Web-based multiplayer mining game with real-time voxel world and physics.</li>
+    <li>Supports both desktop (keyboard/mouse) and mobile (touch controls) gameplay.</li>
+    <li>Features persistent progression, upgrade system, and procedurally generated maps.</li>
+    <li>Implements server discovery, admin controls, and cloud save synchronization.</li>
+    <li>Includes chat, trading, teleportation, and explosive mechanics.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>const Network = new NetworkManager();</code>
-    <code>const UI = new UIManager();</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
+    <code>const CONSTANTS = { MAP_WIDTH: 1000, MAP_HEIGHT: 2000, TILE_SIZE: 32 };</code>
   </pre>
 
-  <p>This is a browser-based multiplayer mining game built with HTML5 Canvas and WebSockets/MQTT for real-time networking. Players explore procedurally generated worlds, mine resources, build structures, and trade with others. The game features mobile-optimized touch controls, a shop system for upgrades, and cloud save functionality. Admin tools allow hosts to manage servers and players.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time voxel world exploration, resource gathering, and player progression. The game supports both desktop and mobile controls, includes a comprehensive upgrade system, and implements server discovery with cloud save synchronization. Players can mine various resources, trade with others, and build structures while managing fuel, health, and cargo capacity.</p>
 </section>
       </section>
     
