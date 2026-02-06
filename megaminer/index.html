@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1826,7 +1827,7 @@ class GameEngine {
                                 this.localPlayer.cargo++;
                                 UI.updateDashboard();
                             }
-                            
+
                             this.map[y][x] = TILE_TYPES.EMPTY;
                             this.discovered[y][x] = 1; // Reveal area
                             this.spawnParticle(x*32+16, y*32+16, '#ffaa00', 3);
@@ -1946,7 +1947,7 @@ class GameEngine {
 
         let cx = this.canvas.width / 2;
         let cy = this.canvas.height / 2;
-        
+
         // Cache zoomed dimensions to avoid division in loops
         const zoom = this.zoom;
         const viewW = (this.canvas.width / zoom);
@@ -1972,10 +1973,10 @@ class GameEngine {
         if (!this._cachedHost || (this.frameTick % 60 === 0)) { // Update host logic occasionally, not every frame
             const allPlayers = Object.values(this.remotePlayers);
             allPlayers.push(this.localPlayer);
-            
+
             let minTime = this.localPlayer.joinedAt || Date.now();
             let hostRef = this.localPlayer;
-            
+
             for(let i=0; i<allPlayers.length; i++) {
                 const p = allPlayers[i];
                 if(p.joinedAt && p.joinedAt < minTime) {
@@ -1985,7 +1986,7 @@ class GameEngine {
             }
             this._cachedHost = hostRef;
         }
-        
+
         const worldTime = Date.now() - (this._cachedHost.joinedAt || Date.now());
         const dayLength = 20 * 60 * 1000;
         const t = (worldTime % dayLength) / dayLength;
@@ -2003,7 +2004,7 @@ class GameEngine {
         const sunset  = Math.max(0, 1 - Math.abs(t - 0.75) * 20);
         const warm = sunrise + sunset;
 
-        // Pre-calc colors to avoid string parsing overhead if possible, 
+        // Pre-calc colors to avoid string parsing overhead if possible,
         // but template literals are decent in modern JS engines.
         const r = (135 * (0.3 + daylight * 0.7) - warm * 80) | 0;
         const g = (206 * (0.3 + daylight * 0.7) - warm * 40) | 0;
@@ -2043,8 +2044,8 @@ class GameEngine {
         // MOON
         const moonSize = 55;
         const moonCycle = 60 * 60 * 1000;
-        const moonPhase = (worldTime % moonCycle) / moonCycle; 
-        
+        const moonPhase = (worldTime % moonCycle) / moonCycle;
+
         this.ctx.fillStyle = "#e0e0e0";
         this.ctx.beginPath();
         this.ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
@@ -2076,17 +2077,17 @@ class GameEngine {
             for (let i = 0; i < this.starField.length; i++) {
                 const s = this.starField[i];
                 // Only draw stars that are actually bright enough
-                if (s.b * starAlpha < 0.05) continue; 
-                
+                if (s.b * starAlpha < 0.05) continue;
+
                 // To vary opacity without context switching, we can either:
                 // 1. Group by opacity (complex)
                 // 2. Just use globalAlpha for the whole batch (loss of individual twinkle variation)
                 // 3. Keep current logic but use rect() instead of fillRect()
-                
+
                 // Fast compromise: Draw all stars at average opacity
-                // If individual star twinkle is vital, you must accept the perf hit. 
+                // If individual star twinkle is vital, you must accept the perf hit.
                 // Here is the "fast" version:
-                this.ctx.rect(s.x, s.y, 2, 2); 
+                this.ctx.rect(s.x, s.y, 2, 2);
             }
             this.ctx.globalAlpha = starAlpha; // Apply overall fade
             this.ctx.fill(); // ONE draw call for all stars
@@ -2103,15 +2104,15 @@ class GameEngine {
         // OPTIMIZATION: TILE BATCHING
         // -------------------------------
         // Problem: Your old code switched globalAlpha inside the loop.
-        // Solution: Collect coordinates, then draw in two passes. 
-        
+        // Solution: Collect coordinates, then draw in two passes.
+
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
         const visionRadSq = this.localPlayer.xrayRange * this.localPlayer.xrayRange;
-        
+
         // We create temporary lists. In high-perf code, reuse these arrays to avoid Garbage Collection.
         // Assuming simple usage here:
-        const visibleTiles = []; 
+        const visibleTiles = [];
         const discoveredTiles = [];
 
         // 1. LOGIC PASS (Determine visibility)
@@ -2125,15 +2126,15 @@ class GameEngine {
             const dy = y - pcy;
             const dySq = dy * dy;
             const row = this.map[y]; // Cache row lookup
-            
+
             for (let x = iStartCol; x <= iEndCol; x++) {
                 const dx = x - pcx;
                 const distSq = dx * dx + dySq;
-                
+
                 if (distSq <= visionRadSq) {
                     this.discovered[y][x] = 1; // Update model
                     // Store tile render data: [x, y, tileType]
-                    visibleTiles.push(x, y, row[x]); 
+                    visibleTiles.push(x, y, row[x]);
                 } else if (this.discovered[y][x]) {
                     discoveredTiles.push(x, y, row[x]);
                 }
@@ -2149,7 +2150,7 @@ class GameEngine {
         // 3. RENDER PASS - DISCOVERED (FOG)
         // Switch Alpha ONCE
         if (discoveredTiles.length > 0) {
-            this.ctx.globalAlpha = 0.9; 
+            this.ctx.globalAlpha = 0.9;
             for (let i = 0; i < discoveredTiles.length; i+=3) {
                 this.drawProceduralTile(discoveredTiles[i], discoveredTiles[i+1], discoveredTiles[i+2], false);
             }
@@ -2165,13 +2166,13 @@ class GameEngine {
         // OPTIMIZATION: PARTICLE BATCHING
         // -------------------------------
         if (this.particles.length > 0) {
-            // Since particles have different colors/alpha, we can't batch perfectly 
+            // Since particles have different colors/alpha, we can't batch perfectly
             // without grouping by color.
             // However, we can use integer positions for sharper rendering.
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 let p = this.particles[i];
-                p.x += p.vx; 
-                p.y += p.vy; 
+                p.x += p.vx;
+                p.y += p.vy;
                 p.life -= 0.05;
 
                 if (p.life <= 0) {
@@ -2179,10 +2180,10 @@ class GameEngine {
                     continue;
                 }
 
-                this.ctx.globalAlpha = p.life; 
+                this.ctx.globalAlpha = p.life;
                 this.ctx.fillStyle = p.color;
                 // Use bitwise OR for integer coordinates (faster/crisper)
-                this.ctx.fillRect(p.x | 0, p.y | 0, 4, 4); 
+                this.ctx.fillRect(p.x | 0, p.y | 0, 4, 4);
             }
             this.ctx.globalAlpha = 1.0;
         }
@@ -2190,7 +2191,7 @@ class GameEngine {
         this.drawLocalMinimap();
         this.ctx.resetTransform();
         this.drawHUD();
-        
+
         // Increment a tick for logic throttling
         this.frameTick = (this.frameTick || 0) + 1;
     }
@@ -2392,8 +2393,8 @@ class GameEngine {
                     if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
                     if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
                     if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
-                    bevel=false;
                 }
+                bevel=false;
             }
             else if (type === TILE_TYPES.EMPTY && y<5) {
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
@@ -2849,7 +2850,7 @@ class CloudManager {
             return "error";
         }
     }
-    
+
     // hey autocomplete
     static async delete(id) {
         if(!puter.whoami){
@@ -3484,10 +3485,10 @@ class UIManager {
             console.warn("No puter user detected, skipping cloud sync.");
             return;
         }
-        
+
         const list = $('server-list-sidebar');
         list.innerHTML = '';
-        
+
         // Render helper
         const renderItem = (url, isCustom) => {
             const isActive = url === Game.settings.broker;
