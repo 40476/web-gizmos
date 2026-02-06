@@ -10,6 +10,7 @@
     <script src="lib/puter-v2.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Geo');
+        @import url('https://fonts.googleapis.com/css2?family=Danfo');
 
         /* CSS Reset & Normalization */
         * {
@@ -74,6 +75,8 @@
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor; /* IE8+ */
         }
 
         /* UI Overlay */
@@ -534,7 +537,7 @@
 </head>
 <body>
 
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="gameCanvas" class="noaliasing"></canvas>
 
     <div id="mobile-controls">
         <div class="d-pad">
@@ -1665,8 +1668,10 @@ class GameEngine {
                 this.canvas.height = window.innerHeight - 180; // 180px for controls
             }
         } else {
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight;
+            // const dpr = window.devicePixelRatio || 1;
+            const dpr = 1;
+            this.canvas.width = window.innerWidth * dpr;
+            this.canvas.height = window.innerHeight * dpr;
         }
     }
 
@@ -2469,7 +2474,7 @@ class GameEngine {
         // SIGNAGE
         // -------------------------------
         ctx.fillStyle = `hsl(${(Date.now()*0.05)%360}, 100%, 60%)`;
-        ctx.font = `${ts * 0.5}px Arial`;
+        ctx.font = `${ts * 0.5}px Danfo`;
         ctx.textAlign = "center";
         ctx.fillText("SHOP", baseX + buildingW / 2, baseY - roofH * 0.4);
 
@@ -2671,7 +2676,7 @@ class GameEngine {
         this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
         this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
         if (!isLocal) {
-            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '10px Arial'; this.ctx.textAlign = 'center';
+            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = '10px Geo'; this.ctx.textAlign = 'center';
             this.ctx.shadowColor="black"; this.ctx.shadowBlur=2;
             this.ctx.fillText(p.username || "Unknown", 0, -20);
             this.ctx.shadowBlur=0;
@@ -2783,7 +2788,7 @@ class GameEngine {
         const pct = clamp(val / max, 0, 1);
         const current = start + (end - start) * pct;
         ctx.beginPath(); ctx.arc(x, y, r - 5, start, current); ctx.strokeStyle = color; ctx.lineWidth = 6; ctx.stroke();
-        ctx.fillStyle = "#fff"; ctx.font = "bold 10px Arial"; ctx.textAlign = "center";
+        ctx.fillStyle = "#fff"; ctx.font = "bold 20px Geo"; ctx.textAlign = "center";
         ctx.fillText(label, x, y + 15); ctx.fillText(Math.floor(val), x, y - 5);
     }
 
