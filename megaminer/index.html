@@ -1938,149 +1938,126 @@ class GameEngine {
 
     draw() {
         if (!this.running) return;
+
+        // 1. CLEAR & SETUP
         this.ctx.resetTransform();
         this.ctx.fillStyle = '#050505';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         let cx = this.canvas.width / 2;
         let cy = this.canvas.height / 2;
+        
+        // Cache zoomed dimensions to avoid division in loops
+        const zoom = this.zoom;
+        const viewW = (this.canvas.width / zoom);
+        const viewH = (this.canvas.height / zoom);
+
         this.ctx.translate(cx, cy);
-        this.ctx.scale(this.zoom, this.zoom);
-        this.ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
+        this.ctx.scale(zoom, zoom);
+        // Use bitwise | 0 for faster integer rounding than Math.round/floor
+        this.ctx.translate(-(this.camera.x | 0), -(this.camera.y | 0));
 
-        const viewW = (this.canvas.width / this.zoom);
-        const viewH = (this.canvas.height / this.zoom);
-        const startCol = Math.floor((this.camera.x - viewW/2) / CONSTANTS.TILE_SIZE) - 1;
-        const endCol = Math.floor((this.camera.x + viewW/2) / CONSTANTS.TILE_SIZE) + 1;
-        const startRow = Math.floor((this.camera.y - viewH/2) / CONSTANTS.TILE_SIZE) - 1;
-        const endRow = Math.floor((this.camera.y + viewH/2) / CONSTANTS.TILE_SIZE) + 1;
+        // Calculate bounds once
+        const TILE_SIZE = CONSTANTS.TILE_SIZE;
+        const startCol = ((this.camera.x - viewW / 2) / TILE_SIZE | 0) - 1;
+        const endCol   = ((this.camera.x + viewW / 2) / TILE_SIZE | 0) + 1;
+        const startRow = ((this.camera.y - viewH / 2) / TILE_SIZE | 0) - 1;
+        const endRow   = ((this.camera.y + viewH / 2) / TILE_SIZE | 0) + 1;
 
-        const pcx = this.localPlayer.gridX;
-        const pcy = this.localPlayer.gridY;
-        const visionRad = this.localPlayer.xrayRange;
-        const visionRadSq = visionRad * visionRad;
-
-        /// -------------------------------
-        // WORLD TIME (host-based)
         // -------------------------------
-        const allPlayers = Object.values(this.remotePlayers)
-            .concat([this.localPlayer])
-            .filter(p => typeof p.joinedAt === "number" && !isNaN(p.joinedAt));
-        if (allPlayers.length === 0) {
-            // fallback: treat local player as host
-            allPlayers.push({ ...this.localPlayer, joinedAt: Date.now() });
+        // OPTIMIZATION: CACHE TIME LOGIC
+        // -------------------------------
+        // Sorting an array every frame is slow. Finding min value is O(n).
+        // If possible, calculate 'host' outside draw(), but here is the O(n) version:
+        if (!this._cachedHost || (this.frameTick % 60 === 0)) { // Update host logic occasionally, not every frame
+            const allPlayers = Object.values(this.remotePlayers);
+            allPlayers.push(this.localPlayer);
+            
+            let minTime = this.localPlayer.joinedAt || Date.now();
+            let hostRef = this.localPlayer;
+            
+            for(let i=0; i<allPlayers.length; i++) {
+                const p = allPlayers[i];
+                if(p.joinedAt && p.joinedAt < minTime) {
+                    minTime = p.joinedAt;
+                    hostRef = p;
+                }
+            }
+            this._cachedHost = hostRef;
         }
-        const host = allPlayers.sort((a,b)=>a.joinedAt - b.joinedAt)[0] || this.localPlayer;
-        const worldTime = Date.now() - host.joinedAt;
-
+        
+        const worldTime = Date.now() - (this._cachedHost.joinedAt || Date.now());
         const dayLength = 20 * 60 * 1000;
         const t = (worldTime % dayLength) / dayLength;
-
-        // Rotate so sunrise = 0.25, noon = 0.5, sunset = 0.75
         const sunAngle = (t * Math.PI * 2) - Math.PI / 2;
 
-        // Smooth daylight curve (no flicker)
-        const daylight = (() => {
-            const x = (Math.cos(sunAngle) + 1) / 2; // 0→1→0
-            return x * x * (3 - 2 * x);            // smoothstep
-        })();
+        // Smooth daylight curve
+        const x = (Math.cos(sunAngle) + 1) / 2;
+        const daylight = x * x * (3 - 2 * x);
 
         // -------------------------------
-        // SKY COLOR (above ground level y=5)
+        // SKY RENDERING
         // -------------------------------
-        const baseSky = { r: 135, g: 206, b: 235 };
-        const groundY = 5 * CONSTANTS.TILE_SIZE;
-
+        const groundY = 5 * TILE_SIZE;
         const sunrise = Math.max(0, 1 - Math.abs(t - 0.25) * 20);
         const sunset  = Math.max(0, 1 - Math.abs(t - 0.75) * 20);
         const warm = sunrise + sunset;
 
-        const r = Math.round(baseSky.r * (0.3 + daylight*0.7) - warm * 80);
-        const g = Math.round(baseSky.g * (0.3 + daylight*0.7) - warm * 40);
-        const b = Math.round(baseSky.b * (0.3 + daylight*0.7) - warm * 20);
+        // Pre-calc colors to avoid string parsing overhead if possible, 
+        // but template literals are decent in modern JS engines.
+        const r = (135 * (0.3 + daylight * 0.7) - warm * 80) | 0;
+        const g = (206 * (0.3 + daylight * 0.7) - warm * 40) | 0;
+        const b = (235 * (0.3 + daylight * 0.7) - warm * 20) | 0;
 
         this.ctx.fillStyle = `rgb(${r},${g},${b})`;
-        this.ctx.fillRect(
-            this.camera.x - viewW,
-            -2000,
-            viewW * 2,
-            groundY + 2000
-        );
+        // Draw sky in one large rect
+        this.ctx.fillRect(this.camera.x - viewW, -2000, viewW * 2, groundY + 2000);
 
-        // Sunrise/sunset gradient
         if (warm > 0) {
             const grad = this.ctx.createLinearGradient(0, -2000, 0, groundY);
             grad.addColorStop(0, `rgba(255,120,50,${warm * 0.6})`);
             grad.addColorStop(1, `rgba(255,180,120,${warm * 0.3})`);
             this.ctx.fillStyle = grad;
-            this.ctx.fillRect(
-                this.camera.x - viewW,
-                -2000,
-                viewW * 2,
-                groundY + 2000
-            );
+            this.ctx.fillRect(this.camera.x - viewW, -2000, viewW * 2, groundY + 2000);
         }
 
         // -------------------------------
-        // SUN & MOON POSITIONS
+        // CELESTIAL BODIES
         // -------------------------------
         const skyRadius = 900;
-        const centerX = this.camera.x;
-        // Fix: Pivot exactly at ground level so sunrise/sunset looks correct
-        const centerY = groundY;
+        const sunX = this.camera.x + Math.cos(sunAngle) * skyRadius;
+        const sunY = groundY + Math.sin(sunAngle) * skyRadius;
+        const moonX = this.camera.x + Math.cos(sunAngle + Math.PI) * skyRadius;
+        const moonY = groundY + Math.sin(sunAngle + Math.PI) * skyRadius;
 
-        const sunX = centerX + Math.cos(sunAngle) * skyRadius;
-        const sunY = centerY + Math.sin(sunAngle) * skyRadius;
+        // SUN
+        const sunSize = 70;
+        const sunGrd = this.ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunSize);
+        sunGrd.addColorStop(0, "rgba(255,255,200,1)");
+        sunGrd.addColorStop(1, "rgba(255,180,0,0.2)");
+        this.ctx.fillStyle = sunGrd;
+        this.ctx.beginPath();
+        this.ctx.arc(sunX, sunY, sunSize, 0, Math.PI * 2);
+        this.ctx.fill();
 
-        const moonX = centerX + Math.cos(sunAngle + Math.PI) * skyRadius;
-        const moonY = centerY + Math.sin(sunAngle + Math.PI) * skyRadius;
-
-        // -------------------------------
-        // SUN (always drawn)
-        // -------------------------------
-        {
-            const sunSize = 70;
-            const grd = this.ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunSize);
-            grd.addColorStop(0, "rgba(255,255,200,1)");
-            grd.addColorStop(1, "rgba(255,180,0,0.2)");
-
-            this.ctx.fillStyle = grd;
-            this.ctx.beginPath();
-            this.ctx.arc(sunX, sunY, sunSize, 0, Math.PI*2);
-            this.ctx.fill();
-        }
-
-        // -------------------------------
-        // MOON (one draw call, 3 phases)
-        // -------------------------------
-        {
-            const moonSize = 55;
-            const moonCycle = 60 * 60 * 1000;
-            const moonPhase = (worldTime % moonCycle) / moonCycle; // 0=new, 0.5=full
-
-            this.ctx.fillStyle = "#e0e0e0";
-            this.ctx.beginPath();
-
-            // Outer circle
-            this.ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
-
-            // Phase curve (one quadratic curve)
-            const curveOffset = (moonPhase - 0.5) * moonSize * 1.6;
-
-            this.ctx.moveTo(moonX - moonSize, moonY);
-            this.ctx.quadraticCurveTo(
-                moonX + curveOffset,
-                moonY,
-                moonX - moonSize,
-                moonY
-            );
-
-            this.ctx.fill();
-        }
+        // MOON
+        const moonSize = 55;
+        const moonCycle = 60 * 60 * 1000;
+        const moonPhase = (worldTime % moonCycle) / moonCycle; 
+        
+        this.ctx.fillStyle = "#e0e0e0";
+        this.ctx.beginPath();
+        this.ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
+        const curveOffset = (moonPhase - 0.5) * moonSize * 1.6;
+        this.ctx.moveTo(moonX - moonSize, moonY);
+        this.ctx.quadraticCurveTo(moonX + curveOffset, moonY, moonX - moonSize, moonY);
+        this.ctx.fill();
 
         // -------------------------------
-        // STARS
+        // OPTIMIZATION: BATCHED STARS
         // -------------------------------
+        // Instead of looping and setting fillStyle/globalAlpha 200 times,
+        // we set the style once and draw all rects.
         if (!this.starField) {
             this.starField = [];
             for (let i = 0; i < 200; i++) {
@@ -2092,64 +2069,130 @@ class GameEngine {
             }
         }
 
-        {
-            const starAlpha = (0.4 - daylight) / 0.4;
-            if (starAlpha > 0) {
-                this.ctx.fillStyle = "#fff";
-                for (const s of this.starField) {
-                    this.ctx.globalAlpha = s.b * starAlpha;
-                    this.ctx.fillRect(s.x, s.y, 2, 2);
-                }
-                this.ctx.globalAlpha = 1;
+        const starAlpha = (0.4 - daylight) / 0.4;
+        if (starAlpha > 0) {
+            this.ctx.fillStyle = "#fff";
+            this.ctx.beginPath(); // Start a path for batching
+            for (let i = 0; i < this.starField.length; i++) {
+                const s = this.starField[i];
+                // Only draw stars that are actually bright enough
+                if (s.b * starAlpha < 0.05) continue; 
+                
+                // To vary opacity without context switching, we can either:
+                // 1. Group by opacity (complex)
+                // 2. Just use globalAlpha for the whole batch (loss of individual twinkle variation)
+                // 3. Keep current logic but use rect() instead of fillRect()
+                
+                // Fast compromise: Draw all stars at average opacity
+                // If individual star twinkle is vital, you must accept the perf hit. 
+                // Here is the "fast" version:
+                this.ctx.rect(s.x, s.y, 2, 2); 
             }
+            this.ctx.globalAlpha = starAlpha; // Apply overall fade
+            this.ctx.fill(); // ONE draw call for all stars
+            this.ctx.globalAlpha = 1;
         }
 
-        // -------------------------------
-        // BLACK RECTANGLE (drawn LAST in sky section)
-        // -------------------------------
+        // Black void below ground
         this.ctx.fillStyle = "#000";
-        this.ctx.fillRect(
-            this.camera.x - viewW,
-            groundY,
-            viewW * 2,
-            5000
-        );
+        this.ctx.fillRect(this.camera.x - viewW, groundY, viewW * 2, 5000);
 
         this.drawStation();
 
-        for (let y = Math.max(0, startRow); y <= Math.min(CONSTANTS.MAP_HEIGHT-1, endRow); y++) {
-            const dy = y - pcy;
-            const dySq = dy * dy; // Calculate Y-squared once per row
-            for (let x = Math.max(0, startCol); x <= Math.min(CONSTANTS.MAP_WIDTH-1, endCol); x++) {
-                let dx = x - pcx; let dy = y - pcy;
-                const distSq = dx * dx + dySq;
-                let visible = distSq <= visionRadSq;
-                if (visible) this.discovered[y][x] = 1;
-                let tile = this.map[y][x];
+        // -------------------------------
+        // OPTIMIZATION: TILE BATCHING
+        // -------------------------------
+        // Problem: Your old code switched globalAlpha inside the loop.
+        // Solution: Collect coordinates, then draw in two passes. 
+        
+        const pcx = this.localPlayer.gridX;
+        const pcy = this.localPlayer.gridY;
+        const visionRadSq = this.localPlayer.xrayRange * this.localPlayer.xrayRange;
+        
+        // We create temporary lists. In high-perf code, reuse these arrays to avoid Garbage Collection.
+        // Assuming simple usage here:
+        const visibleTiles = []; 
+        const discoveredTiles = [];
 
-                if (visible) this.drawProceduralTile(x, y, tile, !visible);
-                else if (this.discovered[y][x]) {
-                    this.ctx.globalAlpha = 0.9;
-                    this.drawProceduralTile(x, y, tile, false);
-                    this.ctx.globalAlpha = 1.0;
+        // 1. LOGIC PASS (Determine visibility)
+        // Clamp loops to map bounds to avoid Math.min/max inside loop
+        const iStartRow = (startRow < 0) ? 0 : startRow;
+        const iEndRow   = (endRow >= CONSTANTS.MAP_HEIGHT) ? CONSTANTS.MAP_HEIGHT - 1 : endRow;
+        const iStartCol = (startCol < 0) ? 0 : startCol;
+        const iEndCol   = (endCol >= CONSTANTS.MAP_WIDTH) ? CONSTANTS.MAP_WIDTH - 1 : endCol;
+
+        for (let y = iStartRow; y <= iEndRow; y++) {
+            const dy = y - pcy;
+            const dySq = dy * dy;
+            const row = this.map[y]; // Cache row lookup
+            
+            for (let x = iStartCol; x <= iEndCol; x++) {
+                const dx = x - pcx;
+                const distSq = dx * dx + dySq;
+                
+                if (distSq <= visionRadSq) {
+                    this.discovered[y][x] = 1; // Update model
+                    // Store tile render data: [x, y, tileType]
+                    visibleTiles.push(x, y, row[x]); 
+                } else if (this.discovered[y][x]) {
+                    discoveredTiles.push(x, y, row[x]);
                 }
             }
         }
 
-        Object.values(this.remotePlayers).forEach(p => this.drawPlayer(p, false));
+        // 2. RENDER PASS - FULL VISIBILITY
+        // Draw all bright tiles consecutively. No alpha switching.
+        for (let i = 0; i < visibleTiles.length; i+=3) {
+            this.drawProceduralTile(visibleTiles[i], visibleTiles[i+1], visibleTiles[i+2], false);
+        }
+
+        // 3. RENDER PASS - DISCOVERED (FOG)
+        // Switch Alpha ONCE
+        if (discoveredTiles.length > 0) {
+            this.ctx.globalAlpha = 0.9; 
+            for (let i = 0; i < discoveredTiles.length; i+=3) {
+                this.drawProceduralTile(discoveredTiles[i], discoveredTiles[i+1], discoveredTiles[i+2], false);
+            }
+            this.ctx.globalAlpha = 1.0; // Reset once
+        }
+
+        // Players
+        const remote = Object.values(this.remotePlayers);
+        for(let i=0; i<remote.length; i++) this.drawPlayer(remote[i], false);
         this.drawPlayer(this.localPlayer, true);
 
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            let p = this.particles[i];
-            p.x += p.vx; p.y += p.vy; p.life -= 0.05;
-            this.ctx.globalAlpha = p.life; this.ctx.fillStyle = p.color;
-            this.ctx.fillRect(p.x, p.y, 4, 4); this.ctx.globalAlpha = 1.0;
-            if (p.life <= 0) this.particles.splice(i, 1);
+        // -------------------------------
+        // OPTIMIZATION: PARTICLE BATCHING
+        // -------------------------------
+        if (this.particles.length > 0) {
+            // Since particles have different colors/alpha, we can't batch perfectly 
+            // without grouping by color.
+            // However, we can use integer positions for sharper rendering.
+            for (let i = this.particles.length - 1; i >= 0; i--) {
+                let p = this.particles[i];
+                p.x += p.vx; 
+                p.y += p.vy; 
+                p.life -= 0.05;
+
+                if (p.life <= 0) {
+                    this.particles.splice(i, 1);
+                    continue;
+                }
+
+                this.ctx.globalAlpha = p.life; 
+                this.ctx.fillStyle = p.color;
+                // Use bitwise OR for integer coordinates (faster/crisper)
+                this.ctx.fillRect(p.x | 0, p.y | 0, 4, 4); 
+            }
+            this.ctx.globalAlpha = 1.0;
         }
 
         this.drawLocalMinimap();
         this.ctx.resetTransform();
         this.drawHUD();
+        
+        // Increment a tick for logic throttling
+        this.frameTick = (this.frameTick || 0) + 1;
     }
 
 
@@ -2282,7 +2325,9 @@ class GameEngine {
         let px = x * ts; let py = y * ts;
         let prop = TILE_PROPS[type];
 
-        // Detailed Texture Patterns
+        if (type === TILE_TYPES.EMPTY && y < 5) {
+            return;
+        }
 
         const n1 = (pseudoRandom(x, y) % 1);
         const n2 = ((pseudoRandom(x, y) * 10) % 1);
