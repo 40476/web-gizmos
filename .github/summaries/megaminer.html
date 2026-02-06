@@ -1,16 +1,17 @@
 <section>
   <ul>
-    <li>Browser-based multiplayer mining game with real-time WebSocket communication.</li>
-    <li>Procedurally generated infinite map with various ore types and mining mechanics.</li>
-    <li>Mobile-optimized controls with virtual D-pad and action buttons.</li>
-    <li>Shop system for upgrades, repairs, and item purchases using in-game currency.</li>
-    <li>Save system with IndexedDB and cloud sync capabilities via Puter API.</li>
+    <li>Multiplayer mining game with real-time sync via MQTT</li>
+    <li>Procedural map generation with different ore tiers</li>
+    <li>Shop system for upgrades, fuel, and building materials</li>
+    <li>Save/load system with IndexedDB and cloud sync</li>
+    <li>Mobile controls with virtual D-pad and action buttons</li>
+    <li>Admin system for kicking players and transferring host</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
-    <code>const MSGS = { join: ["spawned in.", "slid into the server."] };</code>
+    <code>const GameEngine = class { update() { /* game loop logic */ } draw() { /* render tiles, players */ } };</code>
+    <code>class NetworkManager { connect() { /* MQTT setup */ } handleMessage() { /* message routing */ } };</code>
   </pre>
 
-  <p>MultiMiner is a real-time multiplayer mining game where players explore procedurally generated terrain, mine various ores, upgrade equipment, and trade with others. The game features cross-platform support with mobile controls, persistent save systems, and cloud synchronization through the Puter API. Players can join public rooms, build structures, and manage resources while competing on leaderboards.</p>
+  <p>Mega Miner Online is a multiplayer mining adventure where players dig for ores, upgrade equipment, and build structures together. The game features procedural map generation, real-time multiplayer via MQTT, a shop for upgrades, and cloud save functionality. Players can mine different ore tiers, transfer fuel between players, and use explosives for large-scale mining operations.</p>
 </section>
