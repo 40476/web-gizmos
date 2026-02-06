@@ -3777,12 +3777,17 @@ class UIManager {
         if(p.teleporters && p.teleporters.length > 0) {
             // Sort by depth
             p.teleporters.sort((a,b) => a.y - b.y).forEach(t => {
-                const btn = document.createElement('button');
-                btn.className = 'btn';
-                btn.style.background = '#8e44ad';
-                btn.innerHTML = `<strong>${t.name}</strong> <span style="float:right; font-size:10px; opacity:0.8;">${t.y}m</span>`;
-                btn.onclick = () => this.warpTo(t.x, t.y);
-                list.appendChild(btn);
+                if (((t.y < 0) ? TILE_TYPES.EMPTY : Game.map[t.y][t.x])===TILE_TYPES.TELEPORTER) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn';
+                    btn.style.background = '#8e44ad';
+                    btn.innerHTML = `<strong>${t.name}</strong> <span style="float:right; font-size:10px; opacity:0.8;">${t.y}m</span>`;
+                    btn.onclick = () => this.warpTo(t.x, t.y);
+                    list.appendChild(btn);
+                } else {
+                    p.teleporters = p.teleporters.filter(teleporter => teleporter.name !== t.name)
+                    console.log(`Removed missing teleporter at (${t.x},${t.y})`)
+                }
             });
         } else {
             const msg = document.createElement('div');
