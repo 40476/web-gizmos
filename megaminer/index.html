@@ -2753,7 +2753,7 @@ class GameEngine {
         const h = this.canvas.height;
 
         // Adjust gauge scale and position for mobile
-        const gaugeR = this.isMobile ? 35 : 60;
+        const gaugeR = this.isMobile ? Math.min(this.canvas.width/12, 60) : 55;
         const yPos = h - (gaugeR * 1.5); // Sits just above bottom of canvas
         const xStep = this.isMobile ? (w / 4) : 100; // Spread evenly or fixed
 
@@ -2769,10 +2769,10 @@ class GameEngine {
             this.ctx.fillText("$ " + Math.floor(p.money), w/2, 30);
         } else {
             // Desktop layout (bottom corners)
-            this.drawGauge(60, h - 60, 40, p.fuel, p.maxFuel, "FUEL", "#d35400");
-            this.drawGauge(160, h - 60, 40, p.hull, p.maxHull, "HULL", "#c0392b");
-            this.drawGauge(w - 60, h - 60, 40, p.cargo, p.maxCargo, "CARGO", "#27ae60");
-            this.drawGauge(w - 160, h - 60, 40, p.temp, 100, "TEMP", "#e74c3c");
+            this.drawGauge(80, h - 60, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400");
+            this.drawGauge(240, h - 60, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b");
+            this.drawGauge(w - 80, h - 60, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60");
+            this.drawGauge(w - 240, h - 60, gaugeR, p.temp, 100, "TEMP", "#e74c3c");
 
             this.ctx.fillStyle = "#f1c40f"; this.ctx.font = "bold " + getFontSize('--fs-title') + " Geo"; this.ctx.textAlign = "center";
             this.ctx.fillText("$ " + Math.floor(p.money), w/2, h - 30);
