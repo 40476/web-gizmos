@@ -340,19 +340,19 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>Browser-based multiplayer mining game with real-time player interactions</li>
-    <li>Procedurally generated underground worlds with various ore types and mining tiers</li>
-    <li>Mobile-optimized touch controls and desktop keyboard controls</li>
-    <li>Shop system for upgrades, consumables, and vehicle customization</li>
-    <li>Save system with local IndexedDB storage and cloud synchronization</li>
+    <li>Real-time multiplayer mining game with procedurally generated worlds</li>
+    <li>Supports both desktop and mobile controls with virtual D-pad</li>
+    <li>Features shop system for upgrades, inventory management, and multiplayer trading</li>
+    <li>Cloud save functionality with conflict resolution and cross-device sync</li>
+    <li>Admin controls for host management, map sync, and player moderation</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } };</code>
-    <code>const TILE_PROPS = { [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 1, value: 0, tier: 0 } };</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ... }</code>
+    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: 0, gridY: 0, ... } } }</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining game where players dig through procedurally generated underground worlds, collect resources, and upgrade their equipment. The game features real-time multiplayer interaction, a shop system for purchasing upgrades and consumables, and both mobile and desktop controls. Players can save their progress locally or sync to the cloud, and the game includes a dynamic day-night cycle and various ore types with different mining tiers.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time multiplayer gameplay, procedurally generated worlds, and cross-platform support. Players can mine resources, upgrade equipment, trade with others, and explore vast underground caverns while managing fuel, health, and inventory. The game includes cloud save functionality, admin controls for hosts, and supports both desktop and mobile play with virtual controls.</p>
 </section>
       </section>
     
