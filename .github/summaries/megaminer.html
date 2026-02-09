@@ -1,17 +1,16 @@
 <section>
   <ul>
-    <li>Mega Miner Online is a multiplayer mining game with procedurally generated maps and real-time multiplayer features.</li>
-    <li>Players can mine resources, upgrade equipment, trade with others, and explore an expansive underground world.</li>
-    <li>The game includes a shop system for purchasing upgrades, consumables, and building materials.</li>
-    <li>Mobile controls are supported with a virtual D-pad and action buttons for touch devices.</li>
-    <li>Cloud save functionality allows players to sync their progress across devices using Puter integration.</li>
+    <li>Multiplayer mining game with real-time WebSocket/MQTT networking.</li>
+    <li>Procedurally generated infinite map with multiple ore tiers and building mechanics.</li>
+    <li>Full-featured shop system for upgrades, consumables, and explosives.</li>
+    <li>Cloud sync via Puter for cross-device save sharing.</li>
+    <li>Responsive design with mobile controls and touch support.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>const Network = new NetworkManager();</code>
-    <code>const Shop = new ShopSystem();</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99 };</code>
+    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, x: 0, y: 0, fuel: 100, maxFuel: 100, hull: 100, maxHull: 100, cargo: 0, maxCargo: 50, money: 0, temp: 0, maxTemp: 100, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 6, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; } }</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining adventure game featuring procedurally generated worlds, real-time multiplayer interactions, and extensive upgrade systems. Players can mine resources, trade with others, and explore deep underground environments while managing fuel, hull integrity, and cargo capacity. The game supports both desktop and mobile controls, includes a comprehensive shop system, and offers cloud save functionality for cross-device progress synchronization.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring procedurally generated worlds, real-time networking via MQTT, and cross-device cloud saves. Players explore, mine resources, build structures, and upgrade their equipment while competing on leaderboards. The game includes a comprehensive shop system, teleporters for fast travel, and supports both desktop and mobile controls.</p>
 </section>
