@@ -43,6 +43,7 @@
             --ui-scale: 1.0;
 
             /* Individual Sizes (Calculated based on scale) */
+            --fs-micro:  calc(10px * var(--ui-scale));  /* Inventory counts, small labels */
             --fs-tiny:   calc(12px * var(--ui-scale));  /* Inventory counts, small labels */
             --fs-xs:     calc(13px * var(--ui-scale));  /* Server lists, meta data */
             --fs-sm:     calc(14px * var(--ui-scale));  /* Chat, buttons, descriptions */
@@ -1583,8 +1584,8 @@ class GameEngine {
         this.logConnection("Initializing System...");
 
         if (puter.whoami && saveSystem.cloudSyncEnabled) {
-            this.logConnection("Running sync task...");
-            await SaveSystem.smartSyncAll(true);
+            await this.logConnection("Running sync task...");
+            await saveSystem.smartSyncAll(true);
         } else {
             this.logConnection(`Skipping sync task (${puter.whoami ? "auto-sync off" : "not signed in"}}`);
         }
@@ -4196,8 +4197,8 @@ class SaveSystem {
         localStorage.setItem('mm_cloudsync_setting', val);
     }
 
-    static async smartSyncAll() {
-        UI.showToast("Starting Smart Sync...", "info");
+    static async smartSyncAll(isSilent) {
+        if (!isSilent) UI.showToast("Starting Smart Sync...", "info");
         await this.initDB();
 
         // 1. Get Local IDs
@@ -4252,9 +4253,11 @@ class SaveSystem {
 
         this.renderSaveList();
         if (counts.uploaded + counts.downloaded > 0) {
-            UI.showToast(`Sync Complete: ${counts.uploaded} uploaded, ${counts.downloaded} downloaded.`, "success");
+            const syncMsg = `Sync Complete: ${counts.uploaded} uploaded, ${counts.downloaded} downloaded.`;
+            console.log(syncMsg);
+            UI.showToast(syncMsg, "success");
         } else {
-            UI.showToast("Worlds are already in sync.", "normal");
+            if (!isSilent) UI.showToast("Worlds are already in sync.", "normal");
         }
     }
 
