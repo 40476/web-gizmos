@@ -643,7 +643,7 @@
                             <input type="checkbox" id="mobile-toggle" onchange="Game.toggleMobile(this.checked)">&nbsp;&nbsp;Enable Mobile Controls
                         </label>
                     </div>
-                    <button class="btn" onclick="Game.init()">LAUNCH MISSION</button>
+                    <button class="btn" onclick="Game.init()" id="startBtn">LAUNCH MISSION</button>
                     <button class="btn" style="margin-top:10px; background:#444;" onclick="UI.openSettings()">SETTINGS</button>
                 </div>
 
@@ -874,7 +874,7 @@
             <div class="form-group">
                 <label>Cloud Sync</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px; flex-wrap: wrap;">
-                    <button class="btn" style="flex:1; background:#2980b9;" onclick="SaveSystem.smartSyncAll()">
+                    <button class="btn" style="flex:1; background:#2980b9;" onclick="SaveSystem.smartSyncAll(false, true)">
                         Sync All
                     </button>
                     <button class="btn" style="flex:1; background:#444;" onclick="SaveSystem.loadLinkCode()">
@@ -1583,9 +1583,10 @@ class GameEngine {
         $('connection-screen').style.display = 'flex';
         this.logConnection("Initializing System...");
 
-        if (puter.whoami && saveSystem.cloudSyncEnabled) {
+        if (puter.whoami && SaveSystem.cloudSyncEnabled) {
             await this.logConnection("Running sync task...");
-            await saveSystem.smartSyncAll(true);
+            await SaveSystem.smartSyncAll(true, true);
+            this.lastAutosave = now();
         } else {
             this.logConnection(`Skipping sync task (${puter.whoami ? "auto-sync off" : "not signed in"}}`);
         }
@@ -1922,7 +1923,7 @@ class GameEngine {
         this.camera.x += (p.x - this.camera.x) * 0.1;
         this.camera.y += (p.y - this.camera.y) * 0.1;
 
-        if (now() % 5000 < 20) this.saveLocalProgress();
+        if (now() % 10000 < 20) this.saveLocalProgress();
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin && SaveSystem.currentSaveId) {
             SaveSystem.saveGame(SaveSystem.currentSaveId, null, true); this.lastAutosave = now();
         }
@@ -3621,7 +3622,7 @@ class UIManager {
             "wss://test.mosquitto.org:8081"
         ];
         this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
-
+        if (localStorage.getItem('mm_cloudsync_setting')===true) $('startBtn').disabled = true;
         // Init server list on load
         setTimeout(() => this.refreshServerList(), 500);
     }
@@ -3740,8 +3741,8 @@ class UIManager {
 
     // --- SERVER LIST LOGIC ---
     refreshServerList() {
-        if(puter.whoami){
-            SaveSystem.smartSyncAll();
+        if(puter.whoami && SaveSystem.cloudSyncEnabled){
+            SaveSystem.smartSyncAll(true,true);
         } else {
             console.warn("No puter user detected, skipping cloud sync.");
         }
@@ -4197,8 +4198,9 @@ class SaveSystem {
         localStorage.setItem('mm_cloudsync_setting', val);
     }
 
-    static async smartSyncAll(isSilent) {
+    static async smartSyncAll(isSilent, noStartBtn) {
         if (!isSilent) UI.showToast("Starting Smart Sync...", "info");
+        if (noStartBtn) $('startBtn').disabled = true;
         await this.initDB();
 
         // 1. Get Local IDs
@@ -4259,6 +4261,7 @@ class SaveSystem {
         } else {
             if (!isSilent) UI.showToast("Worlds are already in sync.", "normal");
         }
+        $('startBtn').disabled = false;
     }
 
     // Helper to look in both Global and Sandbox
@@ -4379,7 +4382,7 @@ class SaveSystem {
             }
 
             // Re-sync the list automatically after they log in
-            await this.smartSyncAll();
+            await this.smartSyncAll(false,true);
         } catch (e) {
             console.error("Login failed:", e);
             UI.showToast("Cloud login cancelled", "normal");
