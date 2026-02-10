@@ -1502,17 +1502,14 @@ class GameEngine {
         if (y > 300) type = TILE_TYPES.DEEP_SLATE;
         else if (y > 100) type = TILE_TYPES.HARD_STONE;
         else if (y > 30) type = TILE_TYPES.STONE;
-
+        if (r > 0.89) return TILE_TYPES.COAL;
+        if (r > 0.92 && y > 50) return TILE_TYPES.IRON;
+        if (r > 0.96 && y > 100) return TILE_TYPES.GOLD;
         if (r > 0.985) {
-            if (y > 400) return TILE_TYPES.RUBY;
-            else if (y > 250) return TILE_TYPES.EMERALD;
+            const oreRoll = Math.random();
+            if (y > 400 && oreRoll < 0.2) return TILE_TYPES.RUBY;
+            else if (y > 250 && oreRoll < 0.6) return TILE_TYPES.EMERALD;
             else if (y > 150) return TILE_TYPES.DIAMOND;
-        } else if (r > 0.96) {
-            if (y > 100) return TILE_TYPES.GOLD;
-        } else if (r > 0.92) {
-            if (y > 50) return TILE_TYPES.IRON;
-        } else if (r > 0.89) {
-            return TILE_TYPES.COAL;
         }
         return type;
     }
