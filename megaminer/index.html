@@ -1497,18 +1497,25 @@ class GameEngine {
         if (y === 5) return TILE_TYPES.GRASS;
         if (y === CONSTANTS.MAP_HEIGHT - 1) return TILE_TYPES.BEDROCK;
 
-        let r = Game.getMapRandom(x, y);
+        // 1. Determine the base background tile
         let type = TILE_TYPES.DIRT;
         if (y > 300) type = TILE_TYPES.DEEP_SLATE;
         else if (y > 100) type = TILE_TYPES.HARD_STONE;
         else if (y > 30) type = TILE_TYPES.STONE;
 
+        // 2. Get the main "Rarity" roll for this tile
+        let r = Game.getMapRandom(x, y);
+
+        // 3. Check for Rare Ores (Ruby, Emerald, Diamond)
         if (r > 0.985) {
-            const oreRoll = Math.random();
-            if (y > 400 && oreRoll < 0.2) return TILE_TYPES.RUBY;
-            else if (y > 250 && oreRoll < 0.6) return TILE_TYPES.EMERALD;
-            else if (y > 150) return TILE_TYPES.DIAMOND;
+            const oreRoll = Game.getMapRandom(x, y + 10000);
+
+            if (y > 400 && oreRoll < 0.2) return TILE_TYPES.RUBY;       // 20% of rare ores
+            else if (y > 250 && oreRoll < 0.6) return TILE_TYPES.EMERALD; // 40% of rare ores
+            else if (y > 150) return TILE_TYPES.DIAMOND;                // Fallback for the rest
         }
+
+        // 4. Standard Ores
         if (r > 0.96 && y > 100) return TILE_TYPES.GOLD;
         if (r > 0.92 && y > 50) return TILE_TYPES.IRON;
         if (r > 0.89) return TILE_TYPES.COAL;
