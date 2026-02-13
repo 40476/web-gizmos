@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Infinity Racer: MQTT Edition</title>
+    <title>Infinity Racer: Host Edition</title>
     <style>
         :root {
             --primary: #00ffd5;
             --secondary: #ff0055;
-            --bg-dark: rgba(10, 15, 20, 0.9);
+            --bg-dark: rgba(10, 15, 20, 0.95);
             --text-main: #ffffff;
             --font-ui: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --fs-tiny: 10px;
         }
 
         body {
@@ -20,6 +21,7 @@
             font-family: var(--font-ui);
             color: var(--text-main);
             user-select: none;
+            touch-action: none;
         }
 
         #canvas-container {
@@ -66,6 +68,13 @@
             margin-bottom: 10px;
         }
 
+        #score-display {
+            font-size: 20px;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ffd700;
+        }
+
         #speedometer {
             position: absolute;
             bottom: 30px;
@@ -106,12 +115,32 @@
             transition: transform 0.1s;
         }
 
-        /* --- Chat --- */
-        #chat-container {
+        /* --- Minimap --- */
+        #minimap-container {
             position: absolute;
             bottom: 30px;
             left: 30px;
-            width: 350px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 255, 213, 0.2);
+            backdrop-filter: blur(4px);
+        }
+
+        #minimap {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- Chat --- */
+        #chat-container {
+            position: absolute;
+            bottom: 190px;
+            left: 30px;
+            width: 300px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -164,151 +193,97 @@
             border-color: var(--primary);
         }
 
-        /* --- Soundboard --- */
-        #soundboard {
-            margin-top: 10px;
-            max-width: 250px;
-        }
-
-        #sound-list {
-            max-height: 200px;
-            overflow-y: auto;
-            /* Scrollbar styling */
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary) transparent;
-        }
-
-        #sound-list::-webkit-scrollbar {
-            width: 4px;
-        }
-        #sound-list::-webkit-scrollbar-thumb {
-            background-color: var(--primary);
-            border-radius: 4px;
-        }
-
-        .sound-btn {
-            display: block;
-            width: 100%;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid #444;
-            color: #ccc;
-            padding: 8px;
-            margin-bottom: 5px;
-            cursor: pointer;
-            text-align: left;
-            border-radius: 4px;
-            font-size: 12px;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box; /* Fix padding issues */
-        }
-
-        .sound-btn:hover {
-            background: rgba(0, 255, 213, 0.2);
-            border-color: var(--primary);
-            color: white;
-        }
-
-        .sound-btn.playing {
-            border-color: var(--secondary);
-            color: var(--secondary);
-            background: rgba(255, 0, 85, 0.1);
-        }
-
-        /* --- Main Menu / Settings --- */
-        #menu-overlay {
+        /* --- Mobile Controls --- */
+        .mobile-controls {
+            display: none;
             position: absolute;
-            top: 0;
-            left: 0;
+            bottom: 20px;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            z-index: 20;
+            height: 150px;
+            pointer-events: none;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .mobile-controls { display: flex; }
+            #chat-container { display: none; }
+            #minimap-container { bottom: auto; top: 100px; width: 100px; height: 100px; }
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            pointer-events: auto;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            transition: opacity 0.3s;
-        }
-
-        .hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        h1 {
-            font-size: 60px;
-            margin: 0 0 20px 0;
-            text-transform: uppercase;
-            font-style: italic;
-            background: linear-gradient(45deg, var(--primary), #fff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(0, 255, 213, 0.3);
-        }
-
-        .menu-card {
-            background: #1a1f26;
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid #333;
-            width: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        label {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #888;
-        }
-
-        input, select {
-            background: #0f1216;
-            border: 1px solid #333;
             color: white;
-            padding: 12px;
-            border-radius: 6px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s;
+            font-size: 24px;
+            backdrop-filter: blur(4px);
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        input:focus, select:focus {
-            border-color: var(--primary);
-        }
+        .control-btn:active { background: var(--primary); color: black; }
+        .control-btn.brake { border-color: #ff0055; }
+        .control-btn.brake:active { background: #ff0055; }
+        .control-btn.nitro { border-color: #ffaa00; width: 50px; height: 50px; font-size: 14px; margin-bottom: 20px;}
+        .control-btn.nitro:active { background: #ffaa00; }
 
-        button.btn-primary {
-            background: linear-gradient(45deg, var(--primary), #00ccaa);
-            border: none;
-            color: #000;
-            padding: 15px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: transform 0.1s, filter 0.2s;
-        }
+        .d-pad { display: flex; gap: 20px; align-items: flex-end; }
+        .action-pad { display: flex; gap: 20px; align-items: flex-end; }
+        .vert-stack { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
-        button.btn-primary:hover {
-            filter: brightness(1.1);
-            transform: translateY(-2px);
-        }
 
-        /* --- Floating Labels --- */
+        /* --- Soundboard --- */
+        #soundboard { margin-top: 10px; max-width: 250px; }
+        #sound-list { max-height: 200px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--primary) transparent; }
+        .sound-btn { display: flex; width: 100%; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #ccc; padding: 8px; margin-bottom: 5px; cursor: pointer; justify-content: space-between; align-items: center; border-radius: 4px; font-size: 12px; transition: all 0.2s; box-sizing: border-box; }
+        .sound-btn:hover { background: rgba(0, 255, 213, 0.2); border-color: var(--primary); color: white; }
+        .sound-btn.playing { border-color: var(--secondary); color: var(--secondary); background: rgba(255, 0, 85, 0.1); }
+
+        /* --- Host Controls --- */
+        #host-controls { position: absolute; top: 120px; right: 20px; width: 300px; max-height: 80vh; overflow-y: auto; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); padding: 20px; border-radius: 12px; border: 1px solid var(--primary); display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        #host-controls.active { display: flex; flex-direction: column; gap: 15px; }
+        #host-controls h2 { font-size: 18px; margin: 0; color: var(--primary); text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        .control-group label { font-size: 12px; color: #aaa; display: flex; justify-content: space-between; }
+        .control-group input[type="range"] { width: 100%; accent-color: var(--primary); }
+        .val-display { color: var(--primary); font-weight: bold; }
+
+        /* --- Main Menu / Settings --- */
+        #menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 20; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity 0.3s; }
+        .hidden { opacity: 0; pointer-events: none; }
+        h1 { font-size: 60px; margin: 0 0 20px 0; text-transform: uppercase; font-style: italic; background: linear-gradient(45deg, var(--primary), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0, 255, 213, 0.3); }
+        .menu-card { background: #1a1f26; padding: 40px; border-radius: 16px; border: 1px solid #333; width: 450px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 20px; max-height: 90vh; overflow-y: auto; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+        input, select { background: #0f1216; border: 1px solid #333; color: white; padding: 12px; border-radius: 6px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); }
+        button.btn-primary { background: linear-gradient(45deg, var(--primary), #00ccaa); border: none; color: #000; padding: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; border-radius: 6px; transition: transform 0.1s, filter 0.2s; }
+        button.btn-primary:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        button.btn-small { border: none; border-radius: 4px; cursor: pointer; color: white; transition: opacity 0.2s; }
+        button.btn-small:hover { opacity: 0.8; }
+
+        /* --- Server List Styles --- */
+        #server-list-sidebar { background: #0f1216; border: 1px solid #333; border-radius: 6px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+        .server-list-item { padding: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; cursor: pointer; border-bottom: 1px solid #222; transition: background 0.2s; }
+        .server-list-item:hover { background: #1f252e; }
+        .server-list-item.active { background: rgba(0, 255, 213, 0.1); border-left: 3px solid var(--primary); }
+        .server-list-item:last-child { border-bottom: none; }
+        .server-status-icon { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .status-online { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
+        .status-offline { background: #ff0000; }
+        .status-unknown { background: #555; }
+        .spin-loader { width: 8px; height: 8px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+        .server-actions { display: flex; gap: 5px; }
+
+        /* --- Floating Labels & Bubbles --- */
         .name-tag {
             position: absolute;
             background: rgba(0, 0, 0, 0.7);
@@ -319,26 +294,45 @@
             white-space: nowrap;
             transform: translate(-50%, -100%);
             text-shadow: 0 1px 2px black;
+            z-index: 5;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Loading Spinner */
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255,255,255,0.1);
-            border-left-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        .chat-bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+            transform: translate(-50%, -150%);
+            max-width: 200px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 6;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
+        .chat-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.9) transparent transparent transparent;
+        }
+
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
     </style>
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
 </head>
 <body>
 
@@ -352,20 +346,28 @@
         <div id="hud-top">
             <div style="display:flex; flex-direction:column;">
                 <div class="panel">
+                    <span id="score-display">Coins: 0</span><br>
                     <span id="fps-counter">60 FPS</span> |
-                    <span id="ping-counter">Ping: - ms</span> |
-                    <span id="coords">X: 0 Z: 0</span>
+                    <span id="ping-counter">Ping: - ms</span>
                 </div>
                 <!-- Soundboard Panel -->
                 <div class="panel interactive" id="soundboard" style="display:none;">
                     <div style="margin-bottom:5px; font-weight:bold; font-size:12px; color:#aaa;">AUDIO PLAYER</div>
                     <div id="sound-list">Loading...</div>
                 </div>
+                <div style="margin-top:10px;">
+                    <button class="interactive" onclick="document.getElementById('host-controls').classList.toggle('active')" style="background:var(--bg-dark); color:var(--primary); border:1px solid var(--primary); padding:5px 10px; cursor:pointer; border-radius:4px;">Host Settings</button>
+                </div>
             </div>
 
             <div class="panel">
                 <span id="time-display">12:00 PM</span>
             </div>
+        </div>
+
+        <!-- Minimap -->
+        <div id="minimap-container">
+            <canvas id="minimap" width="150" height="150"></canvas>
         </div>
 
         <!-- Speedometer -->
@@ -384,6 +386,56 @@
             </div>
             <div id="chat-input-row">
                 <input type="text" id="chat-input" placeholder="Press ENTER to chat..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Host Controls -->
+        <div id="host-controls" class="interactive">
+            <h2>Map Settings</h2>
+
+            <div class="control-group">
+                <label>Biome Map</label>
+                <select id="inp-biome" style="width:100%; padding:5px; margin-bottom:10px;">
+                    <option value="grass">Grasslands</option>
+                    <option value="desert">Desert Dunes</option>
+                    <option value="snow">Arctic Tundra</option>
+                    <option value="mars">Red Planet</option>
+                    <option value="cave">Deep Caves</option>
+                </select>
+            </div>
+
+            <div style="font-size:11px; color:#888; margin-bottom:10px; border-top:1px solid #333; padding-top:10px;">Advanced Gen (Changes broadcast)</div>
+
+            <div class="control-group">
+                <label>Seed <span class="val-display" id="val-seed">1</span></label>
+                <input type="number" id="inp-seed" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>Roughness <span class="val-display" id="val-step">0.1</span></label>
+                <input type="range" id="inp-step" min="0.01" max="0.3" step="0.01" value="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Height Scale <span class="val-display" id="val-unit">50</span></label>
+                <input type="range" id="inp-unit" min="10" max="150" step="5" value="50">
+            </div>
+
+            <button onclick="game.terrain.broadcastSettings()" style="margin-top:10px; padding:8px; background:var(--primary); border:none; cursor:pointer; font-weight:bold;">Apply & Broadcast</button>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div class="mobile-controls interactive">
+            <div class="d-pad">
+                <div class="control-btn" id="btn-left">←</div>
+                <div class="control-btn" id="btn-right">→</div>
+            </div>
+            <div class="action-pad">
+                <div class="vert-stack">
+                    <div class="control-btn brake" id="btn-brake">S</div>
+                    <div class="control-btn" id="btn-accel">W</div>
+                </div>
+                 <div class="control-btn nitro" id="btn-nitro">N</div>
             </div>
         </div>
 
@@ -409,16 +461,21 @@
             </div>
 
             <div class="form-group">
-                <label>Multiplayer Server (MQTT)</label>
-                <div style="display:flex; gap: 5px;">
-                    <select id="select-server" style="flex:1;">
-                        <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public (SSL)</option>
-                        <option value="wss://broker.hivemq.com:8000/mqtt">HiveMQ Public (SSL)</option>
-                        <option value="wss://test.mosquitto.org:8081">Mosquitto (SSL)</option>
-                        <option value="custom">Custom...</option>
-                    </select>
+                <label>Render Distance (Chunks)</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="range" id="input-render-dist" min="2" max="12" value="4" style="flex:1">
+                    <span id="val-render-dist" style="width:20px; text-align:right;">4</span>
                 </div>
-                <input type="text" id="input-custom-server" placeholder="wss://your-broker:8084" style="display:none;">
+            </div>
+
+            <div class="form-group">
+                <label style="display:flex; justify-content:space-between;">
+                    Multiplayer Server (MQTT)
+                    <button class="btn-small" style="background:#444; font-size:10px; padding:2px 6px;" id="btn-add-server">+ Add</button>
+                </label>
+                <div id="server-list-sidebar">
+                    <!-- Servers populated via JS -->
+                </div>
             </div>
 
             <div class="form-group">
@@ -427,37 +484,24 @@
 
             <div style="font-size: 11px; color: #555; text-align: center; margin-top: 10px;">
                 Game data saved to IndexedDB. <br>
-                Controls: WASD (Drive), Space (Brake), Shift (Nitro), C (Cam).
+                WASD: Drive | SPACE: Brake | SHIFT: Nitro<br>
+                E: Horn | H: Host Menu
             </div>
         </div>
     </div>
 
     <!-- Game Logic -->
     <script>
-/**
- * INFINITY RACER v2.2
- * Updates:
- * - Soundboard scrollable height fix
- * - Correct Quaternion-based slope alignment
- */
-
-/* -------------------------------------------------------------------------- */
-/* 1. UTILITIES                                */
-/* -------------------------------------------------------------------------- */
-
 const Utils = {
     lerp: (a, b, t) => a + (b - a) * t,
     clamp: (val, min, max) => Math.min(Math.max(val, min), max),
     rand: (min, max) => Math.random() * (max - min) + min,
-
-    // Hash string to color
     strToColor: (str) => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
         const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
         return '#' + "00000".substring(0, 6 - c.length) + c;
     },
-
     getTimeString: (gameTime) => {
         const totalMinutes = Math.floor(gameTime * 24 * 60);
         const h = Math.floor(totalMinutes / 60);
@@ -468,39 +512,6 @@ const Utils = {
     }
 };
 
-class SimpleNoise {
-    constructor() {
-        this.perm = new Uint8Array(512);
-        this.grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
-        for(let i=0; i<256; i++) this.perm[i] = this.perm[i+256] = Math.floor(Math.random()*256);
-    }
-    dot(g, x, y) { return g[0]*x + g[1]*y; }
-    noise(xin, yin) {
-        let n0, n1, n2;
-        const F2 = 0.5*(Math.sqrt(3.0)-1.0), G2 = (3.0-Math.sqrt(3.0))/6.0;
-        let s = (xin+yin)*F2;
-        let i = Math.floor(xin+s), j = Math.floor(yin+s);
-        let t = (i+j)*G2;
-        let X0 = i-t, Y0 = j-t;
-        let x0 = xin-X0, y0 = yin-Y0;
-        let i1, j1;
-        if(x0>y0) {i1=1; j1=0;} else {i1=0; j1=1;}
-        let x1 = x0 - i1 + G2, y1 = y0 - j1 + G2;
-        let x2 = x0 - 1.0 + 2.0*G2, y2 = y0 - 1.0 + 2.0*G2;
-        let ii = i & 255, jj = j & 255;
-        let gi0 = this.perm[ii+this.perm[jj]] % 12;
-        let gi1 = this.perm[ii+i1+this.perm[jj+j1]] % 12;
-        let gi2 = this.perm[ii+1+this.perm[jj+1]] % 12;
-        let t0 = 0.5 - x0*x0 - y0*y0;
-        if(t0<0) n0 = 0.0; else {t0 *= t0; n0 = t0 * t0 * this.dot(this.grad3[gi0], x0, y0);}
-        let t1 = 0.5 - x1*x1 - y1*y1;
-        if(t1<0) n1 = 0.0; else {t1 *= t1; n1 = t1 * t1 * this.dot(this.grad3[gi1], x1, y1);}
-        let t2 = 0.5 - x2*x2 - y2*y2;
-        if(t2<0) n2 = 0.0; else {t2 *= t2; n2 = t2 * t2 * this.dot(this.grad3[gi2], x2, y2);}
-        return 70.0 * (n0 + n1 + n2);
-    }
-}
-
 class DB {
     constructor(dbName, storeName) {
         this.dbName = dbName;
@@ -509,7 +520,7 @@ class DB {
     }
     async init() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
+            const request = indexedDB.open(this.dbName, 2);
             request.onupgradeneeded = (e) => {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName);
@@ -536,28 +547,138 @@ class DB {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 2. SYSTEMS                                  */
+/* GAMEPLAY SYSTEMS                            */
 /* -------------------------------------------------------------------------- */
 
 class TerrainSystem {
-    constructor(scene) {
+    constructor(scene, game, renderDist) {
         this.scene = scene;
-        this.noise = new SimpleNoise();
+        this.game = game;
+        this.settings = { seed: 12345, step: 0.05, unit: 50, water: 0, timex: 0, timez: 0, biome: 'grass' };
+        this.noise = new SimplexNoise(this.settings.seed);
         this.chunks = {};
         this.chunkSize = 100;
         this.resolution = 32;
-        this.activeRadius = 2;
+        this.activeRadius = renderDist || 3;
+
+        // Biome Colors
+        this.biomes = {
+            grass: { c1: 0x2d5a27, c2: 0xe6cc85, c3: 0x555555, c4: 0xffffff, water: 0x0077be },
+            desert: { c1: 0xc2b280, c2: 0xe6cc85, c3: 0xa45a52, c4: 0xc2b280, water: 0x22aaff },
+            snow: { c1: 0xffffff, c2: 0xeeeeee, c3: 0x8899aa, c4: 0xffffff, water: 0x99ccff },
+            mars: { c1: 0x8c3b2d, c2: 0xbf5b30, c3: 0x4a1a15, c4: 0xffaa00, water: 0xff0000 },
+            cave: { c1: 0x2c2c2c, c2: 0x1a1a1a, c3: 0x3d3d3d, c4: 0x111111, water: 0x00ff00 } // Dark, toxic water
+        };
+
+        // Gimmicks
+        this.jumpPads = [];
+        this.coins = [];
+
+        // Water
+        const waterGeo = new THREE.PlaneGeometry(1500, 1500);
+        waterGeo.rotateX(-Math.PI/2);
+        this.waterMesh = new THREE.Mesh(waterGeo, new THREE.MeshPhongMaterial({
+            color: 0x0077be, transparent: true, opacity: 0.6, shininess: 100
+        }));
+        this.scene.add(this.waterMesh);
+
+        this.bindUI();
     }
 
-    getHeight(x, z) {
+    bindUI() {
+        const ids = ['seed', 'step', 'unit', 'biome'];
+        ids.forEach(id => {
+            const el = document.getElementById('inp-' + id);
+            const val = document.getElementById('val-' + id);
+            if(el) {
+                el.addEventListener('input', (e) => {
+                    this.settings[id] = (id === 'biome') ? e.target.value : parseFloat(e.target.value);
+                    if(val) val.innerText = e.target.value;
+                });
+                if(id !== 'biome') el.value = this.settings[id];
+                if(val) val.innerText = this.settings[id];
+            }
+        });
+    }
+
+    broadcastSettings() {
+        this.regenerate();
+        if(this.game.network) this.game.network.publishWorldConfig(this.settings);
+    }
+
+    applySettings(newSettings) {
+        Object.assign(this.settings, newSettings);
+        ['seed', 'step', 'unit', 'biome'].forEach(id => {
+            if(newSettings[id] !== undefined) {
+                const el = document.getElementById('inp-' + id);
+                if(el) {
+                    el.value = newSettings[id];
+                    const val = document.getElementById('val-' + id);
+                    if(val) val.innerText = newSettings[id];
+                }
+            }
+        });
+        this.regenerate();
+    }
+
+    regenerate() {
+        this.noise = new SimplexNoise(this.settings.seed);
+
+        // Update Biome Colors
+        const b = this.biomes[this.settings.biome] || this.biomes.grass;
+        this.waterMesh.material.color.setHex(b.water);
+
+        // Force remove all chunks
+        Object.keys(this.chunks).forEach(key => {
+            const chunk = this.chunks[key];
+            if (chunk.mesh) {
+                this.scene.remove(chunk.mesh);
+                chunk.mesh.geometry.dispose();
+                if(chunk.mesh.material) chunk.mesh.material.dispose();
+            }
+            if (chunk.ceiling) {
+                this.scene.remove(chunk.ceiling);
+                chunk.ceiling.geometry.dispose();
+            }
+            if (chunk.props) chunk.props.forEach(p => this.scene.remove(p));
+        });
+
+        this.jumpPads.forEach(p => this.scene.remove(p.mesh));
+        this.jumpPads = [];
+        this.coins.forEach(c => this.scene.remove(c.mesh));
+        this.coins = [];
+        this.chunks = {};
+    }
+
+    getHeight(x, z, isCeiling = false) {
+        const nx = (x + this.settings.timex) * this.settings.step * 0.1;
+        const nz = (z + this.settings.timez) * this.settings.step * 0.1;
         let y = 0;
-        y += this.noise.noise(x * 0.01, z * 0.01) * 20;
-        y += this.noise.noise(x * 0.05, z * 0.05) * 5;
-        y += this.noise.noise(x * 0.002, z * 0.002) * 60;
-        return y;
+
+        if (this.settings.biome === 'cave') {
+            // Cave Floor: Flatter
+            y += this.noise.noise2D(nx * 0.5, nz * 0.5) * 0.5;
+            y += this.noise.noise2D(nx * 2, nz * 2) * 0.1;
+
+            if (isCeiling) {
+                // Ceiling: Rougher and inverted, positioned high
+                let cy = this.noise.noise2D(nx + 100, nz + 100);
+                cy += this.noise.noise2D(nx * 3, nz * 3) * 0.5;
+                // Offset upwards
+                return 40 + (Math.abs(cy) * 30);
+            } else {
+                return y * 20; // Mild floor
+            }
+        } else {
+            // Normal Biomes
+            y += this.noise.noise2D(nx, nz) * 1.0;
+            y += this.noise.noise2D(nx * 2, nz * 2) * 0.5;
+            y += this.noise.noise2D(nx * 4, nz * 4) * 0.25;
+            return y * this.settings.unit;
+        }
     }
 
-    update(playerX, playerZ) {
+    update(playerX, playerZ, dt) {
         const cx = Math.floor(playerX / this.chunkSize);
         const cz = Math.floor(playerZ / this.chunkSize);
         const activeKeys = new Set();
@@ -570,13 +691,27 @@ class TerrainSystem {
             }
         }
 
+        this.waterMesh.position.x = playerX;
+        this.waterMesh.position.z = playerZ;
+
+        // Cleanup
         for (const key in this.chunks) {
             if (!activeKeys.has(key)) {
                 this.scene.remove(this.chunks[key].mesh);
+                if(this.chunks[key].ceiling) this.scene.remove(this.chunks[key].ceiling);
                 this.chunks[key].geometry.dispose();
+                this.chunks[key].props.forEach(p => this.scene.remove(p));
                 delete this.chunks[key];
             }
         }
+
+        // Animate Coins
+        this.coins.forEach(c => {
+            if(c.active) {
+                c.mesh.rotation.y += dt * 3;
+                c.mesh.position.y = c.baseY + Math.sin(Date.now() * 0.005) * 0.5;
+            }
+        });
     }
 
     createChunk(cx, cz, key) {
@@ -594,52 +729,927 @@ class TerrainSystem {
 
         geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
         const colorAttr = geometry.attributes.color;
-        const c1 = new THREE.Color(0x2d5a27);
-        const c2 = new THREE.Color(0xe6cc85);
-        const c3 = new THREE.Color(0x555555);
-        const c4 = new THREE.Color(0xffffff);
+
+        const b = this.biomes[this.settings.biome] || this.biomes.grass;
+        const c1 = new THREE.Color(b.c1);
+        const c2 = new THREE.Color(b.c2);
+        const c3 = new THREE.Color(b.c3);
+        const c4 = new THREE.Color(b.c4);
 
         for (let i = 0; i < count; i++) {
             const h = posAttr.getY(i);
             let c = c1;
-            if(h < -5) c = c2;
-            else if(h > 35 && h < 60) c = c3;
-            else if(h >= 60) c = c4;
-            const variation = (Math.random() * 0.1) - 0.05;
-            colorAttr.setXYZ(i, Utils.clamp(c.r + variation,0,1), Utils.clamp(c.g+variation,0,1), Utils.clamp(c.b+variation,0,1));
+            if(h < this.settings.water + 2) c = c2;
+            else if(h > this.settings.unit * 0.6) c = c3;
+            if(h > this.settings.unit * 0.9) c = c4;
+            const v = (Math.random() * 0.1) - 0.05;
+            colorAttr.setXYZ(i, Utils.clamp(c.r + v,0,1), Utils.clamp(c.g+v,0,1), Utils.clamp(c.b+v,0,1));
         }
 
-        const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }));
         mesh.position.set(cx * this.chunkSize, 0, cz * this.chunkSize);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-
         this.scene.add(mesh);
-        this.chunks[key] = { mesh, geometry };
-        this.generateProps(cx, cz, mesh);
+
+        // --- CAVE CEILING ---
+        let ceilingMesh = null;
+        if (this.settings.biome === 'cave') {
+            const cGeo = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize, this.resolution, this.resolution);
+            cGeo.rotateX(Math.PI / 2); // Facing down
+            const cPos = cGeo.attributes.position;
+            for(let i=0; i<cPos.count; i++) {
+                 const x = cPos.getX(i) + cx * this.chunkSize;
+                 const z = cPos.getZ(i) + cz * this.chunkSize;
+                 // Get ceiling height (inverted look)
+                 cPos.setY(i, this.getHeight(x, z, true));
+            }
+            cGeo.computeVertexNormals();
+            ceilingMesh = new THREE.Mesh(cGeo, new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1.0 }));
+            ceilingMesh.position.set(cx * this.chunkSize, 0, cz * this.chunkSize);
+            this.scene.add(ceilingMesh);
+        }
+
+        this.chunks[key] = { mesh, ceiling: ceilingMesh, geometry, props: [] };
+        this.generateContent(cx, cz, this.chunks[key]);
     }
 
-    generateProps(cx, cz, chunkMesh) {
-        const seed = Math.sin(cx * 12.9898 + cz * 78.233) * 43758.5453;
-        const count = Math.floor(Math.abs(seed % 10));
-        const treeGeo = new THREE.ConeGeometry(1, 4, 6);
-        const treeMat = new THREE.MeshLambertMaterial({color: 0x1a2e12});
+    generateContent(cx, cz, chunk) {
+        const centerH = this.getHeight(cx * this.chunkSize, cz * this.chunkSize);
+        if(centerH < this.settings.water) return;
 
-        for(let i=0; i<count; i++) {
-            const rx = (Math.random() - 0.5) * this.chunkSize;
-            const rz = (Math.random() - 0.5) * this.chunkSize;
-            const wx = (cx * this.chunkSize) + rx;
-            const wz = (cz * this.chunkSize) + rz;
+        const seed = Math.abs(Math.sin(cx * 12.9898 + cz * 78.233) * 43758.5453);
+
+        // Structures (Ramps & Tunnels)
+        // 10% chance of structure per chunk
+        if (seed % 1 < 0.1) {
+            const type = (seed % 0.5 < 0.25) ? 'ramp' : 'tunnel';
+            const wx = (cx * this.chunkSize);
+            const wz = (cz * this.chunkSize);
             const wy = this.getHeight(wx, wz);
 
-            if(wy > 0 && wy < 30) {
-                const tree = new THREE.Mesh(treeGeo, treeMat);
-                tree.position.set(rx, wy, rz);
-                tree.castShadow = true;
-                chunkMesh.add(tree);
+            if (type === 'ramp') {
+                const rampGeo = new THREE.BoxGeometry(10, 1, 20);
+                const rampMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+                const ramp = new THREE.Mesh(rampGeo, rampMat);
+                ramp.position.set(wx, wy + 2, wz);
+                ramp.rotation.x = -Math.PI / 8; // 22 deg incline
+                // Align to random direction? Keeping it simple for now (always facing Z)
+                this.scene.add(ramp);
+                chunk.props.push(ramp);
+            } else {
+                // Tunnel Arch
+                const archGeo = new THREE.TorusGeometry(15, 3, 4, 16, Math.PI); // Half torus
+                const archMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+                const arch = new THREE.Mesh(archGeo, archMat);
+                arch.position.set(wx, wy, wz);
+                arch.rotation.z = Math.PI / 2; // Stand up
+                arch.scale.z = 5; // Long tunnel
+                this.scene.add(arch);
+                chunk.props.push(arch);
             }
         }
+
+        // Trees
+        if(this.settings.biome !== 'mars' && this.settings.biome !== 'cave') {
+            const treeCount = Math.floor(seed % 5);
+            const treeGeo = new THREE.ConeGeometry(1, 4, 6);
+            const treeMat = new THREE.MeshLambertMaterial({color: (this.settings.biome === 'snow' ? 0x224433 : 0x1a2e12)});
+
+            for(let i=0; i<treeCount; i++) {
+                const rx = (Math.random() - 0.5) * this.chunkSize;
+                const rz = (Math.random() - 0.5) * this.chunkSize;
+                const wx = (cx * this.chunkSize) + rx;
+                const wz = (cz * this.chunkSize) + rz;
+                const wy = this.getHeight(wx, wz);
+                if(wy > this.settings.water + 2) {
+                    const tree = new THREE.Mesh(treeGeo, treeMat);
+                    tree.position.set(wx, wy + 2, wz);
+                    tree.castShadow = true;
+                    this.scene.add(tree);
+                    chunk.props.push(tree);
+                }
+            }
+        }
+
+        // Cave Crystals
+        if(this.settings.biome === 'cave') {
+             const crystalGeo = new THREE.ConeGeometry(1, 6, 4);
+             const crystalMat = new THREE.MeshStandardMaterial({color: 0x00ffaa, emissive: 0x004433, flatShading:true});
+             for(let i=0; i<3; i++) {
+                const rx = (Math.random() - 0.5) * this.chunkSize;
+                const rz = (Math.random() - 0.5) * this.chunkSize;
+                const wx = (cx * this.chunkSize) + rx;
+                const wz = (cz * this.chunkSize) + rz;
+                const wy = this.getHeight(wx, wz);
+                const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+                crystal.position.set(wx, wy, wz);
+                // Random tilt
+                crystal.rotation.set(Math.random(), Math.random(), Math.random());
+                this.scene.add(crystal);
+                chunk.props.push(crystal);
+             }
+        }
+
+        // Jump Pads
+        if(seed % 1 < 0.2) {
+            const padGeo = new THREE.CylinderGeometry(2, 2, 0.5, 16);
+            const padMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+            const pad = new THREE.Mesh(padGeo, padMat);
+            const wx = (cx * this.chunkSize);
+            const wz = (cz * this.chunkSize);
+            const wy = this.getHeight(wx, wz);
+            if(wy > this.settings.water) {
+                pad.position.set(wx, wy + 0.2, wz);
+                this.scene.add(pad);
+                this.jumpPads.push({ mesh: pad, pos: pad.position });
+                chunk.props.push(pad);
+            }
+        }
+
+        // Coins
+        if(seed % 1 > 0.4) {
+            const coinGeo = new THREE.TorusGeometry(1, 0.2, 8, 16);
+            const coinMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            const coin = new THREE.Mesh(coinGeo, coinMat);
+            const wx = (cx * this.chunkSize) + (Math.random()-0.5)*20;
+            const wz = (cz * this.chunkSize) + (Math.random()-0.5)*20;
+            const wy = this.getHeight(wx, wz) + 2;
+            if(wy > this.settings.water) {
+                coin.position.set(wx, wy, wz);
+                this.scene.add(coin);
+                this.coins.push({ mesh: coin, pos: coin.position, baseY: wy, active: true });
+                chunk.props.push(coin);
+            }
+        }
+    }
+}
+
+class Car {
+    constructor(scene, color, isLocal = false) {
+        this.scene = scene;
+        this.isLocal = isLocal;
+        this.mesh = this.createMesh(color);
+        this.scene.add(this.mesh);
+
+        // Movement State
+        this.pos = new THREE.Vector3(0, 100, 0);
+        this.vel = new THREE.Vector3(0, 0, 0);
+        this.vy = 0; // Vertical Velocity (Gravity)
+        this.speed = 0;
+        this.nitro = 100;
+        this.score = 0;
+        this.onGround = false;
+
+        if(isLocal) this.setupLights();
+
+        this.nameTag = document.createElement('div');
+        this.nameTag.className = 'name-tag';
+        this.nameTag.textContent = "Unknown";
+        if(!isLocal) document.body.appendChild(this.nameTag);
+
+        this.chatBubble = document.createElement('div');
+        this.chatBubble.className = 'chat-bubble';
+        document.body.appendChild(this.chatBubble);
+        this.chatTimer = null;
+    }
+
+    createMesh(color) {
+        const group = new THREE.Group();
+        const chassis = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4), new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.6 }));
+        chassis.position.y = 0.8;
+        chassis.castShadow = true;
+        group.add(chassis);
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 2), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.0, metalness: 0.9 }));
+        cabin.position.set(0, 1.5, -0.5);
+        group.add(cabin);
+        const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
+        wheelGeo.rotateZ(Math.PI/2);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+        this.wheels = [
+            { x: 1.1, y: 0.5, z: -1.2 },
+            { x: -1.1, y: 0.5, z: -1.2 },
+            { x: 1.1, y: 0.5, z: 1.2 },
+            { x: -1.1, y: 0.5, z: 1.2 }
+        ];
+
+        this.wheels.forEach(p => {
+            const w = new THREE.Mesh(wheelGeo, wheelMat);
+            w.position.set(p.x, p.y, p.z);
+            w.castShadow = true;
+            group.add(w);
+        });
+        return group;
+    }
+
+    setupLights() {
+        const t1 = new THREE.Object3D(); t1.position.set(0.8, 1, -10);
+        const t2 = new THREE.Object3D(); t2.position.set(-0.8, 1, -10);
+        this.mesh.add(t1); this.mesh.add(t2);
+        const l1 = new THREE.SpotLight(0xffffee, 2, 80, 0.5, 0.5, 1); l1.target = t1; l1.castShadow = true; l1.position.set(0.8, 1, -1.8);
+        const l2 = new THREE.SpotLight(0xffffee, 2, 80, 0.5, 0.5, 1); l2.target = t2; l2.castShadow = true; l2.position.set(-0.8, 1, -1.8);
+        this.mesh.add(l1); this.mesh.add(l2);
+        this.headlights = [l1, l2];
+    }
+
+    showChat(text) {
+        this.chatBubble.innerText = text;
+        this.chatBubble.style.opacity = 1;
+        if(this.chatTimer) clearTimeout(this.chatTimer);
+        this.chatTimer = setTimeout(() => {
+            this.chatBubble.style.opacity = 0;
+        }, 4000);
+    }
+
+    updatePhysics(dt, input, terrainSystem, particles) {
+        // --- 1. Gimmicks ---
+        terrainSystem.jumpPads.forEach(pad => {
+            if(this.mesh.position.distanceTo(pad.pos) < 3.0 && this.mesh.position.y < pad.pos.y + 2) {
+                this.vy = 50; // Jump!
+                this.nitro = Math.min(100, this.nitro + 50);
+            }
+        });
+        terrainSystem.coins.forEach(coin => {
+            if(coin.active && this.mesh.position.distanceTo(coin.pos) < 3.0) {
+                coin.active = false;
+                coin.mesh.visible = false;
+                this.score += 100;
+                this.nitro = Math.min(100, this.nitro + 20);
+                document.getElementById('score-display').innerText = "Coins: " + this.score;
+            }
+        });
+
+        // --- 2. Arcade Movement ---
+        const throttle = (input.keys['w'] || input.keys['ArrowUp'] || input.touchState.accel) ? 1 : (input.keys['s'] || input.keys['ArrowDown'] || input.touchState.brake) ? -1 : 0;
+        const steer = (input.keys['a'] || input.keys['ArrowLeft'] || input.touchState.left) ? 1 : (input.keys['d'] || input.keys['ArrowRight'] || input.touchState.right) ? -1 : 0;
+        const brake = input.keys[' '] || input.touchState.brake;
+        this.isNitro = (input.keys['Shift'] || input.touchState.nitro) && this.nitro > 0;
+
+        const acceleration = this.isNitro ? 80 : 40;
+        if (throttle !== 0) this.speed += throttle * acceleration * dt;
+        else this.speed = Utils.lerp(this.speed, 0, dt * 2);
+
+        if(brake) this.speed = Utils.lerp(this.speed, 0, dt * 5);
+        this.speed = Utils.clamp(this.speed, -30, this.isNitro ? 120 : 70);
+
+        // Steering (Reduced air control)
+        if(Math.abs(this.speed) > 1) {
+            const turnSpeed = this.onGround ? 2.5 : 1.0;
+            this.mesh.rotation.y += steer * turnSpeed * dt * (this.speed > 0 ? 1 : -1);
+        }
+
+        // Apply Horizontal Motion
+        const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.mesh.rotation.y);
+        this.vel.copy(forward).multiplyScalar(this.speed);
+        this.mesh.position.add(this.vel.clone().multiplyScalar(dt));
+
+        // --- 3. Gravity & Ground Alignment (Fixed Rotation) ---
+
+        // Raycast 4 points around car
+        const p = this.mesh.position;
+        const r = this.mesh.rotation.y;
+        const offset = 2.0;
+        const wOffset = 1.0;
+
+        const getH = (ox, oz) => {
+            const rx = ox * Math.cos(r) - oz * Math.sin(r);
+            const rz = ox * Math.sin(r) + oz * Math.cos(r);
+            return terrainSystem.getHeight(p.x + rx, p.z + rz);
+        };
+
+        const hFL = getH(-wOffset, -offset);
+        const hFR = getH(wOffset, -offset);
+        const hBL = getH(-wOffset, offset);
+        const hBR = getH(wOffset, offset);
+
+        const groundH = (hFL + hFR + hBL + hBR) / 4 + 0.8;
+
+        // Gravity
+        this.vy -= 80 * dt;
+        this.mesh.position.y += this.vy * dt;
+
+        if (this.mesh.position.y < groundH) {
+            this.mesh.position.y = groundH;
+            this.vy = 0;
+            this.onGround = true;
+
+            // Fix Pitch Calculation (Downhill = Nose Down)
+            // Previous: Math.atan2((hBL + hBR) - (hFL + hFR), ...) caused opposite tilt
+            // New: Front - Back. If Front < Back (downhill), result is negative pitch.
+            let pitch = Math.atan2((hFL + hFR) - (hBL + hBR), offset * 2);
+            let roll = Math.atan2((hBL + hFL) - (hBR + hFR), wOffset * 2);
+
+            // Clamp rotation to avoid "facing straight down" (90 degrees)
+            pitch = Utils.clamp(pitch, -0.8, 0.8); // ~45 degrees max
+            roll = Utils.clamp(roll, -0.8, 0.8);
+
+            // Slope Physics: Accelerate if pointing down, Decelerate if pointing up
+            // Negative pitch = nose down. Sin(-pitch) is negative.
+            // We want speed to INCREASE (positive add). So subtract the sin.
+            this.speed -= Math.sin(pitch) * 100 * dt;
+
+            // Smoothly Rotate
+            const targetEuler = new THREE.Euler(pitch, this.mesh.rotation.y, roll, 'YXZ');
+            const targetQuaternion = new THREE.Quaternion().setFromEuler(targetEuler);
+            this.mesh.quaternion.slerp(targetQuaternion, dt * 10);
+
+        } else {
+            this.onGround = false;
+            // In Air: Slowly level out
+            const targetEuler = new THREE.Euler(0, this.mesh.rotation.y, 0, 'YXZ');
+            const targetQuaternion = new THREE.Quaternion().setFromEuler(targetEuler);
+            this.mesh.quaternion.slerp(targetQuaternion, dt * 2);
+        }
+
+        // --- 4. Particles ---
+        this.pos.copy(this.mesh.position);
+        if(this.isNitro) {
+            this.nitro -= dt * 30;
+            const offset = new THREE.Vector3(0, 0.5, 2).applyQuaternion(this.mesh.quaternion);
+            particles.spawn(this.mesh.position.clone().add(offset), 0x00ffff, 0.5, 0.8);
+        } else if(this.nitro < 100) this.nitro += dt * 5;
+
+        if (this.onGround && Math.abs(this.speed) > 10 && Math.random() > 0.8) {
+             particles.spawn(this.mesh.position.clone(), 0x888888, 1.0, 0.5);
+        }
+    }
+
+    setFromNetworkData(data) {
+        this.mesh.position.lerp(new THREE.Vector3(data.x, data.y, data.z), 0.3);
+        const q = new THREE.Quaternion(data.qx, data.qy, data.qz, data.qw);
+        this.mesh.quaternion.slerp(q, 0.3);
+    }
+
+    updateNameTag(camera) {
+        const updateElement = (el, yOffset) => {
+            if(!el || !el.parentNode) return;
+            const tempV = new THREE.Vector3();
+            this.mesh.updateWorldMatrix(true, false);
+            this.mesh.getWorldPosition(tempV);
+            tempV.y += yOffset;
+            tempV.project(camera);
+            const x = (tempV.x * .5 + .5) * window.innerWidth;
+            const y = (-(tempV.y * .5) + .5) * window.innerHeight;
+            if (tempV.z > 1) el.style.display = 'none';
+            else {
+                el.style.display = 'block';
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+            }
+        };
+
+        if(this.nameTag && !this.isLocal) updateElement(this.nameTag, 2.5);
+        if(this.chatBubble) updateElement(this.chatBubble, 3.5);
+    }
+}
+
+class Minimap {
+    constructor(game) {
+        this.game = game;
+        this.canvas = document.getElementById('minimap');
+        this.ctx = this.canvas.getContext('2d');
+        this.radius = 75; // Half of 150px
+        this.range = 300; // World units visible
+    }
+
+    update() {
+        if (!this.game.playerCar) return;
+
+        const p = this.game.playerCar;
+        const px = p.mesh.position.x;
+        const pz = p.mesh.position.z;
+        const pr = p.mesh.rotation.y;
+
+        // Clear
+        this.ctx.clearRect(0, 0, 150, 150);
+
+        // Draw Player (Center)
+        this.ctx.save();
+        this.ctx.translate(75, 75);
+
+        // Rotate map so "forward" is always up
+        this.ctx.rotate(pr);
+
+        // Draw Remote Players
+        const network = this.game.network;
+        for (const id in network.remoteCars) {
+            const r = network.remoteCars[id];
+            const dx = r.mesh.position.x - px;
+            const dz = r.mesh.position.z - pz;
+
+            // Rotate delta relative to player rotation
+            // Actual relative X/Z on screen (unrotated)
+            // But since we rotated the context by pr, we draw absolute relative coords
+            // Wait, standard minimap: Map rotates around player.
+            // X is world X, Z is world Z.
+            // If we rotate context by +pr, we need to draw coords in rotated space.
+            // Actually simpler:
+            // 1. Calculate world angle to target.
+            // 2. Subtract player rotation.
+            // 3. That gives local angle.
+
+            const dist = Math.sqrt(dx*dx + dz*dz);
+            const angle = Math.atan2(dx, dz); // World angle 0 is +Z? No, standard trig atan2(y,x).
+            // ThreeJS: Z is forward/back. X is left/right.
+            // Let's stick to raw screen coords relative to center
+
+            let mapX = dx;
+            let mapY = -dz; // Canvas Y is down, World Z is usually "down" or "up" depending on camera. Let's say -Z is forward.
+
+            // Rotate point by -pr (counter rotate) so forward is Up
+            const rx = mapX * Math.cos(-pr) - mapY * Math.sin(-pr);
+            const ry = mapX * Math.sin(-pr) + mapY * Math.cos(-pr);
+
+            // Scale
+            const scale = this.radius / this.range;
+            let sx = rx * scale;
+            let sy = ry * scale;
+
+            // Clamping
+            const screenDist = Math.sqrt(sx*sx + sy*sy);
+            let isClamped = false;
+
+            if (screenDist > this.radius - 10) {
+                const ratio = (this.radius - 10) / screenDist;
+                sx *= ratio;
+                sy *= ratio;
+                isClamped = true;
+            }
+
+            // Draw Arrow
+            this.ctx.fillStyle = r.mesh.children[0].children[0].material.color.getStyle(); // Get car color
+            this.ctx.beginPath();
+
+            this.ctx.save();
+            this.ctx.translate(sx, sy);
+
+            if (isClamped) {
+                // Point towards center? Or point towards player?
+                // Clamped arrows usually point towards the target location.
+                // But the arrow IS the target location indicator.
+                // Let's just draw a circle if clamped.
+                this.ctx.arc(0, 0, 4, 0, Math.PI*2);
+            } else {
+                // Draw Arrow facing their direction
+                // Their relative rotation
+                const theirRot = r.mesh.rotation.y - pr;
+                this.ctx.rotate(-theirRot + Math.PI); // Adjust for canvas coords
+                this.ctx.moveTo(0, -5);
+                this.ctx.lineTo(4, 5);
+                this.ctx.lineTo(-4, 5);
+            }
+            this.ctx.fill();
+            this.ctx.restore();
+        }
+
+        // Draw Self (Triangle)
+        this.ctx.fillStyle = '#00ffd5';
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, -6);
+        this.ctx.lineTo(5, 6);
+        this.ctx.lineTo(-5, 6);
+        this.ctx.fill();
+
+        this.ctx.restore();
+    }
+}
+
+class AudioManager {
+    constructor(game) {
+        this.game = game;
+        this.container = document.getElementById('sound-list');
+        this.panel = document.getElementById('soundboard');
+        this.activeAudio = null;
+        this.baseUrl = "../shared/audio/";
+    }
+    async init() {
+        this.panel.style.display = 'block';
+        try {
+            const response = await fetch(this.baseUrl + 'atlas.json');
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+            const data = await response.json();
+            const sounds = data.map(track => ({ name: track.name, title: track.name.replace(/\.[^/.]+$/, "") }));
+            this.render(sounds);
+        } catch(e) {
+            console.warn("Audio load error:", e);
+            this.container.innerText = "No audio atlas found.";
+        }
+    }
+    render(sounds) {
+        this.container.innerHTML = "";
+        sounds.forEach(s => {
+            const btn = document.createElement('div');
+            btn.className = 'sound-btn';
+            btn.innerHTML = `<span>${s.title}</span> <span>▶</span>`;
+            btn.onclick = () => this.play(s.name, btn);
+            this.container.appendChild(btn);
+        });
+    }
+    play(filename, btnElement) {
+        if (this.activeAudio && this.activeAudio.src.includes(filename)) {
+            this.activeAudio.pause();
+            this.activeAudio = null;
+            btnElement.classList.remove('playing');
+            btnElement.lastElementChild.innerText = "▶";
+            return;
+        }
+        document.querySelectorAll('.sound-btn').forEach(b => { b.classList.remove('playing'); b.lastElementChild.innerText = "▶"; });
+        this.playClip(filename, 1.0, (audio) => {
+            this.activeAudio = audio;
+            btnElement.classList.add('playing');
+            btnElement.lastElementChild.innerText = "■";
+            audio.onended = () => {
+                btnElement.classList.remove('playing');
+                btnElement.lastElementChild.innerText = "▶";
+                this.activeAudio = null;
+            };
+        });
+        if(this.game && this.game.network) this.game.network.publishSound(filename);
+    }
+    playClip(filename, volume, onPlayCallback) {
+        const audio = new Audio(this.baseUrl + filename);
+        audio.volume = Utils.clamp(volume, 0, 1);
+        audio.play().then(() => { if(onPlayCallback) onPlayCallback(audio); }).catch(e => {});
+    }
+
+    beep() {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+    }
+}
+
+class InputManager {
+    constructor(game) {
+        this.game = game;
+        this.keys = {};
+        this.touchState = { left: false, right: false, accel: false, brake: false, nitro: false };
+
+        window.addEventListener('keydown', (e) => {
+            this.keys[e.key] = true;
+            if((e.key === 'e' || e.key === 'E') && this.game.running) {
+                this.game.audio.beep();
+                this.game.network.publishSound("horn");
+            }
+        });
+        window.addEventListener('keyup', (e) => this.keys[e.key] = false);
+
+        // Mobile Events
+        this.bindTouch('btn-left', 'left');
+        this.bindTouch('btn-right', 'right');
+        this.bindTouch('btn-accel', 'accel');
+        this.bindTouch('btn-brake', 'brake');
+        this.bindTouch('btn-nitro', 'nitro');
+    }
+
+    bindTouch(id, key) {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); this.touchState[key] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); this.touchState[key] = false; });
+    }
+}
+
+class NetworkManager {
+    constructor(game) {
+        this.game = game;
+        this.client = null;
+        this.topicRoot = "infinity_racer_v1/global";
+        this.playerId = "p_" + Math.floor(Math.random() * 100000);
+        this.lastPub = 0;
+        this.connected = false;
+        this.remoteCars = {};
+        window.addEventListener('beforeunload', () => this.disconnect());
+    }
+
+    connect(brokerUrl) {
+        try {
+            this.client = mqtt.connect(brokerUrl, {
+                clientId: this.playerId,
+                clean: true,
+                reconnectPeriod: 2000,
+                will: { topic: `${this.topicRoot}/players/${this.playerId}`, payload: JSON.stringify({ left: true }), qos: 0, retain: false }
+            });
+        } catch(e) { alert("Connection Failed: " + e); return; }
+
+        this.client.on('connect', () => {
+            this.connected = true;
+            document.getElementById('loading-card').style.display = 'none';
+            document.getElementById('menu-overlay').classList.add('hidden');
+            this.client.subscribe(`${this.topicRoot}/players/+`);
+            this.client.subscribe(`${this.topicRoot}/chat`);
+            this.client.subscribe(`${this.topicRoot}/sounds`);
+            this.client.subscribe(`${this.topicRoot}/worldconfig`);
+            this.publishChat("System", `${this.game.username} joined.`);
+        });
+
+        this.client.on('message', (topic, message) => {
+            try {
+                const msg = JSON.parse(message.toString());
+                if (topic.includes('/worldconfig')) {
+                    this.game.terrain.applySettings(msg);
+                }
+                else if (topic.includes('/sounds')) {
+                    if (msg.id === this.playerId) return;
+                    if(msg.name === "horn") {
+                        this.game.audio.beep(); // Remote beep
+                        return;
+                    }
+                    if (this.game.playerCar) {
+                        const dist = this.game.playerCar.pos.distanceTo(new THREE.Vector3(msg.x, msg.y, msg.z));
+                        if (dist < 200) {
+                            const vol = 1.0 - (dist / 200);
+                            this.game.audio.playClip(msg.name, vol);
+                        }
+                    }
+                }
+                else if (topic.includes('/chat')) {
+                    this.game.ui.addChat(msg.name, msg.text, msg.system);
+                    // Show bubble on remote player
+                    if (!msg.system && this.remoteCars[msg.name] /* Wait, ID vs Name mismatch */) {
+                       // We need to map name to car, or send ID in chat
+                       // Simple loop:
+                       for(let id in this.remoteCars) {
+                           if(this.remoteCars[id].nameTag.innerText === msg.name) {
+                               this.remoteCars[id].showChat(msg.text);
+                           }
+                       }
+                    }
+                    // Show bubble on self if it's me
+                    if (!msg.system && msg.name === this.game.username && this.game.playerCar) {
+                        this.game.playerCar.showChat(msg.text);
+                    }
+                }
+                else if (topic.includes('/players/')) {
+                    const pid = topic.split('/').pop();
+                    if (pid === this.playerId) return;
+                    this.handlePlayerUpdate(pid, msg);
+                }
+            } catch (e) {}
+        });
+
+        this.client.on('error', (err) => console.log("MQTT Error", err));
+    }
+
+    disconnect() {
+        if(this.client && this.connected) {
+            this.client.publish(`${this.topicRoot}/players/${this.playerId}`, JSON.stringify({ left: true }));
+            this.client.end();
+        }
+    }
+
+    publishSound(filename) {
+        if (!this.connected || !this.game.playerCar) return;
+        const p = this.game.playerCar.mesh.position;
+        this.client.publish(`${this.topicRoot}/sounds`, JSON.stringify({ id: this.playerId, name: filename, x: p.x, y: p.y, z: p.z }));
+    }
+
+    publishWorldConfig(settings) {
+        if (!this.connected) return;
+        this.client.publish(`${this.topicRoot}/worldconfig`, JSON.stringify(settings));
+    }
+
+    handlePlayerUpdate(id, data) {
+        if (data.left) {
+            if (this.remoteCars[id]) {
+                this.game.scene.remove(this.remoteCars[id].mesh);
+                if(this.remoteCars[id].nameTag.parentNode) this.remoteCars[id].nameTag.parentNode.removeChild(this.remoteCars[id].nameTag);
+                if(this.remoteCars[id].chatBubble.parentNode) this.remoteCars[id].chatBubble.parentNode.removeChild(this.remoteCars[id].chatBubble);
+                delete this.remoteCars[id];
+            }
+            return;
+        }
+        if (!this.remoteCars[id]) {
+            const c = new Car(this.game.scene, data.color || '#ffffff', false);
+            c.nameTag.textContent = data.name || "Unknown";
+            this.remoteCars[id] = c;
+        }
+        const car = this.remoteCars[id];
+        car.lastUpdate = Date.now();
+        car.setFromNetworkData(data);
+    }
+
+    update(dt) {
+        if (!this.connected) return;
+        const now = Date.now();
+        for(const id in this.remoteCars) {
+            if (now - this.remoteCars[id].lastUpdate > 5000) {
+                this.game.scene.remove(this.remoteCars[id].mesh);
+                if(this.remoteCars[id].nameTag.parentNode) this.remoteCars[id].nameTag.parentNode.removeChild(this.remoteCars[id].nameTag);
+                if(this.remoteCars[id].chatBubble.parentNode) this.remoteCars[id].chatBubble.parentNode.removeChild(this.remoteCars[id].chatBubble);
+                delete this.remoteCars[id];
+            } else {
+                this.remoteCars[id].updateNameTag(this.game.camera);
+            }
+        }
+        if (now - this.lastPub > 100) {
+            const p = this.game.playerCar;
+            this.client.publish(`${this.topicRoot}/players/${this.playerId}`, JSON.stringify({
+                x: p.mesh.position.x, y: p.mesh.position.y, z: p.mesh.position.z,
+                qx: p.mesh.quaternion.x, qy: p.mesh.quaternion.y, qz: p.mesh.quaternion.z, qw: p.mesh.quaternion.w,
+                color: this.game.color, name: this.game.username
+            }));
+            this.lastPub = now;
+        }
+        this.publishChat = (name, text, system=false) => {
+            const payload = { name, text, system, time: Date.now() };
+            this.client.publish(`${this.topicRoot}/chat`, JSON.stringify(payload));
+        };
+    }
+}
+
+class UIManager {
+    constructor(game) {
+        this.game = game;
+        this.fpsDiv = document.getElementById('fps-counter');
+        this.speedDiv = document.getElementById('speed-value');
+        this.nitroBar = document.getElementById('nitro-bar');
+        this.timeDiv = document.getElementById('time-display');
+        this.chatDiv = document.getElementById('chat-messages');
+        this.chatInput = document.getElementById('chat-input');
+
+        this.defaultServers = [
+            'wss://broker.emqx.io:8084/mqtt',
+            'wss://broker.hivemq.com:8000/mqtt',
+            'wss://test.mosquitto.org:8081'
+        ];
+        this.customServers = [];
+        this.selectedServer = this.defaultServers[0];
+
+        // Chat
+        this.chatInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && this.chatInput.value.trim() !== "") {
+                this.game.network.publishChat(this.game.username, this.chatInput.value);
+                this.chatInput.value = "";
+                this.chatInput.blur();
+            }
+        });
+
+        // Server List Events
+        document.getElementById('btn-add-server').onclick = () => this.promptAddServer();
+
+        // Settings Inputs
+        document.getElementById('btn-play').addEventListener('click', () => this.game.startGame());
+        document.getElementById('input-render-dist').addEventListener('input', (e) => {
+             document.getElementById('val-render-dist').innerText = e.target.value;
+             this.game.settings.renderDist = parseInt(e.target.value);
+        });
+
+        this.initSettings();
+    }
+
+    async initSettings() {
+        await this.game.db.init();
+        const storedName = await this.game.db.get('username');
+        const storedColor = await this.game.db.get('color');
+        const storedCustom = await this.game.db.get('customServers');
+
+        if(storedName) document.getElementById('input-username').value = storedName;
+        if(storedColor) document.getElementById('input-color').value = storedColor;
+        if(storedCustom) this.customServers = storedCustom;
+
+        this.refreshServerList();
+    }
+
+    selectServer(url) {
+        this.selectedServer = url;
+        this.refreshServerList();
+    }
+
+    promptAddServer() {
+        const url = prompt("Enter MQTT Broker WSS URL:", "wss://");
+        if(url) {
+            this.customServers.push(url);
+            this.game.db.put('customServers', this.customServers);
+            this.selectServer(url);
+        }
+    }
+
+    removeCustomServer(url) {
+        this.customServers = this.customServers.filter(s => s !== url);
+        this.game.db.put('customServers', this.customServers);
+        if(this.selectedServer === url) this.selectedServer = this.defaultServers[0];
+        this.refreshServerList();
+    }
+
+    refreshServerList() {
+        const list = document.getElementById('server-list-sidebar');
+        list.innerHTML = '';
+
+        const renderItem = (url, isCustom) => {
+            const isActive = url === this.selectedServer;
+            const item = document.createElement('div');
+            item.className = `server-list-item ${isActive ? 'active' : ''}`;
+
+            let buttonsHtml = '';
+            if(isCustom) {
+                buttonsHtml = `
+                    <div class="server-actions">
+                        <button class="btn-small" style="background:#c0392b;" data-action="remove">&times;</button>
+                    </div>
+                `;
+            }
+
+            // Create ID safe string
+            const idSafe = btoa(url).replace(/=/g,'').replace(/\+/g, '-').replace(/\//g, '_');
+
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
+                    <div class="server-status-icon status-unknown" id="status-${idSafe}"><div class="spin-loader"></div></div>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
+                </div>
+                ${buttonsHtml}
+            `;
+
+            item.onclick = () => this.selectServer(url);
+            if(isCustom) {
+                const btn = item.querySelector('[data-action="remove"]');
+                if(btn) btn.onclick = (e) => { e.stopPropagation(); this.removeCustomServer(url); };
+            }
+
+            list.appendChild(item);
+
+            // Check Status Real
+            this.checkServerStatus(url, idSafe);
+        };
+
+        this.defaultServers.forEach(url => renderItem(url, false));
+        this.customServers.forEach(url => {
+            if(!this.defaultServers.includes(url)) renderItem(url, true);
+        });
+    }
+
+    checkServerStatus(url, idSafe) {
+        try {
+            const client = mqtt.connect(url, {
+                connectTimeout: 10000, // 10s timeout
+                reconnectPeriod: 0 // No retry
+            });
+
+            let handled = false;
+            const handleResult = (isOnline) => {
+                if(handled) return;
+                handled = true;
+                const icon = document.getElementById(`status-${idSafe}`);
+                if(icon) {
+                    icon.innerHTML = ''; // Remove spinner
+                    icon.classList.remove('status-unknown');
+                    if(isOnline) icon.classList.add('status-online');
+                    else icon.classList.add('status-offline');
+                }
+                client.end(true);
+            };
+
+            client.on('connect', () => handleResult(true));
+            client.on('error', () => handleResult(false));
+
+            // Fallback timeout
+            setTimeout(() => {
+                if(!client.connected) handleResult(false);
+            }, 10500); // 10.5s fallback
+
+        } catch (e) {
+            const icon = document.getElementById(`status-${idSafe}`);
+            if(icon) {
+                icon.innerHTML = '';
+                icon.classList.remove('status-unknown');
+                icon.classList.add('status-offline');
+            }
+        }
+    }
+
+    update(dt) {
+        const p = this.game.playerCar;
+        const kmh = Math.abs(Math.floor(p.speed * 3.6));
+        this.speedDiv.innerText = kmh;
+        this.nitroBar.style.transform = `scaleX(${p.nitro / 100})`;
+        this.fpsDiv.innerText = Math.floor(1/dt) + " FPS";
+        this.timeDiv.innerText = Utils.getTimeString(this.game.dayTime);
+    }
+
+    addChat(name, text, isSystem) {
+        const el = document.createElement('div');
+        el.className = 'chat-msg' + (isSystem ? ' system' : '');
+        const spanName = document.createElement('span');
+        spanName.className = 'author';
+        spanName.innerText = name + ":";
+        spanName.style.color = Utils.strToColor(name);
+        const spanText = document.createElement('span');
+        spanText.innerText = text;
+        if(!isSystem) el.appendChild(spanName);
+        el.appendChild(spanText);
+        this.chatDiv.appendChild(el);
+        this.chatDiv.scrollTop = this.chatDiv.scrollHeight;
     }
 }
 
@@ -675,540 +1685,16 @@ class ParticleSystem {
     }
 }
 
-/* -------------------------------------------------------------------------- */
-/* 3. ENTITIES                                 */
-/* -------------------------------------------------------------------------- */
-
-class Car {
-    constructor(scene, color, isLocal = false) {
-        this.scene = scene;
-        this.isLocal = isLocal;
-        this.mesh = this.createMesh(color);
-        this.scene.add(this.mesh);
-
-        // Physics State
-        this.pos = new THREE.Vector3(0, 10, 0);
-        this.vel = new THREE.Vector3(0, 0, 0);
-        this.rot = new THREE.Euler(0, 0, 0, 'YXZ');
-        this.speed = 0;
-        this.verticalVel = 0;
-
-        this.maxSpeed = 60;
-        this.accel = 30;
-        this.turnSpeed = 2.0;
-        this.driftFactor = 0;
-        this.nitro = 100;
-        this.isNitro = false;
-        this.grounded = false;
-
-        this.headlights = [];
-        if(isLocal) this.setupLights();
-
-        this.nameTag = document.createElement('div');
-        this.nameTag.className = 'name-tag';
-        this.nameTag.textContent = "Unknown";
-        if(!isLocal) document.body.appendChild(this.nameTag);
-    }
-
-    createMesh(color) {
-        const group = new THREE.Group();
-        // Chassis
-        const chassis = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4), new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.6 }));
-        chassis.position.y = 0.8;
-        chassis.castShadow = true;
-        group.add(chassis);
-        // Cabin
-        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 2), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.0, metalness: 0.9 }));
-        cabin.position.set(0, 1.5, -0.5);
-        group.add(cabin);
-        // Wheels
-        const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
-        wheelGeo.rotateZ(Math.PI/2);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-        [{x:1.1,z:1.2}, {x:-1.1,z:1.2}, {x:1.1,z:-1.2}, {x:-1.1,z:-1.2}].forEach(p => {
-            const w = new THREE.Mesh(wheelGeo, wheelMat);
-            w.position.set(p.x, 0.5, p.z);
-            w.castShadow = true;
-            group.add(w);
-        });
-        return group;
-    }
-
-    setupLights() {
-        const t1 = new THREE.Object3D(); t1.position.set(0.8, 1, -10);
-        const t2 = new THREE.Object3D(); t2.position.set(-0.8, 1, -10);
-        this.mesh.add(t1); this.mesh.add(t2);
-        const l1 = new THREE.SpotLight(0xffffee, 2, 80, 0.5, 0.5, 1); l1.target = t1; l1.castShadow = true; l1.position.set(0.8, 1, -1.8);
-        const l2 = new THREE.SpotLight(0xffffee, 2, 80, 0.5, 0.5, 1); l2.target = t2; l2.castShadow = true; l2.position.set(-0.8, 1, -1.8);
-        this.mesh.add(l1); this.mesh.add(l2);
-        this.headlights = [l1, l2];
-    }
-
-    updatePhysics(dt, input, terrainSystem, particles) {
-        const groundHeight = terrainSystem.getHeight(this.pos.x, this.pos.z);
-        const gravity = 25.0;
-
-        // Apply Gravity
-        this.verticalVel -= gravity * dt;
-        this.pos.y += this.verticalVel * dt;
-
-        // Collision Check
-        if (this.pos.y < groundHeight) {
-            this.pos.y = groundHeight;
-            this.verticalVel = 0;
-            this.grounded = true;
-        } else {
-            this.grounded = false;
-        }
-
-        // --- Input & Movement ---
-        let throttle = 0;
-        if (input.keys['w'] || input.keys['ArrowUp']) throttle = 1;
-        if (input.keys['s'] || input.keys['ArrowDown']) throttle = -1;
-
-        let turn = 0;
-        if (input.keys['a'] || input.keys['ArrowLeft']) turn = 1;
-        if (input.keys['d'] || input.keys['ArrowRight']) turn = -1;
-
-        const brake = input.keys[' '] ? 1 : 0;
-        this.isNitro = (input.keys['Shift'] && this.nitro > 0);
-
-        let currentMaxSpeed = this.maxSpeed;
-        if(this.isNitro) {
-            currentMaxSpeed *= 1.5;
-            this.nitro -= dt * 30;
-            if(this.nitro < 0) this.nitro = 0;
-            particles.spawn(this.mesh.position.clone().add(new THREE.Vector3(0,0.5,2)), 0x00ffff, 0.5, 0.8);
-        } else {
-            if(this.nitro < 100) this.nitro += dt * 5;
-        }
-
-        if (throttle !== 0) {
-            this.speed += throttle * this.accel * dt;
-        } else {
-            this.speed = Utils.lerp(this.speed, 0, dt * 1.0);
-        }
-
-        if (brake) {
-            this.speed = Utils.lerp(this.speed, 0, dt * 3.0);
-            this.driftFactor = Utils.lerp(this.driftFactor, 1.0, dt * 5);
-        } else {
-            this.driftFactor = Utils.lerp(this.driftFactor, 0.0, dt * 2);
-        }
-
-        this.speed = Utils.clamp(this.speed, -this.maxSpeed * 0.5, currentMaxSpeed);
-
-        if (Math.abs(this.speed) > 1.0) {
-            const dir = Math.sign(this.speed);
-            const controlMult = this.grounded ? 1.0 : 0.3;
-            this.rot.y += this.turnSpeed * dt * turn * dir * controlMult;
-        }
-
-        this.vel.x = -Math.sin(this.rot.y) * this.speed;
-        this.vel.z = -Math.cos(this.rot.y) * this.speed;
-
-        this.pos.x += this.vel.x * dt;
-        this.pos.z += this.vel.z * dt;
-
-        this.mesh.position.copy(this.pos);
-
-        // --- Ground Alignment Logic (Replaced for better stability) ---
-        // 1. Calculate Ground Normal using Tangents
-        const d = 1.0;
-        const hx = terrainSystem.getHeight(this.pos.x + d, this.pos.z);
-        const hz = terrainSystem.getHeight(this.pos.x, this.pos.z + d);
-        // Tangent vectors relative to center (0,0,0) offset
-        const vec1 = new THREE.Vector3(d, hx - groundHeight, 0); // +X direction tangent
-        const vec2 = new THREE.Vector3(0, hz - groundHeight, d); // +Z direction tangent
-        const normal = new THREE.Vector3().crossVectors(vec2, vec1).normalize(); // Upward normal
-
-        const targetQ = new THREE.Quaternion();
-
-        if (this.grounded) {
-            // Determine forward direction based on current yaw (steering)
-            // Note: In ThreeJS, standard forward can be -Z.
-            // We use standard trig here: X = -sin(ang), Z = -cos(ang) corresponds to standard 0deg = North (-Z)
-            const forward = new THREE.Vector3( -Math.sin(this.rot.y), 0, -Math.cos(this.rot.y) );
-
-            // Construct a matrix that looks 'forward', but oriented so 'up' is 'normal'
-            const target = this.pos.clone().add(forward);
-            const m = new THREE.Matrix4();
-            m.lookAt(this.pos, target, normal);
-            targetQ.setFromRotationMatrix(m);
-
-            if(Math.abs(this.speed) > 10 && groundHeight > -5) {
-                if(Math.random() > 0.8) particles.spawn(this.pos.clone(), 0x888888, 1.0, 0.5);
-            }
-        } else {
-            // Mid-air: Level out to World Up (0,1,0) while keeping steering
-            const forward = new THREE.Vector3( -Math.sin(this.rot.y), 0, -Math.cos(this.rot.y) );
-            const target = this.pos.clone().add(forward);
-            const m = new THREE.Matrix4();
-            m.lookAt(this.pos, target, new THREE.Vector3(0,1,0));
-            targetQ.setFromRotationMatrix(m);
-        }
-
-        // Smoothly interpolate current rotation to target rotation
-        this.mesh.quaternion.slerp(targetQ, dt * 10);
-    }
-
-    setFromNetworkData(data) {
-        this.mesh.position.lerp(new THREE.Vector3(data.x, data.y, data.z), 0.3);
-        if(data.ry !== undefined) this.mesh.rotation.y = data.ry;
-        this.mesh.rotation.x = Utils.lerp(this.mesh.rotation.x, data.rx || 0, 0.3);
-        this.mesh.rotation.z = Utils.lerp(this.mesh.rotation.z, data.rz || 0, 0.3);
-    }
-
-    updateNameTag(camera) {
-        if(!this.nameTag || !this.nameTag.parentNode) return;
-        const tempV = new THREE.Vector3();
-        this.mesh.updateWorldMatrix(true, false);
-        this.mesh.getWorldPosition(tempV);
-        tempV.y += 2.5;
-        tempV.project(camera);
-        const x = (tempV.x * .5 + .5) * window.innerWidth;
-        const y = (-(tempV.y * .5) + .5) * window.innerHeight;
-
-        if (tempV.z > 1) this.nameTag.style.display = 'none';
-        else {
-            this.nameTag.style.display = 'block';
-            this.nameTag.style.left = `${x}px`;
-            this.nameTag.style.top = `${y}px`;
-        }
-    }
-}
-
-
-/* -------------------------------------------------------------------------- */
-/* 4. MANAGERS                                 */
-/* -------------------------------------------------------------------------- */
-
-class AudioManager {
-    constructor(game) {
-        this.game = game; // Store reference to game for network access
-        this.container = document.getElementById('sound-list');
-        this.panel = document.getElementById('soundboard');
-        this.activeAudio = null;
-        this.baseUrl = "../shared/audio/";
-    }
-
-    async init() {
-        this.panel.style.display = 'block';
-        try {
-            // Fetch the atlas from the relative path
-            const response = await fetch(this.baseUrl + 'atlas.json');
-
-            if (!response.ok) {
-                throw new Error(`Status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            // Map the atlas JSON structure to our UI format
-            const sounds = data.map(track => ({
-                name: track.name,
-                // Simple title formatting: remove extension and capitalize
-                title: track.name.replace(/\.[^/.]+$/, "")
-            }));
-
-            this.render(sounds);
-        } catch(e) {
-            console.warn("Audio load error:", e);
-            this.container.innerText = "No audio atlas found.";
-        }
-    }
-
-    render(sounds) {
-        this.container.innerHTML = "";
-        sounds.forEach(s => {
-            const btn = document.createElement('div');
-            btn.className = 'sound-btn';
-            btn.innerHTML = `<span>${s.title}</span> <span>▶</span>`;
-            btn.onclick = () => this.play(s.name, btn);
-            this.container.appendChild(btn);
-        });
-    }
-
-    // Handles UI interaction and Local Playback + Broadcasting
-    play(filename, btnElement) {
-        // --- UI TOGGLE LOGIC (Local only) ---
-        if (this.activeAudio && this.activeAudio.src.includes(filename)) {
-            // Clicking the currently playing song -> Stop it
-            this.activeAudio.pause();
-            this.activeAudio = null;
-            btnElement.classList.remove('playing');
-            btnElement.lastElementChild.innerText = "▶";
-            return;
-        }
-
-        // Reset other buttons
-        document.querySelectorAll('.sound-btn').forEach(b => {
-            b.classList.remove('playing');
-            b.lastElementChild.innerText = "▶";
-        });
-
-        // --- PLAYBACK LOGIC ---
-        // 1. Play Locally
-        this.playClip(filename, 1.0, (audio) => {
-            // Callback to link UI state to this audio instance
-            this.activeAudio = audio;
-            btnElement.classList.add('playing');
-            btnElement.lastElementChild.innerText = "■";
-
-            audio.onended = () => {
-                btnElement.classList.remove('playing');
-                btnElement.lastElementChild.innerText = "▶";
-                this.activeAudio = null;
-            };
-        });
-
-        // 2. Broadcast to Network
-        if(this.game && this.game.network) {
-            this.game.network.publishSound(filename);
-        }
-    }
-
-    // Handles the actual audio generation (Used by Local and Remote)
-    playClip(filename, volume, onPlayCallback) {
-        const audio = new Audio(this.baseUrl + filename);
-        audio.volume = Utils.clamp(volume, 0, 1);
-
-        audio.play().then(() => {
-            if(onPlayCallback) onPlayCallback(audio);
-        }).catch(e => console.log("Audio play failed (interaction needed first)"));
-    }
-}
-
-class InputManager {
-    constructor() {
-        this.keys = {};
-        window.addEventListener('keydown', (e) => this.keys[e.key] = true);
-        window.addEventListener('keyup', (e) => this.keys[e.key] = false);
-    }
-}
-
-class NetworkManager {
-    constructor(game) {
-        this.game = game;
-        this.client = null;
-        this.topicRoot = "infinity_racer_v1/global";
-        this.playerId = "p_" + Math.floor(Math.random() * 100000);
-        this.lastPub = 0;
-        this.connected = false;
-        this.remoteCars = {};
-
-        window.addEventListener('beforeunload', () => this.disconnect());
-    }
-
-    connect(brokerUrl) {
-        console.log(`Connecting to ${brokerUrl}...`);
-        try {
-            this.client = mqtt.connect(brokerUrl, {
-                clientId: this.playerId,
-                clean: true,
-                reconnectPeriod: 2000,
-                will: {
-                    topic: `${this.topicRoot}/players/${this.playerId}`,
-                    payload: JSON.stringify({ left: true }),
-                    qos: 0, retain: false
-                }
-            });
-        } catch(e) { alert("Connection Failed: " + e); return; }
-
-        this.client.on('connect', () => {
-            this.connected = true;
-            document.getElementById('loading-card').style.display = 'none';
-            document.getElementById('menu-overlay').classList.add('hidden');
-            this.client.subscribe(`${this.topicRoot}/players/+`);
-            this.client.subscribe(`${this.topicRoot}/chat`);
-            this.client.subscribe(`${this.topicRoot}/sounds`); // Listen for sounds
-            this.publishChat("System", `${this.game.username} joined the race.`);
-        });
-
-        this.client.on('message', (topic, message) => {
-            try {
-                const msg = JSON.parse(message.toString());
-
-                // --- Handle Sounds ---
-                if (topic.includes('/sounds')) {
-                    if (msg.id === this.playerId) return; // Ignore own echoes
-
-                    if (this.game.playerCar) {
-                        const dist = this.game.playerCar.pos.distanceTo(new THREE.Vector3(msg.x, msg.y, msg.z));
-                        const maxDist = 200; // Meters
-                        if (dist < maxDist) {
-                            // Spatial Audio: Volume drops over distance
-                            const vol = 1.0 - (dist / maxDist);
-                            this.game.audio.playClip(msg.name, vol);
-                            // Optional: Show visual indicator in chat or above car?
-                        }
-                    }
-                    return;
-                }
-
-                // --- Handle Chat ---
-                if (topic.includes('/chat')) {
-                    this.game.ui.addChat(msg.name, msg.text, msg.system);
-                }
-                // --- Handle Players ---
-                else if (topic.includes('/players/')) {
-                    const pid = topic.split('/').pop();
-                    if (pid === this.playerId) return;
-                    this.handlePlayerUpdate(pid, msg);
-                }
-            } catch (e) {}
-        });
-    }
-
-    disconnect() {
-        if(this.client && this.connected) {
-            this.client.publish(`${this.topicRoot}/players/${this.playerId}`, JSON.stringify({ left: true }));
-            this.client.end();
-        }
-    }
-
-    publishSound(filename) {
-        if (!this.connected || !this.game.playerCar) return;
-        const p = this.game.playerCar.mesh.position;
-        const payload = {
-            id: this.playerId,
-            name: filename,
-            x: p.x, y: p.y, z: p.z
-        };
-        this.client.publish(`${this.topicRoot}/sounds`, JSON.stringify(payload));
-    }
-
-    handlePlayerUpdate(id, data) {
-        if (data.left) {
-            if (this.remoteCars[id]) {
-                this.game.scene.remove(this.remoteCars[id].mesh);
-                if(this.remoteCars[id].nameTag.parentNode) this.remoteCars[id].nameTag.parentNode.removeChild(this.remoteCars[id].nameTag);
-                delete this.remoteCars[id];
-            }
-            return;
-        }
-
-        if (!this.remoteCars[id]) {
-            const c = new Car(this.game.scene, data.color || '#ffffff', false);
-            c.nameTag.textContent = data.name || "Unknown";
-            this.remoteCars[id] = c;
-        }
-
-        const car = this.remoteCars[id];
-        car.lastUpdate = Date.now();
-        car.setFromNetworkData(data);
-    }
-
-    update(dt) {
-        if (!this.connected) return;
-        const now = Date.now();
-
-        for(const id in this.remoteCars) {
-            if (now - this.remoteCars[id].lastUpdate > 5000) {
-                this.game.scene.remove(this.remoteCars[id].mesh);
-                if(this.remoteCars[id].nameTag.parentNode) this.remoteCars[id].nameTag.parentNode.removeChild(this.remoteCars[id].nameTag);
-                delete this.remoteCars[id];
-            } else {
-                this.remoteCars[id].updateNameTag(this.game.camera);
-            }
-        }
-
-        if (now - this.lastPub > 100) {
-            const p = this.game.playerCar;
-            const payload = {
-                x: p.mesh.position.x, y: p.mesh.position.y, z: p.mesh.position.z,
-                rx: p.mesh.rotation.x, ry: p.mesh.rotation.y, rz: p.mesh.rotation.z,
-                color: this.game.color, name: this.game.username
-            };
-            this.client.publish(`${this.topicRoot}/players/${this.playerId}`, JSON.stringify(payload));
-            this.lastPub = now;
-        }
-    }
-
-    publishChat(name, text, system=false) {
-        if(!this.connected) return;
-        const payload = { name, text, system, time: Date.now() };
-        this.client.publish(`${this.topicRoot}/chat`, JSON.stringify(payload));
-    }
-}
-
-class UIManager {
-    constructor(game) {
-        this.game = game;
-        this.fpsDiv = document.getElementById('fps-counter');
-        this.coordsDiv = document.getElementById('coords');
-        this.speedDiv = document.getElementById('speed-value');
-        this.nitroBar = document.getElementById('nitro-bar');
-        this.timeDiv = document.getElementById('time-display');
-        this.chatDiv = document.getElementById('chat-messages');
-        this.chatInput = document.getElementById('chat-input');
-
-        this.chatInput.addEventListener('keydown', (e) => {
-            if(e.key === 'Enter' && this.chatInput.value.trim() !== "") {
-                this.game.network.publishChat(this.game.username, this.chatInput.value);
-                this.chatInput.value = "";
-                this.chatInput.blur();
-            }
-        });
-
-        document.getElementById('select-server').addEventListener('change', (e) => {
-            const custom = document.getElementById('input-custom-server');
-            if(e.target.value === 'custom') custom.style.display = 'block';
-            else custom.style.display = 'none';
-        });
-
-        document.getElementById('btn-play').addEventListener('click', () => {
-            this.game.startGame();
-        });
-
-        this.initSettings();
-    }
-
-    async initSettings() {
-        await this.game.db.init();
-        const storedName = await this.game.db.get('username');
-        const storedColor = await this.game.db.get('color');
-        if(storedName) document.getElementById('input-username').value = storedName;
-        if(storedColor) document.getElementById('input-color').value = storedColor;
-    }
-
-    update(dt) {
-        const p = this.game.playerCar;
-        const kmh = Math.abs(Math.floor(p.speed * 3.6));
-        this.speedDiv.innerText = kmh;
-        this.nitroBar.style.transform = `scaleX(${p.nitro / 100})`;
-        this.coordsDiv.innerText = `X: ${Math.floor(p.pos.x)} Z: ${Math.floor(p.pos.z)}`;
-        this.fpsDiv.innerText = Math.floor(1/dt) + " FPS";
-        this.timeDiv.innerText = Utils.getTimeString(this.game.dayTime);
-    }
-
-    addChat(name, text, isSystem) {
-        const el = document.createElement('div');
-        el.className = 'chat-msg' + (isSystem ? ' system' : '');
-        const spanName = document.createElement('span');
-        spanName.className = 'author';
-        spanName.innerText = name + ":";
-        spanName.style.color = Utils.strToColor(name);
-        const spanText = document.createElement('span');
-        spanText.innerText = text;
-        if(!isSystem) el.appendChild(spanName);
-        el.appendChild(spanText);
-        this.chatDiv.appendChild(el);
-        this.chatDiv.scrollTop = this.chatDiv.scrollHeight;
-    }
-}
-
-/* -------------------------------------------------------------------------- */
-/* 5. MAIN GAME CLASS                          */
-/* -------------------------------------------------------------------------- */
-
 class Game {
     constructor() {
         this.container = document.getElementById('canvas-container');
         this.db = new DB('InfinityRacerDB', 'settings');
-        this.input = new InputManager();
+        this.settings = { renderDist: 3 };
+        this.input = new InputManager(this);
         this.ui = new UIManager(this);
-        this.audio = new AudioManager(this); // Pass game ref to audio
+        this.audio = new AudioManager(this);
+        this.network = new NetworkManager(this);
+        this.minimap = new Minimap(this); // Init Minimap
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x87CEEB);
@@ -1216,15 +1702,15 @@ class Game {
 
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.cameraMode = 0;
+        this.currentLookAt = new THREE.Vector3(0,0,0); // For smooth camera
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.shadowMap.enabled = true;
         this.container.appendChild(this.renderer.domElement);
 
-        this.terrain = new TerrainSystem(this.scene);
+        this.terrain = new TerrainSystem(this.scene, this, 3);
         this.particles = new ParticleSystem(this.scene);
-        this.network = new NetworkManager(this);
 
         this.sunLight = new THREE.DirectionalLight(0xffffff, 1);
         this.sunLight.position.set(50, 100, 50);
@@ -1238,7 +1724,6 @@ class Game {
         this.sunLight.shadow.camera.top = 100;
         this.sunLight.shadow.camera.bottom = -100;
         this.scene.add(this.sunLight);
-
         this.ambientLight = new THREE.AmbientLight(0x404040);
         this.scene.add(this.ambientLight);
 
@@ -1258,18 +1743,16 @@ class Game {
 
         window.addEventListener('keydown', (e) => {
             if(e.key === 'c' || e.key === 'C') this.cameraMode = (this.cameraMode + 1) % 3;
+            if(e.key === 'h' || e.key === 'H') document.getElementById('host-controls').classList.toggle('active');
         });
 
-        // Initialize Audio UI
         this.audio.init();
     }
 
     async startGame() {
         this.username = document.getElementById('input-username').value || "Racer" + Math.floor(Math.random()*100);
         this.color = document.getElementById('input-color').value;
-        const serverSelect = document.getElementById('select-server').value;
-        const customServer = document.getElementById('input-custom-server').value;
-        const brokerUrl = (serverSelect === 'custom') ? customServer : serverSelect;
+        const brokerUrl = this.ui.selectedServer;
 
         await this.db.put('username', this.username);
         await this.db.put('color', this.color);
@@ -1277,7 +1760,12 @@ class Game {
         document.getElementById('settings-card').style.display = 'none';
         document.getElementById('loading-card').style.display = 'block';
 
+        this.terrain.activeRadius = this.settings.renderDist;
+        this.terrain.regenerate(); // Rebuild with new render dist
+
         this.playerCar = new Car(this.scene, this.color, true);
+        this.currentLookAt.copy(this.playerCar.mesh.position);
+
         this.network.connect(brokerUrl);
         this.running = true;
     }
@@ -1288,10 +1776,11 @@ class Game {
 
         if (this.running && this.playerCar) {
             this.playerCar.updatePhysics(dt, this.input, this.terrain, this.particles);
-            this.terrain.update(this.playerCar.pos.x, this.playerCar.pos.z);
+            this.terrain.update(this.playerCar.pos.x, this.playerCar.pos.z, dt);
             this.particles.update(dt);
             this.network.update(dt);
             this.ui.update(dt);
+            this.minimap.update(); // Update Minimap
             this.updateCamera();
             this.updateDayCycle(dt);
         }
@@ -1302,25 +1791,36 @@ class Game {
     updateCamera() {
         const car = this.playerCar;
         let targetPos;
-        let lookAtPos = car.mesh.position.clone();
+        let lookAtTarget = car.mesh.position.clone();
+
+        const yawQ = new THREE.Quaternion();
+        const euler = new THREE.Euler().setFromQuaternion(car.mesh.quaternion, 'YXZ');
+        yawQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), euler.y);
 
         if (this.cameraMode === 0) { // Chase Standard
             const offset = new THREE.Vector3(0, 5, 12);
-            offset.applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y);
+            offset.applyQuaternion(yawQ);
             targetPos = car.mesh.position.clone().add(offset);
-            lookAtPos.y += 2;
+            lookAtTarget.y += 2;
         } else if (this.cameraMode === 1) { // Far
             const offset = new THREE.Vector3(0, 15, 25);
-            offset.applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y);
+            offset.applyQuaternion(yawQ);
             targetPos = car.mesh.position.clone().add(offset);
         } else { // Driver
             const offset = new THREE.Vector3(0, 1.8, 0.5);
-            offset.applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y);
+            offset.applyQuaternion(car.mesh.quaternion);
             targetPos = car.mesh.position.clone().add(offset);
-            lookAtPos = car.mesh.position.clone().add(new THREE.Vector3(0, 1.8, -10).applyAxisAngle(new THREE.Vector3(0,1,0), car.rot.y));
+            // Driver mode looks where car points
+            const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(car.mesh.quaternion);
+            lookAtTarget = car.mesh.position.clone().add(fwd.multiplyScalar(20));
         }
+
+        // Smooth Camera Movement to prevent nausea
         this.camera.position.lerp(targetPos, 0.1);
-        this.camera.lookAt(lookAtPos);
+
+        // Smooth LookAt
+        this.currentLookAt.lerp(lookAtTarget, 0.1);
+        this.camera.lookAt(this.currentLookAt);
     }
 
     updateDayCycle(dt) {
