@@ -54,7 +54,8 @@
             --fs-icon:   calc(24px * var(--ui-scale));  /* D-Pad Arrows */
             --fs-gear:   calc(30px * var(--ui-scale));  /* Settings Icon */
             --fs-title:  calc(32px * var(--ui-scale));  /* Disconnect messages */
-            --fs-hero:   calc(48px * var(--ui-scale));  /* Start Screen Title */
+            --fs-hero:   calc(70px * var(--ui-scale));  /* Start Screen Title */
+
         }
         @media(max-width:700px){
             :root {
@@ -125,6 +126,7 @@
                 background: rgba(20, 20, 20, 0.8);
                 border: 1px solid #444;
                 border-radius: 16px;
+                corner-shape: bevel;
                 padding: 15px;
                 margin-bottom: 5px;
                 backdrop-filter: blur(4px);
@@ -159,6 +161,7 @@
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 8px;
+            corner-shape: bevel;
             color: #aaa;
             font-size: var(--fs-icon); /* UPDATED */
             display: flex;
@@ -183,6 +186,7 @@
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 50%;
+            corner-shape: bevel;
             color: white;
             font-weight: bold;
             font-size: var(--fs-sm); /* UPDATED */
@@ -274,7 +278,7 @@
         }
 
         /* Modals */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; width: 95%; max-width: 600px; max-height: 90dvh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; corner-shape: bevel; width: 95%; max-width: 600px; max-height: 90dvh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch; }
         .modal.active { display: block; }
         .modal h2 { margin-top: 0; color: var(--highlight); border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-size: var(--fs-lg); }
 
@@ -349,7 +353,7 @@
             border-bottom: 1px solid #333; padding: 2px 0;
         }
 
-        .btn { background: var(--accent); font-family: "Geo", sans-serif; color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; font-size: var(--fs-base); }
+        .btn { background: var(--accent); font-family: "Geo", sans-serif; color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; corner-shape: bevel; font-size: var(--fs-base); }
         .btn:hover { background: #3498db; filter: brightness(1.2); }
         .btn:disabled { background: #555; cursor: not-allowed; filter: none; }
         .btn-small {
@@ -427,7 +431,7 @@
             color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight);
         }
 
-        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; border:1px solid #444; max-width: 75dvw; max-height: 90dvh; overflow-y:auto; -webkit-overflow-scrolling: touch; }
+        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; corner-shape: bevel; border:1px solid #444; max-width: 75dvw; max-height: 90dvh; overflow-y:auto; -webkit-overflow-scrolling: touch; }
         .start-panel { width:300px; flex-shrink: 0; }
         .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; flex-shrink: 0; }
 
@@ -470,7 +474,7 @@
 
         /* --- CUSTOM MODAL --- */
         #c-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .c-modal-box { background: rgba(20, 25, 40, 0.98); border: 1px solid var(--accent); padding: 20px; width: 90%; max-width: 400px; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); text-align: center; animation: slideIn 0.2s ease; }
+        .c-modal-box { background: rgba(20, 25, 40, 0.98); border: 1px solid var(--accent); padding: 20px; width: 90%; max-width: 400px; border-radius: 8px; corner-shape: bevel; box-shadow: 0 0 30px rgba(0,0,0,0.8); text-align: center; animation: slideIn 0.2s ease; }
         .c-modal-box h3 { color: var(--highlight); margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px; font-size: var(--fs-lg); }
         .c-modal-box p {
             color: #ddd; margin-bottom: 15px; line-height: 1.4;
@@ -605,7 +609,7 @@
 
         <!-- Chat -->
         <div id="chat-container" onclick="UI.openChat()">
-            <button id="chat-close-btn" onclick="event.stopPropagation(); UI.closeChat()" style="display:none; position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; border:none; background:#c0392b; color:white; font-weight:bold; cursor:pointer; z-index:100; var(--fs-tiny);">X</button>
+            <button id="chat-close-btn" onclick="event.stopPropagation(); UI.closeChat()" style="display:none; position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; corner-shape: bevel; border:none; background:#c0392b; color:white; font-weight:bold; cursor:pointer; z-index:100; var(--fs-tiny);">X</button>
             <div id="chat-messages"></div>
             <input type="text" id="chat-input" placeholder="Press CHAT key to type...">
         </div>
@@ -628,7 +632,7 @@
                         <label>Username</label>
                         <div style="display:flex; gap:5px;">
                             <input type="text" id="start-username" placeholder="Enter Username" maxlength="12" style="flex:1;">
-                            <button class="btn btn-small" style="width:auto; padding: 0 10px; font-size: var(--fs-base);" onclick="Game.randomizeUsername()" title="Randomize Username">&#127922;</button>
+                            <button class="btn" style="width:auto; padding: 0 10px; font-size: var(--fs-base);" onclick="Game.randomizeUsername()" title="Randomize Username">&#127922;</button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -939,6 +943,7 @@ const uuid = () => {
         return v.toString(16);
     });
 };
+const paths = [/*`/Documents/MegaMinerSaves/`,*/ `./`];
 
 const now = () => Date.now();
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
@@ -3115,10 +3120,10 @@ class CloudManager {
             let cloudData = null;
 
             // Try to find the file in Global first, then Sandbox
-            const paths = [`/Documents/MegaMinerSaves/${fileName}`, `./${fileName}`];
+
             for (const path of paths) {
                 try {
-                    const fileItem = await puter.fs.read(path);
+                    const fileItem = await puter.fs.read(path+fileName);
                     cloudData = JSON.parse(await fileItem.text());
                     if (cloudData) break;
                 } catch (e) { continue; }
@@ -3154,20 +3159,18 @@ class CloudManager {
         }
     }
 
-    // hey autocomplete
     static async delete(id) {
         if(!puter.whoami){
             console.warn("No puter user detected, skipping cloud delete.");
             return;
         }
         const fileName = this.getFileName(id);
-        const paths = [`/Documents/MegaMinerSaves/${fileName}`, `./${fileName}`];
         paths.forEach(async (path) => {
             try {
-                await puter.fs.delete(path);
-                console.log(`Deleted save file at: ${path}`);
+                await puter.fs.delete(path+fileName);
+                console.log(`Deleted save file at: ${path+fileName}`);
             } catch (e) {
-                console.warn(`Failed to delete save file at: ${path}\n(This is normal as long as you dont see this error twice for a save)`, e);
+                console.warn(`Failed to delete save file at: ${path+fileName}\n(This is normal as long as you dont see this error twice for a save)`, e);
             }
         });
     }
