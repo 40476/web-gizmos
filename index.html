@@ -159,8 +159,6 @@
     
       <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
     
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-    
       <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
     
       <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
@@ -172,6 +170,8 @@
       <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
+    
+      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
     
 
     <button id="themeToggle">Toggle Theme</button>
@@ -297,27 +297,6 @@
 </section>
       </section>
     
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        <section>
-  <ul>
-    <li>A 2D multiplayer mining game where players dig for ores, upgrade equipment, and build structures.</li>
-    <li>Features real-time multiplayer using MQTT, local save system, and cloud sync via Puter.</li>
-    <li>Mobile-friendly controls with touch D-pad and action buttons.</li>
-    <li>Procedural map generation with ore distribution and depth-based heat mechanics.</li>
-    <li>Includes shop system, inventory management, and admin/host controls.</li>
-  </ul>
-
-  <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>const Input = new InputManager();</code>
-  </pre>
-
-  <p>A browser-based multiplayer mining game with real-time networking, procedural world generation, and extensive upgrade systems. Players can mine resources, trade with others, and build structures while managing fuel and heat. The game features both desktop and mobile controls, local and cloud saves, and admin/host management for multiplayer sessions.</p>
-</section>
-      </section>
-    
       <section class="app-section" data-name="matrix">
         <a class="app-link" href="matrix/index.html">Open matrix</a>
         <h2>matrix</h2>
@@ -429,6 +408,26 @@
   </pre>
 
   <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
+        <h2>megaminer</h2>
+        <section>
+  <ul>
+    <li>Web-based multiplayer mining game with procedurally generated maps and real-time player interaction.</li>
+    <li>Features a shop system for upgrades, trading, and building, plus teleporters for fast travel.</li>
+    <li>Includes admin controls for server management, cloud save syncing, and mobile-friendly touch controls.</li>
+    <li>Utilizes MQTT for real-time multiplayer networking and IndexedDB for local game state persistence.</li>
+  </ul>
+
+  <pre>
+    <code>const uuid = () => { /* robust UUID generator */ };</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
+  </pre>
+
+  <p>Mega Miner Online is a browser-based multiplayer mining game where players explore procedurally generated underground worlds, mine resources, trade with others, and upgrade their equipment. The game features real-time multiplayer networking through MQTT, a shop system for upgrades and trading, teleporters for fast travel, and comprehensive admin controls. Built with HTML5 Canvas for rendering and IndexedDB for local persistence, it supports both desktop and mobile play with touch controls and cloud save syncing capabilities.</p>
 </section>
       </section>
     

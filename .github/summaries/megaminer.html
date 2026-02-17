@@ -1,16 +1,15 @@
 <section>
   <ul>
-    <li>A 2D multiplayer mining game where players dig for ores, upgrade equipment, and build structures.</li>
-    <li>Features real-time multiplayer using MQTT, local save system, and cloud sync via Puter.</li>
-    <li>Mobile-friendly controls with touch D-pad and action buttons.</li>
-    <li>Procedural map generation with ore distribution and depth-based heat mechanics.</li>
-    <li>Includes shop system, inventory management, and admin/host controls.</li>
+    <li>Web-based multiplayer mining game with procedurally generated maps and real-time player interaction.</li>
+    <li>Features a shop system for upgrades, trading, and building, plus teleporters for fast travel.</li>
+    <li>Includes admin controls for server management, cloud save syncing, and mobile-friendly touch controls.</li>
+    <li>Utilizes MQTT for real-time multiplayer networking and IndexedDB for local game state persistence.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>const Input = new InputManager();</code>
+    <code>const uuid = () => { /* robust UUID generator */ };</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
   </pre>
 
-  <p>A browser-based multiplayer mining game with real-time networking, procedural world generation, and extensive upgrade systems. Players can mine resources, trade with others, and build structures while managing fuel and heat. The game features both desktop and mobile controls, local and cloud saves, and admin/host management for multiplayer sessions.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game where players explore procedurally generated underground worlds, mine resources, trade with others, and upgrade their equipment. The game features real-time multiplayer networking through MQTT, a shop system for upgrades and trading, teleporters for fast travel, and comprehensive admin controls. Built with HTML5 Canvas for rendering and IndexedDB for local persistence, it supports both desktop and mobile play with touch controls and cloud save syncing capabilities.</p>
 </section>
