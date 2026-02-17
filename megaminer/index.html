@@ -289,6 +289,7 @@
         input[type=range] { width: 100%; accent-color: var(--accent); }
 
         /* Shop Grid */
+        .shop-container { height: 100%;}
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .shop-item { background: rgba(0,0,0,0.3); padding: 10px; border: 1px solid #444; display: flex; flex-direction: column; justify-content: space-between; }
         .shop-item h4 { margin: 0 0 5px 0; color: var(--accent); font-size: var(--fs-base); }
@@ -705,7 +706,7 @@
         <!-- Shop Modal -->
         <div id="shop-modal" class="modal">
             <h2>Service Station</h2>
-            <div style="text-align:center; margin-bottom:15px; font-size:18px;">
+            <div style="text-align:center; margin-bottom:15px; font-size:var(--fs-xl);">
                 Wallet: <span id="shop-money" style="color:gold; font-weight:bold;">$0</span>
             </div>
             <button class="btn" style="margin-bottom:10px; background:var(--success);" onclick="Shop.sellAll()">SELL ALL ORES</button>
@@ -753,14 +754,14 @@
                     <div class="cost" id="cost-xray"></div>
                     <button class="btn" id="btn-xray" onclick="Shop.buy('xray')">Upgrade</button>
                 </div>
-                 <div class="shop-item">
+                <!--<div class="shop-item">
                     <h4>Vehicle Paint</h4>
                     <p>Change your look.</p>
                     <input type="color" id="shop-color-picker" style="width:100%; height:30px; margin-bottom:5px;">
                     <button class="btn" onclick="Shop.buy('paint')">Repaint ($100)</button>
-                </div>
+                </div>-->
                 <!-- New Items -->
-                 <div class="shop-item">
+                <div class="shop-item">
                     <h4>Repair Kit</h4>
                     <p>Restore 50 HP (Use in Inv).</p>
                     <div class="cost">$50</div>
@@ -772,7 +773,7 @@
                     <div class="cost">$50</div>
                     <button class="btn" onclick="Shop.buy('fuel_voucher')">Buy</button>
                 </div>
-                 <div class="shop-item">
+                <div class="shop-item">
                     <h4>TNT</h4>
                     <p>Explosive charge. Range: 3.</p>
                     <div class="cost">$200</div>
@@ -782,7 +783,7 @@
                     <h4>Nuke</h4>
                     <p>Massive destruction. Range: 10.</p>
                     <div class="cost" style="color:#c0392b;">$5000</div>
-                    <button class="btn btn-danger" onclick="Shop.buy('nuke')">Buy</button>
+                    <button class="btn" onclick="Shop.buy('nuke')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>Teleporter</h4>
@@ -791,7 +792,7 @@
                     <button class="btn" onclick="Shop.buy('teleporter')">Buy</button>
                 </div>
             </div>
-            <button class="btn" style="background:#555; margin-top:20px;" onclick="Shop.close()">Exit Station</button>
+            <button class="btn" style="background:#555; margin-top:20px; position:sticky; bottom: 10px;" onclick="Shop.close()">Exit Station</button>
         </div>
 
         <!-- Settings Modal -->
@@ -965,20 +966,20 @@ const TILE_TYPES = {
 };
 
 const TILE_PROPS = {
-    [TILE_TYPES.EMPTY]: { name: "Empty" },
-    [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 1, value: 0, tier: 0 },
-    [TILE_TYPES.GRASS]: { name: "Grass", color: '#388e3c', hardness: 1, value: 0, tier: 0 },
-    [TILE_TYPES.STONE]: { name: "Stone", color: '#7f8c8d', hardness: 3, value: 0, tier: 1 },
-    [TILE_TYPES.HARD_STONE]: { name: "Dense Stone", color: '#525a5b', hardness: 6, value: 0, tier: 2 },
-    [TILE_TYPES.DEEP_SLATE]: { name: "Deep Slate", color: '#2c3e50', hardness: 10, value: 0, tier: 3 },
+    [TILE_TYPES.EMPTY]: { name: "Empty", value : -67 },
+    [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 0.5, value: 0, tier: 0 },
+    [TILE_TYPES.GRASS]: { name: "Grass", color: '#388e3c', hardness: 0.5, value: 0, tier: 0 },
+    [TILE_TYPES.STONE]: { name: "Stone", color: '#7f8c8d', hardness: 1, value: 0, tier: 1 },
+    [TILE_TYPES.HARD_STONE]: { name: "Dense Stone", color: '#525a5b', hardness: 2, value: 0, tier: 2 },
+    [TILE_TYPES.DEEP_SLATE]: { name: "Deep Slate", color: '#2c3e50', hardness: 3, value: 0, tier: 3 },
     [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0, trashExclude: true },
-    [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 4, value: 50, tier: 1, trashExclude: true },
-    [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 6, value: 150, tier: 2, trashExclude: true },
-    [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 10, value: 500, tier: 3, trashExclude: true },
-    [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 12, value: 800, tier: 3, trashExclude: true },
-    [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 15, value: 1200, tier: 4, trashExclude: true },
-    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 2, value: 0, tier: 0, trashExclude: true },
-    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 0, tier: 99, trashExclude: true },
+    [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 2, value: 50, tier: 1, trashExclude: true },
+    [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 1, value: 150, tier: 2, trashExclude: true },
+    [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 3, value: 500, tier: 3, trashExclude: true },
+    [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 3, value: 800, tier: 3, trashExclude: true },
+    [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 3, value: 1200, tier: 4, trashExclude: true },
+    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 0.1, value: 0, tier: 0, trashExclude: true },
+    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 67, tier: 99, trashExclude: true },
     // New Items
     [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0, trashExclude: true },
     [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0, trashExclude: true },
@@ -1363,6 +1364,7 @@ class GameEngine {
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
         this.lastActionTime = 0;
         this.lastAutosave = 0;
+        this.lastViewportSync = 0; // NEW: Timer for aggressive sync
         this.fallHeight = 0;
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
@@ -1746,22 +1748,67 @@ class GameEngine {
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
 
-        let targetX = p.gridX * TS;
-        let targetY = p.gridY * TS;
+        // --- 1. DETERMINE DESTINATION ---
+        let destGridX = (p.nextGridX !== undefined) ? p.nextGridX : p.gridX;
+        let destGridY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
+
+        let targetX = destGridX * TS;
+        let targetY = destGridY * TS;
         let dx = targetX - p.x;
         let dy = targetY - p.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        let speed = this.localPlayer.fuel > 0 ? (this.localPlayer.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL) : 0.3;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        // --- 2. CALCULATE HARDNESS (Look Ahead) ---
+        let currentHardness = 1;
+        if (p.isDrilling) {
+            // Look at the destination tile
+            const tileType = this.map[destGridY]?.[destGridX];
+            currentHardness = TILE_PROPS[tileType]?.hardness || 1;
+        }
+
+        // --- 3. CALCULATE SPEED (With Drill Tier) ---
+        // Formula: (Base Speed * Tier Multiplier) / Block Hardness
+        // Example: Tier 0 (1.0x) vs Hardness 2 = 50% Speed
+        // Example: Tier 4 (3.0x) vs Hardness 2 = 150% Speed
+        let tierMultiplier = 1 + (p.drillTier * 0.5);
+        let drillSpeed = (CONSTANTS.SPEED_DRILL * tierMultiplier) / currentHardness;
+
+        // Determine final movement speed
+        let speed = Math.min(p.fuel > 0 ? (p.isDrilling ? drillSpeed : CONSTANTS.SPEED_NORMAL) : 0.3, CONSTANTS.SPEED_NORMAL);
+
         let isMoving = false;
 
+        // --- 4. MOVEMENT LOOP ---
         if (dist > speed) {
             let angle = Math.atan2(dy, dx);
-            p.x += Math.cos(angle) * speed; p.y += Math.sin(angle) * speed;
+            p.x += Math.cos(angle) * speed;
+            p.y += Math.sin(angle) * speed;
             isMoving = true;
         } else {
-            p.x = targetX; p.y = targetY; p.isDrilling = false;
+            // --- 5. ARRIVAL & EXECUTION ---
+            p.x = targetX;
+            p.y = targetY;
+            p.isDrilling = false;
+
+            // If we just finished a move (nextGridX is set)
+            if (p.nextGridX !== undefined) {
+
+                // EXECUTE MINING (testOnly = false):
+                // Actually remove the block and give items now that we are here.
+                let tileAtDest = this.map[p.nextGridY][p.nextGridX];
+                if (tileAtDest !== TILE_TYPES.EMPTY && tileAtDest !== TILE_TYPES.TELEPORTER) {
+                    this.tryMine(p.nextGridX, p.nextGridY, false);
+                }
+
+                // Finalize position update
+                p.gridX = p.nextGridX;
+                p.gridY = p.nextGridY;
+                p.nextGridX = undefined;
+                p.nextGridY = undefined;
+            }
+
+            // --- 6. INPUT DETECTION ---
             let ix = 0, iy = 0;
-            // Input combining Keys + Virtual
             if (Input.keys[this.settings.keys.up] || Input.virtual.up) iy = -1;
             else if (Input.keys[this.settings.keys.down] || Input.virtual.down) iy = 1;
             else if (Input.keys[this.settings.keys.left] || Input.virtual.left) ix = -1;
@@ -1776,39 +1823,44 @@ class GameEngine {
                     this.lastActionTime = now();
                 }
             } else if (ix || iy) {
-                if (ix === 1) p.rotation = -90 * (Math.PI/180);
-                if (ix === -1) p.rotation = 90 * (Math.PI/180);
+                // Rotation
+                if (ix === 1) p.rotation = -90 * (Math.PI / 180);
+                if (ix === -1) p.rotation = 90 * (Math.PI / 180);
                 if (iy === 1) p.rotation = 0;
-                if (iy === -1) p.rotation = 180 * (Math.PI/180);
+                if (iy === -1) p.rotation = 180 * (Math.PI / 180);
 
                 let nx = p.gridX + ix;
                 let ny = p.gridY + iy;
+
+                // Bounds Check
                 if (nx >= 0 && nx < CONSTANTS.MAP_WIDTH && ny >= 4 && ny < CONSTANTS.MAP_HEIGHT) {
                     let tile = (ny < 0) ? TILE_TYPES.EMPTY : this.map[ny][nx];
 
-                    // --- TELEPORTER LOGIC (Instant Travel) ---
+                    // Teleporter Discovery
                     if (tile === TILE_TYPES.TELEPORTER) {
-                        $('prompt-msg').style.display = 'block';
-                        $('prompt-msg').innerText = "PRESS E TO WARP";
-
-                        // Check if we discovered this?
                         const known = p.teleporters.find(t => t.x === nx && t.y === ny);
-                        if(!known) {
-                            p.teleporters.push({ x: nx, y: ny, name: `Discovered Relay [${nx},${ny}]` });
+                        if (!known) {
+                            p.teleporters.push({ x: nx, y: ny, name: `Relay [${nx},${ny}]` });
                             UI.showToast("New Teleporter Discovered!", "success");
                             this.saveLocalProgress();
                         }
                     }
 
+                    // --- MOVEMENT REQUEST ---
                     if (tile === TILE_TYPES.EMPTY || tile === TILE_TYPES.TELEPORTER) {
-                        p.gridX = nx; p.gridY = ny;
+                        // Moving into empty space
+                        p.nextGridX = nx; p.nextGridY = ny;
                         if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
                         Network.broadcastMove();
-                    } else if (tile !== TILE_TYPES.BEDROCK) {
+                    }
+                    else if (tile !== TILE_TYPES.BEDROCK) {
                         if (now() - this.lastActionTime > 150) {
-                            if (this.tryMine(nx, ny)) {
-                                p.gridX = nx; p.gridY = ny;
-                                p.isDrilling = true;
+
+                            // CHECK IF MINABLE (testOnly = true)
+                            // This checks if we have the correct Drill Tier to even start mining
+                            if (this.tryMine(nx, ny, true)) {
+                                p.nextGridX = nx; p.nextGridY = ny;
+                                p.isDrilling = true; // Start drilling animation
                                 if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
                                 Network.broadcastMove();
                             }
@@ -1823,24 +1875,12 @@ class GameEngine {
         if (this.isAdmin && this.explosives.length > 0) {
             for (let i = this.explosives.length - 1; i >= 0; i--) {
                 let e = this.explosives[i];
-
-                // 1. SETUP: Convert the duration (ms) to a specific finish time
-                // We check 'if (!e.doneAt)' so this only runs the very first time we see the bomb
-                if (!e.doneAt) {
-                    e.doneAt = Date.now() + e.timer;
-                }
-
-                // 2. BROADCAST: Send the event immediately
+                if (!e.doneAt) e.doneAt = Date.now() + e.timer;
                 if (!e.sent) {
-                    // We send 'e.timer' (e.g. 3000ms) so the client knows how long the animation is
                     Network.broadcastExplosion(e.x, e.y, e.range, e.timer);
                     e.sent = true;
                 }
-
-                // 3. CLEANUP: Check if the current real time has passed the finish time
-                if (Date.now() >= e.doneAt) {
-                    this.explosives.splice(i, 1);
-                }
+                if (Date.now() >= e.doneAt) this.explosives.splice(i, 1);
             }
         }
 
@@ -1850,7 +1890,7 @@ class GameEngine {
         Object.values(this.remotePlayers).forEach(rp => {
             if (rp.targetX !== undefined) {
                 let rdx = rp.targetX - rp.x; let rdy = rp.targetY - rp.y;
-                let rDist = Math.sqrt(rdx*rdx + rdy*rdy);
+                let rDist = Math.sqrt(rdx * rdx + rdy * rdy);
                 let rSpeed = rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
                 if (rDist > rSpeed) {
                     let rAngle = Math.atan2(rdy, rdx);
@@ -1860,50 +1900,49 @@ class GameEngine {
         });
 
         // Heat & Prompt
-        let depth = Math.max(0, p.gridY - 5);
+        // Use destGridY for depth check so heat updates as we drill down, not after
+        let depthY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
+        let depth = Math.max(0, depthY - 5);
+
         let heatThreshold = 100 + (p.heatResist * 50);
         if (depth > heatThreshold) {
             p.temp += 0.05;
-            if (p.temp > 100) { p.temp = 100; p.hull -= 0.1; $('heat-overlay').style.opacity = (Math.sin(now()/100)+1)/4 + 0.3; }
+            if (p.temp > 100) { p.temp = 100; p.hull -= 0.1; $('heat-overlay').style.opacity = (Math.sin(now() / 100) + 1) / 4 + 0.3; }
         } else { p.temp = Math.max(0, p.temp - 0.2); $('heat-overlay').style.opacity = 0; }
 
         $('prompt-msg').style.display = 'none';
 
-        // Check Teleporter interaction
         if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
-             $('prompt-msg').style.display = 'block';
-             $('prompt-msg').innerText = "PRESS E TO WARP";
+            $('prompt-msg').style.display = 'block';
+            $('prompt-msg').innerText = "PRESS E TO WARP";
         }
 
         if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 3) {
-             $('prompt-msg').style.display = 'block';
-             $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
+            $('prompt-msg').style.display = 'block';
+            $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
         }
 
         const interactPressed = Input.keys[this.settings.keys.interact] || Input.virtual.interact;
         if (interactPressed && now() - this.lastActionTime > 500) {
-            // Priority: Teleporter -> Station -> Dashboard
             if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
                 UI.openWarpMenu();
             } else {
                 UI.toggleDashboard();
             }
             this.lastActionTime = now();
-            Input.virtual.interact = false; // consume
+            Input.virtual.interact = false;
         }
 
-        // Transfer Check
         const transferPressed = Input.keys[this.settings.keys.transfer] || Input.virtual.transfer;
         if (transferPressed && now() - this.lastActionTime > 1000) {
-            // Find nearest player
             let nearest = null;
-            let minDst = 100; // range
+            let minDst = 100;
             Object.values(this.remotePlayers).forEach(rp => {
-                let d = Math.sqrt((rp.x - p.x)**2 + (rp.y - p.y)**2);
-                if(d < minDst) { minDst = d; nearest = rp; }
+                let d = Math.sqrt((rp.x - p.x) ** 2 + (rp.y - p.y) ** 2);
+                if (d < minDst) { minDst = d; nearest = rp; }
             });
 
-            if(nearest) {
+            if (nearest) {
                 this.tryTransferFuel(nearest.id);
             } else {
                 UI.showToast("No one nearby to transfer to!", "error");
@@ -1912,7 +1951,6 @@ class GameEngine {
             Input.virtual.transfer = false;
         }
 
-        // Mobile Action consumption
         if (Input.virtual.chat && now() - this.lastActionTime > 200) {
             $('chat-container').classList.toggle('minimized');
             $('chat-input').focus();
@@ -1920,7 +1958,7 @@ class GameEngine {
         }
         if (Input.virtual.adminToggle && now() - this.lastActionTime > 200) {
             UI.toggleAdminPanel();
-            Input.virtual.adminToggle=false;
+            Input.virtual.adminToggle = false;
         }
 
         p.fuel = clamp(p.fuel, 0, p.maxFuel); p.hull = clamp(p.hull, 0, p.maxHull);
@@ -2121,28 +2159,61 @@ class GameEngine {
         UI.updateDashboard();
     }
 
-    tryMine(tx, ty) {
+    tryMine(tx, ty, testOnly = false) {
+        // Safety check for map bounds
+        if (!this.map[ty] || this.map[ty][tx] === undefined) return false;
+
         let tile = this.map[ty][tx];
+
+        // Basic validity checks
         if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK && this.localPlayer.fuel > 0) {
             let props = TILE_PROPS[tile];
-            if (this.localPlayer.drillTier < props.tier) { UI.showToast(`Need Tier ${props.tier} Drill`, "error"); Sound.playError(); return false; }
-            if (this.localPlayer.cargo < this.localPlayer.maxCargo) {
-                if (!this.localPlayer.inventory[tile]) this.localPlayer.inventory[tile] = 0;
-                this.localPlayer.inventory[tile]++;
-                this.localPlayer.cargo++;
 
-                if (!this.localPlayer.stats.blocksMined[tile]) this.localPlayer.stats.blocksMined[tile] = 0;
-                this.localPlayer.stats.blocksMined[tile]++;
-                this.localPlayer.stats.totalMined++;
+            // 1. Drill Tier Check
+            if (this.localPlayer.drillTier < props.tier) {
+                // We show the error even in test mode so the player knows why they can't move
+                UI.showToast(`Need Tier ${props.tier} Drill`, "error");
+                Sound.playError();
+                return false;
+            }
 
-                this.map[ty][tx] = TILE_TYPES.EMPTY;
-                this.discovered[ty][tx] = 1;
-                this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);
-                Sound.playMining();
-                Network.sendTileUpdate(tx, ty, TILE_TYPES.EMPTY);
-                UI.updateDashboard();
+            // 2. Cargo Check
+            if (this.localPlayer.cargo >= this.localPlayer.maxCargo) {
+                // If the inventory already has this item, we might still be able to stack it?
+                // Assuming strict slot limit based on your previous code:
+                UI.showToast("Cargo Full!", "error");
+                Sound.playError();
+                return false;
+            }
+
+            // --- SUCCESS CASE ---
+
+            // If we are just checking if movement is allowed:
+            if (testOnly) {
                 return true;
-            } else { UI.showToast("Cargo Full!", "error"); Sound.playError(); return false; }
+            }
+
+            // If we are actually mining (Arrived at tile):
+            if (!this.localPlayer.inventory[tile]) this.localPlayer.inventory[tile] = 0;
+            this.localPlayer.inventory[tile]++;
+            this.localPlayer.cargo++;
+
+            if (!this.localPlayer.stats.blocksMined[tile]) this.localPlayer.stats.blocksMined[tile] = 0;
+            this.localPlayer.stats.blocksMined[tile]++;
+            this.localPlayer.stats.totalMined++;
+
+            this.map[ty][tx] = TILE_TYPES.EMPTY;
+            this.discovered[ty][tx] = 1;
+
+            // Visuals
+            this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);
+            Sound.playMining();
+
+            // Network / UI
+            Network.sendTileUpdate(tx, ty, TILE_TYPES.EMPTY);
+            UI.updateDashboard();
+
+            return true;
         }
         return false;
     }
@@ -2908,7 +2979,7 @@ class ShopSystem {
     updateUI() {
         const p = Game.localPlayer;
         $('shop-money').innerText = "$" + Math.floor(p.money);
-        $('shop-color-picker').value = Game.settings.color;
+        // $('shop-color-picker').value = Game.settings.color;
 
         const sellContainer = $('sell-list');
         sellContainer.innerHTML = '';
@@ -2976,7 +3047,6 @@ class ShopSystem {
             if (p.money >= cost && p.cargo < p.maxCargo) {
                 p.money -= cost;
                 let type = (item === 'tnt') ? TILE_TYPES.TNT : (item === 'nuke' ? TILE_TYPES.NUKE : TILE_TYPES.TELEPORTER);
-                // Explosives count towards cargo weight? Yes.
                 p.cargo++;
                 p.inventory[type] = (p.inventory[type] || 0) + 1;
                 UI.showToast(`Bought ${item.toUpperCase()}`, "success");
@@ -3003,8 +3073,8 @@ class ShopSystem {
         const p = Game.localPlayer;
         let cost = 0;
         let success = false;
-        if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); success=true; } }
-        else if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); success=true; } }
+        // if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); success=true; } }
+        if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); success=true; } }
         else {
             let level = 0;
             if (item === 'hull') level = (p.maxHull-100)/20;
@@ -3173,13 +3243,19 @@ class NetworkManager {
         this.baseTopic = 'mm_online/';
         this.lastHeartbeat = 0;
         this.lastSyncToast = 0;
+        this.connectionWatchdog = 0; // NEW: Monitor connection health
     }
 
     connect() {
         Game.logConnection(`Connecting to broker ${Game.settings.broker}...`);
 
         const broker = Game.settings.broker;
-        const options = { clientId: 'mm_' + Game.localPlayer.id, keepalive: 60, clean: true, reconnectPeriod: 1000 };
+        const options = {
+            clientId: 'mm_' + Game.localPlayer.id,
+            keepalive: 30,
+            clean: true,
+            reconnectPeriod: 500
+        };
         try { this.client = mqtt.connect(broker, options); } catch (e) { Game.logConnection("Error creating client: " + e); }
 
         this.client.on('connect', () => {
@@ -3205,6 +3281,19 @@ class NetworkManager {
 
     update() {
         let n = now();
+
+        // --- AGGRESSIVE RECONNECT WATCHDOG ---
+        // If client exists but isn't connected for > 5 seconds, FORCE a reconnect attempt
+        if (this.client && !this.client.connected) {
+            if (n - this.connectionWatchdog > 5000) {
+                console.log("Watchdog: Force Reconnecting...");
+                try { this.client.reconnect(); } catch(e) { console.error(e); }
+                this.connectionWatchdog = n; // Reset watchdog
+            }
+        } else {
+            this.connectionWatchdog = n; // Heartbeat valid, reset watchdog
+        }
+
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
                 const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
@@ -3215,9 +3304,9 @@ class NetworkManager {
                 // Removed updateAdminStatus, checking health in Game loop
             }
         });
-        if (n - this.lastHeartbeat > 1000) {
+        if (n - this.lastHeartbeat > 2000) {
             this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
-
+            this.requestViewportSync();
             // --- NEW: Admin Heartbeat ---
             if (Game.isAdmin) {
                 this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
@@ -3225,6 +3314,22 @@ class NetworkManager {
 
             this.lastHeartbeat = n;
         }
+    }
+
+    requestViewportSync() {
+        if (!Game.running || !this.client || !this.client.connected) return;
+        const p = Game.localPlayer;
+
+        // Request an area slightly larger than the screen centered on player
+        // Width 50, Height 40 covers most zoom levels
+        this.publish('ctrl', {
+            type: 'view_req',
+            id: p.id,
+            x: p.gridX - 25,
+            y: p.gridY - 20,
+            w: 50,
+            h: 40
+        });
     }
 
     broadcastHostClaim() {
@@ -3259,65 +3364,45 @@ class NetworkManager {
     broadcastDeath() { this.publish('chat', { type: 'death', id: Game.localPlayer.id, name: Game.settings.username }); }
     sendFuel(targetId, amount) { this.publish('ctrl', { type: 'fuel', to: targetId, from: Game.settings.username, amt: amount }); }
     sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
-    sendChat(msg) { this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg }); }
+    sendChat(msg) {
+        this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg });
+        UI.addMessage(Game.settings.username, msg, Game.settings.color);
+    }
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
     transferAdmin(id) { this.publish('ctrl', { type: 'transfer_admin', to: id }); }
 
-    // Add missing Map Request logic
     requestMap(fromId) {
         UI.showToast("Requesting Map...", "normal");
         this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId || null });
     }
 
-    sendMapDiff(toId) {
-        // 1. Flatten the array. [x, y, v, x, y, v...]
-        // This saves massive JSON overhead compared to [[x,y,v], [x,y,v]]
+    sendAreaDiff(bx, by, w, h, toId) {
         let diffs = [];
+        // Bounds check to ensure we don't read outside map array
+        let startX = Math.max(0, bx);
+        let startY = Math.max(0, by);
+        let endX = Math.min(CONSTANTS.MAP_WIDTH, bx + w);
+        let endY = Math.min(CONSTANTS.MAP_HEIGHT, by + h);
 
-        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
-            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
-                // Optimization: If possible, check Game.isChunkModified(x,y) before checking tiles
-                let base = Game.getProceduralTile(x, y);
-                if (Game.map[y][x] !== base) {
-                    diffs.push(x, y, Game.map[y][x]); // Push individual values
-                }
+        for (let y = startY; y < endY; y++) {
+            // Optimization: If row doesn't exist, skip
+            if(!Game.map[y]) continue;
+
+            for (let x = startX; x < endX; x++) {
+                 let base = Game.getProceduralTile(x, y);
+                 let current = Game.map[y][x];
+
+                 // Only send if the current map state differs from the seed generation
+                 if (current !== base) {
+                     diffs.push(x, y, current);
+                 }
             }
         }
 
-        const tileCount = diffs.length / 3;
-        console.log(`Sending Map Diff: ${tileCount} tiles to ${toId}`);
-
-        this.publish('map', { type: 'map_start', to: toId, count: tileCount });
-
-        if (diffs.length === 0) {
-            this.publish('map', { type: 'map_end', to: toId });
-            return;
+        // If we found modified tiles, send them
+        if (diffs.length > 0) {
+             this.publish('map', { type: 'sync', data: diffs, to: toId, flat: true });
         }
-
-        // 2. Optimization: Increase Chunk Size
-        // 32 items is too small (high packet overhead).
-        // 500-1000 items is a better balance for modern networks.
-        const ITEMS_PER_TILE = 3;
-        const TILES_PER_CHUNK = 500;
-        const CHUNK_SIZE = TILES_PER_CHUNK * ITEMS_PER_TILE;
-
-        let offset = 0;
-
-        const sendLoop = setInterval(() => {
-            if (offset >= diffs.length) {
-                clearInterval(sendLoop);
-                this.publish('map', { type: 'map_end', to: toId });
-                return;
-            }
-
-            // Slice the flat array
-            const chunk = diffs.slice(offset, offset + CHUNK_SIZE);
-
-            // Send flat array. Client must read in steps of 3.
-            this.publish('map', { type: 'sync', data: chunk, to: toId, flat: true });
-
-            offset += CHUNK_SIZE;
-        }, 20); // Slightly faster tick
     }
 
     publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
@@ -3326,7 +3411,6 @@ class NetworkManager {
         let msg;
         try { msg = JSON.parse(message.toString()); } catch(e) { return; }
         if (msg.id === Game.localPlayer.id && msg.type !== 'kick') return;
-
         if (msg.type === 'move' || msg.type === 'heartbeat') {
             if (!Game.remotePlayers[msg.id]) {
                 Game.remotePlayers[msg.id] = {
@@ -3382,13 +3466,53 @@ class NetworkManager {
             // Removed updateAdminStatus
 
             if(Game.isAdmin) {
-                this.sendMapDiff(msg.id);
                 // Also assert dominance immediately so they know I'm host
                 this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
             }
             this.broadcastMove();
         }
     }
+    else if (msg.type === 'map' || msg.type === 'sync') {
+            if (Array.isArray(msg.data)) {
+                // Optimization: Detect if this is a Flat Array (Level 1 Optimization)
+                // If the first element is a number, it's likely flat [x,y,v, x,y,v...]
+                // If the first element is an object/array, it's legacy [[x,y,v]...]
+                const isFlat = typeof msg.data[0] === 'number';
+
+                if (isFlat) {
+                    // --- NEW EFFICIENT WAY ---
+                    // Iterate by 3s
+                    for (let i = 0; i < msg.data.length; i += 3) {
+                        const x = msg.data[i];
+                        const y = msg.data[i+1];
+                        const v = msg.data[i+2];
+
+                        // Fast boundary check (optional if you trust server)
+                        if (Game.map[y] && Game.map[y][x] !== undefined) {
+                            Game.map[y][x] = v;
+                            Game.discovered[y][x] = 1;
+                        }
+                    }
+                } else {
+                    // --- LEGACY WAY (Keep for safety) ---
+                    msg.data.forEach(d => {
+                        let x, y, v;
+                        if (Array.isArray(d)) { [x, y, v] = d; }
+                        else { x = d.x; y = d.y; v = d.v; } // Handle {x,y,v} objects
+
+                        if (Game.map[y] && Game.map[y][x] !== undefined) {
+                            Game.map[y][x] = v;
+                            Game.discovered[y][x] = 1;
+                        }
+                    });
+                }
+
+                // Critical Optimization:
+                // Don't redraw the minimap inside the loop!
+                // Flag it to update ONCE after processing the whole chunk.
+                if (Game.renderer) Game.renderer.markMapDirty();
+            }
+        }
     // --- NEW: Admin Messages ---
     else if (msg.type === 'host_heartbeat') {
         Game.hostId = msg.id;
@@ -3432,57 +3556,7 @@ class NetworkManager {
     else if (msg.type === 'tile') {
              if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
         }
-        else if (msg.type === 'map_start' && msg.to === Game.localPlayer.id) {
-             const count = msg.count || "Unknown";
-             UI.showToast(`Receiving Map Data (${count} tiles)...`, "normal");
-        }
-        else if (msg.type === 'sync' && msg.to === Game.localPlayer.id) {
-            if (Array.isArray(msg.data)) {
-                // Optimization: Detect if this is a Flat Array (Level 1 Optimization)
-                // If the first element is a number, it's likely flat [x,y,v, x,y,v...]
-                // If the first element is an object/array, it's legacy [[x,y,v]...]
-                const isFlat = typeof msg.data[0] === 'number';
 
-                if (isFlat) {
-                    // --- NEW EFFICIENT WAY ---
-                    // Iterate by 3s
-                    for (let i = 0; i < msg.data.length; i += 3) {
-                        const x = msg.data[i];
-                        const y = msg.data[i+1];
-                        const v = msg.data[i+2];
-
-                        // Fast boundary check (optional if you trust server)
-                        if (Game.map[y] && Game.map[y][x] !== undefined) {
-                            Game.map[y][x] = v;
-                            Game.discovered[y][x] = 1;
-                        }
-                    }
-                } else {
-                    // --- LEGACY WAY (Keep for safety) ---
-                    msg.data.forEach(d => {
-                        let x, y, v;
-                        if (Array.isArray(d)) { [x, y, v] = d; }
-                        else { x = d.x; y = d.y; v = d.v; } // Handle {x,y,v} objects
-
-                        if (Game.map[y] && Game.map[y][x] !== undefined) {
-                            Game.map[y][x] = v;
-                            Game.discovered[y][x] = 1;
-                        }
-                    });
-                }
-
-                // Critical Optimization:
-                // Don't redraw the minimap inside the loop!
-                // Flag it to update ONCE after processing the whole chunk.
-                if (Game.renderer) Game.renderer.markMapDirty();
-            }
-        }
-        else if (msg.type === 'map_end' && msg.to === Game.localPlayer.id) {
-             UI.showToast("Map Synced!", "success");
-        }
-        else if (msg.type === 'map_req' && Game.isAdmin) {
-            this.sendMapDiff(msg.from);
-        }
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
         else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#f55"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
@@ -3507,6 +3581,12 @@ class NetworkManager {
         }
         else if (msg.type === 'explode') {
             Game.explode(msg.x, msg.y, msg.r, msg.t)
+        } else if (msg.type === 'view_req' && Game.isAdmin) {
+            // Only process if valid numbers
+
+            if (typeof msg.x === 'number' && typeof msg.y === 'number') {
+                this.sendAreaDiff(msg.x, msg.y, msg.w || 40, msg.h || 30, msg.id);
+            }
         }
     }
 }
