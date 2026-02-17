@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Multiplayer mining game with real-time server sync using MQTT</li>
-    <li>Procedural world generation with ore mining, crafting, and building</li>
-    <li>Upgrades, shop system, and inventory management with cloud saves</li>
-    <li>Cross-platform support with mobile controls and desktop keyboard input</li>
-    <li>Admin tools, teleporters, and explosive mechanics for advanced gameplay</li>
+    <li>A 2D multiplayer mining game where players dig for ores, upgrade equipment, and build structures.</li>
+    <li>Features real-time multiplayer using MQTT, local save system, and cloud sync via Puter.</li>
+    <li>Mobile-friendly controls with touch D-pad and action buttons.</li>
+    <li>Procedural map generation with ore distribution and depth-based heat mechanics.</li>
+    <li>Includes shop system, inventory management, and admin/host controls.</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
-    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4 }; } }</code>
+    <code>const Game = new GameEngine();</code>
+    <code>const Input = new InputManager();</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining adventure game featuring real-time server synchronization, procedural world generation, and extensive upgrade systems. Players can mine resources, craft items, build structures, and explore with friends across dynamically generated underground worlds. The game includes mobile-optimized controls, cloud save functionality, and admin tools for managing multiplayer sessions.</p>
+  <p>A browser-based multiplayer mining game with real-time networking, procedural world generation, and extensive upgrade systems. Players can mine resources, trade with others, and build structures while managing fuel and heat. The game features both desktop and mobile controls, local and cloud saves, and admin/host management for multiplayer sessions.</p>
 </section>
