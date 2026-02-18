@@ -1690,18 +1690,21 @@
 
             <div class="form-group">
                 <label>Audio Mixer</label>
-                <div style="font-size: var(--fs-sm); display:grid; grid-template-columns: 1fr 3fr 1fr; gap:10px; align-items:center;">
-                    <span>Master</span> <input type="range" id="vol-master" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('master', this.value)"> <span id="vol-disp-master">50%</span>
-                    <span>Music</span> <input type="range" id="vol-music" min="0" max="1" step="0.01" value="0.1" oninput="Sound.setVolume('music', this.value)"> <span id="vol-disp-music">50%</span>
-                    <span>SFX</span> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('sfx', this.value)"> <span id="vol-disp-sfx">50%</span>
-                    <span>Engine</span> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)"> <span id="vol-disp-engine">50%</span>
+                <div style="font-size: var(--fs-sm);">
+                    <center><span>Master</span>&nbsp;&nbsp;<span id="vol-disp-master">50%</span></center> <input type="range" id="vol-master" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('master', this.value)">
+                    <hr><br>
+                    <center><span>Music</span>&nbsp;&nbsp;<span id="vol-disp-music">50%</span></center> <input type="range" id="vol-music" min="0" max="1" step="0.01" value="0.1" oninput="Sound.setVolume('music', this.value)">
+                    <hr><br>
+                    <center><span>SFX</span>&nbsp;&nbsp;<span id="vol-disp-sfx">50%</span></center> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('sfx', this.value)">
+                    <hr><br>
+                    <center><span>Engine</span>&nbsp;&nbsp;<span id="vol-disp-engine">50%</span></center> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)">
                 </div>
             </div>
-
+            <hr><br>
             <div class="form-group">
                 <label>Graphics Settings</label>
-                <div style="font-size: var(--fs-sm); display:grid; grid-template-columns: 1fr 3fr 1fr; gap:10px; align-items:center;">
-                    <span>Graphics Quality</span> <input type="range" id="graphicsQuality" min="1" max="3" step="1" value="1" oninput="Game.setGraphicsQuality(this.value)">
+                <div style="font-size: var(--fs-sm);">
+                    <center><span>Graphics Quality</span>&nbsp;&nbsp;<span id="gfx-disp"></span></center> <input type="range" id="graphicsQuality" min="1" max="3" step="1" value="1" oninput="Game.setGraphicsQuality(this.value);document.getElementById('gfx-disp').innerHTML=this.value">
                 </div>
             </div>
 
@@ -2505,7 +2508,6 @@ class GameEngine {
         this.roomSeed = seed * 12345;
 
         this.generateMap();
-        Input.init();
         Sound.loadSettings();
 
         // Load stats before connecting
@@ -4491,30 +4493,75 @@ class InputManager {
 
     init() {
         window.addEventListener('keydown', e => {
-            Sound.init();
+            // Initialize Audio context on first interaction if needed
+            if (typeof Sound !== 'undefined' && Sound.init) Sound.init();
 
-            // --- FIX: Ignore game inputs while typing in chat ---
+            // --- 1. CHAT INPUT HANDLING ---
+            // If typing in chat, ignore game commands (except Escape)
             if (document.activeElement === $('chat-input')) {
-                if (e.key === 'Escape') $('chat-input').blur(); // Allow ESC to exit chat
-                return; // Stop processing game keys
-            } else if (document.activeElement === $('c-modal-input')) {
+                if (e.key === 'Escape') {
+                    $('chat-input').blur(); // Exit chat
+                    if (typeof UI !== 'undefined' && UI.toggleChat) UI.toggleChat(false); // Optional: visual close
+                }
+                if (e.key === 'Enter') {
+                    // Optional: You might want to trigger your send function here if not handled by keyup
+                    // sendChatMessage();
+                }
+                return; // STOP: Don't process movement/binds while typing
+            }
+
+            // --- 2. MODAL INPUT HANDLING ---
+            // If typing in a modal (e.g. settings/admin), ignore game commands
+            else if (document.activeElement === $('c-modal-input')) {
+                // FIX: Allow 'Enter' to confirm/submit the modal
+                if (e.key === 'Enter') {
+                    const confirmBtn = document.querySelector('.c-modal-box .btn-confirm') ||
+                                    document.querySelector('.c-modal-btns button:last-child'); // heuristic fallback
+                    if (confirmBtn) confirmBtn.click();
+                    $('c-modal-input').blur();
+                }
                 return;
             }
 
+            // --- 3. KEY BINDING MODE (The Fix) ---
             if (this.bindMode) {
+                // FIX: preventDefault() stops Enter/Space from clicking the focused "Bind" button again
+                e.preventDefault();
+                e.stopPropagation();
+
                 Game.settings.keys[this.bindMode] = e.key;
                 localStorage.setItem('mm_keybinds', JSON.stringify(Game.settings.keys));
+
                 UI.showToast(`Bound ${this.bindMode.toUpperCase()} to ${e.key}`, "success");
+
+                // Reset state
                 this.bindMode = null;
                 UI.refreshKeybindLabels();
+
+                // Remove focus from the button so pressing Space/Enter later doesn't re-trigger it
+                if (document.activeElement) document.activeElement.blur();
+
                 return;
             }
+
+            // --- 4. GAMEPLAY INPUTS ---
             this.keys[e.key] = true;
+
+            // Chat Toggle Logic (e.g. Pressing Enter to open chat)
+            // We check if the key matches the chat bind AND we aren't already in the input
             if (e.key === Game.settings.keys.chat && document.activeElement !== $('chat-input')) {
-                e.preventDefault();
+                e.preventDefault(); // Stop the key from typing into the input immediately
                 $('chat-input').focus();
+
+                // Optional: Reset the key state so the game doesn't think "Enter" is held down
+                this.keys[e.key] = false;
             }
-            if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat) e.preventDefault();
+
+            // Prevent default browser actions for bound game keys (e.g. Space scrolling down)
+            // We exclude 'chat' here because we handled it above, and sometimes you want default behavior for non-game keys
+            if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat) {
+                e.preventDefault();
+            }
         });
         window.addEventListener('keyup', e => this.keys[e.key] = false);
 
@@ -4598,8 +4645,10 @@ class UIManager {
         ];
         this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
         if (localStorage.getItem('mm_cloudsync_setting')===true) $('startBtn').disabled = true;
+        setTimeout(function(){document.getElementById('gfx-disp').innerHTML=document.getElementById('graphicsQuality').value},2000);
         // Init server list on load
         setTimeout(() => this.refreshServerList(), 500);
+        Input.init();
     }
 
     rndMsg(type) { const arr = MSGS[type]; return arr[Math.floor(Math.random() * arr.length)]; }
