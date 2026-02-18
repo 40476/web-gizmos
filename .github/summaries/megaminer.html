@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Browser-based multiplayer mining game with procedurally generated maps.</li>
-    <li>Real-time sync via MQTT broker for multiplayer gameplay.</li>
-    <li>Progressive upgrades including drill tiers, cargo capacity, and special items like TNT and teleporters.</li>
-    <li>Save system with local IndexedDB storage and optional cloud sync via Puter.</li>
-    <li>Mobile controls with touch support and responsive UI layouts.</li>
+    <li>Web-based multiplayer mining game with real-time physics and inventory management</li>
+    <li>Procedural map generation with ore discovery and building mechanics</li>
+    <li>Cross-platform support with mobile controls and touch gestures</li>
+    <li>Save system with cloud sync and local storage capabilities</li>
+    <li>Admin tools for server management and player moderation</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, ... }</code>
-    <code>class GameEngine { update() { /* physics, mining, movement */ } draw() { /* rendering */ } }</code>
+    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } };</code>
+    <code>const NetworkManager = class { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } };</code>
   </pre>
 
-  <p>Mega Miner Online is a multiplayer mining adventure where players dig deep to extract ores, upgrade equipment, and build structures. The game features real-time multiplayer via MQTT, procedural world generation, and persistent saves with cloud sync options. Players can craft items, teleport between stations, and compete on leaderboards while exploring an infinite underground world.</p>
+  <p>Mega Miner Online is a browser-based multiplayer mining game featuring real-time physics, procedural world generation, and cross-platform support. Players can mine resources, build structures, and trade with others while managing fuel, temperature, and inventory. The game includes a comprehensive save system with cloud synchronization, admin tools for server management, and mobile-optimized controls. Built with HTML5 Canvas, MQTT for networking, and IndexedDB for local storage.</p>
 </section>
