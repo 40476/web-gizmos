@@ -40,7 +40,7 @@
 
             /* --- FONT SCALING SYSTEM --- */
             /* Change this value to scale ALL text up (e.g. 1.2) or down (e.g. 0.8) */
-            --ui-scale: 1.0;
+            --ui-scale: 1;
 
             /* Individual Sizes (Calculated based on scale) */
             --fs-micro:  calc(10px * var(--ui-scale));  /* Inventory counts, small labels */
@@ -56,7 +56,11 @@
             --fs-title:  calc(32px * var(--ui-scale));  /* Disconnect messages */
             --fs-hero:   calc(70px * var(--ui-scale));  /* Start Screen Title */
 
+            /* --- ADVANCED STYLING --- */
+            --bevel-size: calc(5px * var(--ui-scale));
+            --clip-path-style: polygon(var(--bevel-size) 0%, calc(100% - var(--bevel-size)) 0%, 100% var(--bevel-size), 100% calc(100% - var(--bevel-size)), calc(100% - var(--bevel-size)) 100%, var(--bevel-size) 100%, 0% calc(100% - var(--bevel-size)), 0% var(--bevel-size));
         }
+
         @media(max-width:700px){
             :root {
                 --ui-scale: 1;
@@ -126,7 +130,7 @@
                 background: rgba(20, 20, 20, 0.8);
                 border: 1px solid #444;
                 border-radius: 16px;
-                corner-shape: bevel;
+                clip-path: var(--clip-path-style);
                 padding: 15px;
                 margin-bottom: 5px;
                 backdrop-filter: blur(4px);
@@ -161,7 +165,7 @@
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 8px;
-            corner-shape: bevel;
+            clip-path: var(--clip-path-style);
             color: #aaa;
             font-size: var(--fs-icon); /* UPDATED */
             display: flex;
@@ -186,7 +190,7 @@
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            corner-shape: bevel;
+            clip-path: var(--clip-path-style);
             color: white;
             font-weight: bold;
             font-size: var(--fs-sm); /* UPDATED */
@@ -278,7 +282,7 @@
         }
 
         /* Modals */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; corner-shape: bevel; width: 95%; max-width: 600px; max-height: 90dvh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); padding: 20px; border: 2px solid var(--accent); border-radius: 8px; clip-path: var(--clip-path-style); width: 95%; max-width: 600px; max-height: 90dvh; overflow-y: auto; pointer-events: auto; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch; }
         .modal.active { display: block; }
         .modal h2 { margin-top: 0; color: var(--highlight); border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-size: var(--fs-lg); }
 
@@ -353,7 +357,7 @@
             border-bottom: 1px solid #333; padding: 2px 0;
         }
 
-        .btn { background: var(--accent); font-family: "Geo", sans-serif; color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; corner-shape: bevel; font-size: var(--fs-base); }
+        .btn { background: var(--accent); font-family: "Geo", sans-serif; color: white; border: none; padding: 10px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 5px; font-weight: bold; border-radius: 4px; clip-path: var(--clip-path-style); font-size: var(--fs-base); }
         .btn:hover { background: #3498db; filter: brightness(1.2); }
         .btn:disabled { background: #555; cursor: not-allowed; filter: none; }
         .btn-small {
@@ -431,7 +435,7 @@
             color: var(--highlight); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--highlight);
         }
 
-        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; corner-shape: bevel; border:1px solid #444; max-width: 75dvw; max-height: 90dvh; overflow-y:auto; -webkit-overflow-scrolling: touch; }
+        .start-container { display:flex; gap:20px; background:rgba(20, 25, 40, 0.95); padding:20px; border-radius:10px; clip-path: var(--clip-path-style); border:1px solid #444; max-width: 75dvw; max-height: 90dvh; overflow-y:auto; -webkit-overflow-scrolling: touch; }
         .start-panel { width:300px; flex-shrink: 0; }
         .server-panel { width:300px; border-left:1px solid #444; padding-left:20px; display:flex; flex-direction:column; flex-shrink: 0; }
 
@@ -474,7 +478,7 @@
 
         /* --- CUSTOM MODAL --- */
         #c-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .c-modal-box { background: rgba(20, 25, 40, 0.98); border: 1px solid var(--accent); padding: 20px; width: 90%; max-width: 400px; border-radius: 8px; corner-shape: bevel; box-shadow: 0 0 30px rgba(0,0,0,0.8); text-align: center; animation: slideIn 0.2s ease; }
+        .c-modal-box { background: rgba(20, 25, 40, 0.98); border: 1px solid var(--accent); padding: 20px; width: 90%; max-width: 400px; border-radius: 8px; clip-path: var(--clip-path-style); box-shadow: 0 0 30px rgba(0,0,0,0.8); text-align: center; animation: slideIn 0.2s ease; }
         .c-modal-box h3 { color: var(--highlight); margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px; font-size: var(--fs-lg); }
         .c-modal-box p {
             color: #ddd; margin-bottom: 15px; line-height: 1.4;
@@ -609,7 +613,7 @@
 
         <!-- Chat -->
         <div id="chat-container" onclick="UI.openChat()">
-            <button id="chat-close-btn" onclick="event.stopPropagation(); UI.closeChat()" style="display:none; position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; corner-shape: bevel; border:none; background:#c0392b; color:white; font-weight:bold; cursor:pointer; z-index:100; var(--fs-tiny);">X</button>
+            <button id="chat-close-btn" onclick="event.stopPropagation(); UI.closeChat()" style="display:none; position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; clip-path: var(--clip-path-style); border:none; background:#c0392b; color:white; font-weight:bold; cursor:pointer; z-index:100; var(--fs-tiny);">X</button>
             <div id="chat-messages"></div>
             <input type="text" id="chat-input" placeholder="Press CHAT key to type...">
         </div>
