@@ -1,17 +1,14 @@
 <section>
   <ul>
-    <li>Mega Miner NG is a multiplayer mining game with real-time networked gameplay.</li>
-    <li>Features procedurally generated worlds with mining, building, and resource management.</li>
-    <li>Includes a shop system for upgrades, a warp network for fast travel, and multiplayer chat.</li>
-    <li>Supports both desktop and mobile controls with customizable key bindings.</li>
-    <li>Implements cloud save synchronization and local IndexedDB storage for game progress.</li>
+    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps and real-time collaboration.</li>
+    <li>Features include inventory management, shop upgrades, teleportation network, and admin controls for host management.</li>
+    <li>Game supports both desktop and mobile controls with responsive UI, sound effects, and cloud save synchronization.</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.EMPTY]: { name: "Empty", value : -67 },</code>
-    <code>const pseudoRandom = (x, y) => { return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1; };</code>
-    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, x: 0, y: 0, fuel: 100, maxFuel: 100, hull: 100, maxHull: 100, cargo: 0, maxCargo: 50, money: 0, temp: 0, maxTemp: 100, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 3, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; } }</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 3, value: 500, tier: 3, trashExclude: true } };</code>
+    <code>const MSGS = { join: ["spawned in.", "slid into the server.", "has entered the chat."] };</code>
   </pre>
 
-  <p>Mega Miner NG is a multiplayer mining game featuring procedurally generated worlds where players can mine resources, build structures, and manage upgrades. The game supports real-time multiplayer through MQTT networking, includes a shop system for purchasing upgrades and supplies, and offers both desktop and mobile controls. Players can discover teleporters for fast travel, trade with others, and sync their progress across devices using cloud storage. The game features a dynamic day-night cycle, heat management system, and comprehensive save functionality with both local IndexedDB and cloud synchronization options.</p>
+  <p>Mega Miner NG is a multiplayer mining game featuring procedurally generated maps where players collaborate to mine resources, upgrade equipment, and build structures. The game includes inventory management, a shop system for upgrades, teleportation networks, and admin controls for host management. It supports both desktop and mobile controls with responsive UI, sound effects, and cloud save synchronization capabilities.</p>
 </section>
