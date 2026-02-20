@@ -1751,7 +1751,7 @@
             <div class="form-group">
                 <label>Graphics Settings</label>
                 <div style="font-size: var(--fs-sm);">
-                    <center><span>Graphics Quality</span>&nbsp;&nbsp;<span id="gfx-disp"></span></center> <input type="range" id="graphicsQuality" min="1" max="3" step="1" value="1" oninput="Game.setGraphicsQuality(this.value);document.getElementById('gfx-disp').innerHTML=this.value">
+                    <center><span>Graphics Quality</span>&nbsp;&nbsp;<span id="gfx-disp"></span></center> <input type="range" id="graphicsQuality" min="1" max="3" step="1"  oninput="Game.setGraphicsQuality(this.value);document.getElementById('gfx-disp').innerHTML=this.value">
                 </div>
             </div>
 
@@ -2249,9 +2249,10 @@ class SoundManager {
         });
     }
 }
-const Sound = new SoundManager();
 
 // --- GAME LOGIC ---
+
+let lastTime = performance.now();
 
 class GameEngine {
     constructor() {
@@ -2271,7 +2272,8 @@ class GameEngine {
             keys: {
                 up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown',
                 build: 'b', interact: 'e', chat: 'Enter', transfer: 'f'
-            }
+            },
+            graphicsQuality: 2
         };
 
         this.localPlayer = {
@@ -2284,7 +2286,7 @@ class GameEngine {
             money: 0,
             temp: 0, maxTemp: 100,
             rotation: 0, isDrilling: false,
-            drillTier: 0, heatResist: 0, xrayRange: 6,
+            drillTier: 0, heatResist: 0, xrayRange: 3,
             inventory: {},
             selectedBlock: TILE_TYPES.CASING,
             stats: { blocksMined: {}, totalMined: 0, startTime: now() },
@@ -2503,7 +2505,10 @@ class GameEngine {
         this.settings.room = ($('start-room').value || 'public').trim();
         this.settings.color = $('start-color').value;
         this.settings.broker = $('setting-broker').value;
-        this.settings.graphicsQuality = $('graphicsQuality').value || 3;
+
+        if (this.settings.graphicsQuality === undefined) {
+            this.settings.graphicsQuality = parseInt(localStorage.getItem('mm_graphics_quality')) || 2;
+        }
         // Reset admin on init
         this.isAdmin = false;
 
@@ -2536,7 +2541,7 @@ class GameEngine {
             await SaveSystem.smartSyncAll(true, true);
             this.lastAutosave = now();
         } else {
-            this.logConnection(`Skipping sync task (${puter.whoami ? "auto-sync off" : "not signed in"}}`);
+            this.logConnection(`Skipping sync task (${puter.whoami ? "auto-sync off" : "not signed in"})`);
         }
 
         this.resize();
@@ -2697,7 +2702,10 @@ class GameEngine {
         if (!this.running) return;
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
-
+        const currentTime = performance.now();
+        const dt = (currentTime - lastTime) / 16.66; 
+        lastTime = currentTime;
+        
         // --- 1. DETERMINE DESTINATION ---
         let destGridX = (p.nextGridX !== undefined) ? p.nextGridX : p.gridX;
         let destGridY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
@@ -2915,8 +2923,11 @@ class GameEngine {
         p.fuel = clamp(p.fuel, 0, p.maxFuel); p.hull = clamp(p.hull, 0, p.maxHull);
         if (p.hull <= 0) this.respawn();
 
-        this.camera.x += (p.x - this.camera.x) * 0.1;
-        this.camera.y += (p.y - this.camera.y) * 0.1;
+        const cameraTightness = 0.06; // 1 = instant, 0 = no movement
+        const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
+        
+        this.camera.x += (p.x - this.camera.x) * cameraLerp;
+        this.camera.y += (p.y - this.camera.y) * cameraLerp;
 
         if (now() % 10000 < 20) this.saveLocalProgress();
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin && SaveSystem.currentSaveId) {
@@ -5886,6 +5897,7 @@ function parseCSSCalc(calcString) {
 function getFontSize(varName) { return (parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
 
 // --- INSTANTIATION ---
+const Sound = new SoundManager();
 const Game = new GameEngine();
 const Input = new InputManager();
 const Network = new NetworkManager();
