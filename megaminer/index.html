@@ -1907,8 +1907,8 @@ const TILE_TYPES = {
 
 const TILE_PROPS = {
     [TILE_TYPES.EMPTY]: { name: "Empty", value : -67 },
-    [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 0.5, value: 0, tier: 0 },
-    [TILE_TYPES.GRASS]: { name: "Grass", color: '#388e3c', hardness: 0.5, value: 0, tier: 0 },
+    [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 0.7, value: 0, tier: 0 },
+    [TILE_TYPES.GRASS]: { name: "Grass", color: '#388e3c', hardness: 0.7, value: 0, tier: 0 },
     [TILE_TYPES.STONE]: { name: "Stone", color: '#7f8c8d', hardness: 1, value: 0, tier: 1 },
     [TILE_TYPES.HARD_STONE]: { name: "Dense Stone", color: '#525a5b', hardness: 2, value: 0, tier: 2 },
     [TILE_TYPES.DEEP_SLATE]: { name: "Deep Slate", color: '#2c3e50', hardness: 3, value: 0, tier: 3 },
@@ -2726,9 +2726,8 @@ class GameEngine {
 
         // --- 3. CALCULATE SPEED (With Drill Tier) ---
         // Formula: (Base Speed * Tier Multiplier) / Block Hardness
-        // Example: Tier 0 (1.0x) vs Hardness 2 = 50% Speed
-        // Example: Tier 4 (3.0x) vs Hardness 2 = 150% Speed
-        let tierMultiplier = 1 + (p.drillTier * 0.5);
+        // Example: Tier 0 = 1x speed, Tier 1 = 1.3x, Tier 2 = 1.6x, etc.
+        let tierMultiplier = 1 + (p.drillTier * 0.3); // Each tier adds 30% speed
         let drillSpeed = (CONSTANTS.SPEED_DRILL * tierMultiplier) / currentHardness;
 
         // Determine final movement speed
@@ -3830,17 +3829,17 @@ class GameEngine {
     
     // The total horizontal space one gauge occupies
     const gaugeStep = (gaugeR * 2) + gap; 
-
+    const gaugeStyle = 'classic';
     if (this.isMobile) {
         // MOBILE: Center all 4 gauges in a row at the bottom
         const yPos = h - (gaugeR * 1.5);
         const totalWidth = (gaugeStep * 4) - gap;
         const startX = (w - totalWidth) / 2 + gaugeR;
 
-        this.drawGauge(startX, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400");
-        this.drawGauge(startX + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b");
-        this.drawGauge(startX + (gaugeStep * 2), yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60");
-        this.drawGauge(startX + (gaugeStep * 3), yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c");
+        this.drawGauge(startX, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400", gaugeStyle);
+        this.drawGauge(startX + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b", gaugeStyle);
+        this.drawGauge(startX + (gaugeStep * 2), yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60", gaugeStyle);
+        this.drawGauge(startX + (gaugeStep * 3), yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", gaugeStyle);
 
         // Money top center
         this.ctx.fillStyle = "#f1c40f"; 
@@ -3853,12 +3852,12 @@ class GameEngine {
         const yPos = h - gaugeR - padding;
         
         // Left side gauges
-        this.drawGauge(padding + gaugeR, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400");
-        this.drawGauge(padding + gaugeR + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b");
+        this.drawGauge(padding + gaugeR, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400", gaugeStyle);
+        this.drawGauge(padding + gaugeR + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b", gaugeStyle);
 
         // Right side gauges
-        this.drawGauge(w - padding - gaugeR, yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60");
-        this.drawGauge(w - padding - gaugeR - gaugeStep, yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c");
+        this.drawGauge(w - padding - gaugeR, yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60", gaugeStyle);
+        this.drawGauge(w - padding - gaugeR - gaugeStep, yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", gaugeStyle);
 
         // Money bottom center
         this.ctx.fillStyle = "#f1c40f"; 
@@ -3868,19 +3867,165 @@ class GameEngine {
     }
 }
 
-    drawGauge(x, y, r, val, max, label, color) { /* Same as before */
-        const ctx = this.ctx;
-        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = "#444"; ctx.stroke();
-        const start = Math.PI * 0.7; const end = Math.PI * 2.3;
-        const pct = clamp(val / max, 0, 1);
-        const current = start + (end - start) * pct;
-        ctx.beginPath(); ctx.arc(x, y, r - 5, start, current); ctx.strokeStyle = color; ctx.lineWidth = 6; ctx.stroke();
-        ctx.fillStyle = "#fff"; ctx.font = "bold " + getFontSize('--fs-md') + " Geo"; ctx.textAlign = "center";
-        ctx.fillText(label, x, y + (15 * window.devicePixelRatio)); 
-        ctx.fillText(Math.floor(val), x, y -(5 * window.devicePixelRatio));
+    drawGauge(x, y, r, val, max, label, color, style = "classic") {
+    const ctx = this.ctx;
+    const dpr = window.devicePixelRatio || 1;
+    const pct = clamp(val / max, 0, 1);
+    
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    switch (style) {
+        case "analog":
+            // --- STYLE: ANALOG (Fixed Needle & Labels) ---
+            const pivotY = y + (r * 0.3); // Lower the pivot point
+            const arcR = r * 0.9;
+            const startAngle = Math.PI * 0.85;
+            const endAngle = Math.PI * 2.15;
+            
+            // 1. Background Arch
+            ctx.beginPath();
+            ctx.arc(x, pivotY, arcR, startAngle, endAngle);
+            ctx.strokeStyle = "rgba(0,0,0,0.5)";
+            ctx.lineWidth = 10 * dpr;
+            ctx.stroke();
+
+            // 2. Value Arch
+            ctx.beginPath();
+            ctx.arc(x, pivotY, arcR, startAngle, startAngle + (endAngle - startAngle) * pct);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 6 * dpr;
+            ctx.stroke();
+
+            // 3. The Needle
+            const needleAngle = startAngle + (endAngle - startAngle) * pct;
+            ctx.save();
+            ctx.translate(x, pivotY);
+            ctx.rotate(needleAngle);
+            ctx.beginPath();
+            ctx.moveTo(-3 * dpr, 0);
+            ctx.lineTo(0, -arcR + (5 * dpr)); // Pointing outward to the arc
+            ctx.lineTo(3 * dpr, 0);
+            ctx.fillStyle = "#fff";
+            ctx.fill();
+            ctx.restore();
+
+            // 4. Labels (Moved to avoid needle overlap)
+            ctx.fillStyle = "#fff";
+            ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
+            ctx.fillText(label, x, pivotY + (20 * dpr)); // Below pivot
+            ctx.font = `bold ${getFontSize('--fs-md')} Geo`;
+            ctx.fillText(Math.floor(val), x, pivotY - (r * 0.4)); // Inside arch
+            break;
+
+        case "pill":
+            // --- STYLE: PILL (Fixed Clipping & Label Visibility) ---
+            const barW = r * 0.7;
+            const barH = r * 2.2;
+            const pillX = x - barW / 2;
+            const pillY = y - barH / 2;
+
+            // 1. Draw Capsule Shape
+            ctx.beginPath();
+            this.drawRoundedRect(ctx, pillX, pillY, barW, barH, barW / 2);
+            
+            // 2. Fill Background
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fill();
+
+            // 3. Progress Fill (Using Save/Clip/Restore block)
+            ctx.save(); 
+            ctx.clip(); // Mask everything to the capsule
+            ctx.fillStyle = color;
+            const fillH = barH * pct;
+            ctx.fillRect(pillX, pillY + barH - fillH, barW, fillH);
+            ctx.restore(); // Clipping removed here
+
+            // 4. Border (Drawn after restore so it's not clipped)
+            ctx.strokeStyle = "rgba(255,255,255,0.3)";
+            ctx.lineWidth = 1.5 * dpr;
+            ctx.stroke();
+
+            // 5. Labels (Drawn outside clipping to ensure visibility)
+            ctx.fillStyle = "#fff";
+            ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
+            ctx.fillText(label, x, pillY - (12 * dpr)); // Moved above the pill
+            
+            if (Math.floor(val) !== 0) {
+                ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
+                // Value stays inside the pill
+                const valY = clamp(pillY + barH - fillH / 2, pillY + 10, pillY + barH - 10);
+                ctx.fillText(Math.floor(val), x, valY);
+            }
+            break;
+
+             case "modern":
+                // --- STYLE: MODERN (Clean segmented ring) ---
+                // Background track
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+                ctx.lineWidth = 8 * dpr;
+                ctx.stroke();
+
+                // Progress glow
+                ctx.shadowBlur = 10 * dpr;
+                ctx.shadowColor = color;
+                ctx.beginPath();
+                ctx.arc(x, y, r, -Math.PI / 2, (-Math.PI / 2) + (Math.PI * 2 * pct));
+                ctx.strokeStyle = color;
+                ctx.lineCap = "round";
+                ctx.stroke();
+                
+                // Text
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#fff";
+                ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
+                ctx.fillText(label, x, y - (r + 10)); // Label above
+                ctx.font = `bold ${getFontSize('--fs-md')} Geo`;
+                ctx.fillText(Math.floor(val), x, y + (6 * dpr));
+                break;
+            case "classic":
+            default:
+                // --- STYLE: CLASSIC (Original) ---
+                ctx.beginPath(); 
+                ctx.arc(x, y, r, 0, Math.PI*2); 
+                ctx.fillStyle = "rgba(0,0,0,0.7)"; 
+                ctx.fill();
+                ctx.lineWidth = 3; 
+                ctx.strokeStyle = "#444"; 
+                ctx.stroke();
+
+                const start = Math.PI * 0.7; 
+                const end = Math.PI * 2.3;
+                const current = start + (end - start) * pct;
+
+                ctx.beginPath(); 
+                ctx.arc(x, y, r - 5, start, current); 
+                ctx.strokeStyle = color; 
+                ctx.lineWidth = 6; 
+                ctx.stroke();
+
+                ctx.fillStyle = "#fff"; 
+                ctx.font = "bold " + getFontSize('--fs-md') + " Geo"; 
+                ctx.textAlign = "center";
+                ctx.fillText(label, x, y + (15 * dpr)); 
+                ctx.fillText(Math.floor(val), x, y - (5 * dpr));
+                break;
+        }
+        ctx.restore();
     }
 
+    // Ensure your drawRoundedRect is present:
+    drawRoundedRect(ctx, x, y, w, h, r) {
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
     loop() {
         this.update();
         this.draw();
