@@ -147,29 +147,29 @@
     <input id="search" type="text" placeholder="Search applications..." />
 
     
-      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
-    
-      <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
-    
-      <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
+      <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
     
       <a class="nav-item" href="pic2html/index.html" data-name="pic2html">pic2html</a>
     
-      <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
-    
-      <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
-    
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-    
       <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
-    
-      <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
-    
-      <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
     
       <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
     
       <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
+    
+      <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
+    
+      <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
+    
+      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
+    
+      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
+    
+      <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
+    
+      <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
+    
+      <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
     
@@ -181,62 +181,22 @@
     <h1>Applications Overview</h1>
 
     
-      <section class="app-section" data-name="pixelreducer">
-        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
-        <h2>pixelreducer</h2>
+      <section class="app-section" data-name="pcb">
+        <a class="app-link" href="pcb/index.html">Open pcb</a>
+        <h2>pcb</h2>
         <section>
   <ul>
-    <li>Degrades resolution linearly over time with user-defined final scale</li>
-    <li>Applies audio degradation via low-pass filtering and bitcrushing for videos</li>
-    <li>Outputs GIFs for images and WebM videos for clips with preview/download</li>
+    <li>Procedurally generates PCB layouts with logic 튩ips, capacitors, LEDs, and seven-segment displays.</li>
+    <li>Simulates signal propagation thr✓ugh traces with adjustable speed and neon glow effects.</li>
+    <li>Features interactive components like switches and a settings panel for dynamic regeneration.</li>
   </ul>
 
   <pre>
-    <code>bits = 16 - Math.floor(15 * tNorm * crushAmount);</code>
-    <code>ctx.drawImage(tmp, 0, 0, w, h, 0, 0, width, height);</code>
+    <code>pcb = new Generator(params.seed, gw, gh, params.density, params.force, params.fanout);</code>
+    <code>ctx.shadowBlur = (c.active的开发 params.glow)礦 15 : 0;</code>
   </pre>
 
-  <p>The Go Go Gadget Pixel Reducer processes images and videos through controlled degradation sequences. For videos, it dynamically reduces resolution while applying audio filtering and bit-depth reduction during playback. Users can export GIF animations from images or degraded WebM videos with custom quality settings.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="voxelracing">
-        <a class="app-link" href="voxelracing/index.html">Open voxelracing</a>
-        <h2>voxelracing</h2>
-        <section>
-  <ul>
-    <li>Three.js 3D racing game with MQTT multiplayer networking</li>
-    <li>Procedural terrain generation with noise-based height maps</li>
-    <li>Real-time chat, audio soundboard, and vehicle physics</li>
-    <li>IndexedDB for persistent user settings and game state</li>
-    <li>Day/night cycle, particle effects, and multiple camera modes</li>
-  </ul>
-
-  <pre>
-    <code>class TerrainSystem { getHeight(x, z) { return noise * 20 + noise * 5 + noise * 60; } }</code>
-    <code>class Car { updatePhysics(dt, input) { this.speed += throttle * accel * dt; this.rot.y += turnSpeed * dt; } }</code>
-  </pre>
-
-  <p>Infinity Racer is a browser-based 3D racing game built with Three.js and MQTT networking. It features procedurally generated terrain, real-time multiplayer racing, and a full audio soundboard system. Players can customize their vehicles, chat with others, and race across dynamically generated landscapes with day/night cycles and physics-based vehicle handling.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="racing">
-        <a class="app-link" href="racing/index.html">Open racing</a>
-        <h2>racing</h2>
-        <section>
-  <ul>
-    <li>Top-down multiplayer racing game with customizable vehicles and real-time physics</li>
-    <li>MQTT-based networking using brokers like HiveMQ for synchronized gameplay</li>
-    <li>Integrated track editor with terrain generation and multiplayer map sharing</li>
-  </ul>
-
-  <pre>
-    <code>function gameLoop(timestamp) {</code>
-    <code>mqttClient.on('message', (topic, message) => {</code>
-  </pre>
-
-  <p>DRiFT.js is a browser-based racing game featuring synchronized multiplayer gameplay and track editing. Players can customize their cars, compete in real-time races, and collaboratively build tracks using different terrain types. The game includes mobile controls, leaderboards, chat functionality, and physics adjustments controlled by room hosts.</p>
+  <p>This application generates interactive circuit board simulations with runtime logic simulation. Users can click components like switches to trigger signals and adjust parameters through a settings panel. The visualization includes configurable effects like trace glow and CRT scanlines.</p>
 </section>
       </section>
     
@@ -259,63 +219,6 @@
 </section>
       </section>
     
-      <section class="app-section" data-name="microviz">
-        <a class="app-link" href="microviz/index.html">Open microviz</a>
-        <h2>microviz</h2>
-        <section>
-  <ul>
-    <li>Implements customizable audio visualizations using canvas rendering and Web Audio API</li>
-    <li>Supports multiple audio sources including file uploads, microphone input, and WebSocket streams</li>
-    <li>Provides master controls (file input, play/pause, visualizer selection) and visualizer-specific settings</li>
-  </ul>
-
-  <pre>
-    <code>const visualizers = { bars: { draw: ctx => ctx.fillRect(...) } }</code>
-    <code>analyser.getByteFrequencyData(audioData);</code>
-  </pre>
-
-  <p>This application creates interactive audio visualizations with customizable visual effects. Users can select different visualizer presets, adjust sensitivity parameters, and choose audio sources including uploaded files, microphone input, or WebSocket streams. The interface features real-time frequency analysis visualization on dual canvas elements with metadata display functionality.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="asl">
-        <a class="app-link" href="asl/index.html">Open asl</a>
-        <h2>asl</h2>
-        <section>
-  <ul>
-    <li>ASL sign language video generator interface</li>
-    <li>Text input with autocomplete suggestions</li>
-    <li>Video element for sign sequence playback</li>
-  </ul>
-
-  <pre>
-    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
-    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
-  </pre>
-
-  <p>This HTML creates a web interface for converting text input into ASL sign sequences. Users enter text which triggers video playback when clicking the Play button. The layout includes auto-suggestions and a responsive video player for displaying sign language demonstrations.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        <section>
-  <ul>
-    <li>Mega Miner Online is a multiplayer mining game with procedurally generated maps and real-time player interaction.</li>
-    <li>Features include vehicle customization, resource mining, building structures, trading, and a shop system for upgrades.</li>
-    <li>Supports both desktop and mobile controls, with admin tools for server management and cloud save functionality.</li>
-  </ul>
-
-  <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 0.5, value: 0, tier: 0 } };</code>
-    <code>const GameEngine = class { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, inventory: {} }; } };</code>
-  </pre>
-
-  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated underground worlds, mine resources, build structures, and trade with others. The game features vehicle customization, a shop system for upgrades, and supports both desktop and mobile controls. Admins can manage servers, while cloud saves enable cross-device gameplay. Players can discover teleporters, craft items, and engage in real-time interactions with others in shared mining environments.</p>
-</section>
-      </section>
-    
       <section class="app-section" data-name="matrix">
         <a class="app-link" href="matrix/index.html">Open matrix</a>
         <h2>matrix</h2>
@@ -332,44 +235,6 @@
   </pre>
 
   <p>This canvas-based application renders customizable Matrix-inspired character rain effects. Users can modify visual parameters through URL query options like text, speed, and color schemes. The animation pause Menus when tab visibility changes to conserve system resources.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="animeboydownloader">
-        <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
-        <h2>animeboydownloader</h2>
-        <section>
-  <ul>
-    <li>Fetches random anime boy images from Nekos API with safe/suggestive rating filters</li>
-    <li>Displays image metadata including ID, tags, source link, and color palette swatches</li>
-    <li>Automatically loads first image on startup and handles API errors gracefully</li>
-  </ul>
-
-  <pre>
-    <code>const response = await fetchdledllo buy ");</code>
-    <code>const image = dataar1alehasta dites();</code>
-  </pre>
-  
-  <p>This web application retrieves anime boy images from the Nekos API with specific content restrictions. It displays each image with associated metadata and color palette in a styled card layout. Users can fetch new images via a button while error handling manages failed API requests.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="pcb">
-        <a class="app-link" href="pcb/index.html">Open pcb</a>
-        <h2>pcb</h2>
-        <section>
-  <ul>
-    <li>Procedurally generates PCB layouts with logic 튩ips, capacitors, LEDs, and seven-segment displays.</li>
-    <li>Simulates signal propagation thr✓ugh traces with adjustable speed and neon glow effects.</li>
-    <li>Features interactive components like switches and a settings panel for dynamic regeneration.</li>
-  </ul>
-
-  <pre>
-    <code>pcb = new Generator(params.seed, gw, gh, params.density, params.force, params.fanout);</code>
-    <code>ctx.shadowBlur = (c.active的开发 params.glow)礦 15 : 0;</code>
-  </pre>
-
-  <p>This application generates interactive circuit board simulations with runtime logic simulation. Users can click components like switches to trigger signals and adjust parameters through a settings panel. The visualization includes configurable effects like trace glow and CRT scanlines.</p>
 </section>
       </section>
     
@@ -408,6 +273,141 @@
   </pre>
 
   <p>This application creates customizable vector patterns using a seed-based pseudo-random generator. Parameters control dimensions, pattern complexity, color schemes, and texture overlays. Outputs maintain deterministic reproducibility across sessions and support SVG/PNG export.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="voxelracing">
+        <a class="app-link" href="voxelracing/index.html">Open voxelracing</a>
+        <h2>voxelracing</h2>
+        <section>
+  <ul>
+    <li>Three.js 3D racing game with MQTT multiplayer networking</li>
+    <li>Procedural terrain generation with noise-based height maps</li>
+    <li>Real-time chat, audio soundboard, and vehicle physics</li>
+    <li>IndexedDB for persistent user settings and game state</li>
+    <li>Day/night cycle, particle effects, and multiple camera modes</li>
+  </ul>
+
+  <pre>
+    <code>class TerrainSystem { getHeight(x, z) { return noise * 20 + noise * 5 + noise * 60; } }</code>
+    <code>class Car { updatePhysics(dt, input) { this.speed += throttle * accel * dt; this.rot.y += turnSpeed * dt; } }</code>
+  </pre>
+
+  <p>Infinity Racer is a browser-based 3D racing game built with Three.js and MQTT networking. It features procedurally generated terrain, real-time multiplayer racing, and a full audio soundboard system. Players can customize their vehicles, chat with others, and race across dynamically generated landscapes with day/night cycles and physics-based vehicle handling.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="asl">
+        <a class="app-link" href="asl/index.html">Open asl</a>
+        <h2>asl</h2>
+        <section>
+  <ul>
+    <li>ASL sign language video generator interface</li>
+    <li>Text input with autocomplete suggestions</li>
+    <li>Video element for sign sequence playback</li>
+  </ul>
+
+  <pre>
+    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
+    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
+  </pre>
+
+  <p>This HTML creates a web interface for converting text input into ASL sign sequences. Users enter text which triggers video playback when clicking the Play button. The layout includes auto-suggestions and a responsive video player for displaying sign language demonstrations.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="pixelreducer">
+        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
+        <h2>pixelreducer</h2>
+        <section>
+  <ul>
+    <li>Degrades resolution linearly over time with user-defined final scale</li>
+    <li>Applies audio degradation via low-pass filtering and bitcrushing for videos</li>
+    <li>Outputs GIFs for images and WebM videos for clips with preview/download</li>
+  </ul>
+
+  <pre>
+    <code>bits = 16 - Math.floor(15 * tNorm * crushAmount);</code>
+    <code>ctx.drawImage(tmp, 0, 0, w, h, 0, 0, width, height);</code>
+  </pre>
+
+  <p>The Go Go Gadget Pixel Reducer processes images and videos through controlled degradation sequences. For videos, it dynamically reduces resolution while applying audio filtering and bit-depth reduction during playback. Users can export GIF animations from images or degraded WebM videos with custom quality settings.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
+        <h2>megaminer</h2>
+        <section>
+  <ul>
+    <li>Mega Miner Online is a multiplayer mining game with procedurally generated maps and real-time player interaction.</li>
+    <li>Features include vehicle customization, resource mining, building structures, trading, and a shop system for upgrades.</li>
+    <li>Supports both desktop and mobile controls, with admin tools for server management and cloud save functionality.</li>
+  </ul>
+
+  <pre>
+    <code>const TILE_PROPS = { [TILE_TYPES.DIRT]: { name: "Dirt", color: '#5d4037', hardness: 0.5, value: 0, tier: 0 } };</code>
+    <code>const GameEngine = class { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, inventory: {} }; } };</code>
+  </pre>
+
+  <p>Mega Miner Online is a multiplayer mining game where players explore procedurally generated underground worlds, mine resources, build structures, and trade with others. The game features vehicle customization, a shop system for upgrades, and supports both desktop and mobile controls. Admins can manage servers, while cloud saves enable cross-device gameplay. Players can discover teleporters, craft items, and engage in real-time interactions with others in shared mining environments.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="animeboydownloader">
+        <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
+        <h2>animeboydownloader</h2>
+        <section>
+  <ul>
+    <li>Fetches random anime boy images from Nekos API with safe/suggestive rating filters</li>
+    <li>Displays image metadata including ID, tags, source link, and color palette swatches</li>
+    <li>Automatically loads first image on startup and handles API errors gracefully</li>
+  </ul>
+
+  <pre>
+    <code>const response = await fetchdledllo buy ");</code>
+    <code>const image = dataar1alehasta dites();</code>
+  </pre>
+  
+  <p>This web application retrieves anime boy images from the Nekos API with specific content restrictions. It displays each image with associated metadata and color palette in a styled card layout. Users can fetch new images via a button while error handling manages failed API requests.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="racing">
+        <a class="app-link" href="racing/index.html">Open racing</a>
+        <h2>racing</h2>
+        <section>
+  <ul>
+    <li>Top-down multiplayer racing game with customizable vehicles and real-time physics</li>
+    <li>MQTT-based networking using brokers like HiveMQ for synchronized gameplay</li>
+    <li>Integrated track editor with terrain generation and multiplayer map sharing</li>
+  </ul>
+
+  <pre>
+    <code>function gameLoop(timestamp) {</code>
+    <code>mqttClient.on('message', (topic, message) => {</code>
+  </pre>
+
+  <p>DRiFT.js is a browser-based racing game featuring synchronized multiplayer gameplay and track editing. Players can customize their cars, compete in real-time races, and collaboratively build tracks using different terrain types. The game includes mobile controls, leaderboards, chat functionality, and physics adjustments controlled by room hosts.</p>
+</section>
+      </section>
+    
+      <section class="app-section" data-name="microviz">
+        <a class="app-link" href="microviz/index.html">Open microviz</a>
+        <h2>microviz</h2>
+        <section>
+  <ul>
+    <li>Implements customizable audio visualizations using canvas rendering and Web Audio API</li>
+    <li>Supports multiple audio sources including file uploads, microphone input, and WebSocket streams</li>
+    <li>Provides master controls (file input, play/pause, visualizer selection) and visualizer-specific settings</li>
+  </ul>
+
+  <pre>
+    <code>const visualizers = { bars: { draw: ctx => ctx.fillRect(...) } }</code>
+    <code>analyser.getByteFrequencyData(audioData);</code>
+  </pre>
+
+  <p>This application creates interactive audio visualizations with customizable visual effects. Users can select different visualizer presets, adjust sensitivity parameters, and choose audio sources including uploaded files, microphone input, or WebSocket streams. The interface features real-time frequency analysis visualization on dual canvas elements with metadata display functionality.</p>
 </section>
       </section>
     
