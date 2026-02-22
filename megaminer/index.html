@@ -2250,6 +2250,8 @@ class SoundManager {
     }
 }
 
+const Sound = new SoundManager();
+
 // --- GAME LOGIC ---
 
 let lastTime = performance.now();
@@ -6048,7 +6050,6 @@ function parseCSSCalc(calcString) {
 function getFontSize(varName) { return (parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
 
 // --- INSTANTIATION ---
-const Sound = new SoundManager();
 const Game = new GameEngine();
 const Input = new InputManager();
 const Network = new NetworkManager();
