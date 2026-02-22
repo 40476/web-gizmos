@@ -340,17 +340,17 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps and real-time collaboration.</li>
-    <li>Features include inventory management, shop upgrades, teleportation network, and admin controls for host management.</li>
-    <li>Game supports both desktop and mobile controls with responsive UI, sound effects, and cloud save synchronization.</li>
+    <li>2D multiplayer mining game with real-time physics and procedurally generated terrain.</li>
+    <li>Supports cross-platform play with mobile touch controls and desktop keyboard/mouse input.</li>
+    <li>Features upgrade system, inventory management, shop, and multiplayer chat with MQTT networking.</li>
   </ul>
 
   <pre>
     <code>const TILE_PROPS = { [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 3, value: 500, tier: 3, trashExclude: true } };</code>
-    <code>const MSGS = { join: ["spawned in.", "slid into the server.", "has entered the chat."] };</code>
+    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, MAP_WIDTH: 1000, MAP_HEIGHT: 2000 };</code>
   </pre>
 
-  <p>Mega Miner NG is a multiplayer mining game featuring procedurally generated maps where players collaborate to mine resources, upgrade equipment, and build structures. The game includes inventory management, a shop system for upgrades, teleportation networks, and admin controls for host management. It supports both desktop and mobile controls with responsive UI, sound effects, and cloud save synchronization capabilities.</p>
+  <p>Mega Miner NG is a cross-platform multiplayer mining game featuring procedurally generated terrain, real-time physics, and an upgrade system. Players can mine various ores, build structures, and trade resources while exploring an infinite underground world. The game supports both desktop and mobile controls with MQTT networking for multiplayer functionality.</p>
 </section>
       </section>
     
