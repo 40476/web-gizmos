@@ -2732,7 +2732,7 @@ class GameEngine {
 
         // Determine final movement speed
         let speed = Math.min(p.fuel > 0 ? (p.isDrilling ? drillSpeed : CONSTANTS.SPEED_NORMAL) : 0.3, CONSTANTS.SPEED_NORMAL);
-
+        
         let isMoving = false;
 
         // --- 4. MOVEMENT LOOP ---
@@ -3188,17 +3188,23 @@ class GameEngine {
     respawn() {
         this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
         this.localPlayer.gridY = 4;
+        // So um i accidentally bricked my save a few times
+        // and thats why nextGridY needs to be set,
+        // because otherwise you get stuck in death loop
+        this.localPlayer.nextGridY = 4;
+	    this.localPlayer.depth = 0;
         this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
         this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
         this.localPlayer.hull = this.localPlayer.maxHull;
         this.localPlayer.fuel = this.localPlayer.maxFuel;
         this.localPlayer.cargo = 0;
         this.localPlayer.inventory = {};
-        this.localPlayer.money = Math.floor(this.localPlayer.money * 0.7);
+        this.localPlayer.money = Math.floor(this.localPlayer.money * 0.9);
         Network.broadcastDeath();
         Sound.playChat('death');
         $('heat-overlay').style.opacity = 0;
         UI.updateDashboard();
+        
     }
 
     draw() {
@@ -5359,7 +5365,7 @@ class UIManager {
                     const btn = document.createElement('button');
                     btn.className = 'btn';
                     btn.style.background = '#8e44ad';
-                    btn.innerHTML = `<strong>${t.name}</strong> <span style="float:right; font-size: var(--fs-tiny); opacity:0.8;">${t.y}m</span>`;
+                    btn.innerHTML = `<strong>${t.name}</strong> <span style="float:right; font-size: var(--fs-tiny); opacity:0.8;">${t.y - 4}m</span>`;
                     btn.onclick = () => this.warpTo(t.x, t.y);
                     list.appendChild(btn);
                 } else {
