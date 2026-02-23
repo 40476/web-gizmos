@@ -1,0 +1,14 @@
+<section>
+  <ul>
+    <li>Web-based MIDI sampler using Tone.js and midi-player-js libraries</li>
+    <li>Loads audio files as sampler and MIDI files as playback triggers</li>
+    <li>Features play, pause, restart controls with status updates</li>
+  </ul>
+
+  <pre>
+    <code>const sampler = new Tone.Sampler({ urls: { C4: url } }).toDestination();</code>
+    <code>player = new MidiPlayer.Player((event) =&gt; { if (event.name === 'Note on') sampler.triggerAttackRelease(event.noteName, "4n"); });</code>
+  </pre>
+
+  <p>A MIDI sampler application that maps MIDI note events to audio samples. Users can upload custom audio and MIDI files or load default samples, with real-time playback control through play, pause, and restart buttons. The interface provides visual feedback on loading status and readiness for playback.</p>
+</section>
