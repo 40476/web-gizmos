@@ -3983,7 +3983,7 @@ class GameEngine {
 
     // The total horizontal space one gauge occupies
     const gaugeStep = (gaugeR * 2) + gap;
-    const gaugeStyle = 'classic';
+    const gaugeStyle = this.style || 'classic';
     if (this.isMobile) {
         // MOBILE: Center all 4 gauges in a row at the bottom
         const yPos = h - (gaugeR * 1.5);
@@ -4053,19 +4053,22 @@ class GameEngine {
             ctx.stroke();
 
             // 3. The Needle
+            // Calculate the exact angle where the arc currently ends
             const needleAngle = startAngle + (endAngle - startAngle) * pct;
             ctx.save();
             ctx.translate(x, pivotY);
-            ctx.rotate(needleAngle);
+            // We add Math.PI/2 because your needle geometry (lineTo 0, -arcR)
+            // is drawn pointing "up", but 0 radians in Canvas is "right".
+            ctx.rotate(needleAngle + Math.PI / 2);
             ctx.beginPath();
             ctx.moveTo(-3 * dpr, 0);
-            ctx.lineTo(0, -arcR + (5 * dpr)); // Pointing outward to the arc
+            ctx.lineTo(0, -arcR + (5 * dpr)); // Pointing toward the arc
             ctx.lineTo(3 * dpr, 0);
             ctx.fillStyle = "#fff";
             ctx.fill();
             ctx.restore();
 
-            // 4. Labels (Moved to avoid needle overlap)
+            // 4. Labels
             ctx.fillStyle = "#fff";
             ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
             ctx.fillText(label, x, pivotY + (20 * dpr)); // Below pivot
@@ -4074,7 +4077,7 @@ class GameEngine {
             break;
 
         case "pill":
-            // --- STYLE: PILL (Fixed Clipping & Label Visibility) ---
+            // --- STYLE: PILL ---
             const barW = r * 0.7;
             const barH = r * 2.2;
             const pillX = x - barW / 2;
