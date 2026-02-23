@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -710,20 +709,26 @@
         .form-group {
             margin-bottom: 15px;
         }
-
+        .form-group label.no-flex {
+            display:block !important;
+        }
         .form-group label {
-            display: flex;
+display: flex;
             margin-bottom: 5px;
             font-size: var(--fs-base);
             color: #aaa;
             text-transform: uppercase;
         }
 
+       .form-group input:not([type="range"]), .form-group select {
+            padding: 8px;
+        }
+
+
         .form-group input,
         .form-group select {
             font-family: "Geo", sans-serif;
             width: 100%;
-            padding: 8px;
             background: #222;
             border: 1px solid #444;
             color: white;
@@ -973,6 +978,82 @@
             background: #c0392b;
             border-color: #e74c3c;
             animation: pulse-red 1s infinite;
+        }
+
+
+        input[type="range"] {
+            margin: auto;
+            -webkit-appearance: none;
+            position: relative;
+            overflow: hidden;
+            height: 40px;
+            border:1px solid #aaa;
+            cursor: pointer;
+            border-radius: 0; /* iOS */
+        }
+
+        ::-webkit-slider-runnable-track {
+            background: #ddd;
+        }
+
+        /*
+        * 1. Set to 0 width and remove border for a slider without a thumb
+        * 2. Shadow is negative the full width of the input and has a spread
+        *    of the width of the input.
+        */
+        ::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px; /* 1 */
+            height: 40px;
+            background: #fff;
+            box-shadow: -1000px 0 0 1000px dodgerblue; /* 2 */
+            border: 1px solid #999; /* 1 */
+        }
+
+        ::-moz-range-track {
+            height: 40px;
+            background: #ddd;
+        }
+
+        ::-moz-range-thumb {
+            background: #fff;
+            height: 40px;
+            width: 20px; /* 1 */
+            border: 1px solid #999; /* 1 */
+            border-radius: 0 !important;
+            box-shadow: -1000px 0 0 1000px dodgerblue;
+            box-sizing: border-box;
+        }
+
+        ::-ms-fill-lower {
+            background: dodgerblue;
+        }
+
+        ::-ms-thumb {
+            background: #fff;
+            border: 1px solid #999; /* 1 */
+            height: 40px;
+            width: 20px; /* 1 */
+            box-sizing: border-box;
+        }
+
+        ::-ms-ticks-after {
+            display: none;
+        }
+
+        ::-ms-ticks-before {
+            display: none;
+        }
+
+        ::-ms-track {
+            background: #ddd;
+            color: transparent;
+            height: 40px;
+            border: none;
+        }
+
+        ::-ms-tooltip {
+            display: none;
         }
 
         input[type="checkbox"]{
@@ -1301,6 +1382,19 @@
             z-index: 200;
         }
 
+        /* For the main element (e.g., body or a specific div) */
+        .no-scrollbar {
+        -ms-overflow-style: none;  /* Internet Explorer and Edge */
+        scrollbar-width: none;     /* Firefox */
+        /* Ensure content can still scroll if it overflows */
+        overflow-y: scroll;
+        }
+
+        /* For Webkit browsers (Chrome, Safari, Opera) */
+        .no-scrollbar::-webkit-scrollbar {
+        display: none;             /* Hides the scrollbar */
+        }
+
         .toast {
             background: rgba(30, 30, 30, 0.95);
             border-left: 4px solid var(--accent);
@@ -1613,8 +1707,10 @@
                         <input type="color" id="start-color" value="#3498db" style="height:40px;">
                     </div>
                     <div class="form-group">
-                        <label style="font-size:var(--fs-base);"/>
+                        <label style="font-size:var(--fs-base);" class="no-flex">
                             <input type="checkbox" id="mobile-toggle" onchange="Game.toggleMobile(this.checked)">&nbsp;&nbsp;Enable Mobile Controls
+                            <br><br>
+                            <input type="checkbox" id="toggle-isSingleplayer">&nbsp;&nbsp;Singleplayer
                         </label>
                     </div>
                     <button class="btn" onclick="Game.init()" id="startBtn">LAUNCH MISSION</button>
@@ -1652,7 +1748,7 @@
                     <h4 style="color:#aaa; border-bottom:1px solid #444;">INVENTORY / BUILD</h4>
                     <p style="font-size: var(--fs-sm); color:#777;">Click item to Equip. Consumables have a [USE] button. Hover to Trash.</p>
                     <button class="btn btn-small" style="background:#c0392b; width:100%; margin-bottom:10px;" onclick="Game.trashJunk()">TRASH ALL JUNK (Dirt/Stone)</button>
-                    <div id="inv-grid" class="inv-grid"></div>
+                    <div id="inv-grid" class="inv-grid no-scrollbar"></div>
                     <div id="station-btn-container" style="margin-top:20px; display:none;">
                         <button class="btn" style="background:var(--success);" onclick="Shop.open()">OPEN STATION SHOP</button>
                     </div>
@@ -1737,32 +1833,32 @@
                 <div class="shop-item">
                     <h4>Repair Kit</h4>
                     <p>Restore 50 HP (Use in Inv).</p>
-                    <div class="cost">$50</div>
-                    <button class="btn" onclick="Shop.buy('repair_kit')">Buy</button>
+                    <div class="cost" id="cost-repair_kit">$50</div>
+                    <button class="btn" id="btn-repair_kit" onclick="Shop.buy('repair_kit')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>Fuel Voucher</h4>
                     <p>Restore 50 Fuel (Use in Inv).</p>
-                    <div class="cost">$50</div>
-                    <button class="btn" onclick="Shop.buy('fuel_voucher')">Buy</button>
+                    <div class="cost" id="cost-fuel_voucher">$50</div>
+                    <button class="btn" id="btn-fuel_voucher" onclick="Shop.buy('fuel_voucher')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>TNT</h4>
                     <p>Explosive charge. Range: 3.</p>
-                    <div class="cost">$200</div>
-                    <button class="btn" onclick="Shop.buy('tnt')">Buy</button>
+                    <div class="cost" id="cost-tnt">$200</div>
+                    <button class="btn" id="btn-tnt" onclick="Shop.buy('tnt')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>Nuke</h4>
                     <p>Massive destruction. Range: 10.</p>
-                    <div class="cost" style="color:#c0392b;">$5000</div>
-                    <button class="btn" onclick="Shop.buy('nuke')">Buy</button>
+                    <div class="cost" id="cost-nuke" style="color:#c0392b;">$5000</div>
+                    <button class="btn" id="btn-nuke" onclick="Shop.buy('nuke')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>Teleporter</h4>
                     <p>Fast travel to surface.</p>
-                    <div class="cost">$1000</div>
-                    <button class="btn" onclick="Shop.buy('teleporter')">Buy</button>
+                    <div class="cost" id="cost-teleporter">$1000</div>
+                    <button class="btn" id="btn-teleporter" onclick="Shop.buy('teleporter')">Buy</button>
                 </div>
             </div>
             <button class="btn" style="background:#555; margin-top:20px; position:sticky; bottom: 10px;" onclick="Shop.close()">Exit Station</button>
@@ -1878,7 +1974,7 @@
             </div>
 
             <div id="credits"></div>
-            <button class="btn" onclick="UI.closeSettings()">Close</button>
+            <button class="btn" onclick="UI.closeSettings()" style="margin-top: 20px; position:sticky; bottom: 10px;">Close</button>
         </div>
     </div>
 
@@ -2282,7 +2378,7 @@ class SoundManager {
                 $(`vol-disp-${t}`).innerText = Math.round(this.volumes[t]*100) + '%';
             } else {
                 this.volumes[t] = parseFloat(Game.settings.volumes[t]);
-                $(`vol-${t}`).value = v;
+                $(`vol-${t}`).value = Game.settings.volumes[t];
                 $(`vol-disp-${t}`).innerText = Math.round(this.volumes[t]*100) + '%';
             }
         });
@@ -2611,7 +2707,7 @@ class GameEngine {
         // Load stats before connecting
         this.loadLocalProgress();
 
-        Network.connect();
+        Network.connect($('toggle-isSingleplayer').checked);
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
 
@@ -2749,9 +2845,9 @@ class GameEngine {
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
         const currentTime = performance.now();
-        const dt = (currentTime - lastTime) / 16.66; 
+        const dt = (currentTime - lastTime) / 16.66;
         lastTime = currentTime;
-        
+
         // --- 1. DETERMINE DESTINATION ---
         let destGridX = (p.nextGridX !== undefined) ? p.nextGridX : p.gridX;
         let destGridY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
@@ -2778,7 +2874,7 @@ class GameEngine {
 
         // Determine final movement speed
         let speed = Math.min(p.fuel > 0 ? (p.isDrilling ? drillSpeed : CONSTANTS.SPEED_NORMAL) : 0.3, CONSTANTS.SPEED_NORMAL);
-        
+
         let isMoving = false;
 
         // --- 4. MOVEMENT LOOP ---
@@ -2976,7 +3072,7 @@ class GameEngine {
 
         const cameraTightness = 0.06; // 1 = instant, 0 = no movement
         const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
-        
+
         this.camera.x += (p.x - this.camera.x) * cameraLerp;
         this.camera.y += (p.y - this.camera.y) * cameraLerp;
 
@@ -3256,7 +3352,7 @@ class GameEngine {
         Sound.playChat('death');
         $('heat-overlay').style.opacity = 0;
         UI.updateDashboard();
-        
+
     }
 
     draw() {
@@ -3884,9 +3980,9 @@ class GameEngine {
     const gaugeR = (this.isMobile ? Math.min(w / 10, 40) : 55) * dpr;
     const padding = 20 * dpr; // Space from screen edges
     const gap = 15 * dpr;    // Space between the gauges themselves
-    
+
     // The total horizontal space one gauge occupies
-    const gaugeStep = (gaugeR * 2) + gap; 
+    const gaugeStep = (gaugeR * 2) + gap;
     const gaugeStyle = 'classic';
     if (this.isMobile) {
         // MOBILE: Center all 4 gauges in a row at the bottom
@@ -3900,15 +3996,15 @@ class GameEngine {
         this.drawGauge(startX + (gaugeStep * 3), yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", gaugeStyle);
 
         // Money top center
-        this.ctx.fillStyle = "#f1c40f"; 
-        this.ctx.font = `bold ${getFontSize('--fs-title')} Geo`; 
+        this.ctx.fillStyle = "#f1c40f";
+        this.ctx.font = `bold ${getFontSize('--fs-title')} Geo`;
         this.ctx.textAlign = "center";
         this.ctx.fillText("$ " + Math.floor(p.money), w / 2, 40 * dpr);
 
     } else {
         // DESKTOP: Pair them in bottom corners
         const yPos = h - gaugeR - padding;
-        
+
         // Left side gauges
         this.drawGauge(padding + gaugeR, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400", gaugeStyle);
         this.drawGauge(padding + gaugeR + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b", gaugeStyle);
@@ -3918,8 +4014,8 @@ class GameEngine {
         this.drawGauge(w - padding - gaugeR - gaugeStep, yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", gaugeStyle);
 
         // Money bottom center
-        this.ctx.fillStyle = "#f1c40f"; 
-        this.ctx.font = `bold ${getFontSize('--fs-title')} Geo`; 
+        this.ctx.fillStyle = "#f1c40f";
+        this.ctx.font = `bold ${getFontSize('--fs-title')} Geo`;
         this.ctx.textAlign = "center";
         this.ctx.fillText("$ " + Math.floor(p.money), w / 2, h - padding);
     }
@@ -3929,7 +4025,7 @@ class GameEngine {
     const ctx = this.ctx;
     const dpr = window.devicePixelRatio || 1;
     const pct = clamp(val / max, 0, 1);
-    
+
     ctx.save();
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -3941,7 +4037,7 @@ class GameEngine {
             const arcR = r * 0.9;
             const startAngle = Math.PI * 0.85;
             const endAngle = Math.PI * 2.15;
-            
+
             // 1. Background Arch
             ctx.beginPath();
             ctx.arc(x, pivotY, arcR, startAngle, endAngle);
@@ -3987,13 +4083,13 @@ class GameEngine {
             // 1. Draw Capsule Shape
             ctx.beginPath();
             this.drawRoundedRect(ctx, pillX, pillY, barW, barH, barW / 2);
-            
+
             // 2. Fill Background
             ctx.fillStyle = "rgba(0,0,0,0.6)";
             ctx.fill();
 
             // 3. Progress Fill (Using Save/Clip/Restore block)
-            ctx.save(); 
+            ctx.save();
             ctx.clip(); // Mask everything to the capsule
             ctx.fillStyle = color;
             const fillH = barH * pct;
@@ -4009,7 +4105,7 @@ class GameEngine {
             ctx.fillStyle = "#fff";
             ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
             ctx.fillText(label, x, pillY - (12 * dpr)); // Moved above the pill
-            
+
             if (Math.floor(val) !== 0) {
                 ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
                 // Value stays inside the pill
@@ -4035,7 +4131,7 @@ class GameEngine {
                 ctx.strokeStyle = color;
                 ctx.lineCap = "round";
                 ctx.stroke();
-                
+
                 // Text
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = "#fff";
@@ -4047,28 +4143,28 @@ class GameEngine {
             case "classic":
             default:
                 // --- STYLE: CLASSIC (Original) ---
-                ctx.beginPath(); 
-                ctx.arc(x, y, r, 0, Math.PI*2); 
-                ctx.fillStyle = "rgba(0,0,0,0.7)"; 
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI*2);
+                ctx.fillStyle = "rgba(0,0,0,0.7)";
                 ctx.fill();
-                ctx.lineWidth = 3; 
-                ctx.strokeStyle = "#444"; 
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#444";
                 ctx.stroke();
 
-                const start = Math.PI * 0.7; 
+                const start = Math.PI * 0.7;
                 const end = Math.PI * 2.3;
                 const current = start + (end - start) * pct;
 
-                ctx.beginPath(); 
-                ctx.arc(x, y, r - 5, start, current); 
-                ctx.strokeStyle = color; 
-                ctx.lineWidth = 6; 
+                ctx.beginPath();
+                ctx.arc(x, y, r - 5, start, current);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 6;
                 ctx.stroke();
 
-                ctx.fillStyle = "#fff"; 
-                ctx.font = "bold " + getFontSize('--fs-md') + " Geo"; 
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold " + getFontSize('--fs-md') + " Geo";
                 ctx.textAlign = "center";
-                ctx.fillText(label, x, y + (15 * dpr)); 
+                ctx.fillText(label, x, y + (15 * dpr));
                 ctx.fillText(Math.floor(val), x, y - (5 * dpr));
                 break;
         }
@@ -4195,8 +4291,10 @@ class ShopSystem {
 
         const check = (type, level) => {
             let cost = this.prices[type];
-            if(Array.isArray(cost)) cost = cost[level] || 999999;
-            else cost = Math.floor(cost * (1 + level));
+            if (level!==false){
+                if(Array.isArray(cost)) cost = cost[level] || 999999;
+                else cost = Math.floor(cost * (1 + level));
+            }
             $(`cost-${type}`).innerText = "$" + cost;
             $(`btn-${type}`).disabled = p.money < cost;
             if(Array.isArray(this.prices[type]) && !this.prices[type][level]) {
@@ -4210,6 +4308,11 @@ class ShopSystem {
         check('cargo', (p.maxCargo-50)/10);
         check('cool', p.heatResist);
         check('xray', p.xrayRange);
+        check('repair_kit',false);
+        check('fuel_voucher',false);
+        check('tnt',false);
+        check('nuke',false);
+        check('teleporter',false);
     }
 
     buy(item) {
@@ -4426,10 +4529,20 @@ class NetworkManager {
         this.baseTopic = 'mm_online/';
         this.lastHeartbeat = 0;
         this.lastSyncToast = 0;
+        this.isSingleplayer = false;
         this.connectionWatchdog = 0; // NEW: Monitor connection health
     }
 
-    connect() {
+    connect(isSingleplayer) {
+        this.isSingleplayer=isSingleplayer;
+
+        if(this.isSingleplayer) {
+            Game.logConnection("Initializing...");
+            Game.finishConnection();
+            Sound.playSuccess();
+            return
+        };
+
         Game.logConnection(`Connecting to broker ${Game.settings.broker}...`);
 
         const broker = Game.settings.broker;
@@ -4463,6 +4576,8 @@ class NetworkManager {
     }
 
     update() {
+
+        if(this.isSingleplayer) return;
         let n = now();
 
         // --- AGGRESSIVE RECONNECT WATCHDOG ---
@@ -6216,8 +6331,6 @@ const UIFX = {
             // The class handles z-index: 1, but we ensure no overflow issues
             el.style.overflow = 'visible'; // Clip-path handles the shape, overflow needs to be visible for shadows usually
         });
-
-        console.log(`UIFX: Converted ${elements.length} elements to beveled borders.`);
     },
 
     init: function() {
