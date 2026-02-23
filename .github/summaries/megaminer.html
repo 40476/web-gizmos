@@ -1,16 +1,17 @@
 <section>
   <ul>
-    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps and real-time networking.</li>
-    <li>Features include vehicle upgrades, inventory management, chat system, and admin controls.</li>
-    <li>Uses MQTT for multiplayer networking and IndexedDB for local save management.</li>
-    <li>Implements mobile controls with touch-friendly interface and responsive design.</li>
-    <li>Includes sound engine with music, SFX, and engine rumble effects.</li>
+    <li>Multiplayer mining game with procedurally generated underground worlds.</li>
+    <li>Features building, crafting, trading, and admin controls.</li>
+    <li>Includes local storage, cloud sync, and cross-platform support.</li>
+    <li>Uses MQTT for real-time networking and IndexedDB for save data.</li>
+    <li>Custom UI with bevel borders, responsive design, and touch controls.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9 };</code>
-    <code>const GameEngine = class { constructor() { this.localPlayer = { id: uuid(), gridX: 0, gridY: 0 }; } };</code>
+    <code>const GameEngine = new GameEngine();</code>
+    <code>const Network = new NetworkManager();</code>
+    <code>const SaveSystem = new SaveSystem();</code>
   </pre>
 
-  <p>Mega Miner NG is a multiplayer mining game featuring procedurally generated maps, real-time networking via MQTT, and comprehensive upgrade systems. Players can mine resources, build structures, and interact with others in shared worlds while managing fuel, hull integrity, and inventory. The game includes mobile controls, admin features, and persistent save systems using IndexedDB and cloud storage.</p>
+  <p>Mega Miner NG is a multiplayer mining game featuring procedurally generated worlds, real-time networking via MQTT, and comprehensive save systems with cloud sync. Players explore, mine resources, build structures, and trade with others while managing fuel, hull integrity, and inventory. The game includes admin controls, responsive mobile support, and a custom UI with bevel borders and smooth animations.</p>
 </section>
