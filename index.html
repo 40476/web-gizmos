@@ -340,17 +340,19 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps and real-time networking.</li>
-    <li>Players can mine resources, build structures, upgrade equipment, and trade with others in a shared world.</li>
-    <li>Features include mobile controls, chat, admin tools, save systems, and cloud synchronization.</li>
+    <li>HTML5 canvas-based multiplayer mining game with real-time physics and voxel terrain.</li>
+    <li>WebSocket/MQTT networking for multiplayer support with host election and map synchronization.</li>
+    <li>Inventory system with building mechanics, crafting, and trading between players.</li>
+    <li>Upgrade system for drills, hull, fuel capacity, and special abilities like X-ray vision.</li>
+    <li>Responsive design with mobile controls, touch gestures, and customizable key bindings.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ... };</code>
-    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 1.75, SPEED_DRILL: 0.75, ... };</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>const GameEngine = class { constructor() { this.localPlayer = { id: uuid(), gridX: 500, gridY: 4, fuel: 100, hull: 100 }; } };</code>
   </pre>
 
-  <p>Mega Miner NG is a multiplayer mining game where players explore procedurally generated underground worlds, mine resources, build structures, and upgrade their equipment. The game features real-time networking, mobile controls, chat functionality, admin tools, and cloud save synchronization. Players can trade resources, discover teleporters, and collaborate or compete in a shared mining environment.</p>
+  <p>Mega Miner NG is a browser-based multiplayer mining game featuring real-time voxel terrain generation, physics-based movement, and collaborative resource gathering. Players control mining vehicles to dig through procedurally generated worlds, collect valuable minerals, upgrade their equipment, and interact with other players through chat and trading systems. The game includes advanced features like heat management, fuel consumption, inventory management, and a shop system for purchasing upgrades and items.</p>
 </section>
       </section>
     
