@@ -1775,13 +1775,17 @@
             <div class="form-group">
                 <label>Audio Mixer</label>
                 <div style="font-size: var(--fs-sm);">
-                    <center><span>Master</span>&nbsp;&nbsp;<span id="vol-disp-master">50%</span></center> <input type="range" id="vol-master" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('master', this.value)">
+<!--                     <center><span>Master</span>&nbsp;&nbsp;<span id="vol-disp-master">--%</span></center> <input type="range" id="vol-master" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('master', this.value)"> -->
+                    <center><span>Master</span>&nbsp;&nbsp;<span id="vol-disp-master">--%</span></center> <input type="range" id="vol-master" min="0" max="1" step="0.01" oninput="Sound.setVolume('master', this.value)">
                     <hr><br>
-                    <center><span>Music</span>&nbsp;&nbsp;<span id="vol-disp-music">50%</span></center> <input type="range" id="vol-music" min="0" max="1" step="0.01" value="0.1" oninput="Sound.setVolume('music', this.value)">
+<!--                     <center><span>Music</span>&nbsp;&nbsp;<span id="vol-disp-music">--%</span></center> <input type="range" id="vol-music" min="0" max="1" step="0.01" value="0.1" oninput="Sound.setVolume('music', this.value)"> -->
+                    <center><span>Music</span>&nbsp;&nbsp;<span id="vol-disp-music">--%</span></center> <input type="range" id="vol-music" min="0" max="1" step="0.01" oninput="Sound.setVolume('music', this.value)">
                     <hr><br>
-                    <center><span>SFX</span>&nbsp;&nbsp;<span id="vol-disp-sfx">50%</span></center> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('sfx', this.value)">
+<!--                     <center><span>SFX</span>&nbsp;&nbsp;<span id="vol-disp-sfx">--%</span></center> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('sfx', this.value)"> -->
+                    <center><span>SFX</span>&nbsp;&nbsp;<span id="vol-disp-sfx">--%</span></center> <input type="range" id="vol-sfx" min="0" max="1" step="0.01" oninput="Sound.setVolume('sfx', this.value)">
                     <hr><br>
-                    <center><span>Engine</span>&nbsp;&nbsp;<span id="vol-disp-engine">50%</span></center> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)">
+<!--                     <center><span>Engine</span>&nbsp;&nbsp;<span id="vol-disp-engine">--%</span></center> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)"> -->
+                    <center><span>Engine</span>&nbsp;&nbsp;<span id="vol-disp-engine">--%</span></center> <input type="range" id="vol-engine" min="0" max="1" step="0.01" oninput="Sound.setVolume('engine', this.value)">
                 </div>
             </div>
             <hr><br>
@@ -2275,7 +2279,11 @@ class SoundManager {
             if(v !== null) {
                 this.volumes[t] = parseFloat(v);
                 $(`vol-${t}`).value = v;
-                $(`vol-disp-${t}`).innerText = Math.round(v*100) + '%';
+                $(`vol-disp-${t}`).innerText = Math.round(this.volumes[t]*100) + '%';
+            } else {
+                this.volumes[t] = parseFloat(Game.settings.volumes[t]);
+                $(`vol-${t}`).value = v;
+                $(`vol-disp-${t}`).innerText = Math.round(this.volumes[t]*100) + '%';
             }
         });
     }
@@ -2305,7 +2313,13 @@ class GameEngine {
                 up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown',
                 build: 'b', interact: 'e', chat: 'Enter', transfer: 'f'
             },
-            graphicsQuality: 2
+            graphicsQuality: 2,
+            volumes: {
+                master: 0.5,
+                music: 0.1,
+                sfx : 0.5,
+                engine: 0.5
+            }
         };
 
         this.localPlayer = {
