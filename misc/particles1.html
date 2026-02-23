@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Particle Canvas</title>
+    <style>
+        /* Reset margins and ensure the canvas fills the entire screen */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #111;
+            overflow: hidden; /* Hide scrollbars */
+            font-family: sans-serif;
+        }
+
+        #canvas1 {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none; /* Let clicks pass through to the canvas */
+            font-size: 1.5rem;
+            text-align: center;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instructions">Move your mouse or touch the screen</div>
+    <canvas id="canvas1"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas1');
+        const ctx = canvas.getContext('2d');
+        const instructions = document.getElementById('instructions');
+
+        // Set initial canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particlesArray = [];
+        let hue = 0;
+        let hasInteracted = false;
+
+        // Track mouse/touch coordinates
+        const mouse = {
+            x: undefined,
+            y: undefined,
+        };
+
+        // Update canvas dimensions on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Hide instructions on first interaction
+        function hideInstructions() {
+            if (!hasInteracted) {
+                instructions.style.opacity = '0';
+                hasInteracted = true;
+            }
+        }
+
+        // Mouse interaction
+        canvas.addEventListener('mousemove', (event) => {
+            hideInstructions();
+            mouse.x = event.x;
+            mouse.y = event.y;
+            // Spawn multiple particles per movement for a thicker trail
+            for (let i = 0; i < 5; i++) {
+                particlesArray.push(new Particle());
+            }
+        });
+
+        // Touch interaction for mobile devices
+        canvas.addEventListener('touchmove', (event) => {
+            hideInstructions();
+            mouse.x = event.touches[0].clientX;
+            mouse.y = event.touches[0].clientY;
+            for (let i = 0; i < 5; i++) {
+                particlesArray.push(new Particle());
+            }
+        });
+
+        // Click interaction
+        canvas.addEventListener('click', (event) => {
+            hideInstructions();
+            mouse.x = event.x;
+            mouse.y = event.y;
+            // Burst of particles on click
+            for (let i = 0; i < 20; i++) {
+                particlesArray.push(new Particle());
+            }
+        });
+
+        // Particle Class blueprint
+        class Particle {
+            constructor() {
+                this.x = mouse.x;
+                this.y = mouse.y;
+                // Randomize starting size
+                this.size = Math.random() * 15 + 1;
+                // Random velocity in X and Y directions
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 3 - 1.5;
+                // Set color based on the current hue
+                this.color = `hsl(${hue}, 100%, 50%)`;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                // Shrink the particle over time
+                if (this.size > 0.2) {
+                    this.size -= 0.1;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Process all active particles
+        function handleParticles() {
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+
+                // Draw connecting lines between nearby particles
+                for (let j = i; j < particlesArray.length; j++) {
+                    const dx = particlesArray[i].x - particlesArray[j].x;
+                    const dy = particlesArray[i].y - particlesArray[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 50) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = particlesArray[i].color;
+                        ctx.lineWidth = particlesArray[i].size / 10;
+                        ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+                        ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
+                }
+
+                // Remove particles that are too small to see
+                if (particlesArray[i].size <= 0.3) {
+                    particlesArray.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        // Main animation loop
+        function animate() {
+            // Clear the canvas with a slight opacity to create a fading trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            handleParticles();
+
+            // Cycle the colors
+            hue += 2;
+
+            // Request the next frame
+            requestAnimationFrame(animate);
+        }
+
+        // Start the animation
+        animate();
+    </script>
+</body>
+</html>
