@@ -62,7 +62,7 @@
             --fs-title: calc(32px * var(--ui-scale));
             --fs-hero: calc(70px * var(--ui-scale));
 
-            /* --- ADVANCED STYLING (UPDATED) --- */
+            /* --- ADVANCED STYLING --- */
             --bevel-size: calc(10px * var(--ui-scale));
             --border-width: 2px;
 
@@ -1507,11 +1507,48 @@
             <div class="d-btn d-down" data-key="down">&#8595;</div>
         </div>
         <div class="action-pad">
-            <div class="act-btn" data-key="build" style="background:var(--highlight); color:black;"><i>&#9874;</i>BUILD</div>
-            <div class="act-btn" data-key="interact" style="background:var(--success);"><i>&#128736;</i>ACT</div>
-            <div class="act-btn" data-key="chat" style="background:#555;"><i>&#128489;</i>CHAT</div>
-            <div class="act-btn" data-key="transfer" style="background:#8e44ad;"><i>&#127873;</i>GIVE</div>
-            <div class="act-btn" data-key="adminToggle" style="background:#ff0000;"><i>&#128737;</i>ADMIN</div>
+            <div class="act-btn" data-key="build" style="background:var(--highlight);">
+                <i>
+                    <svg fill="#000000" width="1em" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg" id="memory-cube-unfolded"><path d="M12 3V8H22V15H17V20H10V15H0V8H5V3H12M10 5H7V8H10V5M7 10V13H10V10H7M5 10H2V13H5V10M17 10V13H20V10H17M15 15H12V18H15V15M12 10V13H15V10H12Z" /></svg>
+                </i>
+                BUILD
+            </div>
+
+            <div class="act-btn" data-key="interact" style="background:var(--success);">
+                <i>
+                    <svg width="1em" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="Free-Icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g transform="translate(-377.000000, -156.000000)" id="Group" stroke="#000000"><g transform="translate(375.000000, 154.000000)" id="Shape"><circle stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="9"></circle><path d="M11.8981553,9.55678984 L13.0374283,11.2035047 L13.8960076,11.2035047 L12.8478352,12.6211403 L13.4093019,13.9312796 L11.9084042,13.4297151 L10.6849417,14.0414397 L11.1146331,12.4210055 L9.98071132,11.2871101 L11.1381283,11.0769928 L11.8981553,9.55678984 Z" stroke-width="2.4"></path></g></g></g></svg>
+                </i>
+                ACT
+            </div>
+
+            <div class="act-btn" data-key="chat" style="background:#555;">
+                <i>
+                    <svg fill="#000000" width="1em" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M25.042 18.672v-12.487c0-1.234-1-2.236-2.236-2.236h-19.571c-1.235-0.001-2.236 1.001-2.236 2.236v12.487c0 1.235 1.001 2.236 2.236 2.236h3.729v5.137l5.704-5.137h10.137c1.237 0 2.237-1.001 2.237-2.236zM28.765 8.858h-2.798c0 0 0 9.972 0 10.909s-1.216 2.142-2.153 2.142-10.945 0.055-10.945 0.055c0 1.235 1.001 1.986 2.236 1.986h4.309l5.622 5.102-0.007-5.102h3.736c1.236 0 2.236-0.751 2.236-1.986v-10.932c0-1.234-1-2.174-2.236-2.174z"></path></svg>
+                </i>
+                CHAT
+            </div>
+
+            <div class="act-btn" data-key="transfer" style="background:#8e44ad;">
+                <i>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="#000000" width="1em" viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+                </i>
+                GIVE
+            </div>
+
+            <div class="act-btn" data-key="adminToggle" style="background:#ff0000;">
+                <i>
+                    <svg width="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 12L11 14L15 9.99999M20 12C20 16.4611 14.54 19.6937 12.6414 20.683C12.4361 20.79 12.3334 20.8435 12.191 20.8712C12.08 20.8928 11.92 20.8928 11.809 20.8712C11.6666 20.8435 11.5639 20.79 11.3586 20.683C9.45996 19.6937 4 16.4611 4 12V8.21759C4 7.41808 4 7.01833 4.13076 6.6747C4.24627 6.37113 4.43398 6.10027 4.67766 5.88552C4.9535 5.64243 5.3278 5.50207 6.0764 5.22134L11.4382 3.21067C11.6461 3.13271 11.75 3.09373 11.857 3.07827C11.9518 3.06457 12.0482 3.06457 12.143 3.07827C12.25 3.09373 12.3539 3.13271 12.5618 3.21067L17.9236 5.22134C18.6722 5.50207 19.0465 5.64243 19.3223 5.88552C19.566 6.10027 19.7537 6.37113 19.8692 6.6747C20 7.01833 20 7.41808 20 8.21759V12Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </i>
+                ADMIN
+            </div>
+
+            <div class="act-btn" data-key="zoomLevel" style="background:#00ff00;">
+                <i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" viewBox="0 0 490 490"><path fill="none" stroke="#000" stroke-width="36" stroke-linecap="round" d="m280,278a153,153 0 1,0-2,2l170,170m-91-117 110,110-26,26-110-110"/></svg>
+                </i>
+                ZOOM
+            </div>
         </div>
     </div>
 
@@ -1795,20 +1832,13 @@
                 <div style="display:flex; gap:5px; margin-bottom:5px;">
                     <button class="btn" style="flex:1; background:var(--success);" onclick="SaveSystem.createNewSave()">+ NEW SAVE</button>
                     <button class="btn" style="flex:1;" onclick="SaveSystem.saveCurrent()">SAVE CURRENT</button>
+                    <button class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">IMPORT SAVE</button>
+                    <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
                 </div>
                 <div id="save-list-wrapper" class="save-list-wrapper">
                     <!-- Saves injected here -->
                 </div>
                 <small style="color:#777;">Green border indicates current session.</small>
-            </div>
-
-
-            <div class="form-group">
-                <label>Backup Data (File)</label>
-                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                    <button class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">Load Save from File</button>
-                </div>
-                <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
             </div>
 
             <div class="form-group">
@@ -1878,6 +1908,7 @@ const uuid = () => {
         return v.toString(16);
     });
 };
+
 const paths = [/*`/Documents/MegaMinerSaves/`,*/ `./`];
 
 const now = () => Date.now();
@@ -2250,7 +2281,6 @@ class SoundManager {
     }
 }
 
-const Sound = new SoundManager();
 
 // --- GAME LOGIC ---
 
@@ -2308,7 +2338,7 @@ class GameEngine {
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
         this.lastActionTime = 0;
         this.lastAutosave = 0;
-        this.lastViewportSync = 0; // NEW: Timer for aggressive sync
+        this.lastViewportSync = 0; // Timer for aggressive sync
         this.fallHeight = 0;
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
@@ -2317,7 +2347,7 @@ class GameEngine {
         this.loadStoredSettings();
     }
 
-    // --- NEW: Persistent Stats (Wallet, Upgrades) ---
+    // --- Persistent Stats (Wallet, Upgrades) ---
     saveLocalProgress() {
         if (!this.running) return;
         const data = {
@@ -2916,9 +2946,15 @@ class GameEngine {
             $('chat-input').focus();
             Input.virtual.chat = false;
         }
+
         if (Input.virtual.adminToggle && now() - this.lastActionTime > 200) {
             UI.toggleAdminPanel();
             Input.virtual.adminToggle = false;
+        }
+
+        if (Input.virtual.zoomLevel && now() - this.lastActionTime > 200) {
+            Game.zoom=clamp((Game.zoom+0.5) % CONSTANTS.MAX_ZOOM,CONSTANTS.MIN_ZOOM,CONSTANTS.MAX_ZOOM);
+            Input.virtual.zoomLevel = false;
         }
 
         p.fuel = clamp(p.fuel, 0, p.maxFuel); p.hull = clamp(p.hull, 0, p.maxHull);
@@ -3191,8 +3227,8 @@ class GameEngine {
         this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
         this.localPlayer.gridY = 4;
         // So um i accidentally bricked my save a few times
-        // and thats why nextGridY needs to be set,
-        // because otherwise you get stuck in death loop
+        // and thats why nextGridY and depth needs to be
+        // set, because otherwise you get stuck in death loop
         this.localPlayer.nextGridY = 4;
 	    this.localPlayer.depth = 0;
         this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
@@ -4735,8 +4771,6 @@ class InputManager {
 
     init() {
         window.addEventListener('keydown', e => {
-            // Initialize Audio context on first interaction if needed
-            if (typeof Sound !== 'undefined' && Sound.init) Sound.init();
 
             // --- 1. CHAT INPUT HANDLING ---
             // If typing in chat, ignore game commands (except Escape)
@@ -6050,6 +6084,7 @@ function parseCSSCalc(calcString) {
 function getFontSize(varName) { return (parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
 
 // --- INSTANTIATION ---
+const Sound = new SoundManager();
 const Game = new GameEngine();
 const Input = new InputManager();
 const Network = new NetworkManager();
@@ -6101,12 +6136,37 @@ const creditsData = {
         "Contributors",
         "The laptops that were sacrificed in the making of this game"
     ],
-
-    codeAssets: [
+    visualAssets:[
         {
-            name: "LeonardMeagher2",
-            items: ["(Checkboxes): <a href='https://codepen.io/LeonardMeagher2/pen/NvOLZr'>CodePen Link</a>"]
+            name: "Wikimedia Commons",
+            items: [ "(Zoom icon): <a href='https://commons.wikimedia.org/wiki/File:Magnifying_glass_icon.svg' target='_blank' rel='noopener noreferrer'>File:Magnifying_glass_icon.svg</a>"]
         },
+        {
+            name: "Dazzle UI (SVGRepo)",
+            items: [ "(Shield icon): <a href='https://www.svgrepo.com/svg/532329/shield-check' target='_blank' rel='noopener noreferrer'>Shield Check SVG Vector</a>"]
+
+        },
+        {
+            name: "LeonardMeagher2 (SVGRepo)",
+            items: ["(Checkboxes): <a href='https://codepen.io/LeonardMeagher2/pen/NvOLZr' target='_blank' rel='noopener noreferrer'>CodePen Link</a>"]
+        },
+        {
+            name: "Jackhenry Design (SVGRepo)",
+            items : ["(Transfer icon): <a href='https://www.svgrepo.com/svg/453433/transfer' target='_blank' rel='noopener noreferrer'>Transfer SVG Vector</a>"]
+        },
+        {
+            name: "brankic1979 (SVGRepo)",
+            items : ["(Chat icon): <a href='https://www.svgrepo.com/svg/485668/chat' target='_blank' rel='noopener noreferrer'>Chat SVG Vector</a>"]
+        },
+        {
+            name: "Pictogrammers (SVGRepo)",
+            items : ["(Build icon): <a href='https://www.svgrepo.com/svg/498792/cube-unfolded' target='_blank' rel='noopener noreferrer'>Cube Unfolded SVG Vector</a>"]
+        },
+        {
+            name: "Buninux (SVGRepo)",
+            items : ["(Action icon): <a href='https://www.svgrepo.com/svg/438151/action-favorite-circle-favourite-like-rating-button-star-icon' target='_blank' rel='noopener noreferrer'>Bruh no way im typing that</a>"]
+        }
+
     ]
 };
 // JANK AUDIO FIX
