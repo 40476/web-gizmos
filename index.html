@@ -161,6 +161,8 @@
     
       <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
     
+      <a class="nav-item" href="midibeat/index.html" data-name="midibeat">midibeat</a>
+    
       <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
     
       <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
@@ -172,8 +174,6 @@
       <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
-    
-      <a class="nav-item" href="midibeat/index.html" data-name="midibeat">midibeat</a>
     
 
     <button id="themeToggle">Toggle Theme</button>
@@ -318,6 +318,25 @@
 </section>
       </section>
     
+      <section class="app-section" data-name="midibeat">
+        <a class="app-link" href="midibeat/index.html">Open midibeat</a>
+        <h2>midibeat</h2>
+        <section>
+  <ul>
+    <li>Web-based MIDI sampler using Tone.js and midi-player-js libraries</li>
+    <li>Loads audio files as sampler and MIDI files as playback triggers</li>
+    <li>Features play, pause, restart controls with status updates</li>
+  </ul>
+
+  <pre>
+    <code>const sampler = new Tone.Sampler({ urls: { C4: url } }).toDestination();</code>
+    <code>player = new MidiPlayer.Player((event) =&gt; { if (event.name === 'Note on') sampler.triggerAttackRelease(event.noteName, "4n"); });</code>
+  </pre>
+
+  <p>A MIDI sampler application that maps MIDI note events to audio samples. Users can upload custom audio and MIDI files or load default samples, with real-time playback control through play, pause, and restart buttons. The interface provides visual feedback on loading status and readiness for playback.</p>
+</section>
+      </section>
+    
       <section class="app-section" data-name="pixelreducer">
         <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
         <h2>pixelreducer</h2>
@@ -431,25 +450,6 @@
   </pre>
 
   <p>This interactive turtle ecosystem allows users to create and modify environments using a grid-based terrain editor. Turtles autonomously navigate while pursuing food based on personality-driven behaviors like caution or aggression. The simulation includes features like lilypads for resting turtles, obstacle avoidance, and real-time performance statistics tracking.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="midibeat">
-        <a class="app-link" href="midibeat/index.html">Open midibeat</a>
-        <h2>midibeat</h2>
-        <section>
-  <ul>
-    <li>Web-based MIDI sampler using Tone.js and midi-player-js libraries</li>
-    <li>Loads audio files as sampler and MIDI files as playback triggers</li>
-    <li>Features play, pause, restart controls with status updates</li>
-  </ul>
-
-  <pre>
-    <code>const sampler = new Tone.Sampler({ urls: { C4: url } }).toDestination();</code>
-    <code>player = new MidiPlayer.Player((event) =&gt; { if (event.name === 'Note on') sampler.triggerAttackRelease(event.noteName, "4n"); });</code>
-  </pre>
-
-  <p>A MIDI sampler application that maps MIDI note events to audio samples. Users can upload custom audio and MIDI files or load default samples, with real-time playback control through play, pause, and restart buttons. The interface provides visual feedback on loading status and readiness for playback.</p>
 </section>
       </section>
     
