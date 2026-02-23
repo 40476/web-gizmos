@@ -340,17 +340,17 @@
         <h2>megaminer</h2>
         <section>
   <ul>
-    <li>2D multiplayer mining game with real-time physics and procedurally generated terrain.</li>
-    <li>Supports cross-platform play with mobile touch controls and desktop keyboard/mouse input.</li>
-    <li>Features upgrade system, inventory management, shop, and multiplayer chat with MQTT networking.</li>
+    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps and real-time networking.</li>
+    <li>Players can mine resources, build structures, upgrade equipment, and trade with others in a shared world.</li>
+    <li>Features include mobile controls, chat, admin tools, save systems, and cloud synchronization.</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 3, value: 500, tier: 3, trashExclude: true } };</code>
-    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, MAP_WIDTH: 1000, MAP_HEIGHT: 2000 };</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ... };</code>
+    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 1.75, SPEED_DRILL: 0.75, ... };</code>
   </pre>
 
-  <p>Mega Miner NG is a cross-platform multiplayer mining game featuring procedurally generated terrain, real-time physics, and an upgrade system. Players can mine various ores, build structures, and trade resources while exploring an infinite underground world. The game supports both desktop and mobile controls with MQTT networking for multiplayer functionality.</p>
+  <p>Mega Miner NG is a multiplayer mining game where players explore procedurally generated underground worlds, mine resources, build structures, and upgrade their equipment. The game features real-time networking, mobile controls, chat functionality, admin tools, and cloud save synchronization. Players can trade resources, discover teleporters, and collaborate or compete in a shared mining environment.</p>
 </section>
       </section>
     
