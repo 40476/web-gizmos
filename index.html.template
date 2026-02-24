@@ -3,225 +3,185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Web Gizmos | Applications</title>
+  <title>Applications Overview</title>
 
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --bg: #f8fafc;
-      --text: #1e293b;
-      --text-muted: #64748b;
-      --card-bg: #ffffff;
-      --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --sidebar-bg: #1e293b;
-      --sidebar-text: #f1f5f9;
-      --nav-hover: rgba(255, 255, 255, 0.1);
-      --input-bg: #ffffff;
+      --primary: #01ff70;
+      --primary-hover: #2ecc40;
+      --bg: #111;
+      --card-bg: #222;
+      --text: #fafafa;
+      --text-muted: #bbb;
+      --code-bg: #333;
+      --sidebar-bg: #000;
+      --border: #444;
     }
 
-    body.dark {
-      --bg: #0f172a;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --card-bg: #1e293b;
-      --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
-      --sidebar-bg: #020617;
-      --sidebar-text: #e2e8f0;
-      --input-bg: #1e293b;
-    }
-
+    /* Core Stability Fixes */
+    html { font-size: 16px; scroll-behavior: smooth; }
+    
     body {
       margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: "Courier New", Courier, monospace;
       background: var(--bg);
       color: var(--text);
       display: flex;
       min-height: 100vh;
-      transition: background 0.3s ease;
+      line-height: 1.45;
+      overflow-x: hidden; /* Prevent global horizontal scroll */
     }
 
-    /* Sidebar Styling */
+    /* Sidebar - Fixed and Stable */
     nav {
       width: 280px;
       background: var(--sidebar-bg);
-      color: var(--sidebar-text);
-      padding: 2rem 1.5rem;
+      padding: 1.5rem;
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       position: sticky;
       top: 0;
       height: 100vh;
       box-sizing: border-box;
-      box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+      z-index: 100;
     }
 
-    nav h2 {
-      margin: 0 0 1.5rem 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-      background: linear-gradient(to right, #818cf8, #c084fc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    nav h2 { 
+      font-size: 1.5rem; 
+      color: var(--primary); 
+      margin-top: 0;
     }
 
     #search {
       width: 100%;
-      padding: 0.75rem 1rem;
-      margin-bottom: 2rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.05);
-      color: white;
+      padding: 10px;
+      margin-bottom: 1rem;
+      background: #111;
+      border: 1px solid var(--border);
+      color: var(--primary);
+      border-radius: 4px;
       outline: none;
-      transition: all 0.2s;
     }
 
-    #search:focus {
-      background: rgba(255,255,255,0.1);
-      border-color: var(--primary);
+    .nav-items-container {
+      overflow-y: auto;
+      flex-grow: 1;
     }
 
     .nav-item {
       display: block;
-      color: var(--sidebar-text);
+      color: var(--text-muted);
       text-decoration: none;
-      padding: 0.75rem 1rem;
-      margin: 0.2rem 0;
-      border-radius: 0.4rem;
+      padding: 5px 0;
       font-size: 0.9rem;
-      transition: all 0.2s;
-      opacity: 0.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* Truncate long names in sidebar */
     }
 
-    .nav-item:hover {
-      background: var(--nav-hover);
-      opacity: 1;
-      transform: translateX(5px);
-    }
+    .nav-item:hover { color: var(--primary); }
 
-    /* Main Content */
+    /* Main Content Area */
     main {
       flex: 1;
-      padding: 3rem;
-      max-width: 1000px;
+      padding: 2rem 3rem;
+      max-width: 50rem; /* Keeps lines readable */
       margin: 0 auto;
+      box-sizing: border-box;
+      width: 100%;
     }
 
-    h1 {
-      font-size: 2.25rem;
-      font-weight: 800;
-      margin-bottom: 2rem;
-      letter-spacing: -0.025em;
-    }
+    h1 { font-size: 2.5rem; color: var(--primary); margin-top: 0; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 
-    /* Card Grid */
-    .app-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-    }
-
+    /* Application Section Styling */
     .app-section {
       background: var(--card-bg);
-      padding: 1.75rem;
-      border-radius: 1rem;
-      box-shadow: var(--card-shadow);
-      border: 1px solid rgba(0,0,0,0.05);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .app-section:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-    }
-
-    .app-section h2 {
-      margin: 0.5rem 0;
-      font-size: 1.25rem;
-    }
-
-    .app-summary {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.5;
-      margin-bottom: 1.5rem;
-      flex-grow: 1;
+      padding: 2rem;
+      margin-bottom: 3rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      /* Prevent injected content from breaking the card */
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .app-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.6rem 1.2rem;
-      background: var(--primary);
-      color: white;
-      border-radius: 0.5rem;
+      color: var(--primary);
       text-decoration: none;
-      font-weight: 600;
+      font-weight: bold;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .app-link:hover { text-decoration: underline; }
+
+    /* Injected Code Stability (The "Retro" Fix) */
+    pre {
+      background-color: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto; /* Forces scrollbar on long code lines */
+      border-left: 3px solid var(--primary);
+      margin: 1.5rem 0;
+    }
+
+    code {
+      font-family: Menlo, Monaco, "Courier New", monospace;
       font-size: 0.9rem;
-      transition: background 0.2s;
+      color: #01ff70;
     }
 
-    .app-link:hover {
-      background: var(--primary-hover);
-    }
+    ul { padding-left: 1.2rem; }
+    li { margin-bottom: 0.5rem; }
 
+    /* Theme Toggle */
     #themeToggle {
-      margin-top: auto;
-      padding: 0.75rem;
-      background: rgba(255,255,255,0.05);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 0.5rem;
+      margin-top: 1rem;
+      background: none;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 5px 10px;
       cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
+      font-family: inherit;
     }
 
-    #themeToggle:hover {
-      background: rgba(255,255,255,0.1);
-    }
+    #themeToggle:hover { background: var(--primary); color: #000; }
 
-    /* Mobile View */
-    @media (max-width: 768px) {
+    /* Mobile - Stack Layout */
+    @media (max-width: 850px) {
       body { flex-direction: column; }
-      nav { width: 100%; height: auto; position: relative; }
-      main { padding: 1.5rem; }
-      .app-grid { grid-template-columns: 1fr; }
+      nav { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+      main { padding: 1.5rem; width: 100%; }
     }
   </style>
 </head>
+<body>
 
-<body class="dark"> <nav>
-    <h2>Gizmos</h2>
-    <input id="search" type="text" placeholder="Search gadgets..." />
-
-    <div id="navLinks">
+  <nav>
+    <h2>GIZMOS</h2>
+    <input id="search" type="text" placeholder="Filter..." />
+    <div class="nav-items-container">
       {% for name, summary in applications.items() %}
-        <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">{{ name }}</a>
+        <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">> {{ name }}</a>
       {% endfor %}
     </div>
-
-    <button id="themeToggle">🌓 Switch Theme</button>
+    <button id="themeToggle">Toggle Theme</button>
   </nav>
 
   <main>
-    <h1>Project Overview</h1>
+    <h1>web-gizmos (fun inside!)</h1>
 
-    <div class="app-grid">
-      {% for name, summary in applications.items() %}
-        <section class="app-section" data-name="{{ name }}">
-          <h2>{{ name }}</h2>
-          <div class="app-summary">
-            {{ summary | safe }}
-          </div>
-          <a class="app-link" href="{{ name }}/index.html">Launch Application</a>
-        </section>
-      {% endfor %}
-    </div>
+    {% for name, summary in applications.items() %}
+      <section class="app-section" id="section-{{ name }}" data-name="{{ name }}">
+        <a class="app-link" href="{{ name }}/index.html">[ Run Application ]</a>
+        <h2>{{ name }}</h2>
+        <div class="summary-content">
+          {{ summary | safe }}
+        </div>
+      </section>
+    {% endfor %}
   </main>
 
   <script>
@@ -235,14 +195,14 @@
         item.style.display = item.dataset.name.toLowerCase().includes(q) ? "block" : "none";
       });
       sections.forEach(sec => {
-        sec.style.display = sec.dataset.name.toLowerCase().includes(q) ? "flex" : "none";
+        sec.style.display = sec.dataset.name.toLowerCase().includes(q) ? "block" : "none";
       });
     });
 
-    const toggle = document.getElementById("themeToggle");
-    toggle.addEventListener("click", () => {
-      document.body.classList.toggle("dark");
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      document.body.style.filter = document.body.style.filter === 'invert(1)' ? 'invert(0)' : 'invert(1)';
     });
   </script>
+
 </body>
 </html>
