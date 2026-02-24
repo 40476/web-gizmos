@@ -1,0 +1,16 @@
+<section>
+  <ul>
+    <li>Procedural PCB simulator with logic gates, switches, displays, and LEDs</li>
+    <li>Smart A* routing algorithm with fan-out limits and force-connect option</li>
+    <li>Interactive components that respond to mouse clicks and propagate signals</li>
+    <li>Customizable parameters including seed, density, speed, and visual effects</li>
+    <li>Real-time simulation with CRT scanline and glow effects</li>
+  </ul>
+
+  <pre>
+    <code>class PRNG { constructor(seed) { this.seed = this.hashString(seed.toString()); } }</code>
+    <code>class Generator { constructor(seed, w, h, density, forceConnect, maxFanout) { this.generate(); } }</code>
+  </pre>
+
+  <p>This procedural PCB simulator generates random circuit boards with logic components that interact through signal propagation. Users can adjust parameters like component density and fan-out limits, then interact with switches and observe signal flow through traces. The A* routing algorithm intelligently connects components while avoiding collisions, with optional force-connect mode for crowded boards.</p>
+</section>
