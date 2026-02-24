@@ -168,9 +168,9 @@
       
         <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
       
-        <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
+        <a class="nav-item" href="fonttester/index.html" data-name="fonttester">> fonttester</a>
       
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+        <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
       
         <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
@@ -190,7 +190,7 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="fonttester/index.html" data-name="fonttester">> fonttester</a>
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -242,6 +242,30 @@
         </div>
       </section>
     
+      <section class="app-section" id="section-fonttester" data-name="fonttester">
+        <a class="app-link" href="fonttester/index.html">[ Run Application ]</a>
+        <h2>fonttester</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Custom font tester application with responsive design</li>
+    <li>Features font file upload (.ttf, .otf, .woff, .woff2) with @font-face implementation</li>
+    <li>Interactive font size slider (8px to 72px) with smooth transitions</li>
+    <li>Real-time custom text input display with placeholder management</li>
+    <li>Comprehensive typography testing including headings, paragraphs, lists, forms, and glyphs</li>
+  </ul>
+
+  <pre>
+    <code>const reader = new FileReader();</code>
+    <code>reader.onload = (e) =&gt; { /* Apply @font-face rule */ };</code>
+    <code>fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', system-ui, sans-serif`;</code>
+  </pre>
+
+  <p>This web application provides a comprehensive environment for testing custom fonts across various typographic elements. Users can upload font files, adjust font sizes with a slider, and input custom text to see real-time rendering results. The application includes a wide range of test cases including headings, paragraphs, lists, forms, and special characters, all styled with a modern, responsive design using CSS variables and grid layouts.</p>
+</section>
+        </div>
+      </section>
+    
       <section class="app-section" id="section-matrix" data-name="matrix">
         <a class="app-link" href="matrix/index.html">[ Run Application ]</a>
         <h2>matrix</h2>
@@ -259,37 +283,6 @@
   </pre>
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>HTML5 game with canvas rendering and responsive UI</li>
-    <li>Multiplayer support via MQTT/WebSocket for real-time synchronization</li>
-    <li>Procedurally generated infinite 2D mining world with various ores and materials</li>
-    <li>Resource management system with fuel, hull integrity, and cargo capacity</li>
-    <li>Upgrade shop system for drill tiers, hull, fuel capacity, and special items</li>
-    <li>Mobile-optimized touch controls with D-pad and action buttons</li>
-    <li>Inventory system with building blocks and consumable items</li>
-    <li>Local and cloud save system with IndexedDB and Puter integration</li>
-    <li>Admin/host system for server management and world control</li>
-    <li>Dynamic lighting and day/night cycle effects</li>
-    <li>Custom modal system for prompts and confirmations</li>
-    <li>Real-time minimap and coordinate display</li>
-  </ul>
-
-  <pre>
-    <code>const GameEngine = new GameEngine();</code>
-    <code>const Network = new NetworkManager();</code>
-    <code>const Sound = new SoundManager();</code>
-  </pre>
-
-  <p>Mega Miner NG is a comprehensive HTML5 mining game featuring multiplayer capabilities, procedural world generation, and extensive upgrade systems. The game includes canvas-based rendering, touch-optimized mobile controls, real-time synchronization through MQTT, and persistent storage using IndexedDB with optional cloud backup. Players mine resources, upgrade their equipment, manage fuel and cargo, and can interact with other players in shared worlds while maintaining local progress through robust save systems.</p>
 </section>
         </div>
       </section>
@@ -496,26 +489,22 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-fonttester" data-name="fonttester">
-        <a class="app-link" href="fonttester/index.html">[ Run Application ]</a>
-        <h2>fonttester</h2>
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>Custom font tester application with responsive design</li>
-    <li>Features font file upload (.ttf, .otf, .woff, .woff2) with @font-face implementation</li>
-    <li>Interactive font size slider (8px to 72px) with smooth transitions</li>
-    <li>Real-time custom text input display with placeholder management</li>
-    <li>Comprehensive typography testing including headings, paragraphs, lists, forms, and glyphs</li>
+    <li>Mega Miner NG is a multiplayer mining game where players dig deep underground to collect valuable resources.</li>
+    <li>The game features a procedurally generated world with various ores, crafting, building, and social interaction through a chat system.</li>
+    <li>Players can upgrade their mining equipment, purchase items from shops, and discover teleporters for fast travel across the map.</li>
   </ul>
 
   <pre>
-    <code>const reader = new FileReader();</code>
-    <code>reader.onload = (e) =&gt; { /* Apply @font-face rule */ };</code>
-    <code>fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', system-ui, sans-serif`;</code>
+    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: 500, gridY: 4, x: 0, y: 0, fuel: 100, hull: 100, cargo: 0, money: 0, temp: 0, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 3, multiMine: 0, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; this.map = []; this.discovered = []; this.remotePlayers = {}; this.camera = { x: 0, y: 0 }; this.zoom = 1.0; this.particles = []; this.explosives = []; this.isAdmin = false; this.hostId = null; this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]'); this.lastActionTime = 0; this.lastAutosave = 0; this.lastViewportSync = 0; this.fallHeight = 0; this.stationGridX = CONSTANTS.MAP_WIDTH / 2; this.stationGridY = 4; this.lastHostHeartbeat = 0; } }
   </pre>
 
-  <p>This web application provides a comprehensive environment for testing custom fonts across various typographic elements. Users can upload font files, adjust font sizes with a slider, and input custom text to see real-time rendering results. The application includes a wide range of test cases including headings, paragraphs, lists, forms, and special characters, all styled with a modern, responsive design using CSS variables and grid layouts.</p>
+  <p>Mega Miner NG is a multiplayer mining adventure game featuring procedurally generated worlds where players can dig for resources, upgrade equipment, build structures, and interact with other players through chat and trading systems. The game includes a comprehensive shop system, teleporter network, and competitive leaderboard tracking mining statistics.</p>
 </section>
         </div>
       </section>
