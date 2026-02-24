@@ -3,188 +3,244 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Applications</title>
+  <title>Web Gizmos | Applications</title>
 
   <style>
     :root {
-      --bg: #f5f5f5;
-      --text: #222;
-      --card-bg: #fff;
-      --card-shadow: rgba(0,0,0,0.1);
-      --link: #0077cc;
-      --sidebar-bg: #222;
-      --sidebar-text: #eee;
-      --sidebar-hover: #fff;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #111;
-        --text: #eee;
-        --card-bg: #1c1c1c;
-        --card-shadow: rgba(255,255,255,0.05);
-        --link: #4da3ff;
-        --sidebar-bg: #000;
-        --sidebar-text: #ccc;
-        --sidebar-hover: #fff;
-      }
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --card-bg: #ffffff;
+      --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --sidebar-bg: #1e293b;
+      --sidebar-text: #f1f5f9;
+      --nav-hover: rgba(255, 255, 255, 0.1);
+      --input-bg: #ffffff;
     }
 
     body.dark {
-      --bg: #111;
-      --text: #eee;
-      --card-bg: #1c1c1c;
-      --card-shadow: rgba(255,255,255,0.05);
-      --link: #4da3ff;
-      --sidebar-bg: #000;
-      --sidebar-text: #ccc;
-      --sidebar-hover: #fff;
+      --bg: #0f172a;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --card-bg: #1e293b;
+      --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+      --sidebar-bg: #020617;
+      --sidebar-text: #e2e8f0;
+      --input-bg: #1e293b;
     }
 
     body {
       margin: 0;
-      font-family: system-ui, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       display: flex;
       min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
+      transition: background 0.3s ease;
     }
 
+    /* Sidebar Styling */
     nav {
-      width: 260px;
+      width: 280px;
       background: var(--sidebar-bg);
       color: var(--sidebar-text);
-      padding: 20px;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
       box-sizing: border-box;
-      transition: background 0.3s, color 0.3s;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.1);
     }
 
     nav h2 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      letter-spacing: 0.5px;
-    }
-
-    nav a {
-      display: block;
-      color: var(--sidebar-text);
-      text-decoration: none;
-      padding: 6px 0;
-      font-size: 0.95rem;
-      transition: color 0.2s;
-    }
-
-    nav a:hover {
-      color: var(--sidebar-hover);
+      margin: 0 0 1.5rem 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     #search {
       width: 100%;
-      padding: 8px 10px;
-      margin: 15px 0 20px 0;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 2rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      outline: none;
+      transition: all 0.2s;
     }
 
+    #search:focus {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--primary);
+    }
+
+    .nav-item {
+      display: block;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      padding: 0.75rem 1rem;
+      margin: 0.2rem 0;
+      border-radius: 0.4rem;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      opacity: 0.8;
+    }
+
+    .nav-item:hover {
+      background: var(--nav-hover);
+      opacity: 1;
+      transform: translateX(5px);
+    }
+
+    /* Main Content */
     main {
       flex: 1;
-      padding: 40px;
-      box-sizing: border-box;
+      padding: 3rem;
+      max-width: 1000px;
+      margin: 0 auto;
     }
 
     h1 {
-      margin-top: 0;
-      font-size: 2rem;
+      font-size: 2.25rem;
+      font-weight: 800;
+      margin-bottom: 2rem;
+      letter-spacing: -0.025em;
     }
 
-    section {
+    /* Card Grid */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .app-section {
       background: var(--card-bg);
-      padding: 20px;
-      margin-bottom: 25px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px var(--card-shadow);
-      transition: background 0.3s, box-shadow 0.3s;
+      padding: 1.75rem;
+      border-radius: 1rem;
+      box-shadow: var(--card-shadow);
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
     }
 
-    section h2 {
-      margin-top: 0;
-      font-size: 1.4rem;
+    .app-section:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    }
+
+    .app-section h2 {
+      margin: 0.5rem 0;
+      font-size: 1.25rem;
+    }
+
+    .app-summary {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
     }
 
     .app-link {
-      display: inline-block;
-      margin-bottom: 10px;
-      font-size: 0.9rem;
-      color: var(--link);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 1.2rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 0.5rem;
       text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
     }
 
     .app-link:hover {
-      text-decoration: underline;
+      background: var(--primary-hover);
     }
 
     #themeToggle {
-      margin-top: 20px;
-      padding: 8px 12px;
-      background: var(--card-bg);
-      color: var(--text);
-      border: 1px solid var(--text);
-      border-radius: 6px;
+      margin-top: auto;
+      padding: 0.75rem;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.5rem;
       cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.3s, color 0.3s, border 0.3s;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    #themeToggle:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* Mobile View */
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      nav { width: 100%; height: auto; position: relative; }
+      main { padding: 1.5rem; }
+      .app-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 
-<body>
+<body class="dark"> <nav>
+    <h2>Gizmos</h2>
+    <input id="search" type="text" placeholder="Search gadgets..." />
 
-  <nav>
-    <h2>Applications</h2>
+    <div id="navLinks">
+      
+        <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
+      
+        <a class="nav-item" href="pic2html/index.html" data-name="pic2html">pic2html</a>
+      
+        <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
+      
+        <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
+      
+        <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
+      
+        <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
+      
+        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">midibeat</a>
+      
+        <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
+      
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
+      
+        <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
+      
+        <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
+      
+        <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
+      
+        <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
+      
+    </div>
 
-    <input id="search" type="text" placeholder="Search applications..." />
-
-    
-      <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
-    
-      <a class="nav-item" href="pic2html/index.html" data-name="pic2html">pic2html</a>
-    
-      <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
-    
-      <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
-    
-      <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
-    
-      <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
-    
-      <a class="nav-item" href="midibeat/index.html" data-name="midibeat">midibeat</a>
-    
-      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
-    
-      <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-    
-      <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
-    
-      <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
-    
-      <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
-    
-      <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
-    
-
-    <button id="themeToggle">Toggle Theme</button>
+    <button id="themeToggle">🌓 Switch Theme</button>
   </nav>
 
   <main>
-    <h1>Applications Overview</h1>
+    <h1>Project Overview</h1>
 
-    
-      <section class="app-section" data-name="pcb">
-        <a class="app-link" href="pcb/index.html">Open pcb</a>
-        <h2>pcb</h2>
-        <section>
+    <div class="app-grid">
+      
+        <section class="app-section" data-name="pcb">
+          <h2>pcb</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Procedural PCB simulator with logic gates, switches, displays, and LEDs</li>
     <li>Smart A* routing algorithm with fan-out limits and force-connect option</li>
@@ -200,12 +256,14 @@
 
   <p>This procedural PCB simulator generates random circuit boards with logic components that interact through signal propagation. Users can adjust parameters like component density and fan-out limits, then interact with switches and observe signal flow through traces. The A* routing algorithm intelligently connects components while avoiding collisions, with optional force-connect mode for crowded boards.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="pic2html">
-        <a class="app-link" href="pic2html/index.html">Open pic2html</a>
-        <h2>pic2html</h2>
-        <section>
+          </div>
+          <a class="app-link" href="pcb/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="pic2html">
+          <h2>pic2html</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Converts images to HTML text representations with configurable settings</li>
     <li>Supports sequence or random character generation based on image pixels</li>
@@ -219,12 +277,14 @@
 
   <p>This web application transforms uploaded images into HTML text art using configurable settings for character type, width, colors, and font size. The tool processes images by reading pixel data and mapping it to HTML elements with appropriate colors, supporting both sequence and random character generation patterns. Users can export their creations as HTML, SVG, or PNG files for sharing or further use.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="matrix">
-        <a class="app-link" href="matrix/index.html">Open matrix</a>
-        <h2>matrix</h2>
-        <section>
+          </div>
+          <a class="app-link" href="pic2html/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="matrix">
+          <h2>matrix</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Creates a Matrix-style falling text animation with customizable parameters</li>
     <li>Uses canvas to render animated characters that fall vertically and move horizontally</li>
@@ -238,12 +298,14 @@
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="pattern">
-        <a class="app-link" href="pattern/index.html">Open pattern</a>
-        <h2>pattern</h2>
-        <section>
+          </div>
+          <a class="app-link" href="matrix/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="pattern">
+          <h2>pattern</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>SVG pattern generator with seeded randomness for reproducible designs</li>
     <li>Six distinct style engines: Memphis, Bauhaus, Isometric, Voronoi, Waves, Op-Art</li>
@@ -258,12 +320,14 @@
 
   <p>This web application generates deterministic SVG patterns using seeded pseudorandom number generation. Users can customize dimensions, select from six artistic styles, adjust complexity, choose color palettes, and export their creations as vector SVG or raster PNG files. The seed-based approach ensures identical patterns can be recreated by reusing the same settings.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="voxelracing">
-        <a class="app-link" href="voxelracing/index.html">Open voxelracing</a>
-        <h2>voxelracing</h2>
-        <section>
+          </div>
+          <a class="app-link" href="pattern/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="voxelracing">
+          <h2>voxelracing</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Multiplayer racing game using Three.js for 3D graphics and MQTT for real-time networking</li>
     <li>Procedurally generated terrain with five biomes (grasslands, desert, snow, mars, caves) using simplex noise</li>
@@ -279,12 +343,14 @@
 
   <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="asl">
-        <a class="app-link" href="asl/index.html">Open asl</a>
-        <h2>asl</h2>
-        <section>
+          </div>
+          <a class="app-link" href="voxelracing/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="asl">
+          <h2>asl</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Webpage for playing ASL sequences based on user input text</li>
     <li>Features an input field with autocomplete suggestions</li>
@@ -298,12 +364,14 @@
 
   <p>This webpage allows users to enter text and play corresponding ASL (American Sign Language) sequences. It features an input field with autocomplete suggestions and a video player to display the ASL sequences. The page includes a button to fetch and play the ASL sequence based on the user's input text.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="midibeat">
-        <a class="app-link" href="midibeat/index.html">Open midibeat</a>
-        <h2>midibeat</h2>
-        <section>
+          </div>
+          <a class="app-link" href="asl/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="midibeat">
+          <h2>midibeat</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Web-based MIDI sampler using Tone.js and midi-player-js libraries</li>
     <li>Supports custom audio and MIDI file uploads or default files</li>
@@ -317,12 +385,14 @@
 
   <p>A MIDI sampler web application that triggers custom audio samples based on MIDI note events. Users can upload their own audio and MIDI files or use default files, with controls to play, pause, and restart the sequence. The application uses Tone.js for audio synthesis and midi-player-js for MIDI file parsing.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="pixelreducer">
-        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
-        <h2>pixelreducer</h2>
-        <section>
+          </div>
+          <a class="app-link" href="midibeat/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="pixelreducer">
+          <h2>pixelreducer</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Web app that degrades image/video quality over time by scaling down resolution and crushing audio.</li>
     <li>Supports uploading images or videos, then applying pixelation and audio degradation to create a GIF or degraded video file.</li>
@@ -337,12 +407,14 @@
 
   <p>This web application lets users upload images or videos and apply progressive degradation effects including pixelation and audio bitcrushing. It provides real-time preview, customizable parameters for final scale, pixelation step, audio crush strength, and output options like GIF or degraded video. The app uses canvas manipulation for visual degradation and Web Audio API for audio processing, with optional recording capabilities for video output.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">Open megaminer</a>
-        <h2>megaminer</h2>
-        <section>
+          </div>
+          <a class="app-link" href="pixelreducer/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="megaminer">
+          <h2>megaminer</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>HTML5 game with canvas rendering and responsive UI</li>
     <li>Multiplayer support via MQTT/WebSocket for real-time synchronization</li>
@@ -366,12 +438,14 @@
 
   <p>Mega Miner NG is a comprehensive HTML5 mining game featuring multiplayer capabilities, procedural world generation, and extensive upgrade systems. The game includes canvas-based rendering, touch-optimized mobile controls, real-time synchronization through MQTT, and persistent storage using IndexedDB with optional cloud backup. Players mine resources, upgrade their equipment, manage fuel and cargo, and can interact with other players in shared worlds while maintaining local progress through robust save systems.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="animeboydownloader">
-        <a class="app-link" href="animeboydownloader/index.html">Open animeboydownloader</a>
-        <h2>animeboydownloader</h2>
-        <section>
+          </div>
+          <a class="app-link" href="megaminer/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="animeboydownloader">
+          <h2>animeboydownloader</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Web app fetches random anime boy images from Nekos API through a proxy</li>
     <li>Displays image with metadata including ID, rating, tags, source link, and color palette</li>
@@ -385,12 +459,14 @@
 
   <p>This application displays random anime boy images from the Nekos API with accompanying metadata and color palette swatches. Users can fetch new images by clicking a button, and each image card shows details like ID, rating, tags, and source link. The interface uses a playful pink-themed design with Comic Sans font and smooth hover effects.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="racing">
-        <a class="app-link" href="racing/index.html">Open racing</a>
-        <h2>racing</h2>
-        <section>
+          </div>
+          <a class="app-link" href="animeboydownloader/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="racing">
+          <h2>racing</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Real-time multiplayer racing game using MQTT for networking</li>
     <li>Pixelated 2D graphics with neon cyberpunk aesthetic</li>
@@ -406,12 +482,14 @@
 
   <p>DRiFT.js is a browser-based multiplayer racing game featuring real-time physics, custom map creation, and chat functionality. Players connect via MQTT to race together, with the host controlling physics settings and the ability to share maps. The game includes a map editor, particle effects, and supports both desktop and mobile controls.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="microviz">
-        <a class="app-link" href="microviz/index.html">Open microviz</a>
-        <h2>microviz</h2>
-        <section>
+          </div>
+          <a class="app-link" href="racing/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="microviz">
+          <h2>microviz</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Audio visualizer with 2D canvas overlay and 3D background canvas</li>
     <li>Multiple visualizer modes including bars, waveform, and circle visualizations</li>
@@ -428,12 +506,14 @@
 
   <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
 </section>
-      </section>
-    
-      <section class="app-section" data-name="turtle">
-        <a class="app-link" href="turtle/index.html">Open turtle</a>
-        <h2>turtle</h2>
-        <section>
+          </div>
+          <a class="app-link" href="microviz/index.html">Launch Application</a>
+        </section>
+      
+        <section class="app-section" data-name="turtle">
+          <h2>turtle</h2>
+          <div class="app-summary">
+            <section>
   <ul>
     <li>Interactive turtle simulation with multiple turtle personalities and behaviors</li>
     <li>Pathfinding AI using A* algorithm with obstacle avoidance and 8-directional movement</li>
@@ -449,8 +529,11 @@
 
   <p>This web-based turtle simulation features intelligent AI turtles with distinct personalities, pathfinding capabilities, and interactive behaviors. Users can spawn turtles, place food and obstacles, edit terrain, and customize simulation settings through a responsive control panel. The simulation includes advanced features like A* pathfinding, turtle vision cones, food detection systems, and mobile touch controls.</p>
 </section>
-      </section>
-    
+          </div>
+          <a class="app-link" href="turtle/index.html">Launch Application</a>
+        </section>
+      
+    </div>
   </main>
 
   <script>
@@ -460,15 +543,11 @@
 
     search.addEventListener("input", () => {
       const q = search.value.toLowerCase();
-
       navItems.forEach(item => {
-        const name = item.dataset.name.toLowerCase();
-        item.style.display = name.includes(q) ? "block" : "none";
+        item.style.display = item.dataset.name.toLowerCase().includes(q) ? "block" : "none";
       });
-
       sections.forEach(sec => {
-        const name = sec.dataset.name.toLowerCase();
-        sec.style.display = name.includes(q) ? "block" : "none";
+        sec.style.display = sec.dataset.name.toLowerCase().includes(q) ? "flex" : "none";
       });
     });
 
@@ -477,6 +556,5 @@
       document.body.classList.toggle("dark");
     });
   </script>
-
 </body>
 </html>
