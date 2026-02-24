@@ -159,6 +159,8 @@
     
       <a class="nav-item" href="midibeat/index.html" data-name="midibeat">midibeat</a>
     
+      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
+    
       <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
     
       <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
@@ -166,8 +168,6 @@
       <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
     
       <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
-    
-      <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
     
       <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
     
@@ -296,6 +296,26 @@
 </section>
       </section>
     
+      <section class="app-section" data-name="pixelreducer">
+        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
+        <h2>pixelreducer</h2>
+        <section>
+  <ul>
+    <li>Web app that degrades image/video quality over time by scaling down resolution and crushing audio.</li>
+    <li>Supports uploading images or videos, then applying pixelation and audio degradation to create a GIF or degraded video file.</li>
+    <li>Features real-time preview, customizable degradation parameters, and download options.</li>
+  </ul>
+
+  <pre>
+    <code>const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });</code>
+    <code>const gif = new GIF({ workers: 2, quality: 10, width: canvas.width, height: canvas.height });</code>
+  </pre>
+
+  <p>This web application lets users upload images or videos and apply progressive degradation effects including pixelation and audio bitcrushing. It provides real-time preview, customizable parameters for final scale, pixelation step, audio crush strength, and output options like GIF or degraded video. The app uses canvas manipulation for visual degradation and Web Audio API for audio processing, with optional recording capabilities for video output.</p>
+</section>
+      </section>
+    
       <section class="app-section" data-name="megaminer">
         <a class="app-link" href="megaminer/index.html">Open megaminer</a>
         <h2>megaminer</h2>
@@ -384,26 +404,6 @@
   </pre>
 
   <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
-</section>
-      </section>
-    
-      <section class="app-section" data-name="pixelreducer">
-        <a class="app-link" href="pixelreducer/index.html">Open pixelreducer</a>
-        <h2>pixelreducer</h2>
-        <section>
-  <ul>
-    <li>Web app that degrades image/video quality over time by scaling down resolution and crushing audio.</li>
-    <li>Supports uploading images or videos, then applying pixelation and audio degradation to create a GIF or degraded video file.</li>
-    <li>Features real-time preview, customizable degradation parameters, and download options.</li>
-  </ul>
-
-  <pre>
-    <code>const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { alpha: false });</code>
-    <code>const gif = new GIF({ workers: 2, quality: 10, width: canvas.width, height: canvas.height });</code>
-  </pre>
-
-  <p>This web application lets users upload images or videos and apply progressive degradation effects including pixelation and audio bitcrushing. It provides real-time preview, customizable parameters for final scale, pixelation step, audio crush strength, and output options like GIF or degraded video. The app uses canvas manipulation for visual degradation and Web Audio API for audio processing, with optional recording capabilities for video output.</p>
 </section>
       </section>
     
