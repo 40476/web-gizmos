@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages and Cloudflare
-name: Deploy static content to Pages
+name: Deploy static content
 
 on:
   workflow_run:
@@ -51,6 +51,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: web-gizmos 
-          directory: . 
+          projectName: web-gizmos
+          directory: .
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          # Use '3' to ensure it handles the new Workers/Pages convergence
+          wranglerVersion: '3'
