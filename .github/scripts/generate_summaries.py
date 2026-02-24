@@ -1,11 +1,15 @@
 import os
 import json
 import time
+import sys
 import subprocess
 import requests
 import re
 import argparse
 from jinja2 import Template
+
+# Force unbuffered output for live logging
+sys.stdout.reconfigure(line_buffering=True)
 
 MODEL = "arcee-ai/trinity-large-preview:free"
 SUMMARY_DIR = ".github/summaries"
@@ -30,283 +34,117 @@ SYSTEM_PROMPT = (
     "  <p>[Three-sentence summary here.]</p>\n"
     "</section>\n\n"
     "Rules:\n"
-    "- Do NOT include Markdown.\n"
-    "- Do NOT rewrite or restyle the original HTML.\n"
-    "- Do NOT include full code blocks or long excerpts.\n"
-    "- Code lines must be short (max 80 chars) and taken from the input.\n"
-    "- Keep the summary stable; only change it when the meaning must change.\n"
-    "- Do NOT include any non-English words or characters.\n"
-    "- Do NOT include stray Unicode symbols.\n"
-    "- Assume all provided code is functional and does not require debugging.\n"
     "- Output must contain ONLY standard ASCII characters."
-    
 )
 
-# ------------------------------------------------------------
-# Preproccessing
-# ------------------------------------------------------------
-def hide_ignored_sections(content):
-    """
-    Replace text between //!summaryignore and //!endsummaryignore
-    with a placeholder notice.
-    """
-    pattern = re.compile(
-        r"//!summaryignore(.*?)//!endsummaryignore",
-        re.DOTALL
-    )
+def clean_and_truncate_content(content):
+    pattern = re.compile(r"//!summaryignore(.*?)//!endsummaryignore", re.DOTALL)
+    content = re.sub(pattern, "[Section ignored]", content)
+    lines = content.splitlines()
+    if len(lines) > 10000:
+        lines = lines[:10000]
+    return "\n".join([line[:1000] + "... [trunc]" if len(line) > 1000 else line for line in lines])
 
-    replacement = (
-        "//!summaryignore\n"
-        "Notice: This text has been hidden.\n"
-        "//!endsummaryignore\n"
-    )
-
-    return re.sub(pattern, replacement, content)
-
-# ------------------------------------------------------------
-# GitHub Actions logging helpers
-# ------------------------------------------------------------
-def gha_notice(msg):
-    print(f"::notice::{msg}")
-
-def gha_group(msg):
-    print(f"::group::{msg}")
-
-def gha_endgroup():
-    print("::endgroup::")
-
-# ------------------------------------------------------------
-# Directory change detection
-# ------------------------------------------------------------
 def dir_changed(path):
-    """Return True if the directory has changed since last commit."""
+    """Checks if the directory changed in the last commit."""
     result = subprocess.run(
         ["git", "diff", "--name-only", "HEAD~1", "HEAD", path],
-        capture_output=True,
-        text=True
+        capture_output=True, text=True
     )
     return bool(result.stdout.strip())
 
-# ------------------------------------------------------------
-# Summary validator
-# ------------------------------------------------------------
-def validate_summary(summary):
-    if "<section>" not in summary or "</section>" not in summary:
-        return False
-    if summary.count("<li>") < 3:
-        return False
-    if summary.count("<code>") < 2:
-        return False
-    if "<p>" not in summary or "</p>" not in summary:
-        return False
-
-    # Check for 3 sentences inside <p>
-    p_match = re.search(r"<p>(.*?)</p>", summary, re.DOTALL)
-    if not p_match:
-        return False
-
-    sentences = re.split(r"[.!?]\s+", p_match.group(1).strip())
-    if len([s for s in sentences if s.strip()]) < 3:
-        return False
-
-    return True
-
-# ------------------------------------------------------------
-# OpenRouter API call with retry + backoff
-# ------------------------------------------------------------
 def generate_summary(content):
-    content = content.encode("utf-8", "replace").decode("utf-8")
-
+    content = content.encode("ascii", "ignore").decode("ascii")
     headers = {
         "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
-        "Content-Type": "application/json",
-        "X-Title": "summary-generator"
+        "Content-Type": "application/json"
     }
-
     payload = {
         "model": MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": content}
-        ]
+        "messages": [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": content}]
     }
-
-    for attempt in range(6):
-        r = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            data=json.dumps(payload)
-        )
-
-        # Rate limit
-        if r.status_code == 429:
-            wait = 2 ** attempt
-            gha_notice(f"Rate limited. Waiting {wait} seconds...")
-            time.sleep(wait)
-            continue
-
-        # Other errors
-        if r.status_code >= 400:
-            gha_notice(f"OpenRouter error: {r.text}")
-            if attempt < 10:
-                time.sleep(2)
+    for attempt in range(3):
+        try:
+            r = requests.post("https://openrouter.ai/api/v1/chat/completions", 
+                             headers=headers, json=payload, timeout=45)
+            if r.status_code == 429:
+                time.sleep(2 ** attempt)
                 continue
             r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"].encode("ascii", "ignore").decode("ascii")
+        except Exception as e:
+            print(f"API Error: {e}")
+            time.sleep(2)
+    return ""
 
-        data = r.json()
-
-        # Missing choices = invalid response
-        if "choices" not in data:
-            gha_notice(f"Invalid response (no 'choices'): {data}")
-            if attempt < 5:
-                time.sleep(2)
-                continue
-            raise RuntimeError("OpenRouter returned no choices after retries.")
-
-        # Log raw LLM output
-        gha_group("LLM raw output")
-        print(data["choices"][0]["message"]["content"])
-        gha_endgroup()
-
-        return data["choices"][0]["message"]["content"]
-
-    raise RuntimeError("Failed after multiple retries.")
-
-# ------------------------------------------------------------
-# Template rendering
-# ------------------------------------------------------------
-def load_template():
-    with open(TEMPLATE_FILE, "r", encoding="utf-8") as f:
-        return Template(f.read())
-
-def write_root_index(summaries):
-    template = load_template()
-    rendered = template.render(applications=summaries)
-
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write(rendered)
-
-# ------------------------------------------------------------
-# Main
-# ------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(description='Generate summaries for web applications')
-    parser.add_argument('--dry-run', action='store_true', 
-                       help='Run in dry-run mode (no API calls, no file writes)')
-    parser.add_argument('--api-key', type=str,
-                       help='OpenRouter API key (overrides OPENROUTER_API_KEY environment variable)')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
 
-    # Set API key from argument or environment variable
-    if args.api_key:
-        os.environ['OPENROUTER_API_KEY'] = args.api_key
-    elif 'OPENROUTER_API_KEY' not in os.environ:
-        print("Error: OpenRouter API key not provided. Use --api-key argument or set OPENROUTER_API_KEY environment variable.")
-        exit(1)
+    if 'OPENROUTER_API_KEY' not in os.environ:
+        print("::error::Missing OPENROUTER_API_KEY")
+        sys.exit(1)
+
+    all_entries = sorted([
+        e for e in os.listdir(".")
+        if os.path.isdir(e) and not e.startswith(".") and os.path.exists(os.path.join(e, "index.html"))
+    ])
 
     summaries = {}
-    retry_queue = []
+    to_update = []
 
-    # Collect valid directories
-    entries = [
-        e for e in os.listdir(".")
-        if os.path.isdir(e)
-        and not e.startswith(".")
-        and os.path.exists(os.path.join(e, "index.html"))
-        and not os.path.exists(os.path.join(e, ".summaryignore"))
-    ]
-
-    total = len(entries)
-    completed = 0
-
-    for entry in entries:
-        completed += 1
-        gha_notice(f"Starting summary {completed}/{total}: {entry}")
-        gha_group(f"Processing {entry}")
-
-        index_file = os.path.join(entry, "index.html")
+    # --- STARTUP PRE-SCAN ---
+    print(f"::group::Startup Scan")
+    for entry in all_entries:
         summary_file = os.path.join(SUMMARY_DIR, f"{entry}.html")
+        
+        # Determine if we need a new summary
+        needs_api = not os.path.exists(summary_file) or dir_changed(entry)
 
-        # Cache check
-        if os.path.exists(summary_file) and not dir_changed(entry):
-            gha_notice(f"Using cached summary for {entry}")
+        if needs_api:
+            to_update.append(entry)
+            print(f"Queueing for update: {entry}")
+        else:
             with open(summary_file, "r", encoding="utf-8") as f:
                 summaries[entry] = f.read()
-            gha_endgroup()
-            continue
+            print(f"Loaded from cache: {entry}")
+    
+    print(f"Scan complete. {len(summaries)} cached, {len(to_update)} to update.")
+    print("::endgroup::")
 
-        # Generate new summary
-        with open(index_file, "r", encoding="utf-8") as f:
-            content = f.read()
+    # --- UPDATE LOOP ---
+    for i, entry in enumerate(to_update):
+        print(f"::notice::Processing {i+1}/{len(to_update)}: {entry}")
         
-        content = hide_ignored_sections(content)
+        with open(os.path.join(entry, "index.html"), "r", encoding="utf-8") as f:
+            clean_content = clean_and_truncate_content(f.read())
 
         if args.dry_run:
-            gha_notice(f"DRY RUN: Would generate summary for {entry}")
-            # Create a mock summary for dry run
-            mock_summary = f"""<section>
-  <ul>
-    <li>Mock bullet point 1 for {entry}</li>
-    <li>Mock bullet point 2 for {entry}</li>
-    <li>Mock bullet point 3 for {entry}</li>
-  </ul>
-
-  <pre>
-    <code>// Mock code line 1</code>
-    <code>// Mock code line 2</code>
-  </pre>
-
-  <p>This is a mock summary for {entry}. It demonstrates the format. The actual summary would be generated by the AI model.</p>
-</section>"""
-            summaries[entry] = mock_summary
+            summary = "<section><p>Mocking summary for dry run.</p></section>"
         else:
-            summary = generate_summary(content)
+            summary = generate_summary(clean_content)
+        
+        if summary and "<section>" in summary:
+            with open(os.path.join(SUMMARY_DIR, f"{entry}.html"), "w", encoding="utf-8") as f:
+                f.write(summary)
+            summaries[entry] = summary
+            print(f"Successfully updated {entry}")
+        else:
+            print(f"::error::Failed to generate valid summary for {entry}")
 
-            # Validate
-            if not validate_summary(summary):
-                gha_notice(f"Validation failed for {entry}, adding to retry queue.")
-                retry_queue.append(entry)
-            else:
-                gha_notice(f"Validation passed for {entry}.")
-                with open(summary_file, "w", encoding="utf-8") as f:
-                    f.write(summary)
-                summaries[entry] = summary
-
-        gha_endgroup()
-        if not args.dry_run:
-            time.sleep(10)  # queue delay
-
-    # Retry pass (only in non-dry-run mode)
-    if retry_queue and not args.dry_run:
-        gha_notice(f"Retrying {len(retry_queue)} failed summaries...")
-
-        for entry in retry_queue:
-            gha_group(f"Retrying {entry}")
-
-            index_file = os.path.join(entry, "index.html")
-            with open(index_file, "r", encoding="utf-8") as f:
-                content = f.read()
-            
-            content = hide_ignored_sections(content)
-            
-            summary = generate_summary(content)
-
-            if validate_summary(summary):
-                gha_notice(f"Retry succeeded for {entry}.")
-                with open(os.path.join(SUMMARY_DIR, f"{entry}.html"), "w", encoding="utf-8") as f:
-                    f.write(summary)
-                summaries[entry] = summary
-            else:
-                gha_notice(f"Final failure for {entry}, leaving old summary unchanged.")
-
-            gha_endgroup()
+        # Only sleep if there are more items left in the update queue
+        if i < len(to_update) - 1:
+            print("Waiting 10s for rate limits...")
             time.sleep(10)
 
-    if args.dry_run:
-        gha_notice("DRY RUN: Would rebuild index.html with generated summaries.")
-    else:
-        gha_notice("All summaries complete. Rebuilding index.html.")
-        write_root_index(summaries)
+    # Rebuild Index
+    with open(TEMPLATE_FILE, "r", encoding="utf-8") as f:
+        template = Template(f.read())
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(template.render(applications=summaries))
+    
+    print("Workflow complete.")
 
 if __name__ == "__main__":
     main()
