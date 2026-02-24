@@ -1823,6 +1823,12 @@ display: flex;
                     <div class="cost" id="cost-xray"></div>
                     <button class="btn" id="btn-xray" onclick="Shop.buy('xray')">Upgrade</button>
                 </div>
+                <div class="shop-item">
+                    <h4>Multi-miner</h4>
+                    <p>Mine blocks around you</p>
+                    <div class="cost" id="cost-multi_mine"></div>
+                    <button class="btn" id="btn-multi_mine" onclick="Shop.buy('multi_mine')">Upgrade</button>
+                </div>
                 <!--<div class="shop-item">
                     <h4>Vehicle Paint</h4>
                     <p>Change your look.</p>
@@ -2429,6 +2435,7 @@ class GameEngine {
             temp: 0, maxTemp: 100,
             rotation: 0, isDrilling: false,
             drillTier: 0, heatResist: 0, xrayRange: 3,
+            multiMine:0,
             inventory: {},
             selectedBlock: TILE_TYPES.CASING,
             stats: { blocksMined: {}, totalMined: 0, startTime: now() },
@@ -2468,6 +2475,7 @@ class GameEngine {
             maxCargo: this.localPlayer.maxCargo,
             heatResist: this.localPlayer.heatResist,
             xrayRange: this.localPlayer.xrayRange,
+            multiMine: this.localPlayer.multiMine,
             vehColor: this.settings.color,
             teleporters: this.localPlayer.teleporters || []
         };
@@ -2488,6 +2496,7 @@ class GameEngine {
                 if (data.heatResist) p.heatResist = data.heatResist;
                 if (data.xrayRange) p.xrayRange = data.xrayRange;
                 if (data.teleporters) p.teleporters = data.teleporters;
+                if (data.multiMine) p.multiMine = data.multiMine;
                 if (data.vehColor) {
                     this.settings.color = data.vehColor;
                     $('start-color').value = data.vehColor;
@@ -3269,62 +3278,94 @@ class GameEngine {
     }
 
     tryMine(tx, ty, testOnly = false) {
-        // Safety check for map bounds
         if (!this.map[ty] || this.map[ty][tx] === undefined) return false;
-
         let tile = this.map[ty][tx];
 
-        // Basic validity checks
-        if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK && this.localPlayer.fuel > 0) {
-            let props = TILE_PROPS[tile];
+        if (tile === TILE_TYPES.EMPTY) return true;
+        if (tile === TILE_TYPES.BEDROCK) return false;
+        if (this.localPlayer.fuel <= 0) return false;
 
-            // 1. Drill Tier Check
-            if (this.localPlayer.drillTier < props.tier) {
-                // We show the error even in test mode so the player knows why they can't move
-                UI.showToast(`Need Tier ${props.tier} Drill`, "error");
-                Sound.playError();
-                return false;
+        let props = TILE_PROPS[tile];
+        if (this.localPlayer.drillTier < props.tier) {
+            UI.showToast(`Need Tier ${props.tier} Drill`, "error");
+            Sound.playError();
+            return false;
+        }
+
+        if (this.localPlayer.cargo >= this.localPlayer.maxCargo) {
+            UI.showToast("Cargo Full!", "error");
+            Sound.playError();
+            return false;
+        }
+
+        if (testOnly) return true;
+
+        // --- AOE SORTING LOGIC ---
+        const range = this.localPlayer.multiMine || 0;
+        const tilesToMine = [];
+
+        // 1. Collect all potential coordinates in the range
+        for (let dy = -range; dy <= range; dy++) {
+            for (let dx = -range; dx <= range; dx++) {
+                tilesToMine.push({ x: tx + dx, y: ty + dy });
             }
+        }
 
-            // 2. Cargo Check
-            if (this.localPlayer.cargo >= this.localPlayer.maxCargo) {
-                // If the inventory already has this item, we might still be able to stack it?
-                // Assuming strict slot limit based on your previous code:
-                UI.showToast("Cargo Full!", "error");
-                Sound.playError();
-                return false;
-            }
+        // 2. Sort by distance to the player (gridX, gridY)
+        // This ensures the block the player is moving into and its
+        // immediate neighbors break first.
+        tilesToMine.sort((a, b) => {
+            const distA = Math.hypot(a.x - this.localPlayer.gridX, a.y - this.localPlayer.gridY);
+            const distB = Math.hypot(b.x - this.localPlayer.gridX, b.y - this.localPlayer.gridY);
+            return distA - distB;
+        });
 
-            // --- SUCCESS CASE ---
+        // 3. Execute mining in order (with an optional slight delay if you want a ripple)
+        tilesToMine.forEach((t, index) => {
+            // Optional: wrap this in a setTimeout(..., index * 20) for a visual ripple
+            this.executeSingleMine(t.x, t.y);
+        });
 
-            // If we are just checking if movement is allowed:
-            if (testOnly) {
-                return true;
-            }
+        this.map[ty][tx] = TILE_TYPES.EMPTY; // Final safety clear
+        Sound.playMining();
+        UI.updateDashboard();
 
-            // If we are actually mining (Arrived at tile):
+        return true;
+    }
+
+    // Helper function to handle individual block logic
+    executeSingleMine(x, y) {
+        // Bounds Check
+        if (!this.map[y] || this.map[y][x] === undefined) return;
+
+        const tile = this.map[y][x];
+        const props = TILE_PROPS[tile];
+        if (this.localPlayer.drillTier < props.tier) return false;
+
+        // Only mine if it's a valid tile and not bedrock/empty
+        // Note: AOE follows tier requirements for secondary blocks.
+        if (tile !== TILE_TYPES.EMPTY &&
+            tile !== TILE_TYPES.BEDROCK &&
+            this.localPlayer.cargo < this.localPlayer.maxCargo) {
+
+            // Add to Inventory
             if (!this.localPlayer.inventory[tile]) this.localPlayer.inventory[tile] = 0;
             this.localPlayer.inventory[tile]++;
             this.localPlayer.cargo++;
 
+            // Update Stats
             if (!this.localPlayer.stats.blocksMined[tile]) this.localPlayer.stats.blocksMined[tile] = 0;
             this.localPlayer.stats.blocksMined[tile]++;
             this.localPlayer.stats.totalMined++;
 
-            this.map[ty][tx] = TILE_TYPES.EMPTY;
-            this.discovered[ty][tx] = 1;
+            // Map Update
+            this.map[y][x] = TILE_TYPES.EMPTY;
+            if (this.discovered[y]) this.discovered[y][x] = 1;
 
-            // Visuals
-            this.spawnParticle(tx * 32 + 16, ty * 32 + 16, props.color, 8);
-            Sound.playMining();
-
-            // Network / UI
-            Network.sendTileUpdate(tx, ty, TILE_TYPES.EMPTY);
-            UI.updateDashboard();
-
-            return true;
+            // Visuals & Networking
+            this.spawnParticle(x * 32 + 16, y * 32 + 16, props.color, 8);
+            Network.sendTileUpdate(x, y, TILE_TYPES.EMPTY);
         }
-        return false;
     }
 
     spawnParticle(x, y, color, count) {
@@ -4198,7 +4239,7 @@ class ShopSystem {
     constructor() {
         this.prices = {
             drill: [500, 2000, 10000, 50000],
-            hull: 200, fuel: 200, cargo: 100, cool: 1000, xray: 2000,
+            hull: 200, fuel: 200, cargo: 100, cool: 1000, xray: 2000, multi_mine: [15000, 30000, 40000, 50000, 67, 60000, 70000, 100000],
             repair_kit: 50, fuel_voucher: 50, tnt: 200, nuke: 5000, teleporter: 1000
         };
     }
@@ -4311,6 +4352,7 @@ class ShopSystem {
         check('cargo', (p.maxCargo-50)/10);
         check('cool', p.heatResist);
         check('xray', p.xrayRange);
+        check('multi_mine', p.multiMine);
         check('repair_kit',false);
         check('fuel_voucher',false);
         check('tnt',false);
@@ -4360,34 +4402,69 @@ class ShopSystem {
         }
     }
 
+    // Helper to determine current level based on player stats
+    getUpgradeLevel(item) {
+        const p = Game.localPlayer;
+        switch(item) {
+            case 'drill':      return p.drillTier;
+            case 'hull':       return (p.maxHull - 100) / 20;
+            case 'fuel':       return (p.maxFuel - 100) / 20;
+            case 'cargo':      return (p.maxCargo - 50) / 10;
+            case 'cool':       return p.heatResist;
+            case 'xray':       return p.xrayRange;
+            case 'multi_mine': return p.multiMine;
+            default:           return 0;
+        }
+    }
+
     buyUpgrade(item) {
         const p = Game.localPlayer;
+        const priceData = this.prices[item];
+        const currentLevel = this.getUpgradeLevel(item);
+
         let cost = 0;
-        let success = false;
-        // if (item === 'paint') { if (p.money >= 100) { p.money -= 100; Game.settings.color = $('shop-color-picker').value; UI.showToast("Repainted!", "success"); success=true; } }
-        if (item === 'drill') { cost = this.prices.drill[p.drillTier]; if (p.money >= cost) { p.money -= cost; p.drillTier++; UI.showToast("Drill Upgraded!", "success"); Sound.playSuccess(); success=true; } }
-        else {
-            let level = 0;
-            if (item === 'hull') level = (p.maxHull-100)/20;
-            if (item === 'fuel') level = (p.maxFuel-100)/20;
-            if (item === 'cargo') level = (p.maxCargo-50)/10;
-            if (item === 'cool') level = p.heatResist;
-            if (item === 'xray') level = p.xrayRange;
-            cost = Math.floor(this.prices[item] * (1 + level));
-            if (p.money >= cost) {
-                p.money -= cost;
-                if (item === 'hull') { p.maxHull += 20; p.hull = p.maxHull; }
-                if (item === 'fuel') { p.maxFuel += 20; p.fuel = p.maxFuel; }
-                if (item === 'cargo') p.maxCargo += 20;
-                if (item === 'cool') p.heatResist++;
-                if (item === 'xray') p.xrayRange++;
-                UI.showToast(`You bought ${item} for \$${cost}!`, "success");
-                Sound.playSuccess();
-                success = true;
+        let isMaxLevel = false;
+
+        // 1. AUTO-DETECT ARRAY VS FORMULA
+        if (Array.isArray(priceData)) {
+            // If we've reached the end of the array, it's maxed out
+            if (currentLevel >= priceData.length) {
+                UI.showToast("Max Level Reached!", "error");
+                return;
             }
+            cost = priceData[currentLevel];
+        } else if (typeof priceData === 'number') {
+            // Fallback to your original formula
+            cost = Math.floor(priceData * (1 + currentLevel));
+        } else {
+            console.error("Invalid price data for item:", item);
+            return;
         }
-        if(success) Game.saveLocalProgress(); // Save on buy
-        this.updateUI();
+
+        // 2. TRANSACTION CHECK
+        if (p.money >= cost) {
+            p.money -= cost;
+
+            // 3. APPLY STAT CHANGES
+            switch(item) {
+                case 'drill':      p.drillTier++; break;
+                case 'hull':       p.maxHull += 20; p.hull = p.maxHull; break;
+                case 'fuel':       p.maxFuel += 20; p.fuel = p.maxFuel; break;
+                case 'cargo':      p.maxCargo += 10; break; // Fixed: using 10 to match your level formula
+                case 'cool':       p.heatResist++; break;
+                case 'xray':       p.xrayRange++; break;
+                case 'multi_mine': p.multiMine++; break;
+            }
+
+            UI.showToast(`Upgraded ${item} for $${cost}!`, "success");
+            Sound.playSuccess();
+            Game.saveLocalProgress();
+            this.updateUI();
+            UI.updateDashboard(); // Ensure HUD updates immediately
+        } else {
+            UI.showToast("Not enough money!", "error");
+            Sound.playError();
+        }
     }
 }
 
