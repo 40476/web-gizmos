@@ -164,31 +164,33 @@
     <input id="search" type="text" placeholder="Filter..." />
     <div class="nav-items-container">
       
+        <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
+      
+        <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
+      
+        <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
+      
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+      
+        <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
+      
+        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
+      
+        <a class="nav-item" href="pattern/index.html" data-name="pattern">> pattern</a>
+      
         <a class="nav-item" href="pcb/index.html" data-name="pcb">> pcb</a>
       
         <a class="nav-item" href="pic2html/index.html" data-name="pic2html">> pic2html</a>
       
-        <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
-      
-        <a class="nav-item" href="pattern/index.html" data-name="pattern">> pattern</a>
-      
-        <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
-      
-        <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
-      
-        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
-      
         <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">> pixelreducer</a>
-      
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
-      
-        <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
       
         <a class="nav-item" href="racing/index.html" data-name="racing">> racing</a>
       
-        <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
-      
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
+      
+        <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
+      
+        <a class="nav-item" href="fonttester/index.html" data-name="fonttester">> fonttester</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -197,6 +199,167 @@
   <main>
     <h1>web-gizmos (fun inside!)</h1>
 
+    
+      <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader">
+        <a class="app-link" href="animeboydownloader/index.html">[ Run Application ]</a>
+        <h2>animeboydownloader</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Web app fetches random anime boy images from Nekos API through a proxy</li>
+    <li>Displays image with metadata including ID, rating, tags, source link, and color palette</li>
+    <li>Features Comic Sans font, pink gradient background, and interactive button for new images</li>
+  </ul>
+
+  <pre>
+    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy...";</code>
+    <code>async function loadImage() { const response = await fetch(apiUrl); ... }</code>
+  </pre>
+
+  <p>This application displays random anime boy images from the Nekos API with accompanying metadata and color palette swatches. Users can fetch new images by clicking a button, and each image card shows details like ID, rating, tags, and source link. The interface uses a playful pink-themed design with Comic Sans font and smooth hover effects.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-asl" data-name="asl">
+        <a class="app-link" href="asl/index.html">[ Run Application ]</a>
+        <h2>asl</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Webpage for playing ASL sequences based on user input text</li>
+    <li>Features an input field with autocomplete suggestions</li>
+    <li>Includes a video player to display ASL sequences</li>
+  </ul>
+
+  <pre>
+    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
+    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
+  </pre>
+
+  <p>This webpage allows users to enter text and play corresponding ASL (American Sign Language) sequences. It features an input field with autocomplete suggestions and a video player to display the ASL sequences. The page includes a button to fetch and play the ASL sequence based on the user's input text.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-matrix" data-name="matrix">
+        <a class="app-link" href="matrix/index.html">[ Run Application ]</a>
+        <h2>matrix</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Creates a Matrix-style falling text animation with customizable parameters</li>
+    <li>Uses canvas to render animated characters that fall vertically and move horizontally</li>
+    <li>Supports URL parameters for customizing text, color, speed, font, and other visual properties</li>
+  </ul>
+
+  <pre>
+    <code>const canvas = document.getElementById('matrix');</code>
+    <code>const ctx = canvas.getContext('2d');</code>
+  </pre>
+
+  <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>HTML5 game with canvas rendering and responsive UI</li>
+    <li>Multiplayer support via MQTT/WebSocket for real-time synchronization</li>
+    <li>Procedurally generated infinite 2D mining world with various ores and materials</li>
+    <li>Resource management system with fuel, hull integrity, and cargo capacity</li>
+    <li>Upgrade shop system for drill tiers, hull, fuel capacity, and special items</li>
+    <li>Mobile-optimized touch controls with D-pad and action buttons</li>
+    <li>Inventory system with building blocks and consumable items</li>
+    <li>Local and cloud save system with IndexedDB and Puter integration</li>
+    <li>Admin/host system for server management and world control</li>
+    <li>Dynamic lighting and day/night cycle effects</li>
+    <li>Custom modal system for prompts and confirmations</li>
+    <li>Real-time minimap and coordinate display</li>
+  </ul>
+
+  <pre>
+    <code>const GameEngine = new GameEngine();</code>
+    <code>const Network = new NetworkManager();</code>
+    <code>const Sound = new SoundManager();</code>
+  </pre>
+
+  <p>Mega Miner NG is a comprehensive HTML5 mining game featuring multiplayer capabilities, procedural world generation, and extensive upgrade systems. The game includes canvas-based rendering, touch-optimized mobile controls, real-time synchronization through MQTT, and persistent storage using IndexedDB with optional cloud backup. Players mine resources, upgrade their equipment, manage fuel and cargo, and can interact with other players in shared worlds while maintaining local progress through robust save systems.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-microviz" data-name="microviz">
+        <a class="app-link" href="microviz/index.html">[ Run Application ]</a>
+        <h2>microviz</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Audio visualizer with 2D canvas overlay and 3D background canvas</li>
+    <li>Multiple visualizer modes including bars, waveform, and circle visualizations</li>
+    <li>Real-time audio processing using Web Audio API with FFT analysis</li>
+    <li>Metadata display including album art, title, artist, and album information</li>
+    <li>Multiple audio input modes: local microphone, WebSocket stream, and local file</li>
+  </ul>
+
+  <pre>
+    <code>const canvas2D = document.getElementById('visualizer-2d');</code>
+    <code>const ctx = canvas2D.getContext('2d');</code>
+    <code>const canvas3D = document.getElementById('visualizer-3d');</code>
+  </pre>
+
+  <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-midibeat" data-name="midibeat">
+        <a class="app-link" href="midibeat/index.html">[ Run Application ]</a>
+        <h2>midibeat</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Web-based MIDI sampler using Tone.js and midi-player-js libraries</li>
+    <li>Supports custom audio and MIDI file uploads or default files</li>
+    <li>Features play, pause, and restart controls with real-time status updates</li>
+  </ul>
+
+  <pre>
+    <code>const playBtn = document.getElementById('playBtn');</code>
+    <code>async function initSampler(url) { sampler = new Tone.Sampler({ urls: { C4: url } }); }</code>
+  </pre>
+
+  <p>A MIDI sampler web application that triggers custom audio samples based on MIDI note events. Users can upload their own audio and MIDI files or use default files, with controls to play, pause, and restart the sequence. The application uses Tone.js for audio synthesis and midi-player-js for MIDI file parsing.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-pattern" data-name="pattern">
+        <a class="app-link" href="pattern/index.html">[ Run Application ]</a>
+        <h2>pattern</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>SVG pattern generator with seeded randomness for reproducible designs</li>
+    <li>Six distinct style engines: Memphis, Bauhaus, Isometric, Voronoi, Waves, Op-Art</li>
+    <li>Deterministic output based on seed, dimensions, style, density, palette, and stroke width</li>
+    <li>Export to both SVG and PNG formats with texture overlay options</li>
+  </ul>
+
+  <pre>
+    <code>const rng = PRNG(`${seed}|${style}|${W}x${H}|${density}`);</code>
+    <code>switch (style) { case 'memphis': genMemphis(rootGroup, rng, W, H, palette, bg, strokeWidth); break; }</code>
+  </pre>
+
+  <p>This web application generates deterministic SVG patterns using seeded pseudorandom number generation. Users can customize dimensions, select from six artistic styles, adjust complexity, choose color palettes, and export their creations as vector SVG or raster PNG files. The seed-based approach ensures identical patterns can be recreated by reusing the same settings.</p>
+</section>
+        </div>
+      </section>
     
       <section class="app-section" id="section-pcb" data-name="pcb">
         <a class="app-link" href="pcb/index.html">[ Run Application ]</a>
@@ -242,114 +405,6 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-matrix" data-name="matrix">
-        <a class="app-link" href="matrix/index.html">[ Run Application ]</a>
-        <h2>matrix</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>Creates a Matrix-style falling text animation with customizable parameters</li>
-    <li>Uses canvas to render animated characters that fall vertically and move horizontally</li>
-    <li>Supports URL parameters for customizing text, color, speed, font, and other visual properties</li>
-  </ul>
-
-  <pre>
-    <code>const canvas = document.getElementById('matrix');</code>
-    <code>const ctx = canvas.getContext('2d');</code>
-  </pre>
-
-  <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-pattern" data-name="pattern">
-        <a class="app-link" href="pattern/index.html">[ Run Application ]</a>
-        <h2>pattern</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>SVG pattern generator with seeded randomness for reproducible designs</li>
-    <li>Six distinct style engines: Memphis, Bauhaus, Isometric, Voronoi, Waves, Op-Art</li>
-    <li>Deterministic output based on seed, dimensions, style, density, palette, and stroke width</li>
-    <li>Export to both SVG and PNG formats with texture overlay options</li>
-  </ul>
-
-  <pre>
-    <code>const rng = PRNG(`${seed}|${style}|${W}x${H}|${density}`);</code>
-    <code>switch (style) { case 'memphis': genMemphis(rootGroup, rng, W, H, palette, bg, strokeWidth); break; }</code>
-  </pre>
-
-  <p>This web application generates deterministic SVG patterns using seeded pseudorandom number generation. Users can customize dimensions, select from six artistic styles, adjust complexity, choose color palettes, and export their creations as vector SVG or raster PNG files. The seed-based approach ensures identical patterns can be recreated by reusing the same settings.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-voxelracing" data-name="voxelracing">
-        <a class="app-link" href="voxelracing/index.html">[ Run Application ]</a>
-        <h2>voxelracing</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>Multiplayer racing game using Three.js for 3D graphics and MQTT for real-time networking</li>
-    <li>Procedurally generated terrain with five biomes (grasslands, desert, snow, mars, caves) using simplex noise</li>
-    <li>Host edition includes terrain customization tools and soundboard for in-game audio effects</li>
-    <li>Mobile-optimized controls with virtual joystick and nitro buttons</li>
-    <li>Persistent settings stored in IndexedDB and server status checking for MQTT brokers</li>
-  </ul>
-
-  <pre>
-    <code>const Utils = { lerp: (a, b, t) => a + (b - a) * t, clamp: (val, min, max) => Math.min(Math.max(val, min), max), rand: (min, max) => Math.random() * (max - min) + min, strToColor: (str) => { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); const c = (hash & 0x00FFFFFF).toString(16).toUpperCase(); return '#' + "00000".substring(0, 6 - c.length) + c; }, getTimeString: (gameTime) => { const totalMinutes = Math.floor(gameTime * 24 * 60); const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`; } };</code>
-    <code>class DB { constructor(dbName, storeName) { this.dbName = dbName; this.storeName = storeName; this.db = null; } async init() { return new Promise((resolve, reject) => { const request = indexedDB.open(this.dbName, 2); request.onupgradeneeded = (e) => { const db = e.target.result; if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName); }; request.onsuccess = (e) => { this.db = e.target.result; resolve(); }; request.onerror = (e) => reject("DB Error"); }); } async get(key) { return new Promise((resolve) => { const tx = this.db.transaction([this.storeName], "readonly"); const req = tx.objectStore(this.storeName).get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => resolve(null); }); } async put(key, value) { return new Promise((resolve) => { const tx = this.db.transaction([this.storeName], "readwrite"); tx.objectStore(this.storeName).put(value, key); tx.oncomplete = () => resolve(); }); } }</code>
-  </pre>
-
-  <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-asl" data-name="asl">
-        <a class="app-link" href="asl/index.html">[ Run Application ]</a>
-        <h2>asl</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>Webpage for playing ASL sequences based on user input text</li>
-    <li>Features an input field with autocomplete suggestions</li>
-    <li>Includes a video player to display ASL sequences</li>
-  </ul>
-
-  <pre>
-    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
-    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
-  </pre>
-
-  <p>This webpage allows users to enter text and play corresponding ASL (American Sign Language) sequences. It features an input field with autocomplete suggestions and a video player to display the ASL sequences. The page includes a button to fetch and play the ASL sequence based on the user's input text.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-midibeat" data-name="midibeat">
-        <a class="app-link" href="midibeat/index.html">[ Run Application ]</a>
-        <h2>midibeat</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>Web-based MIDI sampler using Tone.js and midi-player-js libraries</li>
-    <li>Supports custom audio and MIDI file uploads or default files</li>
-    <li>Features play, pause, and restart controls with real-time status updates</li>
-  </ul>
-
-  <pre>
-    <code>const playBtn = document.getElementById('playBtn');</code>
-    <code>async function initSampler(url) { sampler = new Tone.Sampler({ urls: { C4: url } }); }</code>
-  </pre>
-
-  <p>A MIDI sampler web application that triggers custom audio samples based on MIDI note events. Users can upload their own audio and MIDI files or use default files, with controls to play, pause, and restart the sequence. The application uses Tone.js for audio synthesis and midi-player-js for MIDI file parsing.</p>
-</section>
-        </div>
-      </section>
-    
       <section class="app-section" id="section-pixelreducer" data-name="pixelreducer">
         <a class="app-link" href="pixelreducer/index.html">[ Run Application ]</a>
         <h2>pixelreducer</h2>
@@ -368,58 +423,6 @@
   </pre>
 
   <p>This web application lets users upload images or videos and apply progressive degradation effects including pixelation and audio bitcrushing. It provides real-time preview, customizable parameters for final scale, pixelation step, audio crush strength, and output options like GIF or degraded video. The app uses canvas manipulation for visual degradation and Web Audio API for audio processing, with optional recording capabilities for video output.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>HTML5 game with canvas rendering and responsive UI</li>
-    <li>Multiplayer support via MQTT/WebSocket for real-time synchronization</li>
-    <li>Procedurally generated infinite 2D mining world with various ores and materials</li>
-    <li>Resource management system with fuel, hull integrity, and cargo capacity</li>
-    <li>Upgrade shop system for drill tiers, hull, fuel capacity, and special items</li>
-    <li>Mobile-optimized touch controls with D-pad and action buttons</li>
-    <li>Inventory system with building blocks and consumable items</li>
-    <li>Local and cloud save system with IndexedDB and Puter integration</li>
-    <li>Admin/host system for server management and world control</li>
-    <li>Dynamic lighting and day/night cycle effects</li>
-    <li>Custom modal system for prompts and confirmations</li>
-    <li>Real-time minimap and coordinate display</li>
-  </ul>
-
-  <pre>
-    <code>const GameEngine = new GameEngine();</code>
-    <code>const Network = new NetworkManager();</code>
-    <code>const Sound = new SoundManager();</code>
-  </pre>
-
-  <p>Mega Miner NG is a comprehensive HTML5 mining game featuring multiplayer capabilities, procedural world generation, and extensive upgrade systems. The game includes canvas-based rendering, touch-optimized mobile controls, real-time synchronization through MQTT, and persistent storage using IndexedDB with optional cloud backup. Players mine resources, upgrade their equipment, manage fuel and cargo, and can interact with other players in shared worlds while maintaining local progress through robust save systems.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader">
-        <a class="app-link" href="animeboydownloader/index.html">[ Run Application ]</a>
-        <h2>animeboydownloader</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>Web app fetches random anime boy images from Nekos API through a proxy</li>
-    <li>Displays image with metadata including ID, rating, tags, source link, and color palette</li>
-    <li>Features Comic Sans font, pink gradient background, and interactive button for new images</li>
-  </ul>
-
-  <pre>
-    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy...";</code>
-    <code>async function loadImage() { const response = await fetch(apiUrl); ... }</code>
-  </pre>
-
-  <p>This application displays random anime boy images from the Nekos API with accompanying metadata and color palette swatches. Users can fetch new images by clicking a button, and each image card shows details like ID, rating, tags, and source link. The interface uses a playful pink-themed design with Comic Sans font and smooth hover effects.</p>
 </section>
         </div>
       </section>
@@ -447,30 +450,6 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-microviz" data-name="microviz">
-        <a class="app-link" href="microviz/index.html">[ Run Application ]</a>
-        <h2>microviz</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>Audio visualizer with 2D canvas overlay and 3D background canvas</li>
-    <li>Multiple visualizer modes including bars, waveform, and circle visualizations</li>
-    <li>Real-time audio processing using Web Audio API with FFT analysis</li>
-    <li>Metadata display including album art, title, artist, and album information</li>
-    <li>Multiple audio input modes: local microphone, WebSocket stream, and local file</li>
-  </ul>
-
-  <pre>
-    <code>const canvas2D = document.getElementById('visualizer-2d');</code>
-    <code>const ctx = canvas2D.getContext('2d');</code>
-    <code>const canvas3D = document.getElementById('visualizer-3d');</code>
-  </pre>
-
-  <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
-</section>
-        </div>
-      </section>
-    
       <section class="app-section" id="section-turtle" data-name="turtle">
         <a class="app-link" href="turtle/index.html">[ Run Application ]</a>
         <h2>turtle</h2>
@@ -490,6 +469,53 @@
   </pre>
 
   <p>This web-based turtle simulation features intelligent AI turtles with distinct personalities, pathfinding capabilities, and interactive behaviors. Users can spawn turtles, place food and obstacles, edit terrain, and customize simulation settings through a responsive control panel. The simulation includes advanced features like A* pathfinding, turtle vision cones, food detection systems, and mobile touch controls.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-voxelracing" data-name="voxelracing">
+        <a class="app-link" href="voxelracing/index.html">[ Run Application ]</a>
+        <h2>voxelracing</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Multiplayer racing game using Three.js for 3D graphics and MQTT for real-time networking</li>
+    <li>Procedurally generated terrain with five biomes (grasslands, desert, snow, mars, caves) using simplex noise</li>
+    <li>Host edition includes terrain customization tools and soundboard for in-game audio effects</li>
+    <li>Mobile-optimized controls with virtual joystick and nitro buttons</li>
+    <li>Persistent settings stored in IndexedDB and server status checking for MQTT brokers</li>
+  </ul>
+
+  <pre>
+    <code>const Utils = { lerp: (a, b, t) => a + (b - a) * t, clamp: (val, min, max) => Math.min(Math.max(val, min), max), rand: (min, max) => Math.random() * (max - min) + min, strToColor: (str) => { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); const c = (hash & 0x00FFFFFF).toString(16).toUpperCase(); return '#' + "00000".substring(0, 6 - c.length) + c; }, getTimeString: (gameTime) => { const totalMinutes = Math.floor(gameTime * 24 * 60); const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`; } };</code>
+    <code>class DB { constructor(dbName, storeName) { this.dbName = dbName; this.storeName = storeName; this.db = null; } async init() { return new Promise((resolve, reject) => { const request = indexedDB.open(this.dbName, 2); request.onupgradeneeded = (e) => { const db = e.target.result; if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName); }; request.onsuccess = (e) => { this.db = e.target.result; resolve(); }; request.onerror = (e) => reject("DB Error"); }); } async get(key) { return new Promise((resolve) => { const tx = this.db.transaction([this.storeName], "readonly"); const req = tx.objectStore(this.storeName).get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => resolve(null); }); } async put(key, value) { return new Promise((resolve) => { const tx = this.db.transaction([this.storeName], "readwrite"); tx.objectStore(this.storeName).put(value, key); tx.oncomplete = () => resolve(); }); } }</code>
+  </pre>
+
+  <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-fonttester" data-name="fonttester">
+        <a class="app-link" href="fonttester/index.html">[ Run Application ]</a>
+        <h2>fonttester</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Custom font tester application with responsive design</li>
+    <li>Features font file upload (.ttf, .otf, .woff, .woff2) with @font-face implementation</li>
+    <li>Interactive font size slider (8px to 72px) with smooth transitions</li>
+    <li>Real-time custom text input display with placeholder management</li>
+    <li>Comprehensive typography testing including headings, paragraphs, lists, forms, and glyphs</li>
+  </ul>
+
+  <pre>
+    <code>const reader = new FileReader();</code>
+    <code>reader.onload = (e) =&gt; { /* Apply @font-face rule */ };</code>
+    <code>fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', system-ui, sans-serif`;</code>
+  </pre>
+
+  <p>This web application provides a comprehensive environment for testing custom fonts across various typographic elements. Users can upload font files, adjust font sizes with a slider, and input custom text to see real-time rendering results. The application includes a wide range of test cases including headings, paragraphs, lists, forms, and special characters, all styled with a modern, responsive design using CSS variables and grid layouts.</p>
 </section>
         </div>
       </section>
