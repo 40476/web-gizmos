@@ -1,16 +1,18 @@
 <section>
   <ul>
-    <li>2D multiplayer mining game with real-time sync via MQTT broker</li>
-    <li>Procedurally generated world with ore tiers, crafting, and shop system</li>
-    <li>Mobile-optimized controls with virtual D-pad and action buttons</li>
-    <li>Save system with cloud sync and admin/host management features</li>
+    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps and real-time synchronization.</li>
+    <li>Features include vehicle upgrades, inventory management, chat system, and admin controls for server management.</li>
+    <li>Players can mine various ores, build structures, and trade with others in a persistent online world.</li>
+    <li>Cloud save system allows cross-device progress synchronization through Puter integration.</li>
+    <li>Mobile controls and customizable keybindings provide flexible input options across devices.</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { ... }</code>
-    <code>class NetworkManager { ... }</code>
-    <code>class SaveSystem { ... }</code>
+    <code>const GameEngine = class {</code>
+    <code>  constructor() { this.running = false; this.localPlayer = {...}; }</code>
+    <code>  async init() { this.settings.username = $('start-username').value; Network.connect(); }</code>
+    <code>  loop() { this.update(); this.draw(); requestAnimationFrame(() => this.loop()); }</code>
   </pre>
 
-  <p>Mega Miner NG is a browser-based multiplayer mining game featuring procedurally generated worlds, real-time player synchronization, and extensive crafting/upgrading mechanics. Players can mine various ore tiers, build structures, and manage inventories while exploring an expansive underground environment with heat mechanics and teleporter networks.</p>
+  <p>Mega Miner NG is an online multiplayer mining simulation game featuring procedurally generated worlds, real-time synchronization, and extensive upgrade systems. Players control mining vehicles to extract resources, build structures, and trade with others while managing fuel, hull integrity, and cargo capacity. The game includes admin controls for server management, cloud save functionality for cross-device progress, and customizable input options for both desktop and mobile platforms.</p>
 </section>
