@@ -61,6 +61,7 @@
             --fs-gear: calc(30px * var(--ui-scale));
             --fs-title: calc(32px * var(--ui-scale));
             --fs-hero: 5vw;
+            --hero-margin: -2dvh;
 
             /* --- ADVANCED STYLING --- */
             --bevel-size: calc(10px * var(--ui-scale));
@@ -80,7 +81,25 @@
         @media(max-width:700px) {
             :root {
                 --ui-scale: 1;
+                --hero-margin: 0px;
             }
+        }
+
+        .ticker-wrap {
+            overflow: hidden; /* Hides text outside the box */
+        }
+
+        .ticker-move {
+            display: inline-block;
+            white-space: nowrap;
+            margin-bottom: 10px;
+            padding-left: 100%; /* Start the text off-screen to the right */
+            animation: ticker-kb 10s linear infinite;
+        }
+
+        @keyframes ticker-kb {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
         }
 
         .bevel-border {
@@ -1365,7 +1384,7 @@ display: flex;
             font-size: var(--fs-hero);
             font-family: "Stalinist One";
             color: var(--highlight);
-            margin-bottom: 20px;
+            margin-bottom: var(--hero-margin);
             text-transform: uppercase;
             letter-spacing: 4px;
             text-shadow: 0 0 10px var(--highlight);
@@ -1699,8 +1718,13 @@ display: flex;
 
         <!-- Start Screen -->
         <div id="start-screen">
-            <br class="mobileShow">
-            <h1 class="title-text">Mega Miner NG</h1>
+            <div class="ticker-wrap">
+                <br class="mobileShow">
+                <h1 class="title-text">Mega Miner NG</h1>
+                <div id="ticker-content" class="ticker-move">
+                    Loading updates...
+                </div>
+            </div>
             <div class="start-container">
                 <div class="start-panel">
                     <div class="form-group">
@@ -5181,6 +5205,7 @@ class UIManager {
         this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
         this.toastQueue = [];
         this.lastToast = { msg: null, element: null, count: 1 };
+
         if (localStorage.getItem('mm_cloudsync_setting')===true) $('startBtn').disabled = true;
         setTimeout(function(){document.getElementById('gfx-disp').innerHTML=document.getElementById('graphicsQuality').value},2000);
         // Init server list on load
@@ -5339,7 +5364,9 @@ class UIManager {
     }
 
     // --- SERVER LIST LOGIC ---
-    refreshServerList() {
+    async refreshServerList() {
+
+        $('ticker-content').innerText = await getLatestCommit();
         if(puter.whoami && SaveSystem.cloudSyncEnabled){
             SaveSystem.smartSyncAll(true,true);
         } else {
@@ -6381,6 +6408,45 @@ function parseCSSCalc(calcString) {
 }
 
 function getFontSize(varName, shrink = 0) { return (parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
+
+async function getLatestCommit() {
+    const user = '40476';
+    const repo = 'web-gizmos';
+    const url = `https://api.github.com/repos/${user}/${repo}/commits?per_page=10`;
+
+    try {
+        const response = await fetch(url);
+        const commits = await response.json();
+
+        const lastHumanCommit = commits.find(c => {
+            const msg = c.commit.message.toUpperCase();
+            const authorName = c.commit.author.name.toLowerCase();
+            const login = (c.author?.login || "").toLowerCase();
+
+            // Exclude if:
+            // 1. Login contains 'bot'
+            // 2. Author name contains 'bot'
+            // 3. Message starts with '[BOT]'
+            const isBot =
+                login.includes('bot') ||
+                authorName.includes('bot') ||
+                msg.startsWith('[BOT]') ||
+                msg.includes('UPDATE ATLAS.JSON');
+
+            return !isBot;
+        });
+
+        if (lastHumanCommit) {
+            const message = lastHumanCommit.commit.message.split('\n')[0].toUpperCase();
+            const date = new Date(lastHumanCommit.commit.author.date).toLocaleDateString();
+            return `LATEST UPDATE [${date}]: ${message}`;
+        }
+
+        return "SYSTEM ONLINE: SCANNING FOR MANUAL INPUT...";
+    } catch (error) {
+        return "DATA LINK SEVERED...";
+    }
+}
 
 // --- INSTANTIATION ---
 const Sound = new SoundManager();
