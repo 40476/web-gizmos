@@ -1,0 +1,15 @@
+<section>
+  <ul>
+    <li>Web app that degrades image/video quality over time by scaling down resolution and crushing audio.</li>
+    <li>Supports uploading images or videos, then applying pixelation and audio degradation to create a GIF or degraded video file.</li>
+    <li>Features real-time preview, customizable degradation parameters, and download options.</li>
+  </ul>
+
+  <pre>
+    <code>const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });</code>
+    <code>const gif = new GIF({ workers: 2, quality: 10, width: canvas.width, height: canvas.height });</code>
+  </pre>
+
+  <p>This web application lets users upload images or videos and apply progressive degradation effects including pixelation and audio bitcrushing. It provides real-time preview, customizable parameters for final scale, pixelation step, audio crush strength, and output options like GIF or degraded video. The app uses canvas manipulation for visual degradation and Web Audio API for audio processing, with optional recording capabilities for video output.</p>
+</section>
