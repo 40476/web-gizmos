@@ -2972,7 +2972,7 @@ class GameEngine {
                         Network.broadcastMove();
                     }
                     else if (tile !== TILE_TYPES.BEDROCK) {
-                        if (now() - this.lastActionTime > 150) {
+                        // if (now() - this.lastActionTime > 150) {
 
                             // CHECK IF MINABLE (testOnly = true)
                             // This checks if we have the correct Drill Tier to even start mining
@@ -2983,7 +2983,7 @@ class GameEngine {
                                 Network.broadcastMove();
                             }
                             this.lastActionTime = now();
-                        }
+                        // }
                     }
                 }
             }
@@ -4751,7 +4751,10 @@ class NetworkManager {
 
     broadcastDeath() { this.publish('chat', { type: 'death', id: Game.localPlayer.id, name: Game.settings.username }); }
     sendFuel(targetId, amount) { this.publish('ctrl', { type: 'fuel', to: targetId, from: Game.settings.username, amt: amount }); }
-    sendTileUpdate(x, y, type) { this.publish('map', { type: 'tile', x, y, val: type, id: Game.localPlayer.id }); }
+    sendTileUpdate(x, y, type) {
+        // Send as a small 3-value binary packet: [x, y, val]
+        this.publish('map_bin', new Uint16Array([x, y, type]));
+    }
     sendChat(msg) {
         this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg });
         UI.addMessage(Game.settings.username, msg, Game.settings.color);
@@ -4759,43 +4762,107 @@ class NetworkManager {
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
     transferAdmin(id) { this.publish('ctrl', { type: 'transfer_admin', to: id }); }
 
-    requestMap(fromId) {
-        UI.showToast("Requesting Map...", "normal");
-        this.publish('ctrl', { type: 'map_req', from: Game.localPlayer.id, to: fromId || null });
+    requestMap() {
+        UI.showToast("Syncing Map...", "normal");
+        // Broadcast a request for data
+        this.publish('ctrl', { type: 'map_query', from: Game.localPlayer.id });
     }
 
     sendAreaDiff(bx, by, w, h, toId) {
         let diffs = [];
-        // Bounds check to ensure we don't read outside map array
-        let startX = Math.max(0, bx);
-        let startY = Math.max(0, by);
-        let endX = Math.min(CONSTANTS.MAP_WIDTH, bx + w);
-        let endY = Math.min(CONSTANTS.MAP_HEIGHT, by + h);
+        const startX = Math.max(0, bx);
+        const startY = Math.max(0, by);
+        const endX = Math.min(CONSTANTS.MAP_WIDTH, bx + w);
+        const endY = Math.min(CONSTANTS.MAP_HEIGHT, by + h);
 
         for (let y = startY; y < endY; y++) {
-            // Optimization: If row doesn't exist, skip
-            if(!Game.map[y]) continue;
-
+            if (!Game.map[y]) continue;
             for (let x = startX; x < endX; x++) {
-                 let base = Game.getProceduralTile(x, y);
-                 let current = Game.map[y][x];
+                const base = Game.getProceduralTile(x, y);
+                const current = Game.map[y][x];
 
-                 // Only send if the current map state differs from the seed generation
-                 if (current !== base) {
-                     diffs.push(x, y, current);
-                 }
+                if (current !== base) {
+                    diffs.push(x, y, current);
+                }
+
+                // Packet Splitting: Keep chunks ~30KB to avoid broker drops
+                if (diffs.length >= 15000) {
+                    this.publish('map_bin', new Uint16Array(diffs));
+                    diffs = [];
+                }
             }
         }
 
-        // If we found modified tiles, send them
         if (diffs.length > 0) {
-             this.publish('map', { type: 'sync', data: diffs, to: toId, flat: true });
+            this.publish('map_bin', new Uint16Array(diffs));
         }
     }
+    sendBinarySync(dataArray, toId) {
+        // Using Uint16Array because 10MB maps likely exceed 255 in coordinates
+        const buffer = new Uint16Array(dataArray);
 
-    publish(sub, payload) { if (this.client && this.client.connected) this.client.publish(`${this.baseTopic}${Game.settings.room}/${sub}`, JSON.stringify(payload)); }
+        // Match your existing syntax: sub-topic is 'map_bin'
+        this.publish('map_bin', buffer);
+    }
+
+    publish(sub, payload) {
+        if (!this.client || !this.client.connected) return;
+        const topic = `${this.baseTopic}${Game.settings.room}/${sub}`;
+
+        let data;
+        if (ArrayBuffer.isView(payload)) {
+            // Fix for "list argument must be an Array of Buffers"
+            // We cast the view to Uint8Array so MQTT.js sees a raw byte stream
+            data = new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength);
+        } else {
+            data = JSON.stringify(payload);
+        }
+
+        this.client.publish(topic, data);
+    }
 
     async handleMessage(topic, message) {
+
+        // At the top of handleMessage(topic, message)
+        const prefix = `${this.baseTopic}${Game.settings.room}/`;
+        const subTopic = topic.replace(prefix, '');
+
+        if (subTopic === 'map_bin') {
+            // FIX: Check for memory alignment (byteOffset must be a multiple of 2)
+            let data;
+            if (message.byteOffset % 2 !== 0) {
+                // Misaligned: Slice the buffer to create a perfectly aligned copy
+                const buf = message.buffer.slice(message.byteOffset, message.byteOffset + message.byteLength);
+                data = new Uint16Array(buf);
+            } else {
+                // Aligned: Use the efficient zero-copy view
+                data = new Uint16Array(message.buffer, message.byteOffset, message.byteLength / 2);
+            }
+
+            let i = 0;
+            const processBatch = () => {
+                const start = Date.now();
+                // 8ms budget per frame
+                while (i < data.length && Date.now() - start < 8) {
+                    const x = data[i], y = data[i + 1], v = data[i + 2];
+                    if (Game.map[y] && Game.map[y][x] !== undefined) {
+                        Game.map[y][x] = v;
+                        Game.discovered[y][x] = 1;
+                    }
+                    i += 3;
+                }
+
+                if (i < data.length) {
+                    requestAnimationFrame(processBatch);
+                } else {
+                    if (Game.renderer) Game.renderer.markMapDirty();
+                }
+            };
+            processBatch();
+            return;
+        }
+
+
         let msg;
         try { msg = JSON.parse(message.toString()); } catch(e) { return; }
         if (msg.id === Game.localPlayer.id && msg.type !== 'kick') return;
@@ -4840,6 +4907,22 @@ class NetworkManager {
         }
         // Removed updateAdminStatus
     }
+    else if (msg.type === 'map_query') {
+        if (msg.from !== Game.localPlayer.id && !this.isSingleplayer) {
+            const jitter = Math.random() * 800 + 200;
+            this.pendingSync = setTimeout(() => {
+                this.sendAreaDiff(0, 0, CONSTANTS.MAP_WIDTH, CONSTANTS.MAP_HEIGHT, msg.from);
+                this.publish('ctrl', { type: 'map_ack', for: msg.from });
+            }, jitter);
+        }
+    }
+    else if (msg.type === 'map_ack') {
+        // Someone else is already syncing the requester. I can stay silent.
+        if (this.pendingSync) {
+            clearTimeout(this.pendingSync);
+            this.pendingSync = null;
+        }
+    }
     else if (msg.type === 'join') {
         if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
         else {
@@ -4860,47 +4943,6 @@ class NetworkManager {
             this.broadcastMove();
         }
     }
-    else if (msg.type === 'map' || msg.type === 'sync') {
-            if (Array.isArray(msg.data)) {
-                // Optimization: Detect if this is a Flat Array (Level 1 Optimization)
-                // If the first element is a number, it's likely flat [x,y,v, x,y,v...]
-                // If the first element is an object/array, it's legacy [[x,y,v]...]
-                const isFlat = typeof msg.data[0] === 'number';
-
-                if (isFlat) {
-                    // --- NEW EFFICIENT WAY ---
-                    // Iterate by 3s
-                    for (let i = 0; i < msg.data.length; i += 3) {
-                        const x = msg.data[i];
-                        const y = msg.data[i+1];
-                        const v = msg.data[i+2];
-
-                        // Fast boundary check (optional if you trust server)
-                        if (Game.map[y] && Game.map[y][x] !== undefined) {
-                            Game.map[y][x] = v;
-                            Game.discovered[y][x] = 1;
-                        }
-                    }
-                } else {
-                    // --- LEGACY WAY (Keep for safety) ---
-                    msg.data.forEach(d => {
-                        let x, y, v;
-                        if (Array.isArray(d)) { [x, y, v] = d; }
-                        else { x = d.x; y = d.y; v = d.v; } // Handle {x,y,v} objects
-
-                        if (Game.map[y] && Game.map[y][x] !== undefined) {
-                            Game.map[y][x] = v;
-                            Game.discovered[y][x] = 1;
-                        }
-                    });
-                }
-
-                // Critical Optimization:
-                // Don't redraw the minimap inside the loop!
-                // Flag it to update ONCE after processing the whole chunk.
-                if (Game.renderer) Game.renderer.markMapDirty();
-            }
-        }
     // --- NEW: Admin Messages ---
     else if (msg.type === 'host_heartbeat') {
         Game.hostId = msg.id;
@@ -5135,6 +5177,8 @@ class UIManager {
             "wss://test.mosquitto.org:8081"
         ];
         this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
+        this.toastQueue = [];
+        this.lastToast = { msg: null, element: null, count: 1 };
         if (localStorage.getItem('mm_cloudsync_setting')===true) $('startBtn').disabled = true;
         setTimeout(function(){document.getElementById('gfx-disp').innerHTML=document.getElementById('graphicsQuality').value},2000);
         // Init server list on load
@@ -5204,15 +5248,53 @@ class UIManager {
             panel.hidden = true;
         }
     }
+    // yummy
+    showToast(msg, type = 'normal', timeout = 4000) {
+        const area = document.getElementById('notification-area');
 
+        // 1. Check for Duplicates (Stacking)
+        if (this.lastToast.msg === msg && this.lastToast.element && this.lastToast.element.parentElement) {
+            this.lastToast.count++;
+            // Update the existing toast text with the multiplier
+            this.lastToast.element.innerText = `${msg} (x${this.lastToast.count})`;
 
-    showToast(msg, type='normal',timeout=4000) {
-        const area = $('notification-area');
+            // Optional: Reset the timeout so the stacked toast stays visible longer
+            return;
+        }
+
+        // 2. Check Capacity (Queueing)
+        const activeToasts = area.getElementsByClassName('toast').length;
+        if (activeToasts >= 3) {
+            this.toastQueue.push({ msg, type, timeout });
+            return;
+        }
+
+        // 3. Create New Toast
         const el = document.createElement('div');
         el.className = `toast ${type}`;
         el.innerText = msg;
         area.appendChild(el);
-        setTimeout(() => el.remove(), timeout);
+
+        // Track this as the new "last toast"
+        this.lastToast = { msg: msg, element: el, count: 1 };
+
+        // 4. Handle Removal & Queue
+        setTimeout(() => {
+            // Only trigger queue if this specific element is being removed
+            if (el.parentElement) {
+                el.remove();
+                // Clear lastToast reference if it was this one
+                if (this.lastToast.element === el) this.lastToast.msg = null;
+                this.processToastQueue();
+            }
+        }, timeout);
+    }
+
+    processToastQueue() {
+        if (this.toastQueue.length > 0) {
+            const next = this.toastQueue.shift();
+            this.showToast(next.msg, next.type, next.timeout);
+        }
     }
 
     openSettings() {
