@@ -60,7 +60,7 @@
             --fs-icon: calc(24px * var(--ui-scale));
             --fs-gear: calc(30px * var(--ui-scale));
             --fs-title: calc(32px * var(--ui-scale));
-            --fs-hero: calc(70px * var(--ui-scale));
+            --fs-hero: 5vw;
 
             /* --- ADVANCED STYLING --- */
             --bevel-size: calc(10px * var(--ui-scale));
@@ -80,7 +80,6 @@
         @media(max-width:700px) {
             :root {
                 --ui-scale: 1;
-                --fs-hero: calc(40px * var(--ui-scale));
             }
         }
 
@@ -1361,8 +1360,10 @@ display: flex;
             pointer-events: auto;
         }
 
+
         #start-screen h1 {
             font-size: var(--fs-hero);
+            font-family: "Stalinist One";
             color: var(--highlight);
             margin-bottom: 20px;
             text-transform: uppercase;
@@ -1698,6 +1699,7 @@ display: flex;
 
         <!-- Start Screen -->
         <div id="start-screen">
+            <br class="mobileShow">
             <h1 class="title-text">Mega Miner NG</h1>
             <div class="start-container">
                 <div class="start-panel">
@@ -4050,7 +4052,7 @@ class GameEngine {
         this.ctx.fillStyle = "#f1c40f";
         this.ctx.font = `bold ${getFontSize('--fs-title', 4)} Stalinist One`;
         this.ctx.textAlign = "center";
-        this.ctx.fillText("$ " + Math.floor(p.money), w / 2, h - ((gaugeR * 1.75) * dpr));
+        this.ctx.fillText("$ " + Math.floor(p.money), w / 2, h - ((gaugeR * 2.5)));
 
     } else {
         // DESKTOP: Pair them in bottom corners
