@@ -184,8 +184,6 @@
       
         <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
       
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
-      
         <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
         <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
@@ -203,6 +201,8 @@
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
+      
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -295,32 +295,6 @@
   </pre>
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>2D mining game with multiplayer support via MQTT broker</li>
-    <li>Procedural world generation with ore veins and teleporters</li>
-    <li>Upgradable equipment system (drill, hull, fuel, cargo, etc.)</li>
-    <li>Mobile-optimized controls with virtual D-pad and action buttons</li>
-    <li>Save system with local IndexedDB storage and cloud sync via Puter</li>
-    <li>Admin/host controls for server management and player moderation</li>
-    <li>Custom modal system for prompts, confirmations, and settings</li>
-  </ul>
-
-  <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, BEDROCK: 99 };</code>
-    <code>class GameEngine { update() { /* movement, mining, heat, particles */ } draw() { /* rendering pipeline */ } }</code>
-    <code>class NetworkManager { connect() { /* MQTT setup */ } handleMessage() { /* join, move, chat, map sync */ } }</code>
-  </pre>
-
-  <p>Mega Miner NG is a browser-based multiplayer mining game featuring procedurally generated worlds, real-time multiplayer via MQTT, and extensive upgrade systems. Players dig for resources, upgrade their equipment, and can teleport between discovered stations. The game includes mobile-optimized controls, cloud save functionality, and admin tools for server management.</p>
 </section>
         </div>
       </section>
@@ -523,6 +497,38 @@
   </pre>
 
   <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>2D mining game with multiplayer support using MQTT for real-time communication</li>
+    <li>Procedural world generation with 1000x2000 tile map featuring multiple ore tiers</li>
+    <li>Upgrade system including drill tiers, hull capacity, fuel capacity, and special abilities</li>
+    <li>Inventory management with building mechanics and consumable items</li>
+    <li>Service station for selling ores, refueling, repairing, and purchasing upgrades</li>
+    <li>Teleporter network for fast travel between discovered locations</li>
+    <li>Mobile controls with touch-optimized D-pad and action buttons</li>
+    <li>Admin system with player management, map synchronization, and world control</li>
+    <li>Save system with cloud synchronization and local storage support</li>
+    <li>Dynamic lighting system with day/night cycle and celestial bodies</li>
+  </ul>
+
+  <pre>
+    <code>const TILE_PROPS = {</code>
+    <code>  [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 },</code>
+    <code>  [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 2, value: 50, tier: 1 },</code>
+    <code>  [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 1, value: 150, tier: 2 },</code>
+    <code>  [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 3, value: 500, tier: 3 }</code>
+    <code>};</code>
+  </pre>
+
+  <p>Mega Miner NG is a browser-based 2D mining game featuring multiplayer gameplay, procedural world generation, and extensive upgrade systems. Players can mine various ores, build structures, trade with others, and explore a vast underground world while managing resources like fuel and hull integrity. The game includes both singleplayer and online multiplayer modes with admin controls, cloud save functionality, and mobile-optimized controls.</p>
 </section>
         </div>
       </section>
