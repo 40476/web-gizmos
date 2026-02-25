@@ -184,8 +184,6 @@
       
         <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
       
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
-      
         <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
         <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
@@ -203,6 +201,8 @@
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
+      
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -295,29 +295,6 @@
   </pre>
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>HTML5 web game with canvas rendering and responsive design</li>
-    <li>Client-side game engine with procedural map generation and multiplayer support</li>
-    <li>WebSocket/MQTT-based networking for real-time multiplayer gameplay</li>
-    <li>Mobile-optimized touch controls and desktop keyboard input</li>
-    <li>Save system with IndexedDB and cloud sync capabilities</li>
-  </ul>
-
-  <pre>
-    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } }</code>
-    <code>class NetworkManager { connect() { this.client = mqtt.connect(broker, options); } }</code>
-  </pre>
-
-  <p>This HTML5 game features a client-side game engine with canvas rendering, procedural map generation, and real-time multiplayer support through WebSocket/MQTT networking. The game includes mobile-optimized touch controls, desktop keyboard input, and a comprehensive save system with IndexedDB and cloud sync capabilities.</p>
 </section>
         </div>
       </section>
@@ -520,6 +497,31 @@
   </pre>
 
   <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Features a 1000x2000 tile map with procedural terrain generation and resource mining</li>
+    <li>Supports real-time multiplayer via MQTT broker with chat, player movement, and collaborative mining</li>
+    <li>Offers extensive upgrade system including drill tiers, cargo capacity, fuel efficiency, and special abilities</li>
+    <li>Includes building mechanics, crafting system, and various items like teleporters, explosives, and consumables</li>
+    <li>Provides mobile controls with touch-optimized interface and responsive design</li>
+  </ul>
+
+  <pre>
+    <code>// Core game loop update</code>
+    <code>this.update();</code>
+    <code>this.draw();</code>
+    <code>requestAnimationFrame(() => this.loop());</code>
+  </pre>
+
+  <p>This is a comprehensive 2D mining game with real-time multiplayer capabilities, featuring procedural world generation, extensive upgrade systems, and a complete inventory management system. The game supports both desktop and mobile play with touch controls, offers various mining tools and explosives, and includes a shop system for upgrades and consumables. Players can collaborate in shared worlds, build structures, and explore a vast underground environment filled with different ores and resources.</p>
 </section>
         </div>
       </section>
