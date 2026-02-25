@@ -20,6 +20,9 @@
 
     /* Light Theme Overrides */
     body.light-theme {
+
+      --primary: #01bb70;
+      --primary-hover: #2e0040;
       --bg: #f4f4f4;
       --card-bg: #ffffff;
       --sidebar-bg: #e0e0e0;
@@ -28,14 +31,6 @@
       --border: #ccc;
       --code-bg: #eee;
     }
-
-
-    body.light-theme #themeToggle {
-      background: #111;
-      color: var(--primary);
-    }
-
-
     html { font-size: 16px; scroll-behavior: smooth; }
     
     body {
@@ -74,7 +69,7 @@
       width: 100%;
       padding: 10px;
       margin-bottom: 1rem;
-      background: #111;
+      background: var(--bg);
       border: 1px solid var(--border);
       color: var(--primary);
       border-radius: 4px;
