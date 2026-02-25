@@ -18,7 +18,24 @@
       --border: #444;
     }
 
-    /* Core Stability Fixes */
+    /* Light Theme Overrides */
+    body.light-theme {
+      --bg: #f4f4f4;
+      --card-bg: #ffffff;
+      --sidebar-bg: #e0e0e0;
+      --text: #111111;
+      --text-muted: #444444;
+      --border: #ccc;
+      --code-bg: #eee;
+    }
+
+
+    body.light-theme #themeToggle {
+      background: #111;
+      color: var(--primary);
+    }
+
+
     html { font-size: 16px; scroll-behavior: smooth; }
     
     body {
@@ -199,8 +216,18 @@
       });
     });
 
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      document.body.style.filter = document.body.style.filter === 'invert(1)' ? 'invert(0)' : 'invert(1)';
+    const themeToggle = document.getElementById("themeToggle");
+
+    themeToggle.addEventListener("click", () => {
+      // This toggles the 'light-theme' class on the body
+      document.body.classList.toggle("light-theme");
+
+      // Optional: Change the button text based on the mode
+      if (document.body.classList.contains("light-theme")) {
+        themeToggle.textContent = "Dark Mode";
+      } else {
+        themeToggle.textContent = "Light Mode";
+      }
     });
   </script>
 
