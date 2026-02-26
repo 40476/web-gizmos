@@ -507,19 +507,21 @@
         <div class="summary-content">
           <section>
   <ul>
-    <li>A 2D multiplayer mining game with procedurally generated worlds</li>
-    <li>Features real-time multiplayer via MQTT, inventory management, and upgrade systems</li>
-    <li>Supports both desktop and mobile controls with touch-optimized interface</li>
-    <li>Includes save/load functionality with cloud sync capabilities</li>
-    <li>Contains admin tools for server management and player moderation</li>
+    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps and real-time networking.</li>
+    <li>Features include vehicle upgrades, resource management, building mechanics, and a shop system for trading and upgrades.</li>
+    <li>Supports both desktop and mobile controls with customizable key bindings and a full settings panel.</li>
+    <li>Implements cloud save functionality and admin tools for server management.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ... };</code>
-    <code>class GameEngine { update() { /* physics, movement, mining logic */ } draw() { /* render tiles, players, UI */ } };</code>
+    <code>const TILE_PROPS = {
+  [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0, trashExclude: true },
+  [TILE_TYPES.IRON]: { name: "Iron", color: '#95a5a6', hardness: 2, value: 50, tier: 1, trashExclude: true },
+  [TILE_TYPES.GOLD]: { name: "Gold", color: '#f1c40f', hardness: 1, value: 150, tier: 2, trashExclude: true }
+};</code>
   </pre>
 
-  <p>This web-based mining game combines real-time multiplayer networking with procedural world generation. Players can mine resources, upgrade equipment, and trade with others while managing fuel and heat levels. The game features a comprehensive save system, cloud synchronization, and both desktop and mobile control schemes.</p>
+  <p>Mega Miner NG is a multiplayer mining game featuring procedurally generated maps, real-time networking, and extensive customization options. Players can mine resources, upgrade their vehicles, trade in shops, and build structures while managing fuel and health. The game supports both desktop and mobile controls with cloud save functionality and admin tools for server management.</p>
 </section>
         </div>
       </section>
