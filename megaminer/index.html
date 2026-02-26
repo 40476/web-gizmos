@@ -94,7 +94,7 @@
             white-space: nowrap;
             margin-bottom: 10px;
             padding-left: 100%; /* Start the text off-screen to the right */
-            animation: ticker-kb 10s linear infinite;
+            animation: ticker-kb 15s linear infinite;
         }
 
         @keyframes ticker-kb {
@@ -6409,42 +6409,37 @@ function parseCSSCalc(calcString) {
 
 function getFontSize(varName, shrink = 0) { return (parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
 
-async function getLatestCommit() {
+async function getLatestCommit(projectPath = "megaminer") {
     const user = '40476';
     const repo = 'web-gizmos';
-    const url = `https://api.github.com/repos/${user}/${repo}/commits?per_page=10`;
+
+    // Adding the 'path' parameter filters commits to ONLY that folder
+    const listUrl = `https://api.github.com/repos/${user}/${repo}/commits?path=${projectPath}&per_page=5`;
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(listUrl);
         const commits = await response.json();
 
-        const lastHumanCommit = commits.find(c => {
-            const msg = c.commit.message.toUpperCase();
-            const authorName = c.commit.author.name.toLowerCase();
-            const login = (c.author?.login || "").toLowerCase();
+        if (!commits || commits.length === 0) return "NO RECENT UPDATES.";
 
-            // Exclude if:
-            // 1. Login contains 'bot'
-            // 2. Author name contains 'bot'
-            // 3. Message starts with '[BOT]'
-            const isBot =
-                login.includes('bot') ||
-                authorName.includes('bot') ||
-                msg.startsWith('[BOT]') ||
-                msg.includes('UPDATE ATLAS.JSON');
+        for (const commitData of commits) {
+            // 1. Filter by Bot Identity
+            const msg = commitData.commit.message.toUpperCase();
+            const login = (commitData.author?.login || "").toLowerCase();
+            if (login.includes('bot') || msg.startsWith('[BOT]')) continue;
 
-            return !isBot;
-        });
+            // 2. Filter by Specific Automated Files
+            const detailResponse = await fetch(commitData.url);
+            const detailedCommit = await detailResponse.json();
 
-        if (lastHumanCommit) {
-            const message = lastHumanCommit.commit.message.split('\n')[0].toUpperCase();
-            const date = new Date(lastHumanCommit.commit.author.date).toLocaleDateString();
-            return `LATEST UPDATE [${date}]: ${message}`;
+            return `LATEST PROJECT UPDATE [${new Date(commitData.commit.author.date).toLocaleDateString()}]: ${msg.split('\n')[0]}`;
+
         }
 
-        return "SYSTEM ONLINE: SCANNING FOR MANUAL INPUT...";
+        return "SCANNING PROJECT FOLDER... NO MANUAL COMMITS FOUND.";
     } catch (error) {
-        return "DATA LINK SEVERED...";
+        console.error(error);
+        return "COMMUNICATION ERROR: SIGNAL LOST.";
     }
 }
 
