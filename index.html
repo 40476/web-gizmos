@@ -507,21 +507,20 @@
         <div class="summary-content">
           <section>
   <ul>
-    <li>HTML5-based multiplayer mining game with canvas rendering</li>
-    <li>Procedurally generated maps with various ores and resources</li>
-    <li>Real-time multiplayer using MQTT protocol for network communication</li>
-    <li>Mobile-optimized controls with touch support and responsive design</li>
-    <li>Save system with local IndexedDB storage and cloud sync capabilities</li>
-    <li>Upgrade shop system for vehicle enhancements and consumables</li>
-    <li>Admin system for server management and player moderation</li>
+    <li>A web-based mining game with multiplayer functionality</li>
+    <li>Features procedurally generated 2D maps with various ores and materials</li>
+    <li>Includes vehicle controls, inventory management, and a shop system</li>
+    <li>Supports mobile and desktop controls with customizable key bindings</li>
+    <li>Implements cloud save system with conflict resolution</li>
+    <li>Features admin controls for multiplayer servers</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { constructor() { /*... */ } update() { /* game logic */ } draw() { /* rendering */ } }</code>
-    <code>class NetworkManager { constructor() { /* MQTT client */ } connect() { /* broker connection */ } }</code>
+    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } }</code>
+    <code>class NetworkManager { constructor() { this.client = null; this.baseTopic = 'mm_online/'; } }</code>
   </pre>
 
-  <p>This is a sophisticated HTML5 mining game featuring real-time multiplayer capabilities, procedural world generation, and a comprehensive upgrade system. The game uses modern web technologies including canvas rendering, MQTT networking, and IndexedDB for persistent storage. It includes both desktop and mobile support with touch controls, admin functionality, and cloud synchronization for saves across devices.</p>
+  <p>This is a sophisticated web-based mining game featuring a 2D procedurally generated world where players can dig for resources, upgrade their equipment, and interact with other players through a real-time multiplayer system. The game includes a comprehensive shop system, inventory management, and cloud save functionality with conflict resolution. It supports both desktop and mobile controls, offers customizable key bindings, and includes admin controls for managing multiplayer servers. The game uses advanced rendering techniques including dynamic lighting, particle effects, and a minimap system to create an immersive mining experience.</p>
 </section>
         </div>
       </section>
