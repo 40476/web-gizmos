@@ -5183,7 +5183,7 @@ class InputManager {
 
             // Prevent default browser actions for bound game keys (e.g. Space scrolling down)
             // We exclude 'chat' here because we handled it above, and sometimes you want default behavior for non-game keys
-            if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat) {
+            if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat && document.activeElement.type !== 'text') {
                 e.preventDefault();
             }
         });
