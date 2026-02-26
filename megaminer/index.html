@@ -1922,6 +1922,7 @@ display: flex;
                     <hr><br>
 <!--                     <center><span>Engine</span>&nbsp;&nbsp;<span id="vol-disp-engine">--%</span></center> <input type="range" id="vol-engine" min="0" max="1" step="0.01" value="0.5" oninput="Sound.setVolume('engine', this.value)"> -->
                     <center><span>Engine</span>&nbsp;&nbsp;<span id="vol-disp-engine">--%</span></center> <input type="range" id="vol-engine" min="0" max="1" step="0.01" oninput="Sound.setVolume('engine', this.value)">
+                    <button class="btn" style="flex:1;" onclick="UI.openTextureImporter()">IMPORT TEXTURES</button>
                 </div>
             </div>
             <hr><br>
@@ -2278,6 +2279,68 @@ class ModalSystem {
 const CustomModal = new ModalSystem();
 
 let initialTimestamp = null;
+
+
+const CustomTextures = {
+    tiles: {},
+    player: {},
+    drill: {},
+    isLoaded: false,
+
+    async loadFromJSON(jsonString, shouldPersist = true) {
+        try {
+            const data = JSON.parse(jsonString);
+
+            // Reset current textures to allow for a clean "hotswap"
+            this.tiles = {};
+            this.player = {};
+            this.drill = {};
+
+            const loadImg = (url) => new Promise((res, rej) => {
+                const img = new Image();
+                img.onload = () => res(img);
+                img.onerror = rej;
+                img.src = url;
+            });
+
+            // Load Tiles
+            if (data.tiles) {
+                for (let id in data.tiles) {
+                    this.tiles[id] = await loadImg(data.tiles[id]);
+                }
+            }
+
+            // Load Player/Drill
+            const categories = ['player', 'drill'];
+            for (let cat of categories) {
+                if (data[cat]) {
+                    for (let dir in data[cat]) {
+                        this[cat][dir] = await loadImg(data[cat][dir]);
+                    }
+                }
+            }
+
+            // 1. Mark as loaded for the renderer
+            this.isLoaded = true;
+
+            // 2. Automatically save to the existing MegaMinerDB
+            if (shouldPersist) {
+                await SaveSystem.saveTexturesLocally(jsonString);
+
+                // 3. Trigger cloud sync if the user has it enabled
+                if (SaveSystem.cloudSyncEnabled) {
+                    await SaveSystem.saveTexturesToCloud();
+                }
+            }
+
+            return true;
+        } catch (e) {
+            console.error("Texture Load Failed:", e);
+            this.isLoaded = false;
+            return false;
+        }
+    }
+};
 
 // --- SOUND ENGINE ---
 class SoundManager {
@@ -2751,8 +2814,12 @@ class GameEngine {
     }
 
     async init() {
-        this.settings.username = $('start-username').value || 'Miner' + Date.now();
-        this.localPlayer.username = this.settings.username;
+        // WHY IS THIS NECESSARY???
+        setTimeout(() => {
+            this.settings.username = $('start-username').value || 'Miner' + Date.now();
+            this.localPlayer.username = this.settings.username;
+            localStorage.setItem('mm_username', this.settings.username);
+        }, 500);
         // FIX: Trim room ID to ensure seeds match perfectly across clients
         this.settings.room = ($('start-room').value || 'public').trim();
         this.settings.color = $('start-color').value;
@@ -2779,7 +2846,7 @@ class GameEngine {
             localStorage.setItem(timeKey, this.localPlayer.joinedAt);
         }
 
-        localStorage.setItem('mm_username', this.settings.username);
+
         localStorage.setItem('mm_room_id', this.settings.room);
         localStorage.setItem('mm_veh_color', this.settings.color);
         localStorage.setItem('mm_broker_url', this.settings.broker);
@@ -2834,6 +2901,7 @@ class GameEngine {
     }
 
     finishConnection() {
+
         // Critical: Do not re-initialize game state if we just reconnected
         if (this.running) {
             console.log("Reconnected to broker. Game state preserved.");
@@ -2954,9 +3022,6 @@ class GameEngine {
         if (!this.running) return;
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
-        const currentTime = performance.now();
-        const dt = (currentTime - lastTime) / 16.66;
-        lastTime = currentTime;
 
         // --- 1. DETERMINE DESTINATION ---
         let destGridX = (p.nextGridX !== undefined) ? p.nextGridX : p.gridX;
@@ -3181,11 +3246,7 @@ class GameEngine {
         p.fuel = clamp(p.fuel, 0, p.maxFuel); p.hull = clamp(p.hull, 0, p.maxHull);
         if (p.hull <= 0) this.respawn();
 
-        const cameraTightness = 0.06; // 1 = instant, 0 = no movement
-        const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
-
-        this.camera.x += (p.x - this.camera.x) * cameraLerp;
-        this.camera.y += (p.y - this.camera.y) * cameraLerp;
+        
 
         if (now() % 10000 < 20) this.saveLocalProgress();
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin && SaveSystem.currentSaveId) {
@@ -3424,10 +3485,11 @@ class GameEngine {
 
         // 3. Execute mining in order
         tilesToMine.forEach((t, index) => {
-            setTimeout(() => this.executeSingleMine(t.x, t.y), index);
+            setTimeout(() => {
+                this.executeSingleMine(t.x, t.y);
+                Sound.playMining();
+            }, index);
         });
-
-        Sound.playMining();
         UI.updateDashboard();
 
         return true;
@@ -3504,6 +3566,15 @@ class GameEngine {
         this.ctx.resetTransform();
         this.ctx.fillStyle = '#050505';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        const currentTime = performance.now();
+        const dt = (currentTime - lastTime) / 16.66;
+        lastTime = currentTime;
+        const cameraTightness = 0.06; // 1 = instant, 0 = no movement
+        const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
+
+        this.camera.x += (this.localPlayer.x - this.camera.x) * cameraLerp;
+        this.camera.y += (this.localPlayer.y - this.camera.y) * cameraLerp;
 
         let cx = this.canvas.width / 2;
         let cy = this.canvas.height / 2;
@@ -3885,6 +3956,17 @@ class GameEngine {
         let ts = CONSTANTS.TILE_SIZE;
         let px = x * ts; let py = y * ts;
         let prop = TILE_PROPS[type];
+
+
+        if (CustomTextures.isLoaded && CustomTextures.tiles[type] && !(y<5)) {
+            if(y===5 && type===0){
+                this.ctx.drawImage(CustomTextures.tiles[0], px, py, ts, ts)
+                this.ctx.drawImage(CustomTextures.tiles[999], px, py, ts, ts)
+            }else{
+                this.ctx.drawImage(CustomTextures.tiles[type], px, py, ts, ts)
+            }
+            return; // Skip the rest of the function!
+        }
 
         if (type === TILE_TYPES.EMPTY && y < 5) {
             return;
@@ -5281,6 +5363,18 @@ class UIManager {
         Input.init();
     }
 
+    async openTextureImporter() {
+        const result = await CustomModal.show('prompt', 'Import Textures', 'Paste JSON:');
+        if (result) {
+            const success = await CustomTextures.loadFromJSON(result);
+            if (success) {
+                // Trigger cloud upload immediately after successful local import
+                await SaveSystem.saveTexturesToCloud();
+                CustomModal.show('alert', 'Success', 'Textures saved and synced!');
+            }
+        }
+    }
+
     generateCreditsHTML(data) {
         let html = "";
 
@@ -5346,18 +5440,38 @@ class UIManager {
         return `${username} ${msg}`;
     }
 
-    addMessage(name, text, color='#fff') {
+    addMessage(name, text, color = '#fff') {
+        const container = $('chat-messages');
         const div = document.createElement('div');
-        div.innerHTML = `<span style="color:${color}; font-weight:bold;">${name}:</span> ${text}`;
-        $('chat-messages').appendChild(div);
-        $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+
+        // 1. Create the Name
+        const nameSpan = document.createElement('span');
+        nameSpan.style.color = color;
+        nameSpan.style.fontWeight = 'bold';
+        nameSpan.textContent = `${name}: `;
+
+        // 2. Create the Text (Secure from XSS)
+        const textSpan = document.createElement('span');
+        textSpan.textContent = text;
+
+        div.appendChild(nameSpan);
+        div.appendChild(textSpan);
+        container.appendChild(div);
+
+        // 3. CAP THE LOG: Remove oldest if over 200
+        if (container.childElementCount > 200) {
+            container.removeChild(container.firstChild);
+        }
+
+        // 4. Scroll to bottom
+        container.scrollTop = container.scrollHeight;
 
         // Mobile Unread Logic
-        if(document.body.classList.contains('mobile-mode')) {
+        if (document.body.classList.contains('mobile-mode')) {
             const chat = $('chat-container');
-            if(chat.classList.contains('minimized')) {
+            if (chat.classList.contains('minimized')) {
                 chat.classList.add('unread');
-                Sound.playChat('msg'); // Ensure sound plays so they know
+                Sound.playChat('msg');
             }
         }
     }
@@ -5935,6 +6049,104 @@ class SaveSystem {
         const updateCheck = $('update-check-toggle');
         if(updateCheck) updateCheck.checked = this.updateCheckEnabled;
 
+        this.loadTextures();
+
+    }
+
+    static async loadTextures() {
+        // 1. Get from the shared MegaMinerDB
+        const localData = await SaveSystem.getTexturesLocally();
+
+        if (localData) {
+            console.log("Local textures loaded from MegaMinerDB.");
+            await CustomTextures.loadFromJSON(localData, false);
+        }
+
+        // 2. Sync from cloud if enabled
+        if (SaveSystem.cloudSyncEnabled && puter.auth.isSignedIn()) {
+            try {
+                const cloudFile = await puter.fs.read(SaveSystem.SAVE_DIR + 'custom_textures.json');
+                const cloudData = await cloudFile.text();
+
+                if (cloudData && cloudData !== localData) {
+                    await CustomTextures.loadFromJSON(cloudData, true);
+                    // Save the new cloud data back to our shared local DB
+                    await SaveSystem.saveTexturesLocally(cloudData);
+                }
+            } catch (e) {
+                console.log("No cloud textures found.");
+            }
+        }
+    }
+
+    static async saveTexturesLocally(jsonString) {
+        await this.initDB();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction("textures", "readwrite");
+            tx.objectStore("textures").put(jsonString, "active_pack");
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject();
+        });
+    }
+
+    static async getTexturesLocally() {
+        await this.initDB();
+        return new Promise((resolve) => {
+            const tx = this.db.transaction("textures", "readonly");
+            const req = tx.objectStore("textures").get("active_pack");
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    static async resolveConflict(localMeta, cloudData) {
+        return new Promise(async (resolve) => {
+            const localDate = new Date(localMeta.timestamp).toLocaleString();
+            const cloudDate = new Date(cloudData.timestamp).toLocaleString();
+
+            const choice = await CustomModal.show('confirm',
+                'Cloud Conflict',
+                `Which save would you like to keep?\n\nLocal: ${localDate}\nCloud: ${cloudDate}\n\n(Choosing one will overwrite the other.)`
+            );
+
+            if (choice) {
+                // User chose Cloud (Yes)
+                await this.injectIntoLocal(cloudData);
+                resolve('downloaded');
+            } else {
+                // User chose Local (No)
+                await CloudManager.upload(localMeta.id, await this.getLocalSave(localMeta.id));
+                resolve('uploaded');
+            }
+        });
+    }
+
+    static async saveTexturesToCloud() {
+        if (!this.cloudSyncEnabled || !puter.auth.isSignedIn()) return;
+
+        // Get the JSON string from IndexedDB (assuming you used the TextureDB wrapper from earlier)
+        const textureData = await TextureDB.get();
+        if (!textureData) return;
+
+        try {
+            await puter.fs.write(this.SAVE_DIR + 'custom_textures.json', textureData);
+            console.log("Textures synced to cloud.");
+        } catch (e) {
+            console.error("Texture cloud sync failed", e);
+        }
+    }
+
+    static async downloadTexturesFromCloud() {
+        try {
+            const file = await puter.fs.read(this.SAVE_DIR + 'custom_textures.json');
+            const jsonString = await file.text();
+
+            // Load into the game and save to local IndexedDB
+            await CustomTextures.loadFromJSON(jsonString, true);
+            UI.showToast("Custom textures synced from cloud!", "success");
+        } catch (e) {
+            // File might not exist yet, which is fine
+        }
     }
 
     static toggleAutosave(val) {
@@ -5957,6 +6169,8 @@ class SaveSystem {
             const req = this.db.transaction("save_meta", "readonly").objectStore("save_meta").getAll();
             req.onsuccess = () => resolve(req.result || []);
         });
+
+        await this.downloadTexturesFromCloud();
 
         let counts = { uploaded: 0, downloaded: 0, synced: 0 };
 
@@ -6180,25 +6394,24 @@ class SaveSystem {
     static async initDB() {
         if (!this.dbPromise) {
             this.dbPromise = new Promise((resolve, reject) => {
-                const request = indexedDB.open("MegaMinerDB", 2); // Version bumped to 2
+                // If you already have a version 2 out there, change this to 3
+                const request = indexedDB.open("MegaMinerDB", 3);
+
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
-                    // Full map data store
                     if (!db.objectStoreNames.contains("saves")) {
                         db.createObjectStore("saves", { keyPath: "id" });
                     }
-                    // Metadata store for fast listing
                     if (!db.objectStoreNames.contains("save_meta")) {
                         db.createObjectStore("save_meta", { keyPath: "id" });
                     }
+                    // ADDING THE TEXTURE STORE HERE
+                    if (!db.objectStoreNames.contains("textures")) {
+                        db.createObjectStore("textures");
+                    }
                 };
-                request.onsuccess = (event) => {
-                    resolve(event.target.result);
-                };
-                request.onerror = (event) => {
-                    console.error("IndexedDB initialization failed", event);
-                    reject(event);
-                };
+                request.onsuccess = (event) => resolve(event.target.result);
+                request.onerror = (event) => reject(event.target.result);
             });
         }
         this.db = await this.dbPromise;
