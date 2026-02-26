@@ -9,9 +9,7 @@
     <script src="lib/mqtt.min.js"></script>
     <script src="lib/puter-v2.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Stalinist+One');
-        @import url('https://fonts.googleapis.com/css2?family=Geo');
-        @import url('https://fonts.googleapis.com/css2?family=Danfo');
+        @import url('lib/fonts.css');
 
         /* CSS Reset & Normalization */
         * {
@@ -2153,6 +2151,73 @@ const MSGS = {
     rescue: ["is running on fumes!", "needs a fuel stim!", "is signaling SOS!"]
 };
 
+const creditsData = {
+    music: [
+        {
+            artist: "Patrick de Arteaga",
+            songs: ["Chiptronical","Great Little Challenge", "Solve The Puzzle"]
+        },
+        {
+            artist: "Kevin Macleod",
+            songs: ["Sneaky Snitch"]
+        },
+        {
+            artist: "VibeHorn (Pixabay)",
+            songs: ["Cozy Lofi Relax"]
+        },
+        {
+            artist: "DELOSound (Pixabay)",
+            songs: ["LoFi Background Music 3"]
+        },
+        {
+            artist: "CFL_TurningPages (Pixabay)",
+            songs: ["Field Duel lofi"]
+        }
+    ],
+
+    specialThanks: [
+        "My friends",
+        "Playtesters",
+        "Contributors",
+        "The laptops that were sacrificed in the making of this game"
+    ],
+    visualAssets:[
+        {
+            name: "Wikimedia Commons",
+            items: [ "(Zoom icon): <a href='https://commons.wikimedia.org/wiki/File:Magnifying_glass_icon.svg' target='_blank' rel='noopener noreferrer'>File:Magnifying_glass_icon.svg</a>"]
+        },
+        {
+            name: "Dazzle UI (SVG Repo)",
+            items: [ "(Shield icon): <a href='https://www.svgrepo.com/svg/532329/shield-check' target='_blank' rel='noopener noreferrer'>Shield Check SVG Vector</a>"]
+
+        },
+        {
+            name: "LeonardMeagher2",
+            items: ["(Checkboxes): <a href='https://codepen.io/LeonardMeagher2/pen/NvOLZr' target='_blank' rel='noopener noreferrer'>CodePen Link</a>"]
+        },
+        {
+            name: "Jackhenry Design (SVG Repo)",
+            items : ["(Transfer icon): <a href='https://www.svgrepo.com/svg/453433/transfer' target='_blank' rel='noopener noreferrer'>Transfer SVG Vector</a>"]
+        },
+        {
+            name: "brankic1979 (SVG Repo)",
+            items : ["(Chat icon): <a href='https://www.svgrepo.com/svg/485668/chat' target='_blank' rel='noopener noreferrer'>Chat SVG Vector</a>"]
+        },
+        {
+            name: "Pictogrammers (SVG Repo)",
+            items : ["(Build icon): <a href='https://www.svgrepo.com/svg/498792/cube-unfolded' target='_blank' rel='noopener noreferrer'>Cube Unfolded SVG Vector</a>"]
+        },
+        {
+            name: "Buninux (SVG Repo)",
+            items : ["(Action icon): <a href='https://www.svgrepo.com/svg/438151/action-favorite-circle-favourite-like-rating-button-star-icon' target='_blank' rel='noopener noreferrer'>Bruh no way im typing that</a>"]
+        },
+        {
+            name: "SVG Repo (SVG Repo)",
+            items : ["(AOE mining icon): <a href='https://www.svgrepo.com/svg/307559/supernova-star-radiation'>Supernova Star Radiation SVG</a>"]
+        }
+    ]
+};
+
 // --- CUSTOM MODAL SYSTEM ---
 class ModalSystem {
     constructor() {
@@ -3976,7 +4041,7 @@ class GameEngine {
         this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
         this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
         if (!isLocal) {
-            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = getFontSize('--fs-md') + ' Geo'; this.ctx.textAlign = 'center';
+            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = UI.getFontSize('--fs-md') + ' Geo'; this.ctx.textAlign = 'center';
             this.ctx.shadowColor="black"; this.ctx.shadowBlur=2;
             this.ctx.fillText(p.username || "Unknown", 0, -20);
             this.ctx.shadowBlur=0;
@@ -4074,7 +4139,7 @@ class GameEngine {
 
         // Money top center
         this.ctx.fillStyle = "#f1c40f";
-        this.ctx.font = `bold ${getFontSize('--fs-title', 4)} Stalinist One`;
+        this.ctx.font = `bold ${UI.getFontSize('--fs-title', 4)} Stalinist One`;
         this.ctx.textAlign = "center";
         this.ctx.fillText("$ " + Math.floor(p.money), w / 2, h - ((gaugeR * 2.5)));
 
@@ -4092,7 +4157,7 @@ class GameEngine {
 
         // Money bottom center
         this.ctx.fillStyle = "#f1c40f";
-        this.ctx.font = `bold ${getFontSize('--fs-title', 4)} Stalinist One`;
+        this.ctx.font = `bold ${UI.getFontSize('--fs-title', 4)} Stalinist One`;
         this.ctx.textAlign = "center";
         this.ctx.fillText("$ " + Math.floor(p.money), w / 2, h - padding);
     }
@@ -4147,9 +4212,9 @@ class GameEngine {
 
             // 4. Labels
             ctx.fillStyle = "#fff";
-            ctx.font = `bold ${getFontSize('--fs-sm', 4)} Stalinist One`;
+            ctx.font = `bold ${UI.getFontSize('--fs-sm', 4)} Stalinist One`;
             ctx.fillText(label, x, pivotY + (20 * dpr)); // Below pivot
-            ctx.font = `bold ${getFontSize('--fs-md'), 4} Stalinist One`;
+            ctx.font = `bold ${UI.getFontSize('--fs-md'), 4} Stalinist One`;
             ctx.fillText(Math.floor(val), x, pivotY - (r * 0.4)); // Inside arch
             break;
 
@@ -4183,11 +4248,11 @@ class GameEngine {
 
             // 5. Labels (Drawn outside clipping to ensure visibility)
             ctx.fillStyle = "#fff";
-            ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
+            ctx.font = `bold ${UI.getFontSize('--fs-sm')} Geo`;
             ctx.fillText(label, x, pillY - (12 * dpr)); // Moved above the pill
 
             if (Math.floor(val) !== 0) {
-                ctx.font = `bold ${getFontSize('--fs-sm'), 4} Stalinist One`;
+                ctx.font = `bold ${UI.getFontSize('--fs-sm'), 4} Stalinist One`;
                 // Value stays inside the pill
                 const valY = clamp(pillY + barH - fillH / 2, pillY + 10, pillY + barH - 10);
                 ctx.fillText(Math.floor(val), x, valY);
@@ -4215,9 +4280,9 @@ class GameEngine {
                 // Text
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = "#fff";
-                ctx.font = `bold ${getFontSize('--fs-sm')} Geo`;
+                ctx.font = `bold ${UI.getFontSize('--fs-sm')} Geo`;
                 ctx.fillText(label, x, y - (r + 10)); // Label above
-                ctx.font = `bold ${getFontSize('--fs-md'), 4} Stalinist One`;
+                ctx.font = `bold ${UI.getFontSize('--fs-md'), 4} Stalinist One`;
                 ctx.fillText(Math.floor(val), x, y + (6 * dpr));
                 break;
             case "classic":
@@ -4242,7 +4307,7 @@ class GameEngine {
                 ctx.stroke();
 
                 ctx.fillStyle = "#fff";
-                ctx.font = "bold " + getFontSize('--fs-md', 4) + " Stalinist One";
+                ctx.font = "bold " + UI.getFontSize('--fs-md', 4) + " Stalinist One";
                 ctx.textAlign = "center";
                 ctx.fillText(label, x, y + (15 * dpr));
                 ctx.fillText(Math.floor(val), x, y - (5 * dpr));
@@ -5208,10 +5273,68 @@ class UIManager {
 
         if (localStorage.getItem('mm_cloudsync_setting')===true) $('startBtn').disabled = true;
         setTimeout(function(){document.getElementById('gfx-disp').innerHTML=document.getElementById('graphicsQuality').value},2000);
+        this.generateCreditsHTML()
+
         // Init server list on load
         setTimeout(() => this.refreshServerList(), 500);
+
         Input.init();
     }
+
+    generateCreditsHTML(data) {
+        let html = "";
+
+        for (const category in data) {
+            html += `<div class="credits-section">`;
+            html += `<h3>${category.replace(/([A-Z])/g, " $1").toUpperCase()}</h3>`;
+
+            const section = data[category];
+
+            // Simple string list (e.g., specialThanks)
+            if (Array.isArray(section) && typeof section[0] === "string") {
+                html += `<div class="credit-entry">`;
+                html += `<ul class="simple-list">`;
+                section.forEach(item => html += `<li>${item}</li>`);
+                html += `</ul>`;
+                html += `</div>`;
+                continue;
+            }
+
+            // Object list (music, sfx, pictures, etc.)
+            section.forEach(entry => {
+                const key = Object.keys(entry)[0];
+                const name = entry[key];
+                const items = entry.items || entry.songs || [];
+
+                html += `<div class="credit-entry">`;
+                html += `<strong>${name}</strong>`;
+                if (items.length > 0) {
+                    html += `<ul>`;
+                    items.forEach(i => html += `<li>${i}</li>`);
+                    html += `</ul>`;
+                }
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+        }
+
+        return html;
+    }
+    parseCSSCalc(calcString) {
+        // Remove calc() wrapper and evaluate
+        const expression = calcString.replace(/^calc\(|\)$/g, '');
+
+        // Simple evaluation for basic multiplication
+        if (expression.includes('*')) {
+            const parts = expression.split('*').map(p => p.trim());
+            const left = parseFloat(parts[0]);
+            const right = parseFloat(parts[1]);
+            return left * right;
+        }
+    }
+
+    getFontSize(varName, shrink = 0) { return (this.parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
 
     rndMsg(type) { const arr = MSGS[type]; return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -6353,90 +6476,45 @@ class SaveSystem {
     }
 }
 
-function generateCreditsHTML(data) {
-    let html = "";
-
-    for (const category in data) {
-        html += `<div class="credits-section">`;
-        html += `<h3>${category.replace(/([A-Z])/g, " $1").toUpperCase()}</h3>`;
-
-        const section = data[category];
-
-        // Simple string list (e.g., specialThanks)
-        if (Array.isArray(section) && typeof section[0] === "string") {
-            html += `<div class="credit-entry">`;
-            html += `<ul class="simple-list">`;
-            section.forEach(item => html += `<li>${item}</li>`);
-            html += `</ul>`;
-            html += `</div>`;
-            continue;
-        }
-
-        // Object list (music, sfx, pictures, etc.)
-        section.forEach(entry => {
-            const key = Object.keys(entry)[0];
-            const name = entry[key];
-            const items = entry.items || entry.songs || [];
-
-            html += `<div class="credit-entry">`;
-            html += `<strong>${name}</strong>`;
-            if (items.length > 0) {
-                html += `<ul>`;
-                items.forEach(i => html += `<li>${i}</li>`);
-                html += `</ul>`;
-            }
-            html += `</div>`;
-        });
-
-        html += `</div>`;
-    }
-
-    return html;
-}
-
-function parseCSSCalc(calcString) {
-    // Remove calc() wrapper and evaluate
-    const expression = calcString.replace(/^calc\(|\)$/g, '');
-
-    // Simple evaluation for basic multiplication
-    if (expression.includes('*')) {
-        const parts = expression.split('*').map(p => p.trim());
-        const left = parseFloat(parts[0]);
-        const right = parseFloat(parts[1]);
-        return left * right;
-    }
-}
-
-function getFontSize(varName, shrink = 0) { return (parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
 
 async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath = "megaminer") {
-
     const listUrl = `https://api.github.com/repos/${user}/${repo}/commits?path=${projectPath}&per_page=5`;
 
     try {
         const response = await fetch(listUrl);
+
+        // Check for HTTP errors (403, 404, etc.)
+        if (!response.ok) {
+            return `API ERROR [HTTP ${response.status}]`;
+        }
+
         const commits = await response.json();
 
         if (!commits || commits.length === 0) return "NO RECENT UPDATES.";
 
         for (const commitData of commits) {
-            // 1. Filter by Bot Identity
             const msg = commitData.commit.message.toUpperCase();
             const login = (commitData.author?.login || "").toLowerCase();
             if (login.includes('bot') || msg.startsWith('[BOT]')) continue;
 
-            // 2. Filter by Specific Automated Files
+            // Check for errors on the second (detailed) fetch
             const detailResponse = await fetch(commitData.url);
+            if (!detailResponse.ok) {
+                return `API ERROR [HTTP ${detailResponse.status}]`;
+            }
+
             const detailedCommit = await detailResponse.json();
 
-            return `LATEST PROJECT UPDATE [${new Date(commitData.commit.author.date).toLocaleDateString()}]: ${msg.split('\n')[0]}`;
-
+            // Your filtering logic here...
+            const date = new Date(commitData.commit.author.date).toLocaleDateString();
+            return `LATEST UPDATE [${date}]: ${msg.split('\n')[0]}`;
         }
 
-        return "SCANNING PROJECT FOLDER... NO MANUAL COMMITS FOUND.";
+        return "NO UPDATES FOUND.";
     } catch (error) {
         console.error(error);
-        return "COMMUNICATION ERROR: SIGNAL LOST.";
+        // This catches network failures (like being offline)
+        return "OFFLINE?";
     }
 }
 
@@ -6463,78 +6541,12 @@ window.Cloud = Cloud;
 window.Input = Input;
 window.Sound = Sound;
 
-const creditsData = {
-    music: [
-        {
-            artist: "Patrick de Arteaga",
-            songs: ["Chiptronical","Great Little Challenge", "Solve The Puzzle"]
-        },
-        {
-            artist: "Kevin Macleod",
-            songs: ["Sneaky Snitch"]
-        },
-        {
-            artist: "VibeHorn (Pixabay)",
-            songs: ["Cozy Lofi Relax"]
-        },
-        {
-            artist: "DELOSound (Pixabay)",
-            songs: ["LoFi Background Music 3"]
-        },
-        {
-            artist: "CFL_TurningPages (Pixabay)",
-            songs: ["Field Duel lofi"]
-        }
-    ],
-
-    specialThanks: [
-        "My friends",
-        "Playtesters",
-        "Contributors",
-        "The laptops that were sacrificed in the making of this game"
-    ],
-    visualAssets:[
-        {
-            name: "Wikimedia Commons",
-            items: [ "(Zoom icon): <a href='https://commons.wikimedia.org/wiki/File:Magnifying_glass_icon.svg' target='_blank' rel='noopener noreferrer'>File:Magnifying_glass_icon.svg</a>"]
-        },
-        {
-            name: "Dazzle UI (SVG Repo)",
-            items: [ "(Shield icon): <a href='https://www.svgrepo.com/svg/532329/shield-check' target='_blank' rel='noopener noreferrer'>Shield Check SVG Vector</a>"]
-
-        },
-        {
-            name: "LeonardMeagher2",
-            items: ["(Checkboxes): <a href='https://codepen.io/LeonardMeagher2/pen/NvOLZr' target='_blank' rel='noopener noreferrer'>CodePen Link</a>"]
-        },
-        {
-            name: "Jackhenry Design (SVG Repo)",
-            items : ["(Transfer icon): <a href='https://www.svgrepo.com/svg/453433/transfer' target='_blank' rel='noopener noreferrer'>Transfer SVG Vector</a>"]
-        },
-        {
-            name: "brankic1979 (SVG Repo)",
-            items : ["(Chat icon): <a href='https://www.svgrepo.com/svg/485668/chat' target='_blank' rel='noopener noreferrer'>Chat SVG Vector</a>"]
-        },
-        {
-            name: "Pictogrammers (SVG Repo)",
-            items : ["(Build icon): <a href='https://www.svgrepo.com/svg/498792/cube-unfolded' target='_blank' rel='noopener noreferrer'>Cube Unfolded SVG Vector</a>"]
-        },
-        {
-            name: "Buninux (SVG Repo)",
-            items : ["(Action icon): <a href='https://www.svgrepo.com/svg/438151/action-favorite-circle-favourite-like-rating-button-star-icon' target='_blank' rel='noopener noreferrer'>Bruh no way im typing that</a>"]
-        },
-        {
-            name: "SVG Repo (SVG Repo)",
-            items : ["(AOE mining icon): <a href='https://www.svgrepo.com/svg/307559/supernova-star-radiation'>Supernova Star Radiation SVG</a>"]
-        }
-    ]
-};
 // JANK AUDIO FIX
 Sound.loadSettings()
 // bruh
-document.getElementById('credits').innerHTML = generateCreditsHTML(creditsData);
+document.getElementById('credits').innerHTML = UI.generateCreditsHTML(creditsData);
 </script>
-<script>
+<!--<script>
 const UIFX = {
     /**
      * Converts DOM elements matching the selector to use the
@@ -6566,11 +6578,12 @@ const UIFX = {
 
     init: function() {
         this.convertToBeveled('button.generic');
+
     }
 };
 
 // Auto-init if needed
 window.addEventListener('load', () => UIFX.init());
-</script>
+</script>-->
 </body>
 </html>
