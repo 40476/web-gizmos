@@ -99,16 +99,16 @@ def main():
     for entry in all_entries:
         summary_file = os.path.join(SUMMARY_DIR, f"{entry}.html")
         
-        # Determine if we need a new summary
         needs_api = not os.path.exists(summary_file) or dir_changed(entry)
 
         if needs_api:
             to_update.append(entry)
             print(f"Queueing for update: {entry}")
         else:
-            with open(summary_file, "r", encoding="utf-8") as f:
-                summaries[entry] = f.read()
-            print(f"Loaded from cache: {entry}")
+            if os.path.exists(summary_file):
+                with open(summary_file, "r", encoding="utf-8") as f:
+                    summaries[entry] = f.read()
+                print(f"Loaded from cache: {entry}")
     
     print(f"Scan complete. {len(summaries)} cached, {len(to_update)} to update.")
     print("::endgroup::")
@@ -133,18 +133,31 @@ def main():
         else:
             print(f"::error::Failed to generate valid summary for {entry}")
 
-        # Only sleep if there are more items left in the update queue
         if i < len(to_update) - 1:
             print("Waiting 10s for rate limits...")
             time.sleep(10)
 
-    # Rebuild Index
+    # --- REBUILD & CHECK FOR CHANGES ---
     with open(TEMPLATE_FILE, "r", encoding="utf-8") as f:
         template = Template(f.read())
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write(template.render(applications=summaries))
     
-    print("Workflow complete.")
+    # Render to a string first for comparison
+    new_html = template.render(applications=summaries)
 
+    # Check if index.html already exists and compare content
+    if os.path.exists(OUTPUT_FILE):
+        with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+            existing_html = f.read()
+        
+        if existing_html == new_html:
+            print("No changes detected in index.html. Exiting without update.")
+            sys.exit(0) # Successful exit, no work needed
+
+    # If we get here, either file doesn't exist or content changed
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(new_html)
+    
+    print("Workflow complete. index.html updated.")
+    
 if __name__ == "__main__":
     main()
