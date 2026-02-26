@@ -6409,11 +6409,8 @@ function parseCSSCalc(calcString) {
 
 function getFontSize(varName, shrink = 0) { return (parseCSSCalc(getComputedStyle(document.documentElement).getPropertyValue(varName)) * window.devicePixelRatio) + 'px'; }
 
-async function getLatestCommit(projectPath = "megaminer") {
-    const user = '40476';
-    const repo = 'web-gizmos';
+async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath = "megaminer") {
 
-    // Adding the 'path' parameter filters commits to ONLY that folder
     const listUrl = `https://api.github.com/repos/${user}/${repo}/commits?path=${projectPath}&per_page=5`;
 
     try {
