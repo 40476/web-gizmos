@@ -1,18 +1,17 @@
 <section>
   <ul>
-    <li>Features a 1000x2000 tile map with procedural terrain generation and resource mining</li>
-    <li>Supports real-time multiplayer via MQTT broker with chat, player movement, and collaborative mining</li>
-    <li>Offers extensive upgrade system including drill tiers, cargo capacity, fuel efficiency, and special abilities</li>
-    <li>Includes building mechanics, crafting system, and various items like teleporters, explosives, and consumables</li>
-    <li>Provides mobile controls with touch-optimized interface and responsive design</li>
+    <li>Mega Miner NG is a multiplayer mining game with procedurally generated underground maps and real-time player interaction.</li>
+    <li>Features a robust save system with cloud sync, admin controls, and a comprehensive upgrade shop for mining equipment.</li>
+    <li>Includes mobile-optimized touch controls, a minimap, and a sophisticated particle system for mining effects.</li>
+    <li>Utilizes MQTT for real-time multiplayer networking and IndexedDB for local save storage.</li>
+    <li>Offers extensive customization options including key rebinding, audio settings, and visual preferences.</li>
   </ul>
 
   <pre>
-    <code>// Core game loop update</code>
-    <code>this.update();</code>
-    <code>this.draw();</code>
-    <code>requestAnimationFrame(() => this.loop());</code>
+    <code>class GameEngine { constructor() { /* ... */ } update() { /* ... */ } draw() { /* ... */ } }</code>
+    <code>class NetworkManager { constructor() { /* ... */ } connect() { /* ... */ } handleMessage() { /* ... */ } }</code>
+    <code>class ShopSystem { constructor() { /* ... */ } buyUpgrade() { /* ... */ } updateUI() { /* ... */ } }</code>
   </pre>
 
-  <p>This is a comprehensive 2D mining game with real-time multiplayer capabilities, featuring procedural world generation, extensive upgrade systems, and a complete inventory management system. The game supports both desktop and mobile play with touch controls, offers various mining tools and explosives, and includes a shop system for upgrades and consumables. Players can collaborate in shared worlds, build structures, and explore a vast underground environment filled with different ores and resources.</p>
+  <p>This web-based mining game combines procedurally generated terrain, real-time multiplayer networking, and a comprehensive upgrade system. Players can explore underground caves, mine resources, and interact with others through an MQTT-based server system. The game features both desktop and mobile controls, a robust save system with cloud sync capabilities, and a detailed shop for purchasing upgrades and consumables. Built with HTML5 Canvas for rendering and IndexedDB for local storage, it provides an engaging mining experience with social elements.</p>
 </section>
