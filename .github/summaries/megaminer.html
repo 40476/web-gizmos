@@ -1,16 +1,15 @@
 <section>
   <ul>
-    <li>Browser-based multiplayer mining game with real-time physics and voxel-based terrain</li>
-    <li>Features procedurally generated worlds, resource gathering, and player trading economy</li>
-    <li>Includes crafting system, upgrade shop, and teleporter network for fast travel</li>
-    <li>Supports both desktop and mobile controls with touch-optimized interface</li>
-    <li>Cloud save functionality with conflict resolution and cross-device synchronization</li>
+    <li>2D multiplayer mining game with procedurally generated maps and real-time multiplayer via MQTT</li>
+    <li>Features vehicle upgrades, resource management, building, and exploration mechanics</li>
+    <li>Cross-platform support with mobile controls, chat system, and extensive UI overlays</li>
+    <li>Save system with cloud synchronization and texture customization capabilities</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); this.minimapCanvas = $('minimap'); this.minimapCtx = this.minimapCanvas.getContext('2d'); } }</code>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11 };</code>
+    <code>const GameEngine = class { update() { /* movement, mining, networking */ } draw() { /* rendering pipeline */ } }</code>
+    <code>const NetworkManager = class { connect() { /* MQTT setup */ } handleMessage() { /* message routing */ } }</code>
   </pre>
 
-  <p>Mega Miner NG is a browser-based multiplayer mining game built with HTML5 Canvas and WebSockets. Players explore procedurally generated voxel worlds, mine resources, upgrade equipment, and trade with others in real-time. The game features a sophisticated physics engine, dynamic lighting system, and cloud-based save functionality that works across devices.</p>
+  <p>Mega Miner NG is a browser-based multiplayer mining simulation featuring procedurally generated underground worlds, vehicle upgrades, and real-time networking. Players can mine resources, build structures, trade with others, and explore vast cave systems while managing fuel, hull integrity, and cargo capacity. The game includes comprehensive save systems, cloud synchronization, and cross-platform mobile support.</p>
 </section>
