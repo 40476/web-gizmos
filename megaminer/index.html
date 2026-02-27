@@ -83,20 +83,27 @@
             }
         }
 
-        .ticker-wrap {
-            overflow: hidden; /* Hides text outside the box */
+       .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            /* This adds the space you want below the ticker */
+            padding-bottom: 20px;
         }
 
         .ticker-move {
             display: inline-block;
             white-space: nowrap;
-            margin-bottom: 10px;
-            padding-left: 100%; /* Start the text off-screen to the right */
+            will-change: transform;
             animation: ticker-kb 15s linear infinite;
+            /* Ensure no margins are pushing the layout weirdly */
+            margin: 0;
         }
 
         @keyframes ticker-kb {
-            0% { transform: translateX(0); }
+            /* Instead of padding-left: 100%, we start at 100vw (viewport width)
+            This prevents the element from growing physically huge */
+            0% { transform: translateX(100vw); }
             100% { transform: translateX(-100%); }
         }
 
@@ -1718,7 +1725,7 @@ display: flex;
         <div id="start-screen">
             <div class="ticker-wrap">
                 <br class="mobileShow">
-                <h1 class="title-text">Mega Miner NG</h1>
+                <h1 class="title-text"><center>Mega Miner NG</center></h1>
                 <div id="ticker-content" class="ticker-move">
                     Loading updates...
                 </div>
