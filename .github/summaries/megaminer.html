@@ -1,17 +1,16 @@
 <section>
   <ul>
-    <li>Mega Miner NG is a multiplayer mining game with procedurally generated worlds.</li>
-    <li>Features include building, crafting, trading, and a shop system with upgrades and consumables.</li>
-    <li>Supports both singleplayer and multiplayer modes with real-time synchronization.</li>
-    <li>Includes a custom UI system with mobile controls, chat, and an admin panel.</li>
-    <li>Utilizes MQTT for network communication and IndexedDB for local save storage.</li>
+    <li>Browser-based multiplayer mining game with real-time physics and voxel-based terrain</li>
+    <li>Features procedurally generated worlds, resource gathering, and player trading economy</li>
+    <li>Includes crafting system, upgrade shop, and teleporter network for fast travel</li>
+    <li>Supports both desktop and mobile controls with touch-optimized interface</li>
+    <li>Cloud save functionality with conflict resolution and cross-device synchronization</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ... };</code>
-    <code>const CONSTANTS = { TILE_SIZE: 32, CHUNK_SIZE: 16, MAP_WIDTH: 1000, MAP_HEIGHT: 2000 };</code>
-    <code>class GameEngine { update() { /* movement, mining, rendering */ } draw() { /* optimized rendering */ } };</code>
+    <code>const GameEngine = class { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); this.minimapCanvas = $('minimap'); this.minimapCtx = this.minimapCanvas.getContext('2d'); } }</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11 };</code>
   </pre>
 
-  <p>Mega Miner NG is a comprehensive mining game featuring procedurally generated worlds, real-time multiplayer functionality, and extensive building/crafting systems. The game includes a sophisticated UI with mobile controls, chat, and admin features, while utilizing MQTT for network communication and IndexedDB for persistent storage. Players can mine various resources, upgrade equipment, trade with others, and explore an infinite underground world with dynamic lighting and particle effects.</p>
+  <p>Mega Miner NG is a browser-based multiplayer mining game built with HTML5 Canvas and WebSockets. Players explore procedurally generated voxel worlds, mine resources, upgrade equipment, and trade with others in real-time. The game features a sophisticated physics engine, dynamic lighting system, and cloud-based save functionality that works across devices.</p>
 </section>
