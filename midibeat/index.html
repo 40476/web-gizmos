@@ -10,7 +10,7 @@
         .container { max-width: 500px; margin: auto; background: #2d2d2d; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .section { margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 15px; }
         label { display: block; margin-bottom: 8px; font-size: 0.9em; color: #bbb; }
-        input { margin-bottom: 10px; width: 100%; }
+        select, input { margin-bottom: 15px; width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #3d3d3d; color: white; }
 
         .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
         button { padding: 10px 18px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
@@ -18,23 +18,27 @@
         #playBtn { background: #28a745; color: white; }
         #pauseBtn { background: #ffc107; color: #222; }
         #restartBtn { background: #dc3545; color: white; }
-        #defaultBtn { background: #6c757d; color: white; width: 100%; margin-bottom: 20px; }
 
         button:disabled { opacity: 0.3; cursor: not-allowed; }
-        #status { text-align: center; margin-top: 20px; font-style: italic; color: #00d4ff; }
+        #status { text-align: center; margin-top: 20px; font-style: italic; color: #00d4ff; font-size: 0.85em; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; margin-top: 0;">MIDI Sampler</h2>
-
-    <button id="defaultBtn">Load Default (stopposting.wav + sus.mid)</button>
+    <h2 style="text-align: center; margin-top: 0; color: #00d4ff;">MIDIbeat</h2>
 
     <div class="section">
-        <label>Upload Soundbite:</label>
+        <label>Select Soundbite:</label>
+        <select id="audioSelect"><option value="">Loading library...</option></select>
+
+        <label>Select MIDI File:</label>
+        <select id="midiSelect"><option value="">Loading library...</option></select>
+    </div>
+
+    <div class="section">
+        <label>Or Upload Custom Files:</label>
         <input type="file" id="audioFile" accept="audio/*">
-        <label>Upload MIDI:</label>
         <input type="file" id="midiFile" accept=".mid">
     </div>
 
@@ -44,7 +48,7 @@
         <button id="restartBtn" disabled>Restart</button>
     </div>
 
-    <div id="status">Waiting for files...</div>
+    <div id="status">Initializing...</div>
 </div>
 
 <script>
@@ -52,26 +56,64 @@
     let player;
     let isInitialized = false;
 
+    const audioBase = "../shared/audio/";
+    const midiBase = "../shared/midi/";
+
+    const audioSelect = document.getElementById('audioSelect');
+    const midiSelect = document.getElementById('midiSelect');
     const playBtn = document.getElementById('playBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const restartBtn = document.getElementById('restartBtn');
-    const defaultBtn = document.getElementById('defaultBtn');
     const status = document.getElementById('status');
 
-    // --- Initialization Helpers ---
+    // --- Atlas Loading ---
+
+    async function loadLibrary() {
+        try {
+            // Load Audio Atlas
+            const audioRes = await fetch(audioBase + 'atlas.json');
+            const audioData = await audioRes.json();
+            populateDropdown(audioSelect, audioData, "Select a sound...");
+
+            // Load MIDI Atlas (assuming it's called midi_atlas.json)
+            const midiRes = await fetch(midiBase + 'midi_atlas.json');
+            const midiData = await midiRes.json();
+            populateDropdown(midiSelect, midiData, "Select a sequence...");
+
+            status.innerText = "Libraries loaded.";
+        } catch (e) {
+            console.warn("Atlas load error:", e);
+            status.innerText = "Error loading library files.";
+        }
+    }
+
+    function populateDropdown(selectElement, data, defaultText) {
+        selectElement.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+        data.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.name;
+            opt.innerText = item.name.replace(/\.[^/.]+$/, ""); // Remove extension for title
+            selectElement.appendChild(opt);
+        });
+    }
+
+    // --- Core Logic ---
 
     async function initSampler(url) {
         status.innerText = "Loading Audio...";
+        if (sampler) sampler.dispose();
+
         sampler = new Tone.Sampler({
             urls: { C4: url },
             onload: () => {
-                status.innerText = "Audio Ready. Load MIDI next.";
+                status.innerText = "Audio Ready.";
                 checkReady();
             }
         }).toDestination();
     }
 
     async function initMIDI(data) {
+        if (player) player.stop();
         player = new MidiPlayer.Player((event) => {
             if (event.name === 'Note on' && event.velocity > 0) {
                 sampler.triggerAttackRelease(event.noteName, "4n");
@@ -87,13 +129,23 @@
             playBtn.disabled = false;
             pauseBtn.disabled = false;
             restartBtn.disabled = false;
-            status.innerText = "Ready to Play!";
         }
     }
 
-    // --- Event Listeners ---
+    // --- Interaction Listeners ---
 
-    // Manual Uploads
+    audioSelect.addEventListener('change', (e) => {
+        if (e.target.value) initSampler(audioBase + e.target.value);
+    });
+
+    midiSelect.addEventListener('change', async (e) => {
+        if (e.target.value) {
+            const res = await fetch(midiBase + e.target.value);
+            const buffer = await res.arrayBuffer();
+            initMIDI(buffer);
+        }
+    });
+
     document.getElementById('audioFile').addEventListener('change', async (e) => {
         const url = URL.createObjectURL(e.target.files[0]);
         initSampler(url);
@@ -104,21 +156,6 @@
         initMIDI(buffer);
     });
 
-    // Default Button
-    defaultBtn.addEventListener('click', async () => {
-        try {
-            status.innerText = "Fetching defaults...";
-            initSampler('stopposting.wav');
-
-            const midiRes = await fetch('sus.mid');
-            const midiBuffer = await midiRes.arrayBuffer();
-            initMIDI(midiBuffer);
-        } catch (err) {
-            status.innerText = "Error: Default files not found in folder.";
-        }
-    });
-
-    // Transport Controls
     playBtn.addEventListener('click', async () => {
         if (!isInitialized) {
             await Tone.start();
@@ -138,6 +175,9 @@
         player.play();
         status.innerText = "Status: Restarted";
     });
+
+    // Start loading the dropdowns immediately
+    loadLibrary();
 </script>
 
 </body>
