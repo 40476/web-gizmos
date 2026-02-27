@@ -3570,9 +3570,16 @@ class GameEngine {
         });
 
         // 3. Execute mining in order
+        if (!Network.isSingleplayer && range > 0) {
+            Network.broadcastAOEMine(tx, ty, range, Game.localPlayer.drillTier);
+        }
+
         tilesToMine.forEach((t, index) => {
             setTimeout(() => {
-                this.executeSingleMine(t.x, t.y);
+                // Pass a flag to executeSingleMine so it only sends
+                // individual packets if this ISN'T an AOE blast
+                const shouldNetUpdate = (range === 0);
+                this.executeSingleMine(t.x, t.y, shouldNetUpdate);
                 Sound.playMining();
             }, index);
         });
@@ -4992,6 +4999,19 @@ class NetworkManager {
         this.publish('ctrl', { type: 'claim_host', id: Game.localPlayer.id });
     }
 
+    broadcastAOEMine(x, y, range,tier) {
+        if (this.isSingleplayer) return;
+        this.publish('ctrl', {
+            type: 'aoe_mine',
+            id: Game.localPlayer.id,
+            x: x,
+            y: y,
+            r: range,
+            t: tier
+
+        });
+    }
+
     broadcastExplosion(x, y, r, t) { this.publish('map', { type: 'explode', x, y, r, t }); }
 
     broadcastPromote(targetId) {
@@ -5090,8 +5110,6 @@ class NetworkManager {
     }
 
     async handleMessage(topic, message) {
-
-        // At the top of handleMessage(topic, message)
         const prefix = `${this.baseTopic}${Game.settings.room}/`;
         const subTopic = topic.replace(prefix, '');
 
@@ -5183,6 +5201,38 @@ class NetworkManager {
                 this.publish('ctrl', { type: 'map_ack', for: msg.from });
             }, jitter);
         }
+    }// Add this inside the handleMessage logic, near other 'ctrl' or 'move' handlers
+    else if (msg.type === 'aoe_mine') {
+        // Don't process our own AOE (handled locally in tryMine)
+        if (msg.id === Game.localPlayer.id) return;
+
+        // Execute the AOE logic locally on this client
+        // We use a helper similar to your tryMine logic
+        const tx = msg.x;
+        const ty = msg.y;
+        const range = msg.r;
+        const tier = msg.t
+
+        for (let dy = -range; dy <= range; dy++) {
+            for (let dx = -range; dx <= range; dx++) {
+                const curX = tx + dx;
+                const curY = ty + dy;
+
+                if (Game.map[curY] && Game.map[curY][curX] !== undefined) {
+                    const tile = Game.map[curY][curX];
+                    if (tile === TILE_TYPES.EMPTY || tile === TILE_TYPES.BEDROCK) continue;
+
+                    // TIER CHECK: Use the miner's tier sent in the packet
+                    const props = TILE_PROPS[tile];
+                    if (tier < props.tier) continue;
+
+                    // Execute locally with shouldPublish = false to avoid infinite loops
+                    // This will trigger particles and sounds automatically
+                    this.executeSingleMine(curX, curY, false);
+                }
+            }
+        }
+        if (Game.renderer) Game.renderer.markMapDirty();
     }
     else if (msg.type === 'map_ack') {
         // Someone else is already syncing the requester. I can stay silent.
