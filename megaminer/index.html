@@ -2072,7 +2072,8 @@ const pseudoRandom = (x, y) => {
 // --- CONFIG & STATE ---
 const CONSTANTS = {
     TILE_SIZE: 32, CHUNK_SIZE: 16, SPEED_NORMAL: 1.75, SPEED_DRILL: 0.75,
-    FUEL_CONSUMPTION: 0.125, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0
+    FUEL_CONSUMPTION: 0.125, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0,
+    SHARED_DIR: "../shared/audio/"
 };
 
 
@@ -2100,7 +2101,7 @@ const TILE_PROPS = {
     [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 3, value: 1200, tier: 4, trashExclude: true },
     [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 0.1, value: 0, tier: 0, trashExclude: true },
     [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 67, tier: 99, trashExclude: true },
-    // New Items
+    // Purchasables
     [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0, trashExclude: true },
     [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0, trashExclude: true },
     [TILE_TYPES.TELEPORTER]: { name: "Teleporter", color: '#9b59b6', hardness: 5, value: 0, tier: 0, trashExclude: true },
@@ -2469,6 +2470,12 @@ class SoundManager {
         } else {
             this.nodes.drillGain.gain.setTargetAtTime(0, t, 0.1);
         }
+    }
+
+    playClip(filename, volume, onPlayCallback) {
+        const audio = new Audio(CONSTANTS.SHARED_DIR + filename);
+        audio.volume = Utils.clamp(volume, 0, 1);
+        audio.play().then(() => { if(onPlayCallback) onPlayCallback(audio); }).catch(e => {});
     }
 
     playTone(freq, type, duration, vol = 0.1) {
@@ -3029,17 +3036,17 @@ class GameEngine {
                 if (lastId) {
                     console.log("Host detected, loading save:", lastId);
                     await SaveSystem.loadGame(parseInt(lastId), true);
-                    UI.addMessage("System", "Auto-loaded previous save.", "#2ecc71");
+                    UI.addMessage("System", "Auto-loaded previous save.", "#aaa");
                 }
             } else {
                 // If we are NOT admin (Client), ensure we rely on the procedural map + sync
                 // We do NOT load any local saves to prevent overwriting the host's world
                 Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
-                UI.addMessage("System", "Waiting for Map Sync...", "#3498db");
+                UI.addMessage("System", "Waiting for Map Sync...", "#aaa");
             }
 
             this.loop();
-            UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#FFFF00");
+            UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#aaa");
             Network.broadcastMove();
             // Removed updateAdminStatus call
         }, 1000);
@@ -4960,7 +4967,7 @@ class NetworkManager {
         Object.keys(Game.remotePlayers).forEach(id => {
             if (n - Game.remotePlayers[id].lastSeen > 10000) {
                 const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
-                UI.addMessage("System", msg, "#888");
+                UI.addMessage("System", msg, "#aaa");
                 Sound.playChat('leave');
                 delete Game.remotePlayers[id];
                 UI.updatePlayerList();
@@ -5043,10 +5050,30 @@ class NetworkManager {
         // Send as a small 3-value binary packet: [x, y, val]
         this.publish('map_bin', new Uint16Array([x, y, type]));
     }
-    sendChat(msg) {
-        this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg });
-        UI.addMessage(Game.settings.username, msg, Game.settings.color);
+
+    async sendChat(msg) {
+        if(msg.startsWith("/sfx")){
+            const cmd = msg.split(" ");
+            if(cmd[1]==="list") {
+                const response = await fetch(CONSTANTS.SHARED_DIR + 'atlas.json');
+                if (!response.ok) {
+                    UI.addMessage("System", "Could not fetch sound list. (HTTP code"+response.code+")", "#aaa");
+                    return
+                }
+                const data = await response.json();
+                let output = '<br>'
+                data.map(track => ({ name: track.name, title: track.name.replace(/\.[^/.]+$/, "") })).forEach(s => {
+                    output = output + `${s.title}<br>`
+                });
+                UI.addMessage("System", output, "#aaa", true);
+            }
+            // Sound.playClip( )
+        } else {
+            this.publish('chat', { type: 'chat', id: Game.localPlayer.id, name: Game.settings.username, msg });
+            UI.addMessage(Game.settings.username, msg, Game.settings.color);
+        }
     }
+
     kickUser(id) { this.publish('ctrl', { type: 'kick', target: id }); }
     transferAdmin(id) { this.publish('ctrl', { type: 'transfer_admin', to: id }); }
 
@@ -5232,6 +5259,7 @@ class NetworkManager {
                 }
             }
         }
+
         if (Game.renderer) Game.renderer.markMapDirty();
     }
     else if (msg.type === 'map_ack') {
@@ -5306,7 +5334,7 @@ class NetworkManager {
         }
 
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
-        else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#f55"); Sound.playChat('death'); }
+        else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#aaa"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
             if (msg.target === Game.localPlayer.id) {
                 // --- MODAL REPLACEMENT ---
@@ -5314,7 +5342,7 @@ class NetworkManager {
                 location.reload();
             }
             else {
-                if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "red");
+                if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "#aaa");
                 delete Game.remotePlayers[msg.target];
             }
         }
@@ -5322,7 +5350,7 @@ class NetworkManager {
             Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
             UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
             Sound.playSuccess();
-            if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "orange");
+            if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "#aaa");
         }
         else if (msg.type === 'ctrl' && msg.type === 'transfer_admin' && msg.to === Game.localPlayer.id) {
             Game.promoteToAdmin();
@@ -5585,7 +5613,7 @@ class UIManager {
         return `${username} ${msg}`;
     }
 
-    addMessage(name, text, color = '#fff') {
+    addMessage(name, text, color = '#fff', rawHTML = false) {
         const container = $('chat-messages');
         const div = document.createElement('div');
 
@@ -5597,7 +5625,8 @@ class UIManager {
 
         // 2. Create the Text (Secure from XSS)
         const textSpan = document.createElement('span');
-        textSpan.textContent = text;
+        if(rawHTML===false) textSpan.textContent = text;
+        else textSpan.innerHTML = text;
 
         div.appendChild(nameSpan);
         div.appendChild(textSpan);
@@ -5945,7 +5974,7 @@ class UIManager {
                     console.log(`Update detected: ${this.initialTimestamp} -> ${newTimestamp}`);
 
                     UI.showToast("New Version Available!", "normal");
-                    UI.addMessage("System", `Update detected! (${newTimestamp}) Please save and refresh.`, "#0f0", 9999999);
+                    UI.addMessage("System", `Update detected! (${newTimestamp}) Please save and refresh.`, "#aaa", 9999999);
                     if(!Game.running) location.reload();
                     // Optional: Update the stored timestamp so we don't spam the user
                     // this.initialTimestamp = newTimestamp;
