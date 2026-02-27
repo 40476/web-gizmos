@@ -2052,7 +2052,7 @@ const uuid = () => {
 };
 
 const paths = [/*`/Documents/MegaMinerSaves/`,*/ `./`];
-
+const dpr = window.devicePixelRatio || 1;
 const now = () => Date.now();
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 const BUILD_TIMESTAMP = Date.now();
@@ -2219,6 +2219,8 @@ const creditsData = {
     ]
 };
 
+const TintCache = new Map();
+
 // --- CUSTOM MODAL SYSTEM ---
 class ModalSystem {
     constructor() {
@@ -2282,61 +2284,66 @@ let initialTimestamp = null;
 
 
 const CustomTextures = {
+    config: {},
+    library: {},
     tiles: {},
-    player: {},
-    drill: {},
     isLoaded: false,
 
     async loadFromJSON(jsonString, shouldPersist = true) {
         try {
             const data = JSON.parse(jsonString);
 
-            // Reset current textures to allow for a clean "hotswap"
+            // 1. Reset and Set Config
+            this.config = data.config || { protectionColor: "#ffffff" };
+            this.library = {};
             this.tiles = {};
-            this.player = {};
-            this.drill = {};
+            if (window.TintCache) TintCache.clear();
 
-            const loadImg = (url) => new Promise((res, rej) => {
+            const loadImg = (url) => new Promise((res) => {
                 const img = new Image();
                 img.onload = () => res(img);
-                img.onerror = rej;
+                img.onerror = () => res(null);
                 img.src = url;
             });
 
-            // Load Tiles
-            if (data.tiles) {
-                for (let id in data.tiles) {
-                    this.tiles[id] = await loadImg(data.tiles[id]);
+            // 2. Load the Library (The reusable base/overlay parts)
+            if (data.library) {
+                for (let key in data.library) {
+                    this.library[key] = await loadImg(data.library[key]);
                 }
             }
 
-            // Load Player/Drill
-            const categories = ['player', 'drill'];
-            for (let cat of categories) {
-                if (data[cat]) {
-                    for (let dir in data[cat]) {
-                        this[cat][dir] = await loadImg(data[cat][dir]);
+            // 3. Process Tiles
+            if (data.tiles) {
+                for (let id in data.tiles) {
+                    const entry = data.tiles[id];
+
+                    if (typeof entry === 'string') {
+                        // If it starts with data: or http, it's a direct image
+                        if (entry.startsWith('data:') || entry.startsWith('http')) {
+                            this.tiles[id] = await loadImg(entry);
+                        } else if (this.library[entry]) {
+                            // If it's just a name, look it up in the library
+                            this.tiles[id] = this.library[entry];
+                        }
+                    } else {
+                        // It's a complex object (base/tint/overlay), keep as is for renderer
+                        this.tiles[id] = entry;
                     }
                 }
             }
 
-            // 1. Mark as loaded for the renderer
             this.isLoaded = true;
 
-            // 2. Automatically save to the existing MegaMinerDB
-            if (shouldPersist) {
+            // 4. Persistence
+            if (shouldPersist && window.SaveSystem) {
                 await SaveSystem.saveTexturesLocally(jsonString);
-
-                // 3. Trigger cloud sync if the user has it enabled
-                if (SaveSystem.cloudSyncEnabled) {
-                    await SaveSystem.saveTexturesToCloud();
-                }
             }
 
+            console.log("Textures Loaded Successfully");
             return true;
         } catch (e) {
             console.error("Texture Load Failed:", e);
-            this.isLoaded = false;
             return false;
         }
     }
@@ -2556,6 +2563,78 @@ class SoundManager {
     }
 }
 
+const TextureEngine = {
+    // Helper to convert hex to RGB object
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    },
+
+    generateLayer(img, tintHex, protectionHex) {
+        const ts = CONSTANTS.TILE_SIZE * dpr; // Scale internal resolution
+        const canvas = document.createElement('canvas');
+        canvas.width = ts;
+        canvas.height = ts;
+        const ctx = canvas.getContext('2d');
+
+        // Essential for crisp pixel art at high DPR
+        ctx.imageSmoothingEnabled = false;
+
+        // Draw source to the upscaled internal size
+        ctx.drawImage(img, 0, 0, ts, ts);
+
+        const tint = this.hexToRgb(tintHex);
+        if (!tint) return canvas;
+
+        const protection = this.hexToRgb(protectionHex);
+        const imageData = ctx.getImageData(0, 0, ts, ts);
+        const data = imageData.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] === 0) continue;
+            if (protection &&
+                data[i] === protection.r &&
+                data[i+1] === protection.g &&
+                data[i+2] === protection.b) continue;
+
+            data[i]     = (data[i] * tint.r) / 255;
+            data[i + 1] = (data[i + 1] * tint.g) / 255;
+            data[i + 2] = (data[i + 2] * tint.b) / 255;
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        return canvas;
+    },
+
+    compositeTile(instructions) {
+        const ts = CONSTANTS.TILE_SIZE * dpr;
+        const canvas = document.createElement('canvas');
+        canvas.width = ts;
+        canvas.height = ts;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        const protect = CustomTextures.config?.protectionColor || "#ffffff";
+
+        const baseImg = CustomTextures.library[instructions.base];
+        if (baseImg) {
+            const tintedBase = this.generateLayer(baseImg, instructions.baseTint, protect);
+            ctx.drawImage(tintedBase, 0, 0, ts, ts);
+        }
+
+        const overlayImg = CustomTextures.library[instructions.overlay];
+        if (overlayImg) {
+            const tintedOverlay = this.generateLayer(overlayImg, instructions.overlayTint, protect);
+            ctx.drawImage(tintedOverlay, 0, 0, ts, ts);
+        }
+
+        return canvas;
+    }
+};
 
 // --- GAME LOGIC ---
 
@@ -2960,7 +3039,7 @@ class GameEngine {
     }
 
     resize() {
-        const dpr = window.devicePixelRatio || 1;
+
         let targetCssWidth;
         let targetCssHeight;
 
@@ -3953,28 +4032,39 @@ class GameEngine {
 
 
     drawProceduralTile(x, y, type) {
+        if (type === TILE_TYPES.EMPTY && y < 5) return;
+
         let ts = CONSTANTS.TILE_SIZE;
         let px = x * ts; let py = y * ts;
-        let prop = TILE_PROPS[type];
+        let custom = CustomTextures.tiles[type];
 
+        if (CustomTextures.isLoaded && custom) {
+            if (y===5 && type === 0) type = 999;
+            // Recompute tile key
+            custom = CustomTextures.tiles[type];
+            // If it's a complex object, check the cache
+            if (typeof custom === 'object') {
+                // Create a unique key based on the IDs and the Tints
+                const cacheKey = `${custom.base}-${custom.baseTint}-${custom.overlay}-${custom.overlayTint}`;
 
-        if (CustomTextures.isLoaded && CustomTextures.tiles[type] && !(y<5)) {
-            if(y===5 && type===0){
-                this.ctx.drawImage(CustomTextures.tiles[0], px, py, ts, ts)
-                this.ctx.drawImage(CustomTextures.tiles[999], px, py, ts, ts)
-            }else{
-                this.ctx.drawImage(CustomTextures.tiles[type], px, py, ts, ts)
+                if (!TintCache.has(cacheKey)) {
+                    // First time seeing this combination? Create it!
+                    TintCache.set(cacheKey, TextureEngine.compositeTile(custom));
+                }
+
+                this.ctx.drawImage(TintCache.get(cacheKey), px, py, ts, ts);
+            } else {
+                // Simple string mapping
+                this.ctx.drawImage(custom, px, py, ts, ts);
             }
-            return; // Skip the rest of the function!
-        }
-
-        if (type === TILE_TYPES.EMPTY && y < 5) {
             return;
         }
+
 
         const n1 = (pseudoRandom(x, y) % 1);
         const n2 = ((pseudoRandom(x, y) * 10) % 1);
 
+        let prop = TILE_PROPS[type];
         let bevel = true;
         let isOre = false;
 
@@ -4198,7 +4288,6 @@ class GameEngine {
     const p = this.localPlayer;
     const w = this.canvas.width;
     const h = this.canvas.height;
-    const dpr = window.devicePixelRatio || 1;
 
     // 1. Calculate dynamic radius and spacing
     const gaugeR = (this.isMobile ? Math.min(w / 10, 40) : 55) * dpr;
@@ -4247,7 +4336,6 @@ class GameEngine {
 
     drawGauge(x, y, r, val, max, label, color, style = "classic") {
     const ctx = this.ctx;
-    const dpr = window.devicePixelRatio || 1;
     const pct = clamp(val / max, 0, 1);
 
     ctx.save();
