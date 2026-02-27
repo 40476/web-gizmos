@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>2D multiplayer mining game with procedurally generated maps and real-time multiplayer via MQTT</li>
-    <li>Features vehicle upgrades, resource management, building, and exploration mechanics</li>
-    <li>Cross-platform support with mobile controls, chat system, and extensive UI overlays</li>
-    <li>Save system with cloud synchronization and texture customization capabilities</li>
+    <li>Mega Miner NG is a browser-based multiplayer mining game with procedurally generated worlds.</li>
+    <li>Features real-time multiplayer via MQTT, customizable controls, and cloud save functionality.</li>
+    <li>Includes an in-game shop system for upgrades, crafting, and trading with other players.</li>
+    <li>Supports mobile controls with on-screen D-pad and action buttons for touch devices.</li>
+    <li>Implements a sophisticated audio engine with dynamic sound effects and background music.</li>
   </ul>
 
   <pre>
-    <code>const GameEngine = class { update() { /* movement, mining, networking */ } draw() { /* rendering pipeline */ } }</code>
-    <code>const NetworkManager = class { connect() { /* MQTT setup */ } handleMessage() { /* message routing */ } }</code>
+    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } }</code>
+    <code>class ShopSystem { constructor() { this.prices = { drill: [500, 2000, 10000], hull: 200, fuel: 200 }; } }</code>
   </pre>
 
-  <p>Mega Miner NG is a browser-based multiplayer mining simulation featuring procedurally generated underground worlds, vehicle upgrades, and real-time networking. Players can mine resources, build structures, trade with others, and explore vast cave systems while managing fuel, hull integrity, and cargo capacity. The game includes comprehensive save systems, cloud synchronization, and cross-platform mobile support.</p>
+  <p>Mega Miner NG combines procedurally generated mining gameplay with real-time multiplayer functionality, featuring a sophisticated shop system, mobile controls, and cloud-based save management. The game uses MQTT for networking, Canvas for rendering, and IndexedDB for local storage, creating a complete web-based gaming experience.</p>
 </section>
