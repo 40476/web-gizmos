@@ -1,16 +1,15 @@
 <section>
   <ul>
-    <li>Mega Miner NG is a browser-based multiplayer mining game with procedurally generated worlds.</li>
-    <li>Features real-time multiplayer via MQTT, customizable controls, and cloud save functionality.</li>
-    <li>Includes an in-game shop system for upgrades, crafting, and trading with other players.</li>
-    <li>Supports mobile controls with on-screen D-pad and action buttons for touch devices.</li>
-    <li>Implements a sophisticated audio engine with dynamic sound effects and background music.</li>
+    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps.</li>
+    <li>Features voxel-style mining, resource gathering, and base building in a shared world.</li>
+    <li>Supports singleplayer and multiplayer modes with real-time networking via MQTT.</li>
+    <li>Customizable player settings, shop upgrades, and cloud save functionality.</li>
   </ul>
 
   <pre>
     <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } }</code>
-    <code>class ShopSystem { constructor() { this.prices = { drill: [500, 2000, 10000], hull: 200, fuel: 200 }; } }</code>
+    <code>class ShopSystem { open() { $('shop-modal').classList.add('active'); this.updateUI(); } }</code>
   </pre>
 
-  <p>Mega Miner NG combines procedurally generated mining gameplay with real-time multiplayer functionality, featuring a sophisticated shop system, mobile controls, and cloud-based save management. The game uses MQTT for networking, Canvas for rendering, and IndexedDB for local storage, creating a complete web-based gaming experience.</p>
+  <p>This web application is a 2D mining game with multiplayer capabilities, featuring procedurally generated maps, resource gathering, building mechanics, and a shop system for upgrades. The game uses MQTT for real-time networking and includes features like cloud saves, custom textures, and a dashboard for player statistics.</p>
 </section>
