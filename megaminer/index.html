@@ -1944,7 +1944,7 @@ display: flex;
                 <label>Options</label>
                 <div style="gap:15px;">
                     <label style="text-transform:none; color:#eee;">
-                        <input type="checkbox" id="autosave-toggle" checked onchange="SaveSystem.toggleAutosave(this.checked)" checked >&nbsp;&nbsp;Autosave
+                        <input type="checkbox" id="autosave-toggle" onchange="SaveSystem.toggleAutosave(this.checked)">&nbsp;&nbsp;Autosave
                     </label>
                     <label style="text-transform:none; color:#eee;">
                         <input type="checkbox" id="coords-toggle" onchange="Game.toggleCoords(this.checked)">&nbsp;&nbsp;Show Coordinates
@@ -1953,13 +1953,21 @@ display: flex;
                         <input type="checkbox" id="mobile-setting-toggle" onchange="Game.toggleMobile(this.checked)">&nbsp;&nbsp;Mobile Controls
                     </label>
                     <label style="text-transform:none; color:#eee;">
-                        <input type="checkbox" id="update-check-toggle" checked>&nbsp;&nbsp;Autocheck Updates (60s)
+                        <input type="checkbox" id="update-check-toggle" onchange="UI.toggleUpdateCheck(this.checked)">&nbsp;&nbsp;Autocheck Updates (60s)
                     </label>
                     <label style="text-transform:none; color:#eee;">
-                        <input type="checkbox" id="cloudSync-auto" checked>&nbsp;&nbsp;Automatically Sync to Cloud
+                        <input type="checkbox" id="cloudSync-auto">&nbsp;&nbsp;Automatically Sync to Cloud
                     </label>
+                    <!--<label style="text-transform:none; color:#eee;">
+                        <select>
+
+                        </select>&nbsp;&nbsp;Gauge Style
+                    </label>-->
+
                 </div>
             </div>
+
+
 
             <div class="form-group">
                 <label>Update Checker</label>
@@ -1999,11 +2007,10 @@ display: flex;
                         Link Device
                     </button>
                 </div>
-                <div id="cloud-status" style="font-size: var(--fs-sm); color:#aaa; display:flex; justify-content:space-between;">
-                    <span>Status:</span>
-                    <span id="cloud-bin-display" style="font-family:'Geo',sans-serif;"></span>
+                <div style="font-size: var(--fs-sm); color:#aaa;">
+                    <span>Warning:</span><br>
+                    <small style="color:#666;">By using Puter for cloud storage you agree to their privacy policy and TOS. (This is not required to play the game.)</small>
                 </div>
-                <small style="color:#666;">Fetch Cloud Saves to see worlds from other devices.</small>
             </div>
 
             <div class="form-group">
@@ -2075,7 +2082,9 @@ const CONSTANTS = {
     FUEL_CONSUMPTION: 0.125, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0,
     SHARED_DIR: "../shared/audio/"
 };
-
+const CONFIG_TEMPLATE = {
+// each class gets its own object and reads and saves to a main config item in localstorage
+};
 
 const TILE_TYPES = {
     EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, DEEP_SLATE: 5,
@@ -2362,7 +2371,7 @@ class SoundManager {
     constructor() {
         this.ctx = null;
         this.nodes = {};
-        this.volumes = { master: 0.5, music: 0.5, sfx: 0.5, engine: 0.3 };
+        this.volumes = GameConfig.get('Audio')
         this.playlist = ['audio/Chiptronical.ogg', 'audio/Great_Little_Challenge.ogg', 'audio/Solve_The_Puzzle.ogg', 'audio/Sneaky_Snitch.ogg', 'audio/cozy-lofi-relax-468509.mp3', 'audio/field-duel-lofi-464436.ogg', 'audio/lofi-background-music-3-471122.ogg','audio/chill-lofi-beat-469069.ogg'];
         this.currentTrack = 0;
         this.noiseBuffer = null;
@@ -2403,7 +2412,6 @@ class SoundManager {
         if (this.nodes[type]) this.nodes[type].gain.setTargetAtTime(this.volumes[type], this.ctx.currentTime, 0.1);
         else if (type === 'master' && this.nodes.master) this.nodes.master.gain.setTargetAtTime(this.volumes[type], this.ctx.currentTime, 0.1);
         $(`vol-disp-${type}`).innerText = Math.round(val*100) + '%';
-        localStorage.setItem(`mm_vol_${type}`, val);
     }
 
     createNoiseBuffer() {
@@ -2563,14 +2571,14 @@ class SoundManager {
 
     loadSettings() {
         ['master', 'music', 'sfx', 'engine'].forEach(t => {
-            const v = localStorage.getItem(`mm_vol_${t}`);
+            const v = GameConfig.get("Audio."+t);
             if(v !== null) {
                 this.volumes[t] = parseFloat(v);
                 $(`vol-${t}`).value = v;
                 $(`vol-disp-${t}`).innerText = Math.round(this.volumes[t]*100) + '%';
             } else {
-                this.volumes[t] = parseFloat(Game.settings.volumes[t]);
-                $(`vol-${t}`).value = Game.settings.volumes[t];
+                this.volumes[t] = parseFloat(GameConfig.get("Audio."+t));
+                $(`vol-${t}`).value = this.volumes[t];
                 $(`vol-disp-${t}`).innerText = Math.round(this.volumes[t]*100) + '%';
             }
         });
@@ -2664,23 +2672,6 @@ class GameEngine {
         this.running = false;
         this.isMobile = false;
 
-        this.settings = {
-            username: '',
-            color: '#3498db',
-            broker: 'wss://broker.emqx.io:8084/mqtt',
-            room: 'public',
-            keys: {
-                up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown',
-                build: 'b', interact: 'e', chat: 'Enter', transfer: 'f', AOE:"Shift"
-            },
-            volumes: {
-                master: 0.5,
-                music: 0.1,
-                sfx : 0.5,
-                engine: 0.5
-            }
-        };
-
         this.localPlayer = {
             id: uuid(),
             gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4,
@@ -2736,12 +2727,12 @@ class GameEngine {
             vehColor: this.settings.color,
             teleporters: this.localPlayer.teleporters || []
         };
-        localStorage.setItem(`mm_stats_${this.settings.room}`, JSON.stringify(data));
+        GameConfig.set('Stats.'+this.settings.room, JSON.stringify(data))
     }
 
     loadLocalProgress() {
         try {
-            const raw = localStorage.getItem(`mm_stats_${this.settings.room}`);
+            const raw = GameConfig.set('Stats.'+this.settings.room);
             if (raw) {
                 const data = JSON.parse(raw);
                 const p = this.localPlayer;
@@ -2799,38 +2790,43 @@ class GameEngine {
             UI.updateAdminPanel();
         }
     }
+
     loadStoredSettings() {
-        if(localStorage.getItem('mm_graphics_quality')) $('graphicsQuality').value = localStorage.getItem('mm_graphics_quality');
-        if(localStorage.getItem('mm_username')) $('start-username').value = localStorage.getItem('mm_username');
-        if(localStorage.getItem('mm_room_id')) $('start-room').value = localStorage.getItem('mm_room_id');
-        if(localStorage.getItem('mm_veh_color')) $('start-color').value = localStorage.getItem('mm_veh_color');
-        const showCoords = localStorage.getItem('mm_show_coords');
-        if(showCoords === 'true') { $('coords-toggle').checked = true; this.toggleCoords(true); }
+        // 1. Get references to the data for shorter access
+        this.settings = GameConfig.get('PlayerSettings');
+        this.saves = GameConfig.get('SaveSystem');
 
-        // Load broker from storage or use default if none
-        const storedBroker = localStorage.getItem('mm_broker_url');
-        if (storedBroker) {
-            this.settings.broker = storedBroker;
-            $('setting-broker').value = storedBroker;
-        } else {
-            // Ensure input matches default if nothing stored
-            $('setting-broker').value = this.settings.broker;
-        }
-        const binds = localStorage.getItem('mm_keybinds');
-        if(binds) {
-            try { this.settings.keys = {...this.settings.keys, ...JSON.parse(binds)}; } catch(e){console.error(e);}
+        // 2. Sync UI Inputs to Config Values
+        if ($('graphicsQuality')) $('graphicsQuality').value = this.settings.graphicsQuality;
+        if ($('start-username'))  $('start-username').value  = this.settings.username;
+        if ($('start-room'))      $('start-room').value      = this.settings.room;
+        if ($('start-color'))     $('start-color').value     = this.settings.color;
+        if ($('setting-broker'))  $('setting-broker').value  = this.settings.broker;
+
+        // 3. Handle Toggles & Logic-Driven UI
+        // Coordinates
+        const showCoords = this.settings.showCoords || false;
+        if ($('coords-toggle')) {
+            $('coords-toggle').checked = showCoords;
+            this.toggleCoords(showCoords);
         }
 
-        // Mobile setting
-        const mobile = localStorage.getItem('mm_mobile_mode') === 'true';
-        $('mobile-toggle').checked = mobile;
-        $('mobile-setting-toggle').checked = mobile;
+        // Mobile Mode
+        const mobile = this.settings.mobileMode || false; // Added to config?
+        if ($('mobile-toggle')) $('mobile-toggle').checked = mobile;
+        if ($('mobile-setting-toggle')) $('mobile-setting-toggle').checked = mobile;
         this.toggleMobile(mobile);
+
+        // 4. Update internal state references
+        this.settings.keys = { ...this.settings.keys};
+
+        console.log("UI Settings synchronized from Config.");
     }
 
     toggleMobile(enabled) {
+
         this.isMobile = enabled;
-        localStorage.setItem('mm_mobile_mode', enabled);
+        GameConfig.set('PlayerSettings.mobileMode', enabled);
 
         if (enabled && this.running) {
             document.body.classList.add('mobile-mode');
@@ -2907,47 +2903,56 @@ class GameEngine {
     }
 
     async init() {
-        // WHY IS THIS NECESSARY???
-        setTimeout(() => {
-            this.settings.username = $('start-username').value || 'Miner' + Date.now();
-            this.localPlayer.username = this.settings.username;
-            localStorage.setItem('mm_username', this.settings.username);
-        }, 500);
-        // FIX: Trim room ID to ensure seeds match perfectly across clients
-        this.settings.room = ($('start-room').value || 'public').trim();
-        this.settings.color = $('start-color').value;
-        this.settings.broker = $('setting-broker').value;
+        this.logConnection("Initializing System...");
 
+        // 1. Load Player & Connection Settings from Config vs UI
+        const playerConf = GameConfig.get('PlayerSettings');
+
+        this.settings.username = ($('start-username').value || playerConf.username).trim();
+        this.settings.room = ($('start-room').value || playerConf.room).trim();
+        this.settings.color = $('start-color').value || playerConf.color;
+        this.settings.broker = $('setting-broker').value || playerConf.broker;
+
+        // Map keys and volumes from unified config
+        this.settings.keys = playerConf.keys;
+        this.settings.volumes = GameConfig.get('Audio');
+
+        // Update localPlayer identity
+        this.localPlayer.username = this.settings.username;
+
+        // Handle Graphics Quality
         if (this.settings.graphicsQuality === undefined) {
-            this.settings.graphicsQuality = parseInt(localStorage.getItem('mm_graphics_quality')) || 2;
+            this.settings.graphicsQuality = playerConf.graphicsQuality;
         }
-        // Reset admin on init
+
+        // Reset admin status
         this.isAdmin = false;
 
-        // --- STICKY TIMESTAMP LOGIC ---
-        // Restore timestamp for this specific room if it exists
+        // 2. STICKY TIMESTAMP LOGIC
+        // We still use a specific key for room seniority
         const timeKey = `mm_joinedAt_${this.settings.room}`;
-        const savedTime = localStorage.getItem(timeKey);
+        const savedTime = GameConfig.get('Timestamps.'+timeKey);
 
         if (savedTime) {
-            // Restore previous session time to regain seniority
             this.localPlayer.joinedAt = parseInt(savedTime);
             console.log("Restored session time:", this.localPlayer.joinedAt);
         } else {
-            // New session
             this.localPlayer.joinedAt = now();
-            localStorage.setItem(timeKey, this.localPlayer.joinedAt);
+            GameConfig.set('Timestamps.'+timeKey, this.localPlayer.joinedAt);
         }
 
+        // 3. Persist current session settings back to Unified Config
+        GameConfig.set('PlayerSettings.username', this.settings.username);
+        GameConfig.set('PlayerSettings.room', this.settings.room);
+        GameConfig.set('PlayerSettings.color', this.settings.color);
+        GameConfig.set('PlayerSettings.broker', this.settings.broker);
 
-        localStorage.setItem('mm_room_id', this.settings.room);
-        localStorage.setItem('mm_veh_color', this.settings.color);
-        localStorage.setItem('mm_broker_url', this.settings.broker);
-
+        // 4. UI Transition
         $('start-screen').style.display = 'none';
         $('connection-screen').style.display = 'flex';
-        this.logConnection("Initializing System...");
 
+
+        // 5. Cloud Sync Logic
         if (puter.whoami && SaveSystem.cloudSyncEnabled) {
             await this.logConnection("Running sync task...");
             await SaveSystem.smartSyncAll(true, true);
@@ -2956,32 +2961,44 @@ class GameEngine {
             this.logConnection(`Skipping sync task (${puter.whoami ? "auto-sync off" : "not signed in"})`);
         }
 
+        // 6. Window Listeners & Canvas Setup
         this.resize();
+        this.logConnection(`Canvas size init`);
+
         window.addEventListener('resize', () => this.resize());
         window.addEventListener('wheel', (e) => {
             if (e.target.id === 'gameCanvas') {
                 this.zoom = clamp(this.zoom - Math.sign(e.deltaY) * 0.1, CONSTANTS.MIN_ZOOM, CONSTANTS.MAX_ZOOM);
             }
         });
+        this.logConnection(`Event listeners registered`);
 
         this.minimapCanvas.width = 150;
         this.minimapCanvas.height = 150;
+        this.logConnection(`Minimap: ${this.minimapCanvas.width}x${this.minimapCanvas.height}`);
 
+        // 7. Map & Seed Generation
         let seed = 0;
         for (let i = 0; i < this.settings.room.length; i++) seed += this.settings.room.charCodeAt(i);
         this.roomSeed = seed * 12345;
+        this.logConnection(`Seed: ${this.roomSeed}`);
 
         this.generateMap();
+
+        // 8. Final Systems Start
+        // Sound now reads from this.settings.volumes (which we populated from Config)
         Sound.loadSettings();
+        this.logConnection(`Sound settings loaded`);
 
         // Load stats before connecting
         this.loadLocalProgress();
+        this.logConnection(`Local stats loaded`);
 
         Network.connect($('toggle-isSingleplayer').checked);
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
 
-        // Start a new session tracking
+        // Start a new session tracking if none exists
         if (!SaveSystem.currentSaveId) SaveSystem.currentSaveId = Date.now();
     }
 
@@ -3032,7 +3049,7 @@ class GameEngine {
 
             // ONLY load save if we are the host (Admin)
             if (this.isAdmin) {
-                const lastId = localStorage.getItem('mm_last_save_id');
+                const lastId = GameConfig.get('Stats.mm_last_save_id');
                 if (lastId) {
                     console.log("Host detected, loading save:", lastId);
                     await SaveSystem.loadGame(parseInt(lastId), true);
@@ -3108,7 +3125,7 @@ class GameEngine {
 
     toggleCoords(show) {
         $('coords-display').style.display = show ? 'block' : 'none';
-        localStorage.setItem('mm_show_coords', show);
+        GameConfig.set('PlayerSettings.showCoords', show);
     }
 
     update() {
@@ -4316,18 +4333,17 @@ class GameEngine {
     const gap = 15 * dpr;    // Space between the gauges themselves
 
     // The total horizontal space one gauge occupies
-    const gaugeStep = (gaugeR * 2) + gap;
-    const gaugeStyle = 'analog';
+    const gaugeStep = (gaugeR * 2) + gap;;
     if (this.isMobile) {
         // MOBILE: Center all 4 gauges in a row at the bottom
         const yPos = h - (gaugeR * 1.5);
         const totalWidth = (gaugeStep * 4) - gap;
         const startX = (w - totalWidth) / 2 + gaugeR;
 
-        this.drawGauge(startX, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400", gaugeStyle);
-        this.drawGauge(startX + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b", gaugeStyle);
-        this.drawGauge(startX + (gaugeStep * 2), yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60", gaugeStyle);
-        this.drawGauge(startX + (gaugeStep * 3), yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", gaugeStyle);
+        this.drawGauge(startX, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400", this.settings.gaugeStyle);
+        this.drawGauge(startX + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b", this.settings.gaugeStyle);
+        this.drawGauge(startX + (gaugeStep * 2), yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60", this.settings.gaugeStyle);
+        this.drawGauge(startX + (gaugeStep * 3), yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", this.settings.gaugeStyle);
 
         // Money top center
         this.ctx.fillStyle = "#f1c40f";
@@ -4340,12 +4356,12 @@ class GameEngine {
         const yPos = h - gaugeR - padding;
 
         // Left side gauges
-        this.drawGauge(padding + gaugeR, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400", gaugeStyle);
-        this.drawGauge(padding + gaugeR + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b", gaugeStyle);
+        this.drawGauge(padding + gaugeR, yPos, gaugeR, p.fuel, p.maxFuel, "FUEL", "#d35400", this.settings.gaugeStyle);
+        this.drawGauge(padding + gaugeR + gaugeStep, yPos, gaugeR, p.hull, p.maxHull, "HULL", "#c0392b", this.settings.gaugeStyle);
 
         // Right side gauges
-        this.drawGauge(w - padding - gaugeR, yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60", gaugeStyle);
-        this.drawGauge(w - padding - gaugeR - gaugeStep, yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", gaugeStyle);
+        this.drawGauge(w - padding - gaugeR, yPos, gaugeR, p.cargo, p.maxCargo, "CARGO", "#27ae60", this.settings.gaugeStyle);
+        this.drawGauge(w - padding - gaugeR - gaugeStep, yPos, gaugeR, p.temp, 100, "TEMP", "#e74c3c", this.settings.gaugeStyle);
 
         // Money bottom center
         this.ctx.fillStyle = "#f1c40f";
@@ -4529,11 +4545,7 @@ const Qt = { lighter: (hex, factor) => hex };
 // --- SHOP SYSTEM ---
 class ShopSystem {
     constructor() {
-        this.prices = {
-            drill: [500, 2000, 10000, 50000],
-            hull: 200, fuel: 200, cargo: 100, cool: 1000, xray: 2000, AOE: [15000, 30000, 40000, 50000, 67, 60000, 70000, 100000],
-            repair_kit: 50, fuel_voucher: 50, tnt: 200, nuke: 5000, teleporter: 1000
-        };
+        this.prices = GameConfig.get('GameEconomy.prices');
     }
     open() { $('shop-modal').classList.add('active'); this.updateUI(); }
     close() { $('shop-modal').classList.remove('active'); }
@@ -4579,13 +4591,15 @@ class ShopSystem {
 
     refuelRepair() {
         const p = Game.localPlayer;
-        if(p.money >= 10) {
-            p.money -= 10;
+        const cost = this.prices.refuel_repair_flat_rate; // Using config value
+
+        if(p.money >= cost) {
+            p.money -= cost;
             p.fuel = p.maxFuel;
             p.hull = p.maxHull;
             UI.showToast("Refueled & Repaired!", "success");
             Sound.playSuccess();
-            Game.saveLocalProgress(); // Save on transaction
+            Game.saveLocalProgress();
             this.updateUI();
         } else {
             UI.showToast("Not enough money!", "error");
@@ -4765,6 +4779,56 @@ class CloudManager {
         return `mm_world_${id}.json`;
     }
 
+    static getPaths(fileName) {
+        const dir = GameConfig.get('CloudConfig.saveDirectory');
+        return [
+            `${dir}${fileName}`, // Global path
+            fileName             // Sandbox path (root)
+        ];
+    }
+
+    static async upload(id, data) {
+        if(!puter.whoami) return;
+        const conf = GameConfig.get('CloudConfig');
+        const fileName = this.getFileName(id);
+        const fullPath = `${conf.saveDirectory}${fileName}`;
+
+        try {
+            await puter.fs.mkdir(conf.saveDirectory, { recursive: true });
+            await puter.fs.write(fullPath, JSON.stringify(data));
+            return true;
+        } catch (e) {
+            if (conf.fallbackToSandbox) {
+                await puter.fs.write(fileName, JSON.stringify(data));
+                return true;
+            }
+            return false;
+        }
+    }
+
+    static async download(id) {
+        if(!puter.whoami) return null;
+        try {
+            const fileName = this.getFileName(id);
+            const paths = this.getPaths(fileName);
+
+            let fileItem;
+            // Try paths in order: Global then Sandbox
+            for (const path of paths) {
+                try {
+                    fileItem = await puter.fs.read(path);
+                    if (fileItem) break;
+                } catch (e) { continue; }
+            }
+
+            if (!fileItem) return null;
+            const content = await fileItem.text();
+            return JSON.parse(content);
+        } catch (err) {
+            return null;
+        }
+    }
+
     static async syncWithConflictCheck(id, localData) {
         if(!puter.whoami){
             console.warn("No puter user detected, skipping cloud sync.");
@@ -4845,96 +4909,64 @@ class CloudManager {
             return false;
         }
     }
-
-    static async download(id) {
-        if(!puter.whoami){
-            console.warn("No puter user detected, skipping cloud download.");
-            return;
-        }
-        try {
-            if (typeof puter === 'undefined') return null;
-
-            const fileName = this.getFileName(id);
-            const globalPath = `/Documents/MegaMinerSaves/${fileName}`;
-
-            let fileItem;
-            try {
-                // Try global first
-                fileItem = await puter.fs.read(globalPath);
-            } catch (e) {
-                // Fallback to sandbox
-                fileItem = await puter.fs.read(fileName);
-            }
-
-            const content = await fileItem.text();
-            return JSON.parse(content);
-        } catch (err) {
-            if (err.code === 404) return null;
-            console.error("Cloud Download Failed:", err);
-            return null;
-        }
-    }
-
-    static async upload(id, data) {
-        if(!puter.whoami){
-            console.warn("No puter user detected, skipping cloud upload.");
-            return;
-        }
-        try {
-            const fileName = this.getFileName(id);
-            const path = `/Documents/MegaMinerSaves/${fileName}`;
-            await puter.fs.mkdir('/Documents/MegaMinerSaves', { recursive: true });
-            await puter.fs.write(path, JSON.stringify(data));
-            return true;
-        } catch (e) {
-            // Fallback to Sandbox if Documents is Forbidden
-            await puter.fs.write(this.getFileName(id), JSON.stringify(data));
-            return true;
-        }
-    }
 }
 
-// --- NETWORK (MQTT) ---
+
+
+// --- NETWORK ---
 class NetworkManager {
     constructor() {
+        const netConf = GameConfig.get('Network');
         this.client = null;
-        this.baseTopic = 'mm_online/';
+        this.baseTopic = netConf.baseTopic;
         this.lastHeartbeat = 0;
-        this.lastSyncToast = 0;
         this.isSingleplayer = false;
-        this.connectionWatchdog = 0; // NEW: Monitor connection health
+        this.connectionWatchdog = 0;
     }
 
     connect(isSingleplayer) {
-        this.isSingleplayer=isSingleplayer;
+        this.isSingleplayer = isSingleplayer;
+        const playerConf = GameConfig.get('PlayerSettings');
+        const netConf = GameConfig.get('Network');
 
-        if(this.isSingleplayer) {
-            Game.logConnection("Initializing...");
+        if (this.isSingleplayer) {
+            Game.logConnection("Initializing Singleplayer...");
             Game.finishConnection();
             Sound.playSuccess();
-            return
-        };
+            return;
+        }
 
-        Game.logConnection(`Connecting to broker ${Game.settings.broker}...`);
+        Game.logConnection(`Connecting to broker ${playerConf.broker}...`);
 
-        const broker = Game.settings.broker;
         const options = {
             clientId: 'mm_' + Game.localPlayer.id,
-            keepalive: 30,
+            keepalive: netConf.keepalive,
             clean: true,
-            reconnectPeriod: 500
+            reconnectPeriod: netConf.reconnectPeriod
         };
-        try { this.client = mqtt.connect(broker, options); } catch (e) { Game.logConnection("Error creating client: " + e); }
+
+        try {
+            this.client = mqtt.connect(playerConf.broker, options);
+        } catch (e) {
+            Game.logConnection("Error creating client: " + e);
+        }
 
         this.client.on('connect', () => {
             Game.logConnection("Connected. Subscribing...");
-            this.client.subscribe(`${this.baseTopic}${Game.settings.room}/#`, (err) => {
-                if(!err) {
+            // Pull room from unified config
+            const room = GameConfig.get('PlayerSettings.room');
+            this.client.subscribe(`${this.baseTopic}${room}/#`, (err) => {
+                if (!err) {
                     Game.logConnection("Subscribed. Joining room...");
-                    this.publish('ctrl', { type: 'join', id: Game.localPlayer.id, username: Game.settings.username, color: Game.settings.color, joinedAt: Game.localPlayer.joinedAt, /*ver: BUILD_TIMESTAMP*/ });
+                    this.publish('ctrl', {
+                        type: 'join',
+                        id: Game.localPlayer.id,
+                        username: playerConf.username,
+                        color: playerConf.color,
+                        joinedAt: Game.localPlayer.joinedAt
+                    });
                     Game.finishConnection();
                     Sound.playSuccess();
-                    // BROADCAST MOVE immediately so everyone sees new player
                     this.broadcastMove();
                 } else {
                     Game.logConnection("Sub Error: " + err);
@@ -4948,40 +4980,43 @@ class NetworkManager {
     }
 
     update() {
-
-        if(this.isSingleplayer) return;
+        if (this.isSingleplayer) return;
         let n = now();
+        const netConf = GameConfig.get('Network');
 
-        // --- AGGRESSIVE RECONNECT WATCHDOG ---
-        // If client exists but isn't connected for > 5 seconds, FORCE a reconnect attempt
+        // --- WATCHDOG ---
         if (this.client && !this.client.connected) {
-            if (n - this.connectionWatchdog > 5000) {
+            if (n - this.connectionWatchdog > netConf.watchdogThreshold) {
                 console.log("Watchdog: Force Reconnecting...");
-                try { this.client.reconnect(); } catch(e) { console.error(e); }
-                this.connectionWatchdog = n; // Reset watchdog
+                try { this.client.reconnect(); } catch(e) {}
+                this.connectionWatchdog = n;
             }
         } else {
-            this.connectionWatchdog = n; // Heartbeat valid, reset watchdog
+            this.connectionWatchdog = n;
         }
 
+        // --- TIMEOUTS ---
         Object.keys(Game.remotePlayers).forEach(id => {
-            if (n - Game.remotePlayers[id].lastSeen > 10000) {
+            if (n - Game.remotePlayers[id].lastSeen > netConf.playerTimeout) {
                 const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
                 UI.addMessage("System", msg, "#aaa");
                 Sound.playChat('leave');
                 delete Game.remotePlayers[id];
                 UI.updatePlayerList();
-                // Removed updateAdminStatus, checking health in Game loop
             }
         });
-        if (n - this.lastHeartbeat > 2000) {
-            this.publish('pos', { type: 'heartbeat', id: Game.localPlayer.id, username: Game.settings.username, joinedAt: Game.localPlayer.joinedAt });
-            this.requestViewportSync();
-            // --- NEW: Admin Heartbeat ---
-            if (Game.isAdmin) {
-                this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
-            }
 
+        // --- HEARTBEAT ---
+        if (n - this.lastHeartbeat > netConf.heartbeatInterval) {
+            const playerConf = GameConfig.get('PlayerSettings');
+            this.publish('pos', {
+                type: 'heartbeat',
+                id: Game.localPlayer.id,
+                username: playerConf.username,
+                joinedAt: Game.localPlayer.joinedAt
+            });
+            this.requestViewportSync();
+            if (Game.isAdmin) this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
             this.lastHeartbeat = n;
         }
     }
@@ -5368,7 +5403,6 @@ class NetworkManager {
 }
 
 // --- INPUT ---
-
 class InputManager {
     constructor() {
         this.keys = {};
@@ -5378,70 +5412,53 @@ class InputManager {
 
     init() {
         window.addEventListener('keydown', e => {
-
-            // --- 1. CHAT INPUT HANDLING ---
-            // If typing in chat, ignore game commands (except Escape)
+            // 1. Chat/Modal Overrides
             if (document.activeElement === $('chat-input')) {
-                if (e.key === 'Escape') {
-                    $('chat-input').blur(); // Exit chat
-                    if (typeof UI !== 'undefined' && UI.toggleChat) UI.toggleChat(false); // Optional: visual close
-                }
+                if (e.key === 'Escape') $('chat-input').blur();
                 return;
             }
-
-            // --- 2. MODAL INPUT HANDLING ---
-            // If typing in a modal (e.g. settings/admin), ignore game commands
-            else if (document.activeElement === $('c-modal-input')) {
-                // FIX: Allow 'Enter' to confirm/submit the modal
+            if (document.activeElement === $('c-modal-input')) {
                 if (e.key === 'Enter') {
-                    const confirmBtn = document.querySelector('.c-modal-box .btn-confirm') ||
-                                    document.querySelector('.c-modal-btns button:last-child'); // heuristic fallback
+                    const confirmBtn = document.querySelector('.c-modal-box .btn-confirm');
                     if (confirmBtn) confirmBtn.click();
                     $('c-modal-input').blur();
                 }
                 return;
             }
 
-            // --- 3. KEY BINDING MODE (The Fix) ---
+            // 2. KEY BINDING MODE
             if (this.bindMode) {
-                // FIX: preventDefault() stops Enter/Space from clicking the focused "Bind" button again
                 e.preventDefault();
                 e.stopPropagation();
 
-                Game.settings.keys[this.bindMode] = e.key;
-                localStorage.setItem('mm_keybinds', JSON.stringify(Game.settings.keys));
+                // Save directly to Unified Config
+                GameConfig.set(`PlayerSettings.keys.${this.bindMode}`, e.key);
 
                 UI.showToast(`Bound ${this.bindMode.toUpperCase()} to ${e.key}`, "success");
-
-                // Reset state
                 this.bindMode = null;
                 UI.refreshKeybindLabels();
-
-                // Remove focus from the button so pressing Space/Enter later doesn't re-trigger it
                 if (document.activeElement) document.activeElement.blur();
-
                 return;
             }
 
-            // --- 4. GAMEPLAY INPUTS ---
+            // 3. GAMEPLAY INPUTS
             this.keys[e.key] = true;
 
-            // Chat Toggle Logic (e.g. Pressing Enter to open chat)
-            // We check if the key matches the chat bind AND we aren't already in the input
-            if (e.key === Game.settings.keys.chat && document.activeElement !== $('chat-input')) {
-                e.preventDefault(); // Stop the key from typing into the input immediately
-                $('chat-input').focus();
+            const keyBinds = GameConfig.get('PlayerSettings.keys');
 
-                // Optional: Reset the key state so the game doesn't think "Enter" is held down
+            // Chat Toggle
+            if (e.key === keyBinds.chat && document.activeElement !== $('chat-input')) {
+                e.preventDefault();
+                $('chat-input').focus();
                 this.keys[e.key] = false;
             }
 
-            // Prevent default browser actions for bound game keys (e.g. Space scrolling down)
-            // We exclude 'chat' here because we handled it above, and sometimes you want default behavior for non-game keys
-            if (Object.values(Game.settings.keys).includes(e.key) && e.key !== Game.settings.keys.chat && document.activeElement.type !== 'text') {
+            // Prevent scroll for game keys
+            if (Object.values(keyBinds).includes(e.key) && e.key !== keyBinds.chat && document.activeElement.type !== 'text') {
                 e.preventDefault();
             }
         });
+
         window.addEventListener('keyup', e => this.keys[e.key] = false);
 
         // --- CHAT FIX: Handle Enter key on the input itself ---
@@ -5491,6 +5508,7 @@ class InputManager {
                 } else UI.showToast("Player not found", "error");
             }
         }
+
         else if (parts[0] === '/op' && Game.isAdmin) {
             if (parts.length === 2) {
                 let target = Object.values(Game.remotePlayers).find(p => p.username === parts[1]);
@@ -5514,21 +5532,18 @@ class InputManager {
 }
 
 // --- UI & SAVES ---
-
 class UIManager {
     constructor() {
-        this.defaultServers = [
-            "wss://broker.emqx.io:8084/mqtt",
-            "wss://broker.hivemq.com:8884/mqtt",
-            "wss://test.mosquitto.org:8081"
-        ];
+        // Core UI State
+        this.defaultServers = GameConfig.get('defaultServers');;
+
+        // Custom servers still live in their own array for management,
+        // but the ACTIVE broker is handled by GameConfig.
         this.customServers = JSON.parse(localStorage.getItem('mm_custom_servers') || '[]');
         this.toastQueue = [];
         this.lastToast = { msg: null, element: null, count: 1 };
 
-        if (localStorage.getItem('mm_cloudsync_setting')===true) $('startBtn').disabled = true;
-        setTimeout(function(){document.getElementById('gfx-disp').innerHTML=document.getElementById('graphicsQuality').value},2000);
-        this.generateCreditsHTML()
+        this.generateCreditsHTML();
 
         // Init server list on load
         setTimeout(() => this.refreshServerList(), 500);
@@ -5588,6 +5603,7 @@ class UIManager {
 
         return html;
     }
+
     parseCSSCalc(calcString) {
         // Remove calc() wrapper and evaluate
         const expression = calcString.replace(/^calc\(|\)$/g, '');
@@ -5850,6 +5866,7 @@ class UIManager {
 
     selectServer(url) {
         Game.settings.broker = url;
+        //BURGER
         localStorage.setItem('mm_broker_url', url);
         $('setting-broker').value = url;
         this.refreshServerList(); // Redraw to update active class
@@ -5925,18 +5942,18 @@ class UIManager {
     }
 
     checkServers() {
-        // Legacy settings modal check
+        // idk
         this.refreshServerList();
     }
 
-    toggleUpdateCheck(val) {
-        this.updateCheckEnabled = val;
-        localStorage.setItem('mm_autocheck_update_setting', val);
-        if (val===true){
+    toggleUpdateCheck(enabled) {
+        GameConfig.set('SaveSystem.updateCheck', enabled);
+
+        if (enabled) {
             if (this.updateChecker) clearInterval(this.updateChecker);
-            this.updateChecker=setInterval(UI.checkForUpdates,60000);
-        }else{
-            clearInterval(this.updateChecker)
+            this.updateChecker = setInterval(() => this.checkForUpdates(), 60000);
+        } else {
+            clearInterval(this.updateChecker);
         }
     }
 
@@ -6204,27 +6221,21 @@ class SaveSystem {
     static dbPromise = null;
 
     static init() {
-        const as = localStorage.getItem('mm_autosave_setting');
-        if(as !== null) this.autosaveEnabled = (as === 'true');
-        $('autosave-toggle').checked = this.autosaveEnabled;
-        $('cloudSync-auto').onchange = (e) => SaveSystem.toggleCloudSync(e.target.checked);
-        UI.toggleUpdateCheck($('update-check-toggle').checked);
-        $('update-check-toggle').onchange = (e) => UI.toggleUpdateCheck(e.target.checked);
+        // Read from Unified Config
+        this.autosaveEnabled = GameConfig.get('SaveSystem.autosave');
+        this.cloudSyncEnabled = GameConfig.get('SaveSystem.cloudSync');
+        this.updateCheckEnabled = GameConfig.get('SaveSystem.updateCheck');
 
-        // --- CLOUD INIT ---
-        const cs = localStorage.getItem('mm_cloudsync_setting');
-        this.cloudSyncEnabled = (cs === 'true');
-        const cloudCheck = $('cloudSync-auto');
-        if(cloudCheck) cloudCheck.checked = this.cloudSyncEnabled;
+        // Update UI states
+        if ($('autosave-toggle')) $('autosave-toggle').checked = this.autosaveEnabled;
+        if ($('cloudSync-auto')) $('cloudSync-auto').checked = this.cloudSyncEnabled;
+        if ($('update-check-toggle')) $('update-check-toggle').checked = this.updateCheckEnabled;
 
-        // --- UPDATE-CHECK INIT ---
-        const uc = localStorage.getItem('mm_autocheck_update_setting');
-        this.updateCheckEnabled = (uc === 'true');
-        const updateCheck = $('update-check-toggle');
-        if(updateCheck) updateCheck.checked = this.updateCheckEnabled;
+        // Listeners update the Unified Config
+        $('cloudSync-auto').onchange = (e) => this.toggleCloudSync(e.target.checked);
+        $('autosave-toggle').onchange = (e) => this.toggleAutosave(e.target.checked);
 
         this.loadTextures();
-
     }
 
     static async loadTextures() {
@@ -6325,12 +6336,12 @@ class SaveSystem {
 
     static toggleAutosave(val) {
         this.autosaveEnabled = val;
-        localStorage.setItem('mm_autosave_setting', val);
+        GameConfig.set('SaveSystem.autosave', val);
     }
 
     static toggleCloudSync(val) {
         this.cloudSyncEnabled = val;
-        localStorage.setItem('mm_cloudsync_setting', val);
+        GameConfig.set('SaveSystem.cloudSync', val);
     }
 
     static async smartSyncAll(isSilent, noStartBtn) {
@@ -6363,11 +6374,6 @@ class SaveSystem {
 
         // 3. Discover "New" Worlds on Cloud
         let allCloudItems = [];
-        //TODO: Update this to use the paths defined at the beginning of the JS block
-        // try {
-        //     const docs = await puter.fs.readdir('/Documents/MegaMinerSaves');
-        //     allCloudItems = [...allCloudItems, ...docs];
-        // } catch(e) {}
         try {
             const sandbox = await puter.fs.readdir('./');
             allCloudItems = [...allCloudItems, ...sandbox];
@@ -6405,8 +6411,6 @@ class SaveSystem {
     // Helper to look in both Global and Sandbox
     static async getAnyCloudFiles() {
         let files = [];
-        //TODO: Update this to use the paths defined at the beginning of the JS block
-        // try { files = await puter.fs.readdir('/Documents/MegaMinerSaves'); } catch(e) {}
         try {
             const sandboxFiles = await puter.fs.readdir('./');
             files = [...files, ...sandboxFiles];
@@ -6457,7 +6461,7 @@ class SaveSystem {
                 tx.onerror = (e) => reject(e);
             });
 
-            localStorage.setItem('mm_last_save_id', id);
+            GameConfig.set('Stats.mm_last_save_id', id);
 
             // 2. CLOUD SYNC (If enabled)
             // We check the property or the DOM element directly
@@ -6483,9 +6487,8 @@ class SaveSystem {
     static async syncSaveListFromCloud() {
         UI.showToast("Searching cloud...", "info");
         try {
-            // Try 'list' which is the standard v2 method
             const files = await puter.fs.readdir('.');
-            console.log("Files found in cloud:", files); // CHECK YOUR CONSOLE FOR THIS
+            console.log("Files found in cloud:", files);
 
             const worldFiles = files.filter(f => f.name.startsWith('mm_world_'));
 
@@ -6863,6 +6866,122 @@ class SaveSystem {
     }
 }
 
+const GameConfig = {
+    data: {
+        SaveSystem: {
+            autosave: true,
+            cloudSync: false,
+            updateCheck: true
+        },
+        CustomTextures: {
+            protectionColor: "#ffffff"
+        },
+        defaultServers : [
+            "wss://broker.emqx.io:8084/mqtt",
+            "wss://broker.hivemq.com:8884/mqtt",
+            "wss://test.mosquitto.org:8081"
+        ],
+        Network: {
+            baseTopic: 'mm_online/',
+            reconnectPeriod: 500,
+            keepalive: 30,
+            heartbeatInterval: 2000,
+            playerTimeout: 10000,
+            watchdogThreshold: 5000
+        },
+        GameEconomy: {
+            prices: {
+                drill: [500, 2000, 10000, 50000],
+                hull: 200,
+                fuel: 200,
+                cargo: 100,
+                cool: 1000,
+                xray: 2000,
+                AOE: [15000, 30000, 40000, 50000, 67, 60000, 70000, 100000],
+                repair_kit: 50,
+                fuel_voucher: 50,
+                tnt: 200,
+                nuke: 5000,
+                teleporter: 1000,
+                refuel_repair_flat_rate: 10
+            }
+        },
+        CloudConfig: {
+            saveDirectory: '/Documents/MegaMinerSaves/',
+            fallbackToSandbox: true,
+            syncTimeout: 5000
+        },
+        PlayerSettings: {
+            username: 'Miner' + Date.now(),
+            color: '#3498db',
+            broker: 'wss://broker.emqx.io:8084/mqtt',
+            room: 'public',
+            graphicsQuality: 2,
+            showCoords: true,
+            mobileMode : false,
+            keys: {
+                up: 'ArrowUp',
+                left: 'ArrowLeft',
+                right: 'ArrowRight',
+                down: 'ArrowDown',
+                build: 'b',
+                interact: 'e',
+                chat: 'Enter',
+                transfer: 'f',
+                AOE: "Shift"
+            }
+        },
+        Audio: {
+            master: 0.5,
+            music: 0.1,
+            sfx: 0.5,
+            engine: 0.5
+        },
+        Stats: {},
+        Timestamps:{}
+    },
+
+    init() {
+        const saved = localStorage.getItem('mm_master_config');
+        if (saved) {
+            this.data = this.deepMerge(this.data, JSON.parse(saved));
+        }
+        this.save();
+    },
+
+    get(path) {
+        return path.split('.').reduce((obj, key) => obj?.[key], this.data);
+    },
+
+    set(path, value) {
+        const keys = path.split('.');
+        let current = this.data;
+        for (let i = 0; i < keys.length - 1; i++) {
+            current = current[keys[i]];
+        }
+        current[keys[keys.length - 1]] = value;
+        this.save();
+    },
+
+    save() {
+        localStorage.setItem('mm_master_config', JSON.stringify(this.data));
+    },
+
+    deepMerge(target, source) {
+        for (const key in source) {
+            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                if (!target[key]) target[key] = {};
+                this.deepMerge(target[key], source[key]);
+            } else {
+                target[key] = source[key];
+            }
+        }
+        return target;
+    }
+};
+
+GameConfig.init();
+
 
 async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath = "megaminer") {
     const listUrl = `https://api.github.com/repos/${user}/${repo}/commits?path=${projectPath}&per_page=5`;
@@ -6905,6 +7024,9 @@ async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath 
     }
 }
 
+
+GameConfig.init();
+
 // --- INSTANTIATION ---
 const Sound = new SoundManager();
 const Game = new GameEngine();
@@ -6917,6 +7039,8 @@ const Cloud = new CloudManager();
 
 // Init Save System
 SaveSystem.init();
+
+
 
 // Expose
 window.Game = Game;
