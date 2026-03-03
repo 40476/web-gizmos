@@ -184,9 +184,9 @@
       
         <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
       
-        <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
       
-        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
+        <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
         <a class="nav-item" href="pattern/index.html" data-name="pattern">> pattern</a>
       
@@ -202,7 +202,7 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -299,6 +299,28 @@
         </div>
       </section>
     
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps.</li>
+    <li>Features voxel-style mining, resource gathering, and base building in a shared world.</li>
+    <li>Supports singleplayer and multiplayer modes with real-time networking via MQTT.</li>
+    <li>Customizable player settings, shop upgrades, and cloud save functionality.</li>
+  </ul>
+
+  <pre>
+    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } }</code>
+    <code>class ShopSystem { open() { $('shop-modal').classList.add('active'); this.updateUI(); } }</code>
+  </pre>
+
+  <p>This web application is a 2D mining game with multiplayer capabilities, featuring procedurally generated maps, resource gathering, building mechanics, and a shop system for upgrades. The game uses MQTT for real-time networking and includes features like cloud saves, custom textures, and a dashboard for player statistics.</p>
+</section>
+        </div>
+      </section>
+    
       <section class="app-section" id="section-microviz" data-name="microviz">
         <a class="app-link" href="microviz/index.html">[ Run Application ]</a>
         <h2>microviz</h2>
@@ -319,27 +341,6 @@
   </pre>
 
   <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-midibeat" data-name="midibeat">
-        <a class="app-link" href="midibeat/index.html">[ Run Application ]</a>
-        <h2>midibeat</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>Web-based MIDI sampler using Tone.js and midi-player-js libraries</li>
-    <li>Supports custom audio and MIDI file uploads or default files</li>
-    <li>Features play, pause, and restart controls with real-time status updates</li>
-  </ul>
-
-  <pre>
-    <code>const playBtn = document.getElementById('playBtn');</code>
-    <code>async function initSampler(url) { sampler = new Tone.Sampler({ urls: { C4: url } }); }</code>
-  </pre>
-
-  <p>A MIDI sampler web application that triggers custom audio samples based on MIDI note events. Users can upload their own audio and MIDI files or use default files, with controls to play, pause, and restart the sequence. The application uses Tone.js for audio synthesis and midi-player-js for MIDI file parsing.</p>
 </section>
         </div>
       </section>
@@ -501,24 +502,23 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
+      <section class="app-section" id="section-midibeat" data-name="midibeat">
+        <a class="app-link" href="midibeat/index.html">[ Run Application ]</a>
+        <h2>midibeat</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps.</li>
-    <li>Features voxel-style mining, resource gathering, and base building in a shared world.</li>
-    <li>Supports singleplayer and multiplayer modes with real-time networking via MQTT.</li>
-    <li>Customizable player settings, shop upgrades, and cloud save functionality.</li>
+    <li>Web-based MIDI audio player with Tone.js and MidiPlayer.js integration</li>
+    <li>Features library selection from JSON atlases and custom file upload support</li>
+    <li>Complete playback controls with play, pause, and restart functionality</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } }</code>
-    <code>class ShopSystem { open() { $('shop-modal').classList.add('active'); this.updateUI(); } }</code>
+    <code>const sampler = new Tone.Sampler({ urls: { C4: url } }).toDestination();</code>
+    <code>player = new MidiPlayer.Player((event) =&gt; { if (event.name === 'Note on') sampler.triggerAttackRelease(event.noteName, "4n"); });</code>
   </pre>
 
-  <p>This web application is a 2D mining game with multiplayer capabilities, featuring procedurally generated maps, resource gathering, building mechanics, and a shop system for upgrades. The game uses MQTT for real-time networking and includes features like cloud saves, custom textures, and a dashboard for player statistics.</p>
+  <p>MIDIbeat is a browser-based audio application that synchronizes MIDI sequences with custom audio samples. Users can select from predefined libraries or upload their own files, with Tone.js handling audio synthesis and MidiPlayer.js managing MIDI playback events.</p>
 </section>
         </div>
       </section>
