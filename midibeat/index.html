@@ -76,7 +76,7 @@
             populateDropdown(audioSelect, audioData, "Select a sound...");
 
             // Load MIDI Atlas (assuming it's called midi_atlas.json)
-            const midiRes = await fetch(midiBase + 'midi_atlas.json');
+            const midiRes = await fetch(midiBase + 'atlas.json');
             const midiData = await midiRes.json();
             populateDropdown(midiSelect, midiData, "Select a sequence...");
 
