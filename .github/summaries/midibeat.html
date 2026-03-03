@@ -1,14 +1,16 @@
 <section>
   <ul>
-    <li>Web-based MIDI audio player with Tone.js and MidiPlayer.js integration</li>
-    <li>Features library selection from JSON atlases and custom file upload support</li>
-    <li>Complete playback controls with play, pause, and restart functionality</li>
+    <li>Web-based MIDI player that syncs audio samples to MIDI sequences</li>
+    <li>Features customizable playback speed, pitch shifting, and real-time audio visualization</li>
+    <li>Supports both library presets and custom file uploads for audio and MIDI</li>
+    <li>Generates shareable URLs with current configuration for easy sharing</li>
+    <li>Exports rendered audio as WAV files using offline rendering</li>
   </ul>
 
   <pre>
-    <code>const sampler = new Tone.Sampler({ urls: { C4: url } }).toDestination();</code>
-    <code>player = new MidiPlayer.Player((event) =&gt; { if (event.name === 'Note on') sampler.triggerAttackRelease(event.noteName, "4n"); });</code>
+    <code>const sampler = new Tone.Sampler({urls: {C4: url}}).toDestination();</code>
+    <code>player = new MidiPlayer.Player((event) =&gt; { sampler.triggerAttackRelease(shiftedNote, "8n"); });</code>
   </pre>
 
-  <p>MIDIbeat is a browser-based audio application that synchronizes MIDI sequences with custom audio samples. Users can select from predefined libraries or upload their own files, with Tone.js handling audio synthesis and MidiPlayer.js managing MIDI playback events.</p>
+  <p>MIDIbeat is an interactive web application that plays MIDI sequences with custom audio samples. Users can select from a library of sounds and sequences, upload their own files, adjust playback parameters, visualize the audio waveform in real-time, and export their creations as downloadable WAV files. The app features URL-based sharing and offline rendering capabilities for high-quality audio exports.</p>
 </section>
