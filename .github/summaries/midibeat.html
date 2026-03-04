@@ -1,14 +1,16 @@
 <section>
   <ul>
-    <li>Web-based MIDI audio visualizer with Tone.js and MidiPlayer.js integration</li>
-    <li>Supports audio file upload, MIDI sequence selection, and real-time pitch/speed adjustment</li>
-    <li>Features offline WAV export, waveform visualization, and shareable configuration links</li>
+    <li>HTML5-based MIDI sequencer with audio visualization</li>
+    <li>Loads audio samples and MIDI files from local library or uploads</li>
+    <li>Real-time waveform visualization using Tone.js</li>
+    <li>Speed and pitch controls with shareable configuration links</li>
+    <li>Offline WAV export functionality</li>
   </ul>
 
   <pre>
     <code>const sampler = new Tone.Sampler({ urls: { C4: url } });</code>
-    <code>player = new MidiPlayer.Player((event) => { /* trigger notes */ });</code>
+    <code>const player = new MidiPlayer.Player((event) => { /* trigger notes */ });</code>
   </pre>
 
-  <p>This application provides a complete MIDI audio playback system with customizable parameters. Users can upload audio/MIDI files, adjust playback speed and pitch in real-time, visualize the waveform, export to WAV format, and share configurations through URL parameters. The interface includes a modern dark theme with responsive controls and error handling for smooth operation.</p>
+  <p>This MIDI sequencer combines Tone.js audio engine with MidiPlayer.js for playback. Users can select from pre-loaded libraries or upload custom audio/MIDI files, adjust playback speed and pitch in real-time, and export compositions as WAV files. The interface features a live waveform visualizer and generates shareable links with current settings.</p>
 </section>
