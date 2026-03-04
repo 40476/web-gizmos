@@ -2,182 +2,787 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MIDIbeat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/midi-player-js@2.0.16/browser/midiplayer.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background: #1a1a1a; color: #eee; }
-        .container { max-width: 500px; margin: auto; background: #2d2d2d; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .section { margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 15px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.9em; color: #bbb; }
-        select, input { margin-bottom: 15px; width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #3d3d3d; color: white; }
+        :root {
+            --bg-base: #121212;
+            --bg-panel: #1e1e1e;
+            --bg-input: #2d2d2d;
+            --accent: #00d4ff;
+            --accent-hover: #00b4d8;
+            --text-main: #f0f0f0;
+            --text-muted: #a0a0a0;
+            --danger: #ff4757;
+            --success: #2ed573;
+        }
 
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
-        button { padding: 10px 18px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        * { box-sizing: border-box; }
 
-        #playBtn { background: #28a745; color: white; }
-        #pauseBtn { background: #ffc107; color: #222; }
-        #restartBtn { background: #dc3545; color: white; }
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: var(--bg-base);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            margin: 0;
+            min-height: 100vh;
+        }
 
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
-        #status { text-align: center; margin-top: 20px; font-style: italic; color: #00d4ff; font-size: 0.85em; }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--bg-panel);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 0;
+            color: var(--accent);
+            font-weight: 800;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="file"] {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: var(--bg-input);
+            color: white;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus { border-color: var(--accent); }
+        select:last-child, input[type="file"]:last-child { margin-bottom: 0; }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .slider-group label { margin: 0; white-space: nowrap; width: 80px; }
+        .slider-value { width: 50px; text-align: right; font-size: 0.85em; color: var(--accent); font-weight: bold; }
+
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        #visualizer {
+            width: 100%;
+            height: 80px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            display: block;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
+        button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.2); }
+        button:active:not(:disabled) { transform: translateY(0); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        #playBtn { background: var(--success); color: #000; }
+        #pauseBtn { background: #feca57; color: #000; }
+        #stopBtn { background: var(--danger); }
+        #exportBtn { background: var(--accent); color: #000; }
+        #shareBtn { background: rgba(255,255,255,0.2); }
+
+        #status {
+            text-align: center;
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 0.85em;
+            background: var(--bg-input);
+            padding: 12px;
+            border-radius: 6px;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .share-wrapper { display: flex; gap: 10px; }
+        #shareLink { flex-grow: 1; padding: 10px; font-size: 0.8em; background: rgba(0,0,0,0.3); border: 1px solid #444; border-radius: 6px; color: var(--text-muted); outline: none; }
+
+        @media (max-width: 480px) {
+            .controls { flex-direction: column; }
+            button { justify-content: center; width: 100%; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; margin-top: 0; color: #00d4ff;">MIDIbeat</h2>
+    <h2><i data-lucide="music"></i> MIDIbeat</h2>
+
+    <div id="status">Click anywhere to enable audio</div>
 
     <div class="section">
-        <label>Select Soundbite:</label>
+        <label>Select Soundbite (Atlas)</label>
         <select id="audioSelect"><option value="">Loading library...</option></select>
 
-        <label>Select MIDI File:</label>
+        <label>Select MIDI Sequence (Atlas)</label>
         <select id="midiSelect"><option value="">Loading library...</option></select>
-    </div>
 
-    <div class="section">
-        <label>Or Upload Custom Files:</label>
+        <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px;">
+            <hr style="flex-grow: 1; border-color: rgba(255,255,255,0.1);"><span style="font-size: 0.8em; color: var(--text-muted);">OR UPLOAD</span><hr style="flex-grow: 1; border-color: rgba(255,255,255,0.1);">
+        </div>
+
+        <label>Custom Audio File</label>
         <input type="file" id="audioFile" accept="audio/*">
+
+        <label>Custom MIDI File</label>
         <input type="file" id="midiFile" accept=".mid">
     </div>
 
-    <div class="controls">
-        <button id="playBtn" disabled>Play</button>
-        <button id="pauseBtn" disabled>Pause</button>
-        <button id="restartBtn" disabled>Restart</button>
+    <div class="section">
+        <canvas id="visualizer"></canvas>
+
+        <div class="slider-group">
+            <label>Speed</label>
+            <input type="range" id="speedBar" min="0.25" max="3" step="0.05" value="1.0">
+            <div class="slider-value" id="speedValue">1.0x</div>
+        </div>
+
+        <div class="slider-group">
+            <label>Pitch</label>
+            <input type="range" id="pitchBar" min="-24" max="24" value="0">
+            <div class="slider-value" id="pitchValue">0 st</div>
+        </div>
     </div>
 
-    <div id="status">Initializing...</div>
+    <div class="controls">
+        <button id="playBtn" disabled><i data-lucide="play"></i> Play</button>
+        <button id="pauseBtn" disabled><i data-lucide="pause"></i> Pause</button>
+        <button id="stopBtn" disabled><i data-lucide="square"></i> Stop</button>
+        <button id="exportBtn" disabled><i data-lucide="download"></i> Export</button>
+    </div>
+
+    <div class="section">
+        <label>Share Configuration</label>
+        <div class="share-wrapper">
+            <input type="text" id="shareLink" readonly placeholder="Choose settings to generate link...">
+            <button id="shareBtn"><i data-lucide="copy"></i> Copy</button>
+        </div>
+    </div>
 </div>
 
 <script>
+    lucide.createIcons();
+
     let sampler;
     let player;
+    let waveform;
     let isInitialized = false;
+    let pitchOffset = 0;
+    let playbackSpeed = 1.0;
+    let visualizerFrame;
+    let baseTempo = 120;
 
-    const audioBase = "../shared/audio/";
-    const midiBase = "../shared/midi/";
+    // IDs to track the latest network request and prevent race conditions
+    let samplerLoadId = 0;
+    let midiLoadId = 0;
+
+    const baseUrl = "";
+    const audioBase = baseUrl + "../shared/audio/";
+    const midiBase = baseUrl + "../shared/midi/";
 
     const audioSelect = document.getElementById('audioSelect');
     const midiSelect = document.getElementById('midiSelect');
     const playBtn = document.getElementById('playBtn');
     const pauseBtn = document.getElementById('pauseBtn');
-    const restartBtn = document.getElementById('restartBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const exportBtn = document.getElementById('exportBtn');
     const status = document.getElementById('status');
+    const speedBar = document.getElementById('speedBar');
+    const speedValue = document.getElementById('speedValue');
+    const pitchBar = document.getElementById('pitchBar');
+    const pitchValue = document.getElementById('pitchValue');
+    const visualizer = document.getElementById('visualizer');
+    const canvasCtx = visualizer.getContext('2d');
 
-    // --- Atlas Loading ---
+    // 1. Audio Engine Init
+    document.addEventListener('click', async () => {
+        if (!isInitialized) {
+            try {
+                await Tone.start();
+                waveform = new Tone.Waveform(512);
+                setStatus("Audio Engine Started. Loading libraries...");
+                drawVisualizer();
+                await loadLibrary();
+                processUrlParams();
+                isInitialized = true;
+            } catch (e) {
+                console.error("Initialization failed", e);
+            }
+        }
+    }, { once: false });
+
+    // 2. Atlas Loading
+    let audioAtlasData = [];
+    let midiAtlasData = [];
 
     async function loadLibrary() {
         try {
-            // Load Audio Atlas
-            const audioRes = await fetch(audioBase + 'atlas.json');
-            const audioData = await audioRes.json();
-            populateDropdown(audioSelect, audioData, "Select a sound...");
+            const [audioRes, midiRes] = await Promise.all([
+                fetch(audioBase + 'atlas.json').catch(() => ({ json: () => [] })),
+                fetch(midiBase + 'atlas.json').catch(() => ({ json: () => [] }))
+            ]);
 
-            // Load MIDI Atlas (assuming it's called midi_atlas.json)
-            const midiRes = await fetch(midiBase + 'midi_atlas.json');
-            const midiData = await midiRes.json();
-            populateDropdown(midiSelect, midiData, "Select a sequence...");
+            audioAtlasData = await audioRes.json();
+            midiAtlasData = await midiRes.json();
 
-            status.innerText = "Libraries loaded.";
+            populateDropdown(audioSelect, audioAtlasData, "Select a sound...");
+            populateDropdown(midiSelect, midiAtlasData, "Select a sequence...");
+            setStatus("Ready.");
         } catch (e) {
-            console.warn("Atlas load error:", e);
-            status.innerText = "Error loading library files.";
+            setStatus("Library load failed.");
         }
     }
 
     function populateDropdown(selectElement, data, defaultText) {
         selectElement.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+        if (!data || !data.length) return;
         data.forEach(item => {
             const opt = document.createElement('option');
-            opt.value = item.name;
-            opt.innerText = item.name.replace(/\.[^/.]+$/, ""); // Remove extension for title
+            opt.value = item.name || item;
+            opt.innerText = (item.name || item).replace(/\.[^/.]+$/, "");
             selectElement.appendChild(opt);
         });
     }
 
-    // --- Core Logic ---
-
+    // 3. Audio & MIDI Initialization
     async function initSampler(url) {
-        status.innerText = "Loading Audio...";
-        if (sampler) sampler.dispose();
+        setStatus("Loading Audio...");
+        disableControls();
+        if (player) player.stop(); // Stop any MIDI ticks immediately
 
-        sampler = new Tone.Sampler({
-            urls: { C4: url },
-            onload: () => {
-                status.innerText = "Audio Ready.";
-                checkReady();
+        const currentId = ++samplerLoadId;
+
+        return new Promise((resolve) => {
+            let tempSampler;
+            try {
+                tempSampler = new Tone.Sampler({
+                    urls: { C4: url },
+                    onload: () => {
+                        // Prevent an older load request from overriding a new one if user clicked rapidly
+                        if (currentId !== samplerLoadId) {
+                            try { tempSampler.dispose(); } catch(e) {}
+                            resolve();
+                            return;
+                        }
+
+                        // Keep a reference to gracefully clear the old sampler
+                        let oldSampler = sampler;
+                        sampler = tempSampler; // Make the new instance active instantly
+
+                        if (oldSampler) {
+                            try { oldSampler.releaseAll(); } catch (e) {}
+                            // Delay disposal to give lingering MIDI loop ticks time to die
+                            setTimeout(() => {
+                                try {
+                                    oldSampler.disconnect();
+                                    oldSampler.dispose();
+                                } catch (e) {
+                                    console.warn("Silent cleanup:", e);
+                                }
+                            }, 250);
+                        }
+
+                        try {
+                            sampler.connect(waveform);
+                            sampler.toDestination();
+                            setStatus("Audio Ready.");
+                            checkReady();
+                            updateShareLink();
+                        } catch(e) {
+                            console.error("Audio routing error:", e);
+                            setStatus("Audio routing error.");
+                        }
+                        resolve();
+                    },
+                    onerror: (e) => {
+                        try { tempSampler.dispose(); } catch(err) {}
+                        if (currentId === samplerLoadId) {
+                            console.error("Sampler load error:", e);
+                            setStatus("Audio load error.");
+                        }
+                        resolve();
+                    }
+                });
+            } catch (e) {
+                if (currentId === samplerLoadId) {
+                    console.error("Sampler Initialization error:", e);
+                    setStatus("Audio initialization failed.");
+                }
+                resolve();
             }
-        }).toDestination();
+        });
     }
 
     async function initMIDI(data) {
+        setStatus("Loading MIDI...");
+        disableControls();
+
         if (player) player.stop();
+
         player = new MidiPlayer.Player((event) => {
             if (event.name === 'Note on' && event.velocity > 0) {
-                sampler.triggerAttackRelease(event.noteName, "4n");
+                try {
+                    // Strict Guard: If sampler hasn't loaded or is mid-disposal, silently ignore the tick
+                    if (!sampler || !sampler.loaded || sampler.disposed || sampler._wasDisposed) {
+                        return;
+                    }
+                    const shiftedNote = Tone.Frequency(event.noteName).transpose(pitchOffset).toNote();
+                    sampler.triggerAttackRelease(shiftedNote, "8n");
+                } catch(e) {
+                    // Fail silently to prevent event loop breakage
+                }
             }
         });
+
+        player.on('fileLoaded', () => {
+            baseTempo = player.tempo || 120;
+            player.setTempo(baseTempo * playbackSpeed);
+            setStatus("MIDI Ready.");
+            checkReady();
+            updateShareLink();
+        });
+
+        player.on('endOfFile', () => {
+            setStatus("Finished.");
+            if (sampler) {
+                try { sampler.releaseAll(); } catch(e) {}
+            }
+        });
+
         player.loadArrayBuffer(data);
-        status.innerText = "MIDI Ready!";
-        checkReady();
     }
 
     function checkReady() {
-        if (sampler && player) {
+        if (sampler && sampler.loaded && player && player.tracks.length > 0) {
             playBtn.disabled = false;
             pauseBtn.disabled = false;
-            restartBtn.disabled = false;
+            stopBtn.disabled = false;
+            exportBtn.disabled = false;
+        }
+    }
+
+    function disableControls() {
+        playBtn.disabled = true;
+        pauseBtn.disabled = true;
+        stopBtn.disabled = true;
+        exportBtn.disabled = true;
+    }
+
+    function setStatus(msg) {
+        status.innerText = msg;
+    }
+
+    // --- Offline WAV Encoder Helper ---
+    function audioBufferToWav(buffer) {
+        const numChannels = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const format = 1; // PCM
+        const bitDepth = 16;
+
+        const channelData = [];
+        for (let i = 0; i < numChannels; i++) {
+            channelData.push(buffer.getChannelData(i));
+        }
+
+        const length = channelData[0].length;
+        const dataLength = length * numChannels * (bitDepth / 8);
+        const bufferLength = 44 + dataLength;
+        const arrayBuffer = new ArrayBuffer(bufferLength);
+        const view = new DataView(arrayBuffer);
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        // Write WAV Header
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataLength, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, format, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
+        view.setUint16(32, numChannels * (bitDepth / 8), true);
+        view.setUint16(34, bitDepth, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataLength, true);
+
+        // Write Audio Data
+        let offset = 44;
+        for (let i = 0; i < length; i++) {
+            for (let channel = 0; channel < numChannels; channel++) {
+                let sample = channelData[channel][i];
+                // Clamp to prevent popping
+                sample = Math.max(-1, Math.min(1, sample));
+                // Convert to 16-bit integer
+                sample = sample < 0 ? sample * 32768 : sample * 32767;
+                view.setInt16(offset, sample, true);
+                offset += 2;
+            }
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    // --- Export Logic (Offline Rendering) ---
+    async function startExport() {
+        if (!player || !sampler || !sampler.loaded) return;
+        setStatus("Rendering audio offline (this may take a moment)...");
+        disableControls();
+        if (player.isPlaying()) player.stop();
+
+        try {
+            // Retrieve events first so we have a fallback for calculating total ticks
+            const tracks = typeof player.getEvents === 'function' ? player.getEvents() : player.events;
+            if (!tracks) throw new Error("No MIDI tracks found");
+
+            let totalTicks = typeof player.getTotalTicks === 'function' ? player.getTotalTicks() : 0;
+
+            // Fallback: manually calculate max tick if getTotalTicks fails (prevents "MIDI file empty" errors)
+            if (!totalTicks) {
+                tracks.forEach(trackEvents => {
+                    if (Array.isArray(trackEvents)) {
+                        trackEvents.forEach(event => {
+                            if (event.tick > totalTicks) totalTicks = event.tick;
+                        });
+                    }
+                });
+            }
+
+            if (!totalTicks) throw new Error("MIDI file empty or has no duration");
+
+            const division = player.division || 128;
+            const tempo = (baseTempo || 120) * playbackSpeed;
+            // Add 3 seconds to the calculated end to let the final notes decay naturally
+            const duration = Math.max(1, (totalTicks / division) * (60 / tempo) + 3);
+
+            // Create a headless Tone context to render faster-than-realtime
+            const renderedBuffer = await Tone.Offline(async () => {
+                let nativeBuffer;
+
+                // Tone.js often maps note names to MIDI numbers internally (C4 -> 60)
+                if (sampler._buffers.has("60")) {
+                    nativeBuffer = sampler._buffers.get("60").get();
+                } else if (sampler._buffers.has("C4")) {
+                    nativeBuffer = sampler._buffers.get("C4").get();
+                } else {
+                    // Fallback: grab the first available buffer in the map
+                    sampler._buffers._buffers.forEach(b => {
+                        if (!nativeBuffer && b) nativeBuffer = b.get();
+                    });
+                }
+
+                if (!nativeBuffer) throw new Error("Failed to find audio buffer for export.");
+
+                // Re-create the sampler inside the isolated offline context
+                const offlineSampler = new Tone.Sampler({
+                    urls: { "C4": nativeBuffer }
+                }).toDestination();
+
+                await Tone.loaded();
+
+                // Schedule all notes mathematically ahead of time
+                tracks.forEach(trackEvents => {
+                    if (Array.isArray(trackEvents)) {
+                        trackEvents.forEach(event => {
+                            if (event.name === 'Note on' && event.velocity > 0) {
+                                const timeInSecs = (event.tick / division) * (60 / tempo);
+                                const shiftedNote = Tone.Frequency(event.noteName).transpose(pitchOffset).toNote();
+                                offlineSampler.triggerAttackRelease(shiftedNote, "8n", timeInSecs);
+                            }
+                        });
+                    }
+                });
+            }, duration);
+
+            setStatus("Converting to WAV format...");
+            // Small timeout to allow the browser to paint the UI update
+            await new Promise(r => setTimeout(r, 50));
+
+            const wavBlob = audioBufferToWav(renderedBuffer.get());
+            const url = URL.createObjectURL(wavBlob);
+
+            const anchor = document.createElement("a");
+            anchor.download = "midibeat_export.wav";
+            anchor.href = url;
+            anchor.click();
+            URL.revokeObjectURL(url);
+
+            setStatus("Export successfully saved.");
+        } catch (e) {
+            console.error("Export error:", e);
+            setStatus("Export failed.");
+        } finally {
+            checkReady();
         }
     }
 
     // --- Interaction Listeners ---
 
     audioSelect.addEventListener('change', (e) => {
-        if (e.target.value) initSampler(audioBase + e.target.value);
+        if (e.target.value) {
+            if (player) player.stop(); // Stop before we fetch
+            initSampler(audioBase + e.target.value);
+        }
     });
 
     midiSelect.addEventListener('change', async (e) => {
         if (e.target.value) {
-            const res = await fetch(midiBase + e.target.value);
-            const buffer = await res.arrayBuffer();
-            initMIDI(buffer);
+            disableControls();
+            if (player) player.stop(); // Stop before we fetch to prevent overlaps
+            setStatus("Fetching MIDI...");
+            const currentId = ++midiLoadId;
+            try {
+                const res = await fetch(midiBase + e.target.value);
+                const buffer = await res.arrayBuffer();
+                if (currentId === midiLoadId) {
+                    initMIDI(buffer);
+                }
+            } catch (err) {
+                if (currentId === midiLoadId) setStatus("MIDI fetch failed.");
+            }
         }
     });
 
     document.getElementById('audioFile').addEventListener('change', async (e) => {
+        if (!e.target.files[0]) return;
         const url = URL.createObjectURL(e.target.files[0]);
-        initSampler(url);
+        audioSelect.value = "";
+        if (player) player.stop();
+        await initSampler(url);
+        updateShareLink(true);
     });
 
     document.getElementById('midiFile').addEventListener('change', async (e) => {
+        if (!e.target.files[0]) return;
+        midiSelect.value = "";
+        disableControls();
+        if (player) player.stop();
+        setStatus("Loading MIDI...");
+        const currentId = ++midiLoadId;
         const buffer = await e.target.files[0].arrayBuffer();
-        initMIDI(buffer);
+        if (currentId === midiLoadId) {
+            initMIDI(buffer);
+            updateShareLink(true);
+        }
     });
 
-    playBtn.addEventListener('click', async () => {
-        if (!isInitialized) {
-            await Tone.start();
-            isInitialized = true;
-        }
+    playBtn.addEventListener('click', () => {
+        if (Tone.context.state !== 'running') Tone.context.resume();
         player.play();
-        status.innerText = "Status: Playing";
+        setStatus("Playing");
     });
 
     pauseBtn.addEventListener('click', () => {
         player.pause();
-        status.innerText = "Status: Paused";
+        if (sampler) {
+            try { sampler.releaseAll(); } catch(e) {}
+        }
+        setStatus("Paused");
     });
 
-    restartBtn.addEventListener('click', () => {
+    stopBtn.addEventListener('click', () => {
         player.stop();
-        player.play();
-        status.innerText = "Status: Restarted";
+        if (sampler) {
+            try { sampler.releaseAll(); } catch(e) {}
+        }
+        setStatus("Stopped");
     });
 
-    // Start loading the dropdowns immediately
-    loadLibrary();
+    exportBtn.addEventListener('click', startExport);
+
+    // Speed Slider
+    speedBar.addEventListener('input', (e) => {
+        playbackSpeed = parseFloat(e.target.value);
+        speedValue.innerText = `${playbackSpeed.toFixed(2)}x`;
+        if (player) {
+            player.setTempo(baseTempo * playbackSpeed);
+        }
+        updateShareLink();
+    });
+
+    // Pitch Slider
+    pitchBar.addEventListener('input', (e) => {
+        pitchOffset = parseInt(e.target.value);
+        pitchValue.innerText = `${pitchOffset > 0 ? '+' : ''}${pitchOffset} st`;
+        updateShareLink();
+    });
+
+    // --- Visualizer ---
+    function drawVisualizer() {
+        visualizerFrame = requestAnimationFrame(drawVisualizer);
+        if (!waveform) return;
+        const width = visualizer.width = visualizer.clientWidth;
+        const height = visualizer.height = visualizer.clientHeight;
+        canvasCtx.clearRect(0, 0, width, height);
+        canvasCtx.beginPath();
+        const values = waveform.getValue();
+        const sliceWidth = width / values.length;
+        let x = 0;
+        for (let i = 0; i < values.length; i++) {
+            const v = values[i] * 0.5 + 0.5;
+            const y = (1 - v) * height;
+            if (i === 0) canvasCtx.moveTo(x, y);
+            else canvasCtx.lineTo(x, y);
+            x += sliceWidth;
+        }
+        canvasCtx.lineTo(width, height / 2);
+        canvasCtx.strokeStyle = "#00d4ff";
+        canvasCtx.lineWidth = 2;
+        canvasCtx.stroke();
+    }
+
+    // --- Query String & Sharing ---
+    function processUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        let s = params.get('sound');
+        let m = params.get('midi');
+        let p = params.get('pitch');
+        let sp = params.get('speed');
+
+        if (p) {
+            pitchOffset = parseInt(p);
+            pitchBar.value = pitchOffset;
+            pitchValue.innerText = `${pitchOffset > 0 ? '+' : ''}${pitchOffset} st`;
+        }
+
+        if (sp) {
+            playbackSpeed = parseFloat(sp);
+            speedBar.value = playbackSpeed;
+            speedValue.innerText = `${playbackSpeed.toFixed(2)}x`;
+        }
+
+        if (s) {
+            let url = resolveParam(s, audioAtlasData, audioBase);
+            if (!url.startsWith('http')) {
+                url = audioBase + url;
+                audioSelect.value = s.includes('.') ? s : s + '.mp3';
+            }
+            initSampler(url);
+        }
+
+        if (m) {
+            let url = resolveParam(m, midiAtlasData, midiBase);
+            if (!url.startsWith('http')) {
+                url = midiBase + url;
+                midiSelect.value = m.includes('.') ? m : m + '.mid';
+            }
+            fetch(url).then(r => r.arrayBuffer()).then(b => initMIDI(b));
+        }
+    }
+
+    function resolveParam(param, atlas, base) {
+        if (param.startsWith('http')) return param;
+        const match = atlas.find(item => {
+            const name = item.name || item;
+            return name === param || name.split('.')[0] === param;
+        });
+        return match ? (match.name || match) : param;
+    }
+
+    function updateShareLink(isLocal = false) {
+        const shareInput = document.getElementById('shareLink');
+        if (isLocal) { shareInput.value = "Cannot share local files."; return; }
+
+        const s = audioSelect.value;
+        const m = midiSelect.value;
+        if (!s && !m) return;
+
+        const url = new URL(window.location.href.split('?')[0]);
+        if (s) url.searchParams.set('sound', s.split('.')[0]);
+        if (m) url.searchParams.set('midi', m.split('.')[0]);
+        if (pitchOffset !== 0) url.searchParams.set('pitch', pitchOffset);
+        if (playbackSpeed !== 1.0) url.searchParams.set('speed', playbackSpeed.toFixed(2));
+
+        shareInput.value = url.toString();
+    }
+
+    document.getElementById('shareBtn').addEventListener('click', () => {
+        const link = document.getElementById('shareLink').value;
+        if (!link || link.includes("Cannot")) return;
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            setStatus("Link copied!");
+        } catch (err) {}
+        document.body.removeChild(textArea);
+    });
+
 </script>
 
 </body>
