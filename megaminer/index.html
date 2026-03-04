@@ -2082,9 +2082,6 @@ const CONSTANTS = {
     FUEL_CONSUMPTION: 0.125, MAP_WIDTH: 1000, MAP_HEIGHT: 2000, MIN_ZOOM: 0.5, MAX_ZOOM: 3.0,
     SHARED_DIR: "../shared/audio/"
 };
-const CONFIG_TEMPLATE = {
-// each class gets its own object and reads and saves to a main config item in localstorage
-};
 
 const TILE_TYPES = {
     EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, DEEP_SLATE: 5,
@@ -2248,24 +2245,39 @@ class ModalSystem {
         this.btnOk = $('c-modal-ok');
         this.btnCancel = $('c-modal-cancel');
         this.resolve = null;
+        this.currentType = null; // Track current type for resolution logic
+
+        // Create a dynamic container for forms/dropdowns to avoid modifying existing HTML
+        this.dynamicContainer = document.createElement('div');
+        this.dynamicContainer.style.display = 'none';
+        this.dynamicContainer.style.marginTop = '15px';
+        this.dynamicContainer.style.textAlign = 'left';
+        // Insert it right after the standard input
+        this.input.parentNode.insertBefore(this.dynamicContainer, this.input.nextSibling);
 
         this.btnOk.onclick = () => this.close(true);
         this.btnCancel.onclick = () => this.close(false);
 
-        // Allow Enter key to confirm in input mode
+        // Allow Enter key to confirm in standard input mode
         this.input.onkeydown = (e) => { if(e.key === 'Enter') this.close(true); };
     }
 
-    show(type, title, msg, defaultVal = '') {
+    // Added a 5th parameter `extraConfig` for form schemas and trade options
+    show(type, title, msg, defaultVal = '', extraConfig = null) {
         return new Promise(resolve => {
             this.resolve = resolve;
+            this.currentType = type;
             this.title.innerText = title;
             this.text.innerText = msg;
-            this.input.value = defaultVal;
+
+            // Handle standard string defaults
+            this.input.value = typeof defaultVal === 'string' ? defaultVal : '';
 
             // Reset visibility
             this.input.style.display = 'none';
             this.btnCancel.style.display = 'none';
+            this.dynamicContainer.style.display = 'none';
+            this.dynamicContainer.innerHTML = ''; // Clear previous form elements
             this.btnOk.innerText = "OK";
             this.btnOk.style.width = "auto";
 
@@ -2273,28 +2285,133 @@ class ModalSystem {
                 this.input.style.display = 'block';
                 this.btnCancel.style.display = 'block';
                 setTimeout(() => this.input.focus(), 50);
-            } else if (type === 'confirm') {
+            }
+            else if (type === 'confirm') {
                 this.btnCancel.style.display = 'block';
                 this.btnOk.innerText = "Yes";
                 this.btnCancel.innerText = "No";
+            }
+            else if (type === 'form') {
+                this.btnCancel.style.display = 'block';
+                this.dynamicContainer.style.display = 'block';
+                this.buildForm(extraConfig);
+            }
+            else if (type === 'trade') {
+                this.btnCancel.style.display = 'block';
+                this.dynamicContainer.style.display = 'block';
+                this.btnOk.innerText = "Initiate Trade";
+                this.buildTradeUI(extraConfig);
             }
 
             this.overlay.style.display = 'flex';
         });
     }
 
+    // --- NEW: Helper to build dynamic multi-input forms ---
+    buildForm(fields) {
+        if (!fields || !Array.isArray(fields)) return;
+
+        fields.forEach(field => {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '10px';
+
+            const label = document.createElement('label');
+            label.innerText = field.label + ': ';
+            label.style.display = 'block';
+            label.style.marginBottom = '4px';
+            wrapper.appendChild(label);
+
+            let el;
+            if (field.type === 'select') {
+                el = document.createElement('select');
+                field.options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.innerText = opt.text;
+                    if (opt.value == field.default) option.selected = true;
+                    el.appendChild(option);
+                });
+            } else {
+                el = document.createElement('input');
+                el.type = field.type || 'text';
+                el.value = field.default || '';
+            }
+
+            el.id = 'modal-dyn-' + field.id;
+            el.style.width = '100%';
+            el.style.padding = '4px';
+            wrapper.appendChild(el);
+            this.dynamicContainer.appendChild(wrapper);
+        });
+    }
+
+    // --- NEW: Helper to build specific Trade UI ---
+    buildTradeUI(context) {
+        // Fetch players dynamically from your existing Game object
+        const players = typeof Game !== 'undefined' && Game.remotePlayers
+            ? Object.values(Game.remotePlayers)
+            : [];
+
+        const fields = [
+            {
+                id: 'targetPlayer',
+                label: 'Send To',
+                type: 'select',
+                options: players.length > 0
+                    ? players.map(p => ({ value: p.id, text: p.username }))
+                    : [{ value: '', text: 'No players in range...' }]
+            },
+            {
+                id: 'resource',
+                label: 'Resource',
+                type: 'select',
+                options: [
+                    { value: 'fuel', text: 'Fuel' },
+                    { value: 'money', text: 'money' } // Expand as needed
+                ]
+            },
+            {
+                id: 'amount',
+                label: 'Amount',
+                type: 'number',
+                default: '100'
+            }
+        ];
+
+        this.buildForm(fields);
+    }
+
     close(result) {
         this.overlay.style.display = 'none';
         if (this.resolve) {
-            if (this.input.style.display === 'block') {
+            // Handle parsing for our new complex UI types
+            if (this.currentType === 'form' || this.currentType === 'trade') {
+                if (result) {
+                    const data = {};
+                    const inputs = this.dynamicContainer.querySelectorAll('input, select');
+                    inputs.forEach(inp => {
+                        const key = inp.id.replace('modal-dyn-', '');
+                        // Parse numbers if input type is number
+                        data[key] = inp.type === 'number' ? Number(inp.value) : inp.value;
+                    });
+                    this.resolve(data);
+                } else {
+                    this.resolve(null); // Cancelled
+                }
+            }
+            // Standard backward compatible string/boolean resolves
+            else if (this.currentType === 'prompt' && this.input.style.display === 'block') {
                 this.resolve(result ? this.input.value : null);
             } else {
-                this.resolve(result);
+                this.resolve(result); // true/false for confirms & alerts
             }
+
             this.resolve = null;
+            this.currentType = null;
         }
     }
 }
+
 const CustomModal = new ModalSystem();
 
 let initialTimestamp = null;
@@ -3327,7 +3444,7 @@ class GameEngine {
             });
 
             if (nearest) {
-                this.tryTransferFuel(nearest.id);
+                Network.requestTrade(nearest.id);
             } else {
                 UI.showToast("No one nearby to transfer to!", "error");
             }
@@ -3375,10 +3492,10 @@ class GameEngine {
         if (this.localPlayer.fuel > 10) {
             this.localPlayer.fuel -= 10;
             Network.sendFuel(targetId, 10);
-            UI.showToast("Sent 10 Fuel!", "success");
+            UI.showToast("Sent!", "success");
             Sound.playSuccess();
         } else {
-            UI.showToast("Not enough fuel!", "error");
+            UI.showToast("Not enough of selected resource!", "error");
             Sound.playError();
         }
     }
@@ -4910,8 +5027,6 @@ class CloudManager {
     }
 }
 
-
-
 // --- NETWORK ---
 class NetworkManager {
     constructor() {
@@ -5018,6 +5133,70 @@ class NetworkManager {
             if (Game.isAdmin) this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
             this.lastHeartbeat = n;
         }
+    }
+
+    async requestTrade() {
+        if (this.isSingleplayer) {
+            UI.showToast("Cannot trade in singleplayer mode.", "warning");
+            return;
+        }
+
+        const tradeData = await CustomModal.show('trade', 'Trade Resources', 'Select a player and amount:');
+
+        if (tradeData && tradeData.targetPlayer && tradeData.amount > 0) {
+            this.sendTrade(tradeData.targetPlayer, tradeData.resource, tradeData.amount);
+        }
+    }
+
+    // --- NEW: Generic Trade sender with Validation ---
+    sendTrade(targetId, resource, amount) {
+        amount = parseInt(amount); // Ensure we are sending clean numbers
+        if (isNaN(amount) || amount <= 0) return;
+
+        let hasEnough = false;
+
+        // 1. Check & Deduct from Sender
+        if (resource === 'fuel' || resource === 'money') {
+            if (Game.localPlayer[resource] >= amount) {
+                hasEnough = true;
+                Game.localPlayer[resource] -= amount;
+            }
+        } else {
+            // It's a block/item. Check the inventory object.
+            const itemId = String(resource);
+            if (Game.localPlayer.inventory[itemId] && Game.localPlayer.inventory[itemId] >= amount) {
+                hasEnough = true;
+                Game.localPlayer.inventory[itemId] -= amount;
+                Game.localPlayer.cargo -= amount; // Free up cargo space
+
+                // Clean up empty stacks
+                if (Game.localPlayer.inventory[itemId] === 0) {
+                    delete Game.localPlayer.inventory[itemId];
+                }
+            }
+        }
+
+        // 2. Abort if they are trying to trade something they don't have
+        if (!hasEnough) {
+            UI.showToast(`Not enough ${TILE_PROPS[resource]?.name || resource} to trade!`, "warning");
+            return;
+        }
+
+        // 3. Send the Packet
+        if (resource === 'fuel') {
+            // Keeps compatibility with your existing fuel packet structure
+            this.sendFuel(targetId, amount);
+        } else {
+            this.publish('ctrl', { type: 'trade', to: targetId, from: Game.settings.username, res: resource, amt: amount });
+        }
+
+        // 4. Update UI
+        const resName = TILE_PROPS[resource] ? TILE_PROPS[resource].name : resource.charAt(0).toUpperCase() + resource.slice(1);
+        UI.showToast(`Sent ${amount} ${resName} to player!`, "success");
+
+        // Force UI to refresh to reflect deducted items
+        if (typeof UI.updateInventory === 'function') UI.updateInventory();
+        if (typeof UI.updateHUD === 'function') UI.updateHUD();
     }
 
     requestViewportSync() {
@@ -5262,7 +5441,43 @@ class NetworkManager {
                 this.publish('ctrl', { type: 'map_ack', for: msg.from });
             }, jitter);
         }
-    }// Add this inside the handleMessage logic, near other 'ctrl' or 'move' handlers
+    }
+    else if (msg.type === 'fuel' && msg.to === Game.localPlayer.id) {
+            Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
+            UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
+            Sound.playSuccess();
+            if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "#aaa");
+            if (typeof UI.updateHUD === 'function') UI.updateHUD();
+        }
+        else if (msg.type === 'trade' && msg.to === Game.localPlayer.id) {
+            let resName = msg.res;
+
+            // Handle base properties vs inventory items
+            if (msg.res === 'money') {
+                Game.localPlayer.money += msg.amt;
+                resName = "Money";
+            } else {
+                // It's a block/item. Add to inventory.
+                const itemId = String(msg.res);
+                if (!Game.localPlayer.inventory[itemId]) {
+                    Game.localPlayer.inventory[itemId] = 0;
+                }
+                Game.localPlayer.inventory[itemId] += msg.amt;
+                Game.localPlayer.cargo += msg.amt; // Increase cargo footprint
+
+                // Look up the human-readable name if it exists in TILE_PROPS
+                if (typeof TILE_PROPS !== 'undefined' && TILE_PROPS[msg.res]) {
+                    resName = TILE_PROPS[msg.res].name;
+                }
+            }
+
+            UI.showToast(`Received ${msg.amt} ${resName} from ${msg.from}`, "success");
+            Sound.playSuccess();
+
+            // Force UI to refresh to show new items
+            if (typeof UI.updateInventory === 'function') UI.updateInventory();
+            if (typeof UI.updateHUD === 'function') UI.updateHUD();
+        }
     else if (msg.type === 'aoe_mine') {
         // Don't process our own AOE (handled locally in tryMine)
         if (msg.id === Game.localPlayer.id) return;
@@ -5379,12 +5594,6 @@ class NetworkManager {
                 if(Game.remotePlayers[msg.target]) UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "#aaa");
                 delete Game.remotePlayers[msg.target];
             }
-        }
-        else if (msg.type === 'fuel' && msg.to === Game.localPlayer.id) {
-            Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
-            UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
-            Sound.playSuccess();
-            if (Game.localPlayer.fuel < 20) UI.addMessage("System", UI.formatMsg(Game.settings.username, 'rescue'), "#aaa");
         }
         else if (msg.type === 'ctrl' && msg.type === 'transfer_admin' && msg.to === Game.localPlayer.id) {
             Game.promoteToAdmin();
@@ -6885,8 +7094,8 @@ const GameConfig = {
             reconnectPeriod: 500,
             keepalive: 30,
             heartbeatInterval: 2000,
-            playerTimeout: 10000,
-            watchdogThreshold: 5000
+            playerTimeout: 15000,
+            watchdogThreshold: 10000
         },
         GameEconomy: {
             prices: {
@@ -6979,9 +7188,6 @@ const GameConfig = {
     }
 };
 
-GameConfig.init();
-
-
 async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath = "megaminer") {
     const listUrl = `https://api.github.com/repos/${user}/${repo}/commits?path=${projectPath}&per_page=5`;
 
@@ -7037,6 +7243,7 @@ const Shop = new ShopSystem();
 const Cloud = new CloudManager();
 
 // Init Save System
+
 SaveSystem.init();
 
 
