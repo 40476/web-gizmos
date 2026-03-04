@@ -2898,8 +2898,7 @@ class GameEngine {
 
     setGraphicsQuality(quality){
         this.settings.graphicsQuality = quality;
-        localStorage.setItem('mm_graphics_quality',quality);
-        console.debug("graphics set to: " + quality +"\nlocalStorage value is:" + localStorage.getItem('mm_graphics_quality'));
+        GameConfig.set('PlayerSettings.graphicsQuality',quality);
     }
 
     async init() {
@@ -6069,7 +6068,7 @@ class UIManager {
             <div class="stat-row"><span>Current Total Mined:</span><span>${p.stats.totalMined}</span></div>
             <div class="stat-row"><span>Current Depth:</span><span>${Math.floor(Math.max(0, p.gridY-4))}m</span></div>
             <div class="stat-row"><span>Current Cargo:</span><span>${p.cargo}</span></div>
-            <div class="stat-row"><span>Current health:</span><span>${p.hull}</span></div>
+            <div class="stat-row"><span>Current health:</span><span>${Math.floor(p.hull)}</span></div>
             <div class="stat-row"><span>Current Money:</span><span>\$${p.money}</span></div>
         `;
         // Leaderboard
