@@ -188,6 +188,8 @@
       
         <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
+        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
+      
         <a class="nav-item" href="pattern/index.html" data-name="pattern">> pattern</a>
       
         <a class="nav-item" href="pcb/index.html" data-name="pcb">> pcb</a>
@@ -201,8 +203,6 @@
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
-      
-        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -341,6 +341,29 @@
   </pre>
 
   <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-midibeat" data-name="midibeat">
+        <a class="app-link" href="midibeat/index.html">[ Run Application ]</a>
+        <h2>midibeat</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>HTML5-based MIDI sequencer with audio visualization</li>
+    <li>Loads audio samples and MIDI files from local library or uploads</li>
+    <li>Real-time waveform visualization using Tone.js</li>
+    <li>Speed and pitch controls with shareable configuration links</li>
+    <li>Offline WAV export functionality</li>
+  </ul>
+
+  <pre>
+    <code>const sampler = new Tone.Sampler({ urls: { C4: url } });</code>
+    <code>const player = new MidiPlayer.Player((event) => { /* trigger notes */ });</code>
+  </pre>
+
+  <p>This MIDI sequencer combines Tone.js audio engine with MidiPlayer.js for playback. Users can select from pre-loaded libraries or upload custom audio/MIDI files, adjust playback speed and pitch in real-time, and export compositions as WAV files. The interface features a live waveform visualizer and generates shareable links with current settings.</p>
 </section>
         </div>
       </section>
@@ -498,29 +521,6 @@
   </pre>
 
   <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-midibeat" data-name="midibeat">
-        <a class="app-link" href="midibeat/index.html">[ Run Application ]</a>
-        <h2>midibeat</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>HTML5-based MIDI sequencer with audio visualization</li>
-    <li>Loads audio samples and MIDI files from local library or uploads</li>
-    <li>Real-time waveform visualization using Tone.js</li>
-    <li>Speed and pitch controls with shareable configuration links</li>
-    <li>Offline WAV export functionality</li>
-  </ul>
-
-  <pre>
-    <code>const sampler = new Tone.Sampler({ urls: { C4: url } });</code>
-    <code>const player = new MidiPlayer.Player((event) => { /* trigger notes */ });</code>
-  </pre>
-
-  <p>This MIDI sequencer combines Tone.js audio engine with MidiPlayer.js for playback. Users can select from pre-loaded libraries or upload custom audio/MIDI files, adjust playback speed and pitch in real-time, and export compositions as WAV files. The interface features a live waveform visualizer and generates shareable links with current settings.</p>
 </section>
         </div>
       </section>
