@@ -3721,7 +3721,7 @@ class GameEngine {
                 const shouldNetUpdate = (range === 0);
                 this.executeSingleMine(t.x, t.y, shouldNetUpdate);
                 Sound.playMining();
-            }, index);
+            }, index*3);
         });
         UI.updateDashboard();
 
@@ -5482,6 +5482,7 @@ class NetworkManager {
     else if (msg.type === 'aoe_mine') {
         // Don't process our own AOE (handled locally in tryMine)
         if (msg.id === Game.localPlayer.id) return;
+        console.log('bruh')
 
         // Execute the AOE logic locally on this client
         // We use a helper similar to your tryMine logic
