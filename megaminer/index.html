@@ -2844,12 +2844,12 @@ class GameEngine {
             vehColor: this.settings.color,
             teleporters: this.localPlayer.teleporters || []
         };
-        GameConfig.set('Stats.'+this.settings.room, JSON.stringify(data))
+        localStorage.setItem('mm_stats_'+this.settings.room, JSON.stringify(data))
     }
 
     loadLocalProgress() {
         try {
-            const raw = GameConfig.set('Stats.'+this.settings.room);
+            const raw = localStorage.getItem('mm_stats_'+this.settings.room);
             if (raw) {
                 const data = JSON.parse(raw);
                 const p = this.localPlayer;
