@@ -2105,14 +2105,14 @@ const TILE_PROPS = {
     [TILE_TYPES.DIAMOND]: { name: "Diamond", color: '#3498db', hardness: 3, value: 500, tier: 3, trashExclude: true },
     [TILE_TYPES.EMERALD]: { name: "Emerald", color: '#2ecc71', hardness: 3, value: 800, tier: 3, trashExclude: true },
     [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 3, value: 1200, tier: 4, trashExclude: true },
-    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 0.1, value: 0, tier: 0, trashExclude: true },
-    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 67, tier: 99, trashExclude: true },
+    [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 0.1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
+    [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 67, tier: 99, trashExclude: true, AOEExclude: true },
     // Purchasables
-    [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0, trashExclude: true },
-    [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0, trashExclude: true },
-    [TILE_TYPES.TELEPORTER]: { name: "Teleporter", color: '#9b59b6', hardness: 5, value: 0, tier: 0, trashExclude: true },
-    [TILE_TYPES.REPAIR_KIT]: { name: "Repair Kit", color: '#2ecc71', value: 0, consumable: true, trashExclude: true },
-    [TILE_TYPES.FUEL_VOUCHER]: { name: "Fuel Voucher", color: '#e67e22', value: 0, consumable: true, trashExclude: true },
+    [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
+    [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
+    [TILE_TYPES.TELEPORTER]: { name: "Teleporter", color: '#9b59b6', hardness: 5, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
+    [TILE_TYPES.REPAIR_KIT]: { name: "Repair Kit", color: '#2ecc71', value: 0, consumable: true, trashExclude: true, AOEExclude: true },
+    [TILE_TYPES.FUEL_VOUCHER]: { name: "Fuel Voucher", color: '#e67e22', value: 0, consumable: true, trashExclude: true , AOEExclude: true},
 };
 
 const MSGS = {
@@ -3735,7 +3735,7 @@ class GameEngine {
 
         const tile = this.map[y][x];
         const props = TILE_PROPS[tile];
-        if (props.trashExclude===true) return;
+        if (props.AOEExclude===true) return;
         if (this.localPlayer.drillTier < props.tier) return false;
 
         // Only mine if it's a valid tile and not bedrock/empty
