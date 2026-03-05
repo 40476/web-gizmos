@@ -5,8 +5,28 @@
     "extension": "mid"
   },
   {
+    "name": "Pirates of the Caribbean.mid",
+    "size": 11918,
+    "extension": "mid"
+  },
+  {
     "name": "RickRoll.mid",
     "size": 67477,
+    "extension": "mid"
+  },
+  {
+    "name": "Zelda's Lullaby.mid",
+    "size": 1773,
+    "extension": "mid"
+  },
+  {
+    "name": "atlas.json",
+    "size": 245,
+    "extension": "json"
+  },
+  {
+    "name": "tetris.mid",
+    "size": 16647,
     "extension": "mid"
   },
   {
