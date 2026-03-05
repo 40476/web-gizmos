@@ -1,15 +1,17 @@
 <section>
   <ul>
-    <li>Mega Miner NG is a multiplayer mining game with procedurally generated maps.</li>
-    <li>Features voxel-style mining, resource gathering, and base building in a shared world.</li>
-    <li>Supports singleplayer and multiplayer modes with real-time networking via MQTT.</li>
-    <li>Customizable player settings, shop upgrades, and cloud save functionality.</li>
+    <li>HTML5 web-based mining game with multiplayer support</li>
+    <li>Uses Canvas for rendering, WebSockets/MQTT for networking</li>
+    <li>Features procedurally generated maps, inventory systems, and upgrade mechanics</li>
+    <li>Includes mobile controls, admin features, and cloud save functionality</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); this.ctx = this.canvas.getContext('2d'); } }</code>
-    <code>class ShopSystem { open() { $('shop-modal').classList.add('active'); this.updateUI(); } }</code>
+    <code>// Core game engine initialization</code>
+    <code>class GameEngine { constructor() { this.canvas = $('gameCanvas'); } }</code>
+    <code>// Network connection setup</code>
+    <code>class NetworkManager { connect() { this.client = mqtt.connect(playerConf.broker, options); } }</code>
   </pre>
 
-  <p>This web application is a 2D mining game with multiplayer capabilities, featuring procedurally generated maps, resource gathering, building mechanics, and a shop system for upgrades. The game uses MQTT for real-time networking and includes features like cloud saves, custom textures, and a dashboard for player statistics.</p>
+  <p>Mega Miner NG is a browser-based mining simulation game built with HTML5, Canvas, and JavaScript. The game features procedurally generated underground maps where players can mine resources, upgrade equipment, and interact with other players through real-time multiplayer networking using MQTT/WebSockets. It includes a comprehensive inventory system, upgrade shop, mobile controls, and cloud save functionality through Puter integration.</p>
 </section>
