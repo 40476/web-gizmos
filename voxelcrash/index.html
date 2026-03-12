@@ -468,7 +468,7 @@
             },
 
             'instantwin': {
-                name: 'DEVEL_INSTANTWIN', grid: 8,
+                name: 'DEVELOPMENT_INSTANTWIN', grid: 8,
                 art: [
                     'r'
                 ]
@@ -738,7 +738,7 @@
                     }
                 } else {
                     ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                    ctx.fillRect(p.x * cw + 1, p.y * ch + 1, cw - 2, ch - 2);
+                    ctx.fillRect(p.x * cw, p.y * ch, cw, ch);
                 }
             });
 
@@ -1100,7 +1100,7 @@
                         mesh.position.copy(position).add(new THREE.Vector3(x*0.25, y*0.25, z*0.25));
                         const velocity = new THREE.Vector3( x*(Math.random()*0.15), y*(Math.random()*0.15)+0.15, z*(Math.random()*0.15) );
                         const rotSpeed = new THREE.Vector3( Math.random()*0.3, Math.random()*0.3, Math.random()*0.3 );
-                        scene.add(mesh); particles.push({ mesh, velocity, rotSpeed, charKey, life: 60 });
+                        scene.add(mesh); particles.push({ mesh, velocity, rotSpeed, charKey, life: 600 });
                     }
                 }
             }
