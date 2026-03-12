@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Voxel Crash</title>
+
+    <!-- External Libs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0f0f1a;
+            --primary: #FF3366;
+            --primary-shadow: #cc0044;
+            --secondary: #33CCFF;
+            --secondary-shadow: #0099cc;
+            --panel-bg: rgba(42, 42, 74, 0.85);
+            --panel-border: #4a4a7a;
+            --sidebar-width: 320px;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--bg-color);
+            font-family: 'Fredoka', sans-serif; touch-action: none;
+        }
+
+        #fluid-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; filter: blur(40px); opacity: 0.6; pointer-events: none;
+        }
+
+        #app-container {
+            display: flex; flex-direction: row; width: 100%; height: 100%;
+            position: relative; z-index: 1;
+        }
+
+        #game-container {
+            flex-grow: 1; height: 100%; position: relative; overflow: hidden;
+            min-height: 0;
+        }
+
+        #sidebar {
+            width: var(--sidebar-width); height: 100%;
+            background: var(--panel-bg); backdrop-filter: blur(10px);
+            border-left: 6px solid var(--panel-border);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; box-sizing: border-box; z-index: 10;
+            box-shadow: -10px 0 20px rgba(0,0,0,0.5);
+        }
+
+        #sidebar h2 { color: var(--secondary); margin: 0 0 10px 0; text-shadow: 2px 2px 0px var(--secondary-shadow); text-transform: uppercase; }
+
+        #art-canvas-container {
+            background: #111122; border: 4px solid var(--panel-border);
+            border-radius: 12px; padding: 10px; width: 100%;
+            aspect-ratio: 1; position: relative; overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        #art-canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 20px; box-sizing: border-box; z-index: 5;
+        }
+
+        .interactive { pointer-events: auto; }
+
+        .score-box {
+            background: var(--panel-bg); backdrop-filter: blur(5px); border: 4px solid var(--panel-border);
+            border-radius: 16px; padding: 10px 30px; color: white;
+            font-size: 32px; font-weight: 600; box-shadow: 0 8px 0px rgba(0,0,0,0.3);
+            text-align: center; align-self: flex-start;
+        }
+        .score-box span { display: block; font-size: 14px; color: var(--secondary); text-transform: uppercase; }
+
+        .btn {
+            background: var(--primary); border: 4px solid #fff; border-radius: 16px;
+            color: white; padding: 12px 24px; font-size: 20px; font-family: 'Fredoka', sans-serif;
+            font-weight: 600; cursor: pointer; box-shadow: 0 6px 0 var(--primary-shadow), 0 10px 10px rgba(0,0,0,0.3);
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s; text-transform: uppercase; outline: none; margin: 5px;
+            display: inline-flex; justify-content: center; align-items: center; gap: 8px; width: 100%; box-sizing: border-box;
+        }
+        .btn:hover { transform: translateY(2px); box-shadow: 0 4px 0 var(--primary-shadow), 0 8px 8px rgba(0,0,0,0.3); }
+        .btn:active { transform: translateY(6px); box-shadow: 0 0 0 var(--primary-shadow); }
+        .btn:disabled { filter: grayscale(100%); cursor: not-allowed; transform: translateY(6px); box-shadow: 0 0 0 #000; }
+
+        .btn.secondary { background: var(--secondary); box-shadow: 0 6px 0 var(--secondary-shadow), 0 10px 10px rgba(0,0,0,0.3); }
+        .btn.secondary:hover { box-shadow: 0 4px 0 var(--secondary-shadow), 0 8px 8px rgba(0,0,0,0.3); }
+        .btn.secondary:active { box-shadow: 0 0 0 var(--secondary-shadow); }
+
+        .btn.tertiary { background: #2a2a4a; border-color: #4a4a7a; box-shadow: 0 6px 0 #1a1a2e, 0 10px 10px rgba(0,0,0,0.3); font-size: 16px; padding: 10px 15px; }
+        .btn.tertiary:hover { box-shadow: 0 4px 0 #1a1a2e, 0 8px 8px rgba(0,0,0,0.3); }
+        .btn.tertiary:active { box-shadow: 0 0 0 #1a1a2e; }
+
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 26, 0.9); backdrop-filter: blur(12px); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        h1 {
+            font-size: 80px; color: white; margin: 0 0 30px 0; text-align: center; line-height: 1;
+            text-shadow: 6px 6px 0 var(--primary), 12px 12px 0px rgba(0,0,0,0.5);
+        }
+
+        .start-menu-layout {
+            display: flex; flex-direction: row; gap: 30px;
+            align-items: stretch; justify-content: center;
+            max-width: 700px; width: 90%;
+        }
+
+        .panel-container {
+            background: var(--panel-bg); border: 4px solid var(--panel-border);
+            padding: 25px; border-radius: 16px; text-align: center; color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex: 1;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+
+        .start-buttons-col {
+            display: flex; flex-direction: column; gap: 15px; flex: 1; justify-content: center;
+        }
+        .start-buttons-col .btn { margin: 0; }
+
+        /* =========================================
+           WIN SCREEN LAYOUT (Responsive)
+           ========================================= */
+        #win-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 26, 0.9); backdrop-filter: blur(12px); z-index: 150;
+            display: none; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; box-sizing: border-box;
+        }
+
+        .win-content {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; max-width: 400px;
+        }
+
+        .win-controls {
+            display: flex; flex-direction: column; width: 100%; gap: 12px;
+        }
+
+        #win-card {
+            background: #111122; border: 4px solid var(--panel-border);
+            border-radius: 16px; padding: 20px; margin-bottom: 25px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); text-align: center;
+            width: 100%; max-width: 300px; box-sizing: border-box; flex-shrink: 0;
+        }
+
+        #win-card canvas {
+            width: 100%; aspect-ratio: 1; image-rendering: pixelated;
+            background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid #2a2a4a;
+        }
+
+        #win-level-name { color: var(--secondary); margin: 15px 0 5px 0; font-size: 24px; text-transform: uppercase; }
+        #win-stats { color: #8888aa; font-size: 14px; margin: 0; font-family: monospace; }
+
+        .share-row { display: flex; gap: 10px; width: 100%; }
+        .share-row .btn { flex: 1; margin: 0; }
+
+        /* Desktop Landscape - Side by Side layout for Win Screen */
+        @media (min-width: 768px) and (orientation: landscape) {
+            #win-screen h1 { font-size: 70px; margin-bottom: 40px; }
+            .win-content { flex-direction: row; gap: 50px; max-width: 800px; justify-content: center; align-items: center; }
+            #win-card { margin-bottom: 0; }
+            .win-controls { max-width: 320px; }
+        }
+
+        select, input[type="text"], input[type="file"], textarea {
+            width: 100%; padding: 12px; border-radius: 12px; border: 3px solid var(--panel-border);
+            background: #1a1a2e; color: white; font-family: 'Fredoka', sans-serif; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 15px;
+        }
+
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 200;
+        }
+        .modal {
+            background: var(--panel-bg); border: 6px solid var(--panel-border);
+            border-radius: 24px; padding: 30px; width: 90%; max-width: 500px;
+            color: white; box-shadow: 0 20px 0px rgba(0,0,0,0.5); position: relative;
+        }
+        .close-modal {
+            position: absolute; top: -15px; right: -15px; background: var(--primary);
+            border: 4px solid white; color: white; width: 40px; height: 40px;
+            border-radius: 50%; font-weight: bold; font-size: 20px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 0 var(--primary-shadow);
+        }
+        #shuffle-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-size: 40px; font-weight: bold; text-shadow: 4px 4px 0 var(--primary);
+            pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 50; text-align: center;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            h1 { font-size: 55px; margin-bottom: 20px; }
+            .start-menu-layout { flex-direction: column; gap: 15px; }
+            .panel-container { padding: 15px; }
+
+            #app-container { flex-direction: column; }
+            #sidebar {
+                width: 100%; height: auto; max-height: 140px;
+                flex-direction: row; align-items: center; justify-content: space-around;
+                padding: 10px 15px; border-left: none; border-top: 4px solid var(--panel-border);
+                box-shadow: 0 -10px 20px rgba(0,0,0,0.5); gap: 15px;
+            }
+
+            #sidebar h2 { display: none; }
+            #art-canvas-container { width: 100px; height: 100px; padding: 5px; border-width: 3px; flex-shrink: 0; margin: 0; }
+            .sidebar-controls { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; }
+            #art-progress { font-size: 16px !important; margin: 0 0 10px 0 !important; }
+            #btn-menu { margin: 0 !important; font-size: 14px; padding: 8px 12px; width: auto; }
+
+            .score-box { font-size: 20px; padding: 5px 15px; border-width: 3px; }
+            .score-box span { font-size: 11px; }
+
+            #win-card { width: 100%; max-width: 260px; padding: 15px; margin-bottom: 15px;}
+            .share-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="fluid-bg"></canvas>
+
+    <div id="app-container">
+        <!-- Main Game Area -->
+        <div id="game-container">
+            <div id="shuffle-msg">NO MOVES!<br>SHUFFLING...</div>
+            <div id="ui-layer">
+                <div class="score-box interactive">
+                    <span>Score</span>
+                    <div id="score-display">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar / Bottom Bar -->
+        <div id="sidebar">
+            <h2 class="desktop-only">Target Art</h2>
+            <div id="art-canvas-container">
+                <canvas id="art-canvas"></canvas>
+            </div>
+            <div class="sidebar-controls" style="margin-top:20px; text-align:center;">
+                <p id="art-progress" style="color:white; font-size: 20px; font-weight: bold;">0 / 0 Pixels</p>
+                <div id="controls" class="interactive">
+                    <button class="btn tertiary" id="btn-menu" style="margin-top:10px;">Main Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>VOXEL<br>CRASH</h1>
+
+        <div class="start-menu-layout">
+            <div class="panel-container">
+                <h3 style="margin-top:0; color: var(--secondary); font-size: 22px;">Select Level</h3>
+                <select id="level-select"></select>
+                <label style="display:block; margin: 10px 0; font-weight: 600;">Grid Size: <span id="grid-size-display">8x8</span></label>
+                <input type="range" id="grid-size-slider" min="6" max="12" step="1" value="8" style="width: 100%; accent-color: var(--primary);">
+            </div>
+
+            <div class="start-buttons-col">
+                <button class="btn" id="btn-play-solo" style="font-size: 24px; padding: 20px;">Play Level</button>
+                <button class="btn secondary" id="btn-open-importer" style="font-size: 18px;">Custom Art Importer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Responsive Win Screen -->
+    <div id="win-screen">
+        <h1 style="margin-bottom: 15px;">MASTERPIECE!</h1>
+        <div class="win-content">
+            <div id="win-card">
+                <canvas id="win-canvas" width="240" height="240"></canvas>
+                <h3 id="win-level-name">Level Name</h3>
+                <p id="win-stats">Grid: 8x8 | Target: 16x16</p>
+            </div>
+
+            <div class="win-controls">
+                <button class="btn secondary" id="btn-export-card" style="margin-bottom: 10px;">📸 Export Card</button>
+                <div class="share-row">
+                    <button class="btn tertiary" id="btn-share-sms">📱 SMS</button>
+                    <button class="btn tertiary" id="btn-share-matrix">💬 Share</button>
+                </div>
+                <button class="btn" id="btn-win-menu" style="margin-top: 10px;">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Importer Modal -->
+    <div class="modal-overlay" id="importer-modal">
+        <div class="modal">
+            <button class="close-modal" id="btn-close-importer">X</button>
+            <h2 style="margin-top:0; color: var(--secondary); text-align:center;">Art Importer</h2>
+
+            <label style="display:block; margin-bottom: 5px; font-size:14px; color:#aaa;">Target Resolution</label>
+            <select id="import-res">
+                <option value="8">8x8 Pixels</option>
+                <option value="16" selected>16x16 Pixels</option>
+                <option value="24">24x24 Pixels</option>
+                <option value="32">32x32 Pixels</option>
+            </select>
+
+            <label style="display:flex; align-items:center; cursor:pointer; margin-bottom:15px; font-size:14px;">
+                <input type="checkbox" id="import-keep-bg" style="width:auto; transform:scale(1.5); margin-right:10px;">
+                Make Transparent Playable (Black)
+            </label>
+
+            <input type="file" id="image-upload" accept="image/png, image/jpeg, image/webp">
+
+            <label style="display:block; margin-bottom: 5px; font-size:14px; color:#aaa;">Generated JSON</label>
+            <textarea id="json-export-area" readonly style="height: 100px; font-family: monospace; font-size: 12px;"></textarea>
+
+            <div style="display:flex; justify-content: space-between; gap: 10px;">
+                <button class="btn secondary" id="btn-copy-json" style="flex:1; font-size: 14px;">Copy</button>
+                <button class="btn" id="btn-play-custom" style="flex:1; font-size: 14px;">Play Art</button>
+            </div>
+            <canvas id="hidden-process-canvas" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+        const CHAR_TO_COLOR = {
+            'r': { hex: 0xFF3333, rgb: {r:255, g:51, b:51} },
+            'g': { hex: 0x33FF33, rgb: {r:51, g:255, b:51} },
+            'b': { hex: 0x3333FF, rgb: {r:51, g:51, b:255} },
+            'y': { hex: 0xFFFF33, rgb: {r:255, g:255, b:51} },
+            'c': { hex: 0x33FFFF, rgb: {r:51, g:255, b:255} },
+            'm': { hex: 0xFF33FF, rgb: {r:255, g:51, b:255} },
+            'o': { hex: 0xFFA500, rgb: {r:255, g:165, b:0} },
+            'p': { hex: 0x800080, rgb: {r:128, g:0, b:128} },
+            'w': { hex: 0xFFFFFF, rgb: {r:255, g:255, b:255} },
+            'k': { hex: 0x333333, rgb: {r:51, g:51, b:51} }
+        };
+        const COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
+        const FALLBACK_COLORS = ['b', 'r', 'g', 'y', 'c', 'm', 'p', 'o'];
+
+        const CONFIG = { gridSize: 8, blockSize: 1, spacing: 1.1, swapSpeed: 10.0 };
+        const STATE = { IDLE: 0, SWAPPING: 1, MATCHING: 2, DROPPING: 3, SHUFFLING: 4, WON: 5 };
+        let gameState = STATE.IDLE;
+        let score = 0;
+        let lastInteraction = { x: -1, y: -1 };
+
+        let currentLevelName = "Custom Art";
+        let currentArtRes = 16;
+        let currentGridSize = 8;
+        let targetPixels = [];
+
+        function getClosestColorChar(r, g, b) {
+            let closestChar = 'k'; let minDistance = Infinity;
+            for (let char of COLOR_CHARS) {
+                const c = CHAR_TO_COLOR[char].rgb;
+                const dist = Math.pow(r - c.r, 2) + Math.pow(g - c.g, 2) + Math.pow(b - c.b, 2);
+                if (dist < minDistance) { minDistance = dist; closestChar = char; }
+            }
+            return closestChar;
+        }
+
+        const LEVELS = {
+            'heart': {
+                name: '8-Bit Heart', grid: 8,
+                art: [
+                    '________________', '________________', '____rrrr__rrrr__', '__rrrrrrrrrrrr__',
+                    '__rrrrwwwwrrrr__', '__rrrrwwwwrrrr__', '____rrrrrrrr____', '______rrrr______',
+                    '________r_______', '________________', '________________', '________________',
+                    '________________', '________________', '________________', '________________'
+                ]
+            },
+
+            'diamond': {
+                name: 'Blue Diamond', grid: 8,
+                art: [
+                    '________________', '_______cc_______', '_____cccccc_____', '___cccccccccc___',
+                    '_cccccccccccccc_', '_cwwwwcccccccc__', '__cccccccccccc__', '___cccccccccc___',
+                    '____cccccccc____', '_____cccccc_____', '______cccc______', '_______cc_______',
+                    '________c_______', '________________', '________________', '________________'
+                ]
+            },
+
+            'potion': {
+                name: 'Magic Potion', grid: 9, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 2h4v2H6z" fill="#ccc"/><path d="M7 4h2v3l3 4v3H4v-3l3-4V4z" fill="#33ccff"/><path d="M4 14h8v1H4z" fill="#ccc"/></svg>')
+            },
+
+            'flower': {
+                name: 'Fire Flower', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="#ff3333"/><circle cx="8" cy="6" r="2" fill="#ffff33"/><rect x="7" y="10" width="2" height="6" fill="#33ff33"/><path d="M7 13C4 13 3 10 3 10s3 1 4 3zM9 13c3 0 4-3 4-3s-3 1-4 3z" fill="#33ff33"/></svg>')
+            },
+
+            'mushroom': {
+                name: 'Power Mushroom', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3 8c0-4 2-6 5-6s5 2 5 6H3z" fill="#ff3333"/><rect x="6" y="8" width="4" height="6" fill="#ffcc99"/><circle cx="5" cy="5" r="1.5" fill="#ffffff"/><circle cx="11" cy="5" r="1.5" fill="#ffffff"/><circle cx="8" cy="3.5" r="1.5" fill="#ffffff"/></svg>')
+            },
+
+            'coin': {
+                name: 'Gold Coin', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#ffcc00"/><circle cx="8" cy="8" r="4" fill="#ffff66"/><rect x="7" y="5" width="2" height="6" fill="#ff9900"/></svg>')
+            },
+
+            'star': {
+                name: 'Invincible Star', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 1l2.2 4.5 4.8.7-3.5 3.4.8 4.8L8 12l-4.3 2.4.8-4.8L1 6.2l4.8-.7L8 1z" fill="#ffff33"/><rect x="6" y="7" width="1" height="3" fill="#000000"/><rect x="9" y="7" width="1" height="3" fill="#000000"/></svg>')
+            },
+
+            'potion': {
+                name: 'Health Potion', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 3h4v2l3 4v5H3v-5l3-4V3z" fill="#ccffff" stroke="#999999" stroke-width="1"/><path d="M4 10v3h8v-3H4z" fill="#ff3333"/><rect x="6" y="1" width="4" height="2" fill="#996633"/></svg>')
+            },
+
+            'sword': {
+                name: 'Iron Sword', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M14 2L9 7l-2-2L12 0l2 2z" fill="#cccccc"/><path d="M8 8L3 13l2 2 5-5-2-2z" fill="#663300"/><rect x="7" y="6" width="3" height="3" transform="rotate(45 8.5 7.5)" fill="#ffcc00"/></svg>')
+            },
+
+            'chest': {
+                name: 'Treasure Chest', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="2" y="6" width="12" height="8" fill="#8B4513"/><rect x="2" y="3" width="12" height="3" fill="#A0522D"/><rect x="1" y="5" width="14" height="1" fill="#FFD700"/><rect x="7" y="5" width="2" height="3" fill="#FFD700"/><rect x="7.5" y="6" width="1" height="1" fill="#000000"/></svg>')
+            },
+
+            'ruby': {
+                name: 'Red Ruby', grid: 8, resolution: 24, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="12,2 22,9 12,22 2,9" fill="#e60000"/><polygon points="12,2 12,22 2,9" fill="#ff3333" opacity="0.6"/><polygon points="7,4 17,4 12,9" fill="#ff8080"/></svg>')
+            },
+
+            'sapphire': {
+                name: 'Blue Sapphire', grid: 8, resolution: 32, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><polygon points="9,4 23,4 30,16 23,28 9,28 2,16" fill="#0055ff"/><polygon points="9,4 23,4 16,16" fill="#6699ff"/><polygon points="16,16 23,28 9,28" fill="#0022cc"/></svg>')
+            },
+
+            'emerald': {
+                name: 'Green Emerald', grid: 6, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><polygon points="4,1 12,1 15,8 12,15 4,15 1,8" fill="#00b33c"/><rect x="6" y="3" width="4" height="10" fill="#33ff77" opacity="0.5"/></svg>')
+            },
+
+            'topaz': {
+                name: 'Yellow Topaz', grid: 10, resolution: 48, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><polygon points="24,4 40,24 24,44 8,24" fill="#ffcc00"/><polygon points="24,12 32,24 24,36 16,24" fill="#ffee66"/></svg>')
+            },
+
+            'amethyst': {
+                name: 'Purple Amethyst', grid: 6, resolution: 20, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><polygon points="10,2 18,18 2,18" fill="#9933ff"/><polygon points="10,2 10,18 2,18" fill="#c266ff" opacity="0.6"/></svg>')
+            },
+
+            'water_drop': {
+                name: 'Water Drop', grid: 12, resolution: 64, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 8 C32 8 12 34 12 46 C12 57 21 60 32 60 C43 60 52 57 52 46 C52 34 32 8 32 8 Z" fill="#00bbff"/><ellipse cx="24" cy="46" rx="4" ry="8" fill="#ffffff" transform="rotate(-30 24 46)" opacity="0.6"/></svg>')
+            },
+
+            'fireball': {
+                name: 'Fire Element', grid: 12, resolution: 24, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2 C8 6 4 10 4 15 C4 19.4 7.6 23 12 23 C16.4 23 20 19.4 20 15 C20 10 16 6 12 2 Z" fill="#ff4400"/><path d="M12 8 C10 11 8 13 8 16 C8 18.2 9.8 20 12 20 C14.2 20 16 18.2 16 16 C16 13 14 11 12 8 Z" fill="#ffcc00"/></svg>')
+            },
+
+            'lightning': {
+                name: 'Lightning Bolt', grid: 12, resolution: 32, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><polygon points="20,2 6,18 16,18 12,30 26,14 16,14" fill="#ffdd00"/></svg>')
+            },
+
+            'instantwin': {
+                name: 'DEVEL_INSTANTWIN', grid: 8,
+                art: [
+                    'r'
+                ]
+            }
+        };
+
+        const resolutions = Object.values(LEVELS).map(item => item.resolution || 0);
+        const levelSelect = document.getElementById('level-select');
+        Object.keys(LEVELS).forEach(key => {
+            const opt = document.createElement('option');
+            opt.value = key; opt.innerText = `${LEVELS[key].name} (difficulty: ${Math.ceil(mapValueToPercent(resolutions,LEVELS[key].resolution))})`; levelSelect.appendChild(opt);
+        });
+
+        const gridSlider = document.getElementById('grid-size-slider');
+        const gridDisplay = document.getElementById('grid-size-display');
+        gridSlider.addEventListener('input', (e) => {
+            CONFIG.gridSize = parseInt(e.target.value);
+            gridDisplay.innerText = `${CONFIG.gridSize}x${CONFIG.gridSize}`;
+        });
+
+        document.getElementById('level-select').addEventListener('change', (e) => {
+            let lvl = LEVELS[e.target.value];
+            gridSlider.value = lvl.grid; CONFIG.gridSize = lvl.grid;
+            gridDisplay.innerText = `${CONFIG.gridSize}x${CONFIG.gridSize}`;
+        });
+        document.getElementById('level-select').dispatchEvent(new Event('change'));
+
+        function mapValueToPercent(valuesArray, inputValue) {
+            if (!Array.isArray(valuesArray) || valuesArray.length === 0) {
+                return null;
+            }
+
+            // Find min and max values in the array
+            const min = Math.min(...valuesArray);
+            const max = Math.max(...valuesArray);
+
+            // Check if the range is zero to avoid division by zero
+            if (max === min) {
+                return (inputValue === min) ? 100 : 0;
+            }
+
+            // Apply the mapping formula
+            const percentage = ((inputValue - min) / (max - min)) * 100;
+
+            // Optional: Clamp the result between 0 and 100
+            return Math.max(0, Math.min(100, percentage));
+        }
+
+        function loadImageToArt(url, res, keepBg) {
+            return new Promise((resolve, reject) => {
+                const img = new Image(); img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    const cvs = document.createElement('canvas');
+                    cvs.width = res; cvs.height = res;
+                    const pCtx = cvs.getContext('2d', { willReadFrequently: true });
+                    pCtx.drawImage(img, 0, 0, res, res);
+                    const imgData = pCtx.getImageData(0, 0, res, res).data;
+                    let jsonArray = [];
+                    for(let y=0; y<res; y++) {
+                        let rowStr = '';
+                        for(let x=0; x<res; x++) {
+                            const idx = (y * res + x) * 4;
+                            const r = imgData[idx]; const g = imgData[idx+1];
+                            const b = imgData[idx+2]; const a = imgData[idx+3];
+                            if (a < 10) rowStr += keepBg ? 'k' : '_';
+                            else rowStr += getClosestColorChar(r, g, b);
+                        }
+                        jsonArray.push(rowStr);
+                    }
+                    resolve(jsonArray);
+                };
+                img.onerror = () => reject(new Error("Failed to load image"));
+                img.src = url;
+            });
+        }
+
+        /** BACKGROUND FLUID & DYNAMIC COLOR LOGIC */
+        let currentActiveColors = [];
+        const fCanvas = document.getElementById('fluid-bg');
+        const fCtx = fCanvas.getContext('2d');
+        let blobs = [];
+
+        function getArtColors() {
+            if (!targetPixels || targetPixels.length === 0) return ['b', 'r', 'g', 'y', 'c', 'm', 'p', 'o'];
+            let active = new Set();
+            targetPixels.forEach(p => {
+                // Only count colors we still need to collect
+                if (!p.filled && !p.targeted && p.char !== '_') active.add(p.char);
+            });
+            let colors = Array.from(active).sort();
+
+            // If art is complete, celebratory gold and white
+            if (colors.length === 0) return ['w', 'y'];
+            return colors;
+        }
+
+        function updateActiveColors() {
+            currentActiveColors = getArtColors();
+            if (blobs.length > 0 && currentActiveColors.length > 0) {
+                // Distribute blobs evenly among remaining needed colors
+                let blobsPerColor = Math.ceil(blobs.length / currentActiveColors.length);
+                let cIdx = 0; let count = 0;
+                blobs.forEach((b) => {
+                    b.targetColorChar = currentActiveColors[cIdx];
+                    count++;
+                    if (count >= blobsPerColor) {
+                        count = 0;
+                        cIdx = Math.min(cIdx + 1, currentActiveColors.length - 1);
+                    }
+                });
+            }
+        }
+
+        function initFluid() {
+            updateActiveColors();
+            blobs = [];
+            let blobsPerColor = Math.ceil(30 / Math.max(1, currentActiveColors.length));
+            let cIdx = 0; let count = 0;
+
+            for(let i=0; i<30; i++) {
+                let tColor = currentActiveColors[cIdx] || 'w';
+                blobs.push({
+                    x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight,
+                    vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2,
+                    r: 50 + Math.random()*150,
+                    colorChar: tColor,
+                    targetColorChar: tColor,
+                    opacity: 0,
+                    targetOpacity: 0.6
+                });
+                count++;
+                if (count >= blobsPerColor) {
+                    count = 0;
+                    cIdx = Math.min(cIdx + 1, currentActiveColors.length - 1);
+                }
+            }
+        }
+
+        function updateFluid() {
+            if(fCanvas.width !== window.innerWidth) fCanvas.width = window.innerWidth;
+            if(fCanvas.height !== window.innerHeight) fCanvas.height = window.innerHeight;
+
+            fCtx.clearRect(0, 0, fCanvas.width, fCanvas.height);
+            fCtx.globalCompositeOperation = 'screen';
+
+            blobs.forEach((b) => {
+                b.x += b.vx; b.y += b.vy;
+                if(b.x < -b.r) b.x = fCanvas.width + b.r;
+                if(b.x > fCanvas.width + b.r) b.x = -b.r;
+                if(b.y < -b.r) b.y = fCanvas.height + b.r;
+                if(b.y > fCanvas.height + b.r) b.y = -b.r;
+
+                // Determine if we need to fade out to change colors
+                if (b.colorChar !== b.targetColorChar) {
+                    b.targetOpacity = 0;
+                } else {
+                    b.targetOpacity = 0.6;
+                }
+
+                // Smooth fade
+                b.opacity += (b.targetOpacity - b.opacity) * 0.08;
+
+                // Teleport and swap color when fully faded out
+                if (b.opacity <= 0.02 && b.colorChar !== b.targetColorChar) {
+                    b.x = Math.random() * fCanvas.width;
+                    b.y = Math.random() * fCanvas.height;
+                    b.colorChar = b.targetColorChar;
+                    b.opacity = 0.02;
+                }
+
+                if (b.opacity > 0.01) {
+                    fCtx.beginPath();
+                    fCtx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+                    let rgb = CHAR_TO_COLOR[b.colorChar] ? CHAR_TO_COLOR[b.colorChar].rgb : {r:255,g:255,b:255};
+                    fCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${b.opacity})`;
+                    fCtx.fill();
+                }
+            });
+            fCtx.globalCompositeOperation = 'source-over';
+        }
+
+        /** GAME BOARD & ART LOGIC */
+        let currentLevelArt = [];
+        const sidebarCanvas = document.getElementById('art-canvas');
+        const ctx = sidebarCanvas.getContext('2d');
+        let artGridSize = 16;
+        let totalTargetPixels = 0;
+        let filledPixels = 0;
+        let particles2d = [];
+
+        function loadLevelArt(jsonArray) {
+            currentLevelArt = jsonArray;
+            artGridSize = jsonArray[0].length;
+            sidebarCanvas.width = artGridSize * 20;
+            sidebarCanvas.height = jsonArray.length * 20;
+            currentArtRes = artGridSize;
+
+            targetPixels = []; totalTargetPixels = 0; filledPixels = 0;
+
+            for (let y = 0; y < jsonArray.length; y++) {
+                for (let x = 0; x < artGridSize; x++) {
+                    let char = jsonArray[y][x];
+                    if (char === '_') {
+                        targetPixels.push({ x: x, y: y, char: char, filled: true });
+                    } else if (CHAR_TO_COLOR[char]) {
+                        targetPixels.push({ x: x, y: y, char: char, filled: false, targeted: false });
+                        totalTargetPixels++;
+                    }
+                }
+            }
+            updateActiveColors(); // Sync background colors to the loaded art
+            drawSidebarArt();
+            updateProgressText();
+        }
+
+        function getSpawnableColors() {
+            let needed = new Set();
+            targetPixels.forEach(p => { if (!p.filled && !p.targeted && p.char !== '_') needed.add(p.char); });
+            let colors = Array.from(needed).sort();
+
+            // If the board needs blocks but the art is almost done, pad with fallbacks
+            if (colors.length < 4) {
+                for (let c of FALLBACK_COLORS) {
+                    if (colors.length >= 4) break;
+                    if (!colors.includes(c)) colors.push(c);
+                }
+            }
+            return colors;
+        }
+
+        function getRandomSpawnColor() {
+            let pool = getSpawnableColors();
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        function triggerWinSequence() {
+            gameState = STATE.WON;
+            updateActiveColors(); // Triggers gold/white background
+
+            document.getElementById('win-level-name').innerText = currentLevelName;
+            document.getElementById('win-stats').innerText = `Grid: ${currentGridSize}x${currentGridSize} | Art: ${currentArtRes}x${currentArtRes}`;
+
+            const wc = document.getElementById('win-canvas');
+            const wctx = wc.getContext('2d');
+            wctx.clearRect(0, 0, wc.width, wc.height);
+            const pw = wc.width / artGridSize; const ph = wc.height / artGridSize;
+
+            targetPixels.forEach(p => {
+                if (p.char !== '_') {
+                    wctx.fillStyle = '#' + CHAR_TO_COLOR[p.char].hex.toString(16).padStart(6, '0');
+                    wctx.fillRect(p.x * pw, p.y * ph, pw, ph);
+                }
+            });
+
+            setTimeout(() => { document.getElementById('win-screen').style.display = 'flex'; }, 800);
+        }
+
+        function drawSidebarArt() {
+            ctx.clearRect(0, 0, sidebarCanvas.width, sidebarCanvas.height);
+            const cw = sidebarCanvas.width / artGridSize; const ch = sidebarCanvas.height / currentLevelArt.length;
+
+            targetPixels.forEach(p => {
+                if (p.filled) {
+                    if (p.char !== '_') {
+                        ctx.fillStyle = '#' + CHAR_TO_COLOR[p.char].hex.toString(16).padStart(6, '0');
+                        ctx.fillRect(p.x * cw, p.y * ch, cw, ch);
+                    }
+                } else {
+                    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                    ctx.fillRect(p.x * cw + 1, p.y * ch + 1, cw - 2, ch - 2);
+                }
+            });
+
+            for (let i = particles2d.length - 1; i >= 0; i--) {
+                let part = particles2d[i];
+                part.y += part.vy; part.x += part.vx;
+                ctx.fillStyle = part.color; ctx.fillRect(part.x, part.y, cw*0.8, ch*0.8);
+
+                let destY = part.targetY * ch;
+                if (part.y >= destY) {
+                    let pRef = targetPixels.find(p => p.x === part.targetX && p.y === part.targetY);
+                    if(pRef) pRef.filled = true;
+                    particles2d.splice(i, 1);
+                    filledPixels++;
+                    updateProgressText();
+
+                    if (filledPixels >= totalTargetPixels && totalTargetPixels > 0 && gameState !== STATE.WON) {
+                        triggerWinSequence();
+                    }
+                }
+            }
+        }
+
+        function updateProgressText() {
+            document.getElementById('art-progress').innerText = `${filledPixels} / ${totalTargetPixels} Pixels`;
+        }
+
+        function triggerArtFill(colorChar) {
+            let available = targetPixels.filter(p => p.char === colorChar && !p.filled && !p.targeted);
+            if (available.length > 0) {
+                let target = available[Math.floor(Math.random() * available.length)];
+                target.targeted = true;
+
+                // Immediately fade out this color from background if it's the last one needed
+                updateActiveColors();
+
+                const cw = sidebarCanvas.width / artGridSize;
+                particles2d.push({
+                    x: target.x * cw + (Math.random()*10 - 5), y: -20,
+                    vx: 0, vy: 4 + Math.random()*2,
+                    targetX: target.x, targetY: target.y,
+                    color: '#' + CHAR_TO_COLOR[colorChar].hex.toString(16).padStart(6, '0')
+                });
+            }
+        }
+
+        /** THREE.JS CORE */
+        const container = document.getElementById('game-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7); scene.add(dirLight);
+
+        const blockGeometry = new THREE.BoxGeometry(CONFIG.blockSize, CONFIG.blockSize, CONFIG.blockSize);
+        const materials = {};
+        COLOR_CHARS.forEach(char => {
+            materials[char] = new THREE.MeshStandardMaterial({
+                color: CHAR_TO_COLOR[char].hex, roughness: 0.2, metalness: 0.1, emissive: CHAR_TO_COLOR[char].hex, emissiveIntensity: 0.1
+            });
+        });
+
+        const lineGeo = new THREE.EdgesGeometry(blockGeometry);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        const colorBombGeo = new THREE.IcosahedronGeometry(CONFIG.blockSize*0.4);
+        const colorBombMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8 });
+        const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.blockSize*1.1, CONFIG.blockSize*1.1, CONFIG.blockSize*1.1), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.8 }));
+        highlightMesh.visible = false; scene.add(highlightMesh);
+
+        let grid = [];
+        const boardGroup = new THREE.Group(); scene.add(boardGroup);
+
+        class Block {
+            constructor(x, y, charKey, powerupType = 'none') {
+                this.gridX = x; this.gridY = y; this.charKey = charKey; this.powerup = powerupType;
+                this.isDestroying = false;
+                this.mesh = new THREE.Group();
+                this.baseMesh = new THREE.Mesh(blockGeometry, materials[charKey]);
+                this.mesh.add(this.baseMesh);
+                this.mesh.position.set(x * CONFIG.spacing, y * CONFIG.spacing, 0);
+                this.targetPos = this.mesh.position.clone();
+                this.mesh.userData = { block: this };
+                boardGroup.add(this.mesh);
+                this.applyPowerupVisuals();
+            }
+            applyPowerupVisuals() {
+                if (this.powerup === 'line') { this.mesh.add(new THREE.LineSegments(lineGeo, lineMat)); }
+                else if (this.powerup === 'color') { this.baseMesh.visible = false; this.bombCore = new THREE.Mesh(colorBombGeo, colorBombMat); this.mesh.add(this.bombCore); }
+            }
+            changeToPowerup(type) { this.powerup = type; this.applyPowerupVisuals(); }
+            updatePos(delta) {
+                this.mesh.position.lerp(this.targetPos, delta * CONFIG.swapSpeed);
+                if (this.powerup === 'color' && this.bombCore) { this.bombCore.rotation.x += delta * 5; this.bombCore.rotation.y += delta * 5; }
+            }
+            setGridPos(x, y) { this.gridX = x; this.gridY = y; this.targetPos.set(x * CONFIG.spacing, y * CONFIG.spacing, 0); }
+        }
+
+        function initBoard() {
+            while(boardGroup.children.length > 0) { boardGroup.remove(boardGroup.children[0]); }
+            grid = []; score = 0; updateScore(0); gameState = STATE.IDLE;
+            const offset = (CONFIG.gridSize * CONFIG.spacing) / 2 - (CONFIG.spacing / 2);
+            boardGroup.position.set(-offset, -offset, 0);
+            camera.position.set(0, -2, Math.max(16, CONFIG.gridSize * 2.2)); camera.lookAt(0, 0, 0);
+
+            for (let x = 0; x < CONFIG.gridSize; x++) {
+                grid[x] = [];
+                for (let y = 0; y < CONFIG.gridSize; y++) {
+                    let charKey;
+                    do { charKey = getRandomSpawnColor(); } while (
+                        (x >= 2 && grid[x-1] && grid[x-1][y].charKey === charKey && grid[x-2] && grid[x-2][y].charKey === charKey) ||
+                        (y >= 2 && grid[x][y-1].charKey === charKey && grid[x][y-2].charKey === charKey)
+                    );
+                    grid[x][y] = new Block(x, y, charKey);
+                }
+            }
+            if(!hasPossibleMoves()) shuffleBoardLogic();
+        }
+
+        function hasPossibleMoves() {
+            if (grid.length === 0) return false;
+            for (let x = 0; x < CONFIG.gridSize; x++) {
+                for (let y = 0; y < CONFIG.gridSize; y++) {
+                    if (grid[x][y].powerup === 'color') return true;
+                    if (x < CONFIG.gridSize - 1 && testSwap(x, y, x+1, y)) return true;
+                    if (y < CONFIG.gridSize - 1 && testSwap(x, y, x, y+1)) return true;
+                }
+            }
+            return false;
+        }
+
+        function testSwap(x1, y1, x2, y2) {
+            let b1 = grid[x1][y1]; let b2 = grid[x2][y2];
+            grid[x1][y1] = b2; grid[x2][y2] = b1;
+            let m = findMatches().list.length > 0;
+            grid[x1][y1] = b1; grid[x2][y2] = b2; return m;
+        }
+
+        function executeShuffle() {
+            gameState = STATE.SHUFFLING;
+            const msg = document.getElementById('shuffle-msg'); msg.style.opacity = 1;
+            setTimeout(() => { shuffleBoardLogic(); msg.style.opacity = 0; gameState = STATE.IDLE; }, 1000);
+        }
+
+        function shuffleBoardLogic() {
+            let chars = []; let pu = [];
+            for(let x=0; x<CONFIG.gridSize; x++) {
+                for(let y=0; y<CONFIG.gridSize; y++) {
+                    if(grid[x] && grid[x][y]) { chars.push(grid[x][y].charKey); pu.push(grid[x][y].powerup); }
+                }
+            }
+            for (let i = chars.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [chars[i], chars[j]] = [chars[j], chars[i]]; [pu[i], pu[j]] = [pu[j], pu[i]];
+            }
+            let i = 0;
+            for(let x=0; x<CONFIG.gridSize; x++) {
+                for(let y=0; y<CONFIG.gridSize; y++) {
+                    if(grid[x] && grid[x][y]) {
+                        boardGroup.remove(grid[x][y].mesh);
+                        grid[x][y] = new Block(x, y, chars[i], pu[i]); i++;
+                    }
+                }
+            }
+            if (findMatches().list.length > 0 || !hasPossibleMoves()) { shuffleBoardLogic(); }
+        }
+
+        const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2(); let selectedBlock = null;
+        container.addEventListener('touchstart', (e) => e.preventDefault(), {passive: false});
+
+        container.addEventListener('pointerdown', (event) => {
+            if (gameState !== STATE.IDLE) return;
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            let intersectObjects = [];
+            boardGroup.children.forEach(g => { if(g.type === 'Group') intersectObjects.push(g.children[0]); });
+            const intersects = raycaster.intersectObjects(intersectObjects);
+
+            if (intersects.length > 0) {
+                const block = intersects[0].object.parent.userData.block;
+                if (!block) return;
+                if (!selectedBlock) {
+                    selectedBlock = block;
+                    highlightMesh.position.copy(block.mesh.position).add(boardGroup.position);
+                    highlightMesh.visible = true;
+                } else {
+                    const isAdjacent = Math.abs(selectedBlock.gridX - block.gridX) + Math.abs(selectedBlock.gridY - block.gridY) === 1;
+                    if (isAdjacent) attemptSwap(selectedBlock, block);
+                    selectedBlock = null; highlightMesh.visible = false;
+                }
+            } else { selectedBlock = null; highlightMesh.visible = false; }
+        });
+
+        function attemptSwap(b1, b2) {
+            gameState = STATE.SWAPPING; lastInteraction = { x: b2.gridX, y: b2.gridY };
+            grid[b1.gridX][b1.gridY] = b2; grid[b2.gridX][b2.gridY] = b1;
+            const tempX = b1.gridX; const tempY = b1.gridY;
+            b1.setGridPos(b2.gridX, b2.gridY); b2.setGridPos(tempX, tempY);
+
+            let colorBombUsed = false; let blocksToDestroy = new Set();
+            if (b1.powerup === 'color') { colorBombUsed = true; blocksToDestroy = destroyColor(b2.charKey); blocksToDestroy.add(b1); }
+            else if (b2.powerup === 'color') { colorBombUsed = true; blocksToDestroy = destroyColor(b1.charKey); blocksToDestroy.add(b2); }
+
+            setTimeout(() => {
+                if (colorBombUsed) { executeDestruction(Array.from(blocksToDestroy)); }
+                else {
+                    const matchData = findMatches();
+                    if (matchData.list.length > 0) { processMatches(matchData); }
+                    else {
+                        grid[b1.gridX][b1.gridY] = b2; grid[b2.gridX][b2.gridY] = b1;
+                        const rx = b1.gridX; const ry = b1.gridY;
+                        b1.setGridPos(b2.gridX, b2.gridY); b2.setGridPos(rx, ry);
+                        setTimeout(() => { gameState = STATE.IDLE; }, 300);
+                    }
+                }
+            }, 300);
+        }
+
+        function findMatches() {
+            let matchedBlocks = new Set(); let sequences = [];
+            for (let y = 0; y < CONFIG.gridSize; y++) {
+                let currentLen = 1;
+                for (let x = 0; x < CONFIG.gridSize; x++) {
+                    let b = grid[x][y]; let nextB = (x < CONFIG.gridSize - 1) ? grid[x+1][y] : null;
+                    if (b && nextB && b.charKey === nextB.charKey && b.powerup !== 'color' && nextB.powerup !== 'color') { currentLen++; }
+                    else {
+                        if (currentLen >= 3) {
+                            let seq = [];
+                            for(let i=0; i<currentLen; i++) { seq.push(grid[x-i][y]); matchedBlocks.add(grid[x-i][y]); }
+                            sequences.push({ len: currentLen, blocks: seq, type: 'row' });
+                        }
+                        currentLen = 1;
+                    }
+                }
+            }
+            for (let x = 0; x < CONFIG.gridSize; x++) {
+                let currentLen = 1;
+                for (let y = 0; y < CONFIG.gridSize; y++) {
+                    let b = grid[x][y]; let nextB = (y < CONFIG.gridSize - 1) ? grid[x][y+1] : null;
+                    if (b && nextB && b.charKey === nextB.charKey && b.powerup !== 'color' && nextB.powerup !== 'color') { currentLen++; }
+                    else {
+                        if (currentLen >= 3) {
+                            let seq = [];
+                            for(let i=0; i<currentLen; i++) { seq.push(grid[x][y-i]); matchedBlocks.add(grid[x][y-i]); }
+                            sequences.push({ len: currentLen, blocks: seq, type: 'col' });
+                        }
+                        currentLen = 1;
+                    }
+                }
+            }
+            return { list: Array.from(matchedBlocks), sequences: sequences };
+        }
+
+        function destroyColor(charKey) {
+            let toDestroy = new Set();
+            for(let x=0; x<CONFIG.gridSize; x++) {
+                for(let y=0; y<CONFIG.gridSize; y++) { if(grid[x][y] && grid[x][y].charKey === charKey) toDestroy.add(grid[x][y]); }
+            }
+            return toDestroy;
+        }
+
+        function destroyLine(block) {
+            let toDestroy = new Set();
+            for(let i=0; i<CONFIG.gridSize; i++) {
+                if(grid[i][block.gridY]) toDestroy.add(grid[i][block.gridY]);
+                if(grid[block.gridX][i]) toDestroy.add(grid[block.gridX][i]);
+            }
+            return toDestroy;
+        }
+
+        function processMatches(matchData) {
+            gameState = STATE.MATCHING;
+            let powerupToSpawn = null; let spawnTarget = null;
+            matchData.sequences.sort((a,b) => b.len - a.len);
+            if (matchData.sequences.length > 0) {
+                let topSeq = matchData.sequences[0];
+                if (topSeq.len >= 5) powerupToSpawn = 'color';
+                else if (topSeq.len === 4) powerupToSpawn = 'line';
+
+                if (powerupToSpawn) {
+                    spawnTarget = topSeq.blocks.find(b => b.gridX === lastInteraction.x && b.gridY === lastInteraction.y);
+                    if (!spawnTarget) spawnTarget = topSeq.blocks[Math.floor(topSeq.blocks.length / 2)];
+                    matchData.list = matchData.list.filter(b => b !== spawnTarget);
+                    spawnTarget.changeToPowerup(powerupToSpawn);
+                }
+            }
+
+            let fullDestructionSet = new Set(matchData.list); let checkQueue = [...matchData.list];
+            while(checkQueue.length > 0) {
+                let b = checkQueue.pop();
+                if (b.powerup === 'line') {
+                    let lineBlocks = destroyLine(b);
+                    lineBlocks.forEach(lb => {
+                        if (!fullDestructionSet.has(lb) && lb !== spawnTarget) { fullDestructionSet.add(lb); checkQueue.push(lb); }
+                    });
+                }
+            }
+            executeDestruction(Array.from(fullDestructionSet));
+        }
+
+        function executeDestruction(blocksArray) {
+            let points = blocksArray.length * 10; updateScore(points);
+            blocksArray.forEach((block, index) => {
+                if (block.isDestroying) return;
+                block.isDestroying = true;
+                const worldPos = new THREE.Vector3(); block.mesh.getWorldPosition(worldPos);
+                spawnVoxelExplosion(worldPos, block.charKey);
+
+                if(block.powerup === 'none') { setTimeout(() => { triggerArtFill(block.charKey); }, index * 40); }
+                boardGroup.remove(block.mesh); grid[block.gridX][block.gridY] = null;
+            });
+            setTimeout(() => { applyGravity(); }, 400);
+        }
+
+        function applyGravity() {
+            gameState = STATE.DROPPING;
+            for (let x = 0; x < CONFIG.gridSize; x++) {
+                let emptySpaces = 0;
+                for (let y = 0; y < CONFIG.gridSize; y++) {
+                    if (grid[x][y] === null) { emptySpaces++; }
+                    else if (emptySpaces > 0) {
+                        let block = grid[x][y]; grid[x][y - emptySpaces] = block; grid[x][y] = null;
+                        block.setGridPos(x, y - emptySpaces);
+                    }
+                }
+                for (let i = 0; i < emptySpaces; i++) {
+                    let charKey = getRandomSpawnColor(); let newY = CONFIG.gridSize - 1 - i;
+                    let block = new Block(x, newY, charKey);
+                    block.mesh.position.y += (emptySpaces + 1) * CONFIG.spacing; grid[x][newY] = block;
+                }
+            }
+            setTimeout(() => {
+                const matchData = findMatches();
+                if (matchData.list.length > 0) { processMatches(matchData); }
+                else {
+                    if (!hasPossibleMoves()) executeShuffle(); else gameState = STATE.IDLE;
+                }
+            }, 500);
+        }
+
+        function updateScore(points) { score += points; document.getElementById('score-display').innerText = score; }
+
+        /** 3D PARTICLES */
+        const particles = []; const miniGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+
+        function spawnVoxelExplosion(position, charKey) {
+            for(let x=-1; x<=1; x++) {
+                for(let y=-1; y<=1; y++) {
+                    for(let z=-1; z<=1; z++) {
+                        if(x===0 && y===0 && z===0) continue;
+                        if(Math.random() > 0.5) continue;
+                        const mesh = new THREE.Mesh(miniGeo, materials[charKey]);
+                        mesh.position.copy(position).add(new THREE.Vector3(x*0.25, y*0.25, z*0.25));
+                        const velocity = new THREE.Vector3( x*(Math.random()*0.15), y*(Math.random()*0.15)+0.15, z*(Math.random()*0.15) );
+                        const rotSpeed = new THREE.Vector3( Math.random()*0.3, Math.random()*0.3, Math.random()*0.3 );
+                        scene.add(mesh); particles.push({ mesh, velocity, rotSpeed, charKey, life: 60 });
+                    }
+                }
+            }
+        }
+
+        function update3DParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.velocity.y -= 0.012; p.mesh.position.add(p.velocity);
+                p.mesh.rotation.x += p.rotSpeed.x; p.mesh.rotation.y += p.rotSpeed.y; p.mesh.rotation.z += p.rotSpeed.z;
+                p.life--;
+                if (p.mesh.position.y < -12 || p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
+            }
+        }
+
+        /** RENDER LOOP & RESIZE */
+        const clock = new THREE.Clock();
+        initFluid();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            if (grid && grid.length > 0) {
+                for (let x = 0; x < CONFIG.gridSize; x++) {
+                    for (let y = 0; y < CONFIG.gridSize; y++) {
+                        if (grid[x] && grid[x][y]) grid[x][y].updatePos(delta);
+                    }
+                }
+            }
+            if(highlightMesh.visible) highlightMesh.scale.setScalar(1 + Math.sin(Date.now() * 0.01) * 0.05);
+            update3DParticles(); drawSidebarArt(); updateFluid();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', onWindowResize);
+        function onWindowResize() {
+            const width = container.clientWidth; const height = container.clientHeight;
+            if(width === 0 || height === 0) return;
+            renderer.setSize(width, height);
+            camera.aspect = width / height; camera.updateProjectionMatrix();
+        }
+
+        /** UI LOGIC */
+        document.getElementById('btn-play-solo').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-play-solo');
+            const origText = btn.innerText; btn.innerText = "Loading Image..."; btn.disabled = true;
+
+            try {
+                let lvl = LEVELS[document.getElementById('level-select').value];
+                currentLevelName = lvl.name; currentGridSize = CONFIG.gridSize;
+
+                let artData;
+                if (lvl.imageUrl) artData = await loadImageToArt(lvl.imageUrl, lvl.resolution || 16, lvl.keepBg || false);
+                else artData = lvl.art;
+
+                document.getElementById('start-screen').style.display = 'none';
+                loadLevelArt(artData);
+                initBoard();
+                setTimeout(onWindowResize, 50);
+            } catch (err) {
+                btn.innerText = "Error Loading URL!"; setTimeout(() => { btn.innerText = origText; btn.disabled = false; }, 2000);
+            } finally {
+                if (btn.innerText === "Loading Image...") { btn.disabled = false; btn.innerText = origText; }
+            }
+        });
+
+        document.getElementById('btn-menu').addEventListener('click', goToMenu);
+        document.getElementById('btn-win-menu').addEventListener('click', goToMenu);
+
+        function goToMenu() {
+            document.getElementById('start-screen').style.display = 'flex';
+            document.getElementById('win-screen').style.display = 'none';
+            grid = []; while(boardGroup.children.length > 0) boardGroup.remove(boardGroup.children[0]);
+            targetPixels = []; // Reset target pixels
+            updateActiveColors(); // Reset fluid to full rainbow colors
+        }
+
+        /** EXPORT & SHARE */
+        function getSafeShareUrl() {
+            let shareUrl = document.location;
+            try { shareUrl = window.top.location.href || document.location.href; }
+            catch(e) { try { shareUrl = document.location.href; } catch(e){} }
+            if (shareUrl.includes('about:srcdoc') || shareUrl.includes('about:blank')) shareUrl = document.location;
+            return shareUrl;
+        }
+
+        document.getElementById('btn-export-card').addEventListener('click', () => {
+            const c = document.createElement('canvas'); c.width = 800; c.height = 1000;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#0f0f1a'; ctx.fillRect(0, 0, c.width, c.height);
+            ctx.strokeStyle = '#4a4a7a'; ctx.lineWidth = 12; ctx.strokeRect(20, 20, c.width - 40, c.height - 40);
+
+            ctx.fillStyle = '#FF3366'; ctx.font = 'bold 80px "Fredoka", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('VOXEL CRASH', c.width/2, 120);
+            ctx.fillStyle = '#33CCFF'; ctx.font = 'bold 45px "Fredoka", sans-serif'; ctx.fillText(currentLevelName, c.width/2, 200);
+
+            const artSize = 480; const startX = (c.width - artSize) / 2; const startY = 260;
+            ctx.fillStyle = '#111122'; ctx.fillRect(startX-20, startY-20, artSize+40, artSize+40);
+            ctx.strokeStyle = '#2a2a4a'; ctx.lineWidth = 6; ctx.strokeRect(startX-20, startY-20, artSize+40, artSize+40);
+
+            const pw = artSize / currentArtRes; const ph = artSize / currentArtRes;
+            targetPixels.forEach(p => {
+                if (p.char !== '_') {
+                    ctx.fillStyle = '#' + CHAR_TO_COLOR[p.char].hex.toString(16).padStart(6, '0');
+                    ctx.fillRect(startX + p.x * pw, startY + p.y * ph, pw, ph);
+                }
+            });
+
+            ctx.fillStyle = '#ffffff'; ctx.font = '30px "Fredoka", sans-serif';
+            ctx.fillText(`Grid Size: ${currentGridSize}x${currentGridSize}  |  Art: ${currentArtRes}x${currentArtRes}`, c.width/2, 830);
+            ctx.fillStyle = '#8888aa'; ctx.font = '22px monospace'; ctx.fillText(getSafeShareUrl(), c.width/2, 910);
+
+            const link = document.createElement('a'); link.download = `voxel-crash-${currentLevelName.replace(/\s+/g, '-').toLowerCase()}.png`;
+            link.href = c.toDataURL('image/png'); link.click();
+        });
+
+        document.getElementById('btn-share-sms').addEventListener('click', () => {
+            const text = `Check out my VOXEL CRASH masterpiece: ${currentLevelName}! Play here: ${getSafeShareUrl()}`;
+            window.open(`sms:?body=${encodeURIComponent(text)}`, '_self');
+        });
+
+        document.getElementById('btn-share-matrix').addEventListener('click', async () => {
+            const text = `Check out my VOXEL CRASH masterpiece: ${currentLevelName}!\nPlay here: ${getSafeShareUrl()}`;
+            if (navigator.share) {
+                try { await navigator.share({ title: 'VOXEL CRASH', text: text, url: getSafeShareUrl() }); } catch (e) {}
+            } else {
+                navigator.clipboard.writeText(text).then(() => {
+                    const btn = document.getElementById('btn-share-matrix'); const orig = btn.innerText;
+                    btn.innerText = "✓ Copied!"; setTimeout(() => btn.innerText = orig, 2000);
+                });
+            }
+        });
+
+        /** ART IMPORTER (MANUAL UPLOAD) */
+        const importerModal = document.getElementById('importer-modal');
+        document.getElementById('btn-open-importer').addEventListener('click', () => importerModal.style.display = 'flex');
+        document.getElementById('btn-close-importer').addEventListener('click', () => importerModal.style.display = 'none');
+
+        document.getElementById('image-upload').addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const res = parseInt(document.getElementById('import-res').value);
+            const keepBg = document.getElementById('import-keep-bg').checked;
+            const processCanvas = document.getElementById('hidden-process-canvas');
+            processCanvas.width = res; processCanvas.height = res;
+            const pCtx = processCanvas.getContext('2d', { willReadFrequently: true });
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    pCtx.clearRect(0, 0, res, res); pCtx.drawImage(img, 0, 0, res, res);
+                    const imgData = pCtx.getImageData(0, 0, res, res).data;
+                    let jsonArray = [];
+                    for(let y=0; y<res; y++) {
+                        let rowStr = '';
+                        for(let x=0; x<res; x++) {
+                            const idx = (y * res + x) * 4;
+                            if (imgData[idx+3] < 10) rowStr += keepBg ? 'k' : '_';
+                            else rowStr += getClosestColorChar(imgData[idx], imgData[idx+1], imgData[idx+2]);
+                        }
+                        jsonArray.push(`'${rowStr}'`);
+                    }
+                    document.getElementById('json-export-area').value = `[\n  ${jsonArray.join(',\n  ')}\n]`;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('btn-copy-json').addEventListener('click', () => {
+            document.getElementById('json-export-area').select(); document.execCommand('copy');
+        });
+
+        document.getElementById('btn-play-custom').addEventListener('click', () => {
+            const btn = document.getElementById('btn-play-custom');
+            try {
+                let parsed = JSON.parse(document.getElementById('json-export-area').value.replace(/'/g, '"'));
+                if(parsed && parsed.length > 0) {
+                    currentLevelName = "Custom Upload Art"; currentGridSize = CONFIG.gridSize;
+                    importerModal.style.display = 'none'; document.getElementById('start-screen').style.display = 'none';
+                    loadLevelArt(parsed); initBoard(); setTimeout(onWindowResize, 100);
+                }
+            } catch(e) {
+                const originalText = btn.innerText; btn.innerText = "Upload First!"; btn.style.backgroundColor = "#ff3333";
+                setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 1500);
+            }
+        });
+
+        animate();
+    </script>
+</body>
+</html>
