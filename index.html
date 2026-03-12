@@ -184,6 +184,8 @@
       
         <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
       
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+      
         <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
         <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
@@ -202,7 +204,7 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -295,6 +297,29 @@
   </pre>
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>HTML5 game with pixel art mining mechanics and multiplayer support</li>
+    <li>Procedurally generated underground maps with various ores and resources</li>
+    <li>Real-time multiplayer via MQTT broker with WebSocket connections</li>
+    <li>Upgrade system for drills, cargo, fuel capacity, and special abilities</li>
+    <li>Cloud save system using Puter storage for cross-device progress</li>
+  </ul>
+
+  <pre>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ...</code>
+    <code>class GameEngine { update() { /* movement, mining, fuel consumption */ } draw() { /* render tiles */ } }</code>
+  </pre>
+
+  <p>Mega Miner NG is a multiplayer mining game where players dig through procedurally generated underground terrain to collect valuable resources. The game features real-time multiplayer gameplay through WebSocket connections, an upgrade system for mining equipment, and cloud-based save functionality. Players can trade resources, build structures, and explore a vast underground world filled with various ores and minerals.</p>
 </section>
         </div>
       </section>
@@ -503,25 +528,24 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
+      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
+        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
+        <h2>voxelcrash</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>HTML5 game with pixel art mining mechanics and multiplayer support</li>
-    <li>Procedurally generated underground maps with various ores and resources</li>
-    <li>Real-time multiplayer via MQTT broker with WebSocket connections</li>
-    <li>Upgrade system for drills, cargo, fuel capacity, and special abilities</li>
-    <li>Cloud save system using Puter storage for cross-device progress</li>
+    <li>3D match-3 puzzle game combining voxel physics with pixel art creation</li>
+    <li>Swap blocks to create matches, triggering chain reactions and power-ups</li>
+    <li>Completed art reveals as players match specific colored blocks</li>
+    <li>Features fluid background effects, particle explosions, and export/share functionality</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ...</code>
-    <code>class GameEngine { update() { /* movement, mining, fuel consumption */ } draw() { /* render tiles */ } }</code>
+    <code>class Block { constructor(x, y, charKey, powerupType = 'none') { ... } }</code>
+    <code>function findMatches() { ... } // Returns matching sequences</code>
   </pre>
 
-  <p>Mega Miner NG is a multiplayer mining game where players dig through procedurally generated underground terrain to collect valuable resources. The game features real-time multiplayer gameplay through WebSocket connections, an upgrade system for mining equipment, and cloud-based save functionality. Players can trade resources, build structures, and explore a vast underground world filled with various ores and minerals.</p>
+  <p>VOXEL CRASH is a browser-based match-3 game where players swap colored blocks to create matches while simultaneously revealing pixel art. The game features 3D voxel physics, chain reactions, power-ups, and a dynamic fluid background that changes colors based on remaining art pieces. Players can import custom artwork, export completed cards, and share their creations.</p>
 </section>
         </div>
       </section>
