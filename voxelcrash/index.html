@@ -49,18 +49,128 @@
             display: flex; flex-direction: column; align-items: center;
             padding: 20px; box-sizing: border-box; z-index: 10;
             box-shadow: -10px 0 20px rgba(0,0,0,0.5);
+            overflow-y: auto; /* Add scrolling if content is too tall */
         }
 
-        #sidebar h2 { color: var(--secondary); margin: 0 0 10px 0; text-shadow: 2px 2px 0px var(--secondary-shadow); text-transform: uppercase; }
+        #sidebar h2 {
+            color: var(--secondary);
+            margin: 0 0 15px 0;
+            text-shadow: 2px 2px 0px var(--secondary-shadow);
+            text-transform: uppercase;
+            font-size: 18px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #art-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
 
         #art-canvas-container {
             background: #111122; border: 4px solid var(--panel-border);
             border-radius: 12px; padding: 10px; width: 100%;
             aspect-ratio: 1; position: relative; overflow: hidden;
             box-sizing: border-box;
+            margin-bottom: 10px;
         }
 
-        #art-canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+        #art-canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            display: block;
+        }
+
+        #art-progress {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0 0 0;
+            text-align: center;
+            width: 100%;
+        }
+
+        #controls-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: auto; /* Push to bottom */
+            padding-top: 15px;
+            border-top: 2px solid var(--panel-border);
+        }
+
+        .control-group {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+
+        .control-group-title {
+            color: var(--secondary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: var(--secondary);
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
 
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -77,6 +187,19 @@
             text-align: center; align-self: flex-start;
         }
         .score-box span { display: block; font-size: 14px; color: var(--secondary); text-transform: uppercase; }
+
+        .game-status {
+            background: var(--panel-bg); backdrop-filter: blur(5px); border: 4px solid var(--panel-border);
+            border-radius: 16px; padding: 8px 16px; color: white;
+            font-size: 16px; font-weight: 600; box-shadow: 0 4px 0px rgba(0,0,0,0.3);
+            text-align: center; align-self: flex-start; margin-top: 10px;
+        }
+        .status-indicator {
+            display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+            margin-right: 8px; vertical-align: middle;
+        }
+        .status-indicator.active { background-color: #33FF33; box-shadow: 0 0 8px #33FF33; }
+        .status-indicator.inactive { background-color: #666; }
 
         .btn {
             background: var(--primary); border: 4px solid #fff; border-radius: 16px;
@@ -205,17 +328,38 @@
 
             #app-container { flex-direction: column; }
             #sidebar {
-                width: 100%; height: auto; max-height: 140px;
-                flex-direction: row; align-items: center; justify-content: space-around;
-                padding: 10px 15px; border-left: none; border-top: 4px solid var(--panel-border);
-                box-shadow: 0 -10px 20px rgba(0,0,0,0.5); gap: 15px;
+                width: 100%; height: auto; max-height: 40vh;
+                flex-direction: column; align-items: stretch;
+                padding: 15px; border-left: none; border-top: 4px solid var(--panel-border);
+                box-shadow: 0 -10px 20px rgba(0,0,0,0.5); gap: 10px;
             }
 
             #sidebar h2 { display: none; }
-            #art-canvas-container { width: 100px; height: 100px; padding: 5px; border-width: 3px; flex-shrink: 0; margin: 0; }
-            .sidebar-controls { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; }
-            #art-progress { font-size: 16px !important; margin: 0 0 10px 0 !important; }
-            #btn-menu { margin: 0 !important; font-size: 14px; padding: 8px 12px; width: auto; }
+            #art-canvas-container {
+                width: 120px;
+                height: 120px;
+                padding: 5px;
+                border-width: 3px;
+                margin: 0 auto;
+            }
+            #art-progress {
+                font-size: 14px !important;
+                margin: 5px 0 0 0 !important;
+            }
+
+            .control-group {
+                padding: 8px;
+            }
+
+            .toggle-label {
+                font-size: 13px;
+            }
+
+            #btn-menu {
+                margin: 0 !important;
+                font-size: 14px;
+                padding: 8px 12px;
+            }
 
             .score-box { font-size: 20px; padding: 5px 15px; border-width: 3px; }
             .score-box span { font-size: 11px; }
@@ -232,25 +376,55 @@
     <div id="app-container">
         <!-- Main Game Area -->
         <div id="game-container">
-            <div id="shuffle-msg">NO MOVES!<br>SHUFFLING...</div>
+            <div id="shuffle-msg">NO MOVES!<br>FIXING BOARD...</div>
             <div id="ui-layer">
                 <div class="score-box interactive">
                     <span>Score</span>
                     <div id="score-display">0</div>
+                </div>
+                <div class="game-status interactive">
+                    <span class="status-indicator" id="auto-status"></span>
+                    <span id="auto-status-text">Manual</span>
                 </div>
             </div>
         </div>
 
         <!-- Sidebar / Bottom Bar -->
         <div id="sidebar">
-            <h2 class="desktop-only">Target Art</h2>
-            <div id="art-canvas-container">
-                <canvas id="art-canvas"></canvas>
+            <h2>Target Art</h2>
+
+            <div id="art-section">
+                <div id="art-canvas-container">
+                    <canvas id="art-canvas"></canvas>
+                </div>
+                <p id="art-progress">0 / 0 Pixels</p>
             </div>
-            <div class="sidebar-controls" style="margin-top:20px; text-align:center;">
-                <p id="art-progress" style="color:white; font-size: 20px; font-weight: bold;">0 / 0 Pixels</p>
+
+            <div id="controls-section">
+                <div class="control-group">
+                    <div class="control-group-title">Game Settings</div>
+                    <div class="toggle-row">
+                        <span class="toggle-label">
+                            🤖 Auto Play
+                        </span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-play-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <span class="toggle-label">
+                            💡 Show Hints
+                        </span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="show-hint-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
                 <div id="controls" class="interactive">
-                    <button class="btn tertiary" id="btn-menu" style="margin-top:10px;">Main Menu</button>
+                    <button class="btn tertiary" id="btn-menu">Main Menu</button>
                 </div>
             </div>
         </div>
@@ -356,11 +530,18 @@
         let currentGridSize = 8;
         let targetPixels = [];
 
+        // Toggle states
+        let autoPlay = false;
+        let showHint = false;
+        let autoPlayInterval = null;
+        let hintMove = null;
+        let hintWireframes = [];
+
         const LEVELS = {
-            'potion': {
-                name: 'Magic Potion', grid: 9, resolution: 16, keepBg: false,
+            /*'potion': {
+                name: 'Magic Potion', grid: 10, resolution: 16, keepBg: false,
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 2h4v2H6z" fill="#ccc"/><path d="M7 4h2v3l3 4v3H4v-3l3-4V4z" fill="#33ccff"/><path d="M4 14h8v1H4z" fill="#ccc"/></svg>')
-            },
+            },*/
 
             'flower': {
                 name: 'Fire Flower', grid: 10, resolution: 16, keepBg: false,
@@ -387,6 +568,11 @@
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 3h4v2l3 4v5H3v-5l3-4V3z" fill="#ccffff" stroke="#999999" stroke-width="1"/><path d="M4 10v3h8v-3H4z" fill="#ff3333"/><rect x="6" y="1" width="4" height="2" fill="#996633"/></svg>')
             },
 
+            'sword': {
+                name: 'Iron Sword', grid: 10, resolution: 16, keepBg: false,
+                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M14 2L9 7l-2-2L12 0l2 2z" fill="#cccccc"/><path d="M8 8L3 13l2 2 5-5-2-2z" fill="#663300"/><rect x="7" y="6" width="3" height="3" transform="rotate(45 8.5 7.5)" fill="#ffcc00"/></svg>')
+            },
+
             'chest': {
                 name: 'Treasure Chest', grid: 10, resolution: 16, keepBg: false,
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="2" y="6" width="12" height="8" fill="#8B4513"/><rect x="2" y="3" width="12" height="3" fill="#A0522D"/><rect x="1" y="5" width="14" height="1" fill="#FFD700"/><rect x="7" y="5" width="2" height="3" fill="#FFD700"/><rect x="7.5" y="6" width="1" height="1" fill="#000000"/></svg>')
@@ -402,10 +588,10 @@
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2 C8 6 4 10 4 15 C4 19.4 7.6 23 12 23 C16.4 23 20 19.4 20 15 C20 10 16 6 12 2 Z" fill="#ff4400"/><path d="M12 8 C10 11 8 13 8 16 C8 18.2 9.8 20 12 20 C14.2 20 16 18.2 16 16 C16 13 14 11 12 8 Z" fill="#ffcc00"/></svg>')
             },
 
-            'lightning': {
-                name: 'Lightning Bolt', grid: 12, resolution: 32, keepBg: false,
-                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><polygon points="20,2 6,18 16,18 12,30 26,14 16,14" fill="#ffdd00"/></svg>')
-            },
+            'MUW': {
+                 name: 'Mysterious Utility Wizard', grid: 12, resolution: 24, keepBg: false,
+                 imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlTpzLUXEHs1gcFYGNZMpP56wXU33Y_TNFVg&"
+			 },
 
             'instantwin': {
                 name: 'DEVELOPMENT_INSTANTWIN', grid: 8,
@@ -419,61 +605,45 @@
         const levelSelect = document.getElementById('level-select');
         Object.keys(LEVELS).forEach(key => {
             const opt = document.createElement('option');
-            opt.value = key; opt.innerText = `${LEVELS[key].name} (difficulty: ${Math.ceil(mapValueToPercent(resolutions,LEVELS[key].resolution))})`;
-levelSelect.appendChild(opt);
+            opt.value = key; opt.innerText = `${LEVELS[key].name} (difficulty: ${Math.ceil(mapValueToPercent(resolutions,LEVELS[key].resolution))})`; levelSelect.appendChild(opt);
         });
 
         const gridSlider = document.getElementById('grid-size-slider');
         const gridDisplay = document.getElementById('grid-size-display');
         gridSlider.addEventListener('input', (e) => {
             CONFIG.gridSize = parseInt(e.target.value);
-            currentGridSize = CONFIG.gridSize; // FIX: Update currentGridSize when slider changes
+            currentGridSize = CONFIG.gridSize;
             gridDisplay.innerText = `${CONFIG.gridSize}x${CONFIG.gridSize}`;
         });
 
         document.getElementById('level-select').addEventListener('change', (e) => {
             let lvl = LEVELS[e.target.value];
             gridSlider.value = lvl.grid; CONFIG.gridSize = lvl.grid;
-            currentGridSize = lvl.grid; // FIX: Update currentGridSize when level changes
+            currentGridSize = lvl.grid;
             gridDisplay.innerText = `${CONFIG.gridSize}x${CONFIG.gridSize}`;
         });
         document.getElementById('level-select').dispatchEvent(new Event('change'));
 
         function mapValueToPercent(valuesArray, inputValue) {
-            if (!Array.isArray(valuesArray) || valuesArray.length === 0) {
-                return null;
-            }
-
+            if (!Array.isArray(valuesArray) || valuesArray.length === 0) return null;
             const min = Math.min(...valuesArray);
             const max = Math.max(...valuesArray);
-
-            if (max === min) {
-                return (inputValue === min) ? 100 : 0;
-            }
-
+            if (max === min) return (inputValue === min) ? 100 : 0;
             const percentage = ((inputValue - min) / (max - min)) * 100;
-
             return Math.max(0, Math.min(100, percentage));
         }
 
         function getClosestColorChar(r, g, b) {
             if (!COLOR_CHARS || COLOR_CHARS.length === 0) return 'w';
-
             let closestChar = 'w';
             let minDistance = Infinity;
-
             for (let i = 0; i < COLOR_CHARS.length; i++) {
                 const char = COLOR_CHARS[i];
                 if (char === '_') continue;
-
                 const colorData = CHAR_TO_COLOR[char];
-
                 if (!colorData || !colorData.rgb) continue;
-
                 const c = colorData.rgb;
-
                 const dist = (r - c.r)**2 + (g - c.g)**2 + (b - c.b)**2;
-
                 if (dist < minDistance) {
                     minDistance = dist;
                     closestChar = char;
@@ -525,17 +695,14 @@ levelSelect.appendChild(opt);
                             } else {
                                 const currentRGB = { r, g, b };
                                 let matchedChar = null;
-
                                 for (let char in CHAR_TO_COLOR) {
                                     if (char === 'k' || char === '_') continue;
-
                                     const dist = getColorDistance(currentRGB, CHAR_TO_COLOR[char].rgb);
                                     if (dist < THRESHOLD) {
                                         matchedChar = char;
                                         break;
                                     }
                                 }
-
                                 if (!matchedChar) {
                                     const char = getChar(colorCounter++);
                                     CHAR_TO_COLOR[char] = {
@@ -566,36 +733,29 @@ levelSelect.appendChild(opt);
 
         function getArtColors() {
             if (!targetPixels || targetPixels.length === 0) return ['r', 'g', 'b', 'y'];
-
             let active = new Set();
             targetPixels.forEach(p => {
                 if (!p.filled && !p.targeted && p.char !== '_' && CHAR_TO_COLOR[p.char]) {
                     active.add(p.char);
                 }
             });
-
             let colors = Array.from(active).sort();
-
             if (colors.length === 0) return ['w', 'y'];
             return colors;
         }
 
         function updateActiveColors() {
             currentActiveColors = getArtColors();
-
             if (!currentActiveColors || currentActiveColors.length === 0) {
                 currentActiveColors = ['w'];
             }
 
             if (blobs.length > 0) {
                 let blobsPerColor = Math.max(1, Math.ceil(blobs.length / currentActiveColors.length));
-                let cIdx = 0;
-                let count = 0;
-
+                let cIdx = 0, count = 0;
                 blobs.forEach((b) => {
                     let targetChar = currentActiveColors[cIdx] || currentActiveColors[0];
                     b.targetColorChar = targetChar;
-
                     count++;
                     if (count >= blobsPerColor) {
                         count = 0;
@@ -609,8 +769,7 @@ levelSelect.appendChild(opt);
             updateActiveColors();
             blobs = [];
             let blobsPerColor = Math.ceil(30 / Math.max(1, currentActiveColors.length));
-            let cIdx = 0; let count = 0;
-
+            let cIdx = 0, count = 0;
             for(let i=0; i<30; i++) {
                 let tColor = currentActiveColors[cIdx] || 'w';
                 blobs.push({
@@ -633,10 +792,8 @@ levelSelect.appendChild(opt);
         function updateFluid() {
             if(fCanvas.width !== window.innerWidth) fCanvas.width = window.innerWidth;
             if(fCanvas.height !== window.innerHeight) fCanvas.height = window.innerHeight;
-
             fCtx.clearRect(0, 0, fCanvas.width, fCanvas.height);
             fCtx.globalCompositeOperation = 'screen';
-
             blobs.forEach((b) => {
                 b.x += b.vx; b.y += b.vy;
                 if(b.x < -b.r) b.x = fCanvas.width + b.r;
@@ -644,14 +801,10 @@ levelSelect.appendChild(opt);
                 if(b.y < -b.r) b.y = fCanvas.height + b.r;
                 if(b.y > fCanvas.height + b.r) b.y = -b.r;
 
-                if (b.colorChar !== b.targetColorChar) {
-                    b.targetOpacity = 0;
-                } else {
-                    b.targetOpacity = 0.6;
-                }
+                if (b.colorChar !== b.targetColorChar) b.targetOpacity = 0;
+                else b.targetOpacity = 0.6;
 
                 b.opacity += (b.targetOpacity - b.opacity) * 0.08;
-
                 if (b.opacity <= 0.02 && b.colorChar !== b.targetColorChar) {
                     b.colorChar = b.targetColorChar;
                     b.opacity = 0.02;
@@ -660,16 +813,13 @@ levelSelect.appendChild(opt);
                 if (b.opacity > 0.01) {
                     fCtx.beginPath();
                     fCtx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-
                     const colorData = CHAR_TO_COLOR[b.colorChar];
                     let r = 255, g = 255, bl = 255;
-
                     if (colorData && colorData.rgb) {
                         r = colorData.rgb.r;
                         g = colorData.rgb.g;
                         bl = colorData.rgb.b;
                     }
-
                     fCtx.fillStyle = `rgba(${r}, ${g}, ${bl}, ${b.opacity})`;
                     fCtx.fill();
                 }
@@ -692,9 +842,7 @@ levelSelect.appendChild(opt);
                 return;
             }
 
-            let jsonArray;
-            let paletteSource = null;
-
+            let jsonArray, paletteSource = null;
             if (data.art && Array.isArray(data.art)) {
                 jsonArray = data.art;
                 paletteSource = data.palette;
@@ -715,7 +863,6 @@ levelSelect.appendChild(opt);
 
             if (paletteSource) {
                 window.CURRENT_PALETTE_OBJ = paletteSource;
-
                 for (let key in paletteSource) {
                     CHAR_TO_COLOR[key] = paletteSource[key];
                 }
@@ -749,9 +896,11 @@ levelSelect.appendChild(opt);
 
         function getSpawnableColors() {
             let needed = new Set();
-            targetPixels.forEach(p => { if (!p.filled && !p.targeted && p.char !== '_') needed.add(p.char); });
-            let colors = Array.from(needed).sort();
-            return colors;
+            targetPixels.forEach(p => {
+                if (!p.filled && !p.targeted && p.char !== '_')
+                    needed.add(p.char);
+            });
+            return Array.from(needed).sort();
         }
 
         function getRandomSpawnColor() {
@@ -761,19 +910,18 @@ levelSelect.appendChild(opt);
 
         function triggerWinSequence() {
             gameState = STATE.WON;
+            stopAutoPlay();
             updateActiveColors();
-
             document.getElementById('win-level-name').innerText = currentLevelName;
             document.getElementById('win-stats').innerText = `Grid: ${currentGridSize}x${currentGridSize} | Art: ${currentArtRes}x${currentArtRes}`;
 
             const wc = document.getElementById('win-canvas');
             const wctx = wc.getContext('2d');
             wctx.clearRect(0, 0, wc.width, wc.height);
-            const pw = wc.width / artGridSize; const ph = wc.height / artGridSize;
+            const pw = wc.width / artGridSize, ph = wc.height / artGridSize;
 
             targetPixels.forEach(p => {
                 if (p.char !== '_') {
-                    // FIX: Convert hex to proper string format for canvas
                     const colorHex = CHAR_TO_COLOR[p.char].hex;
                     const hexString = typeof colorHex === 'number'
                         ? '#' + colorHex.toString(16).padStart(6, '0')
@@ -789,12 +937,11 @@ levelSelect.appendChild(opt);
         function drawSidebarArt() {
             if (!currentLevelArt || currentLevelArt.length === 0) return;
             ctx.clearRect(0, 0, sidebarCanvas.width, sidebarCanvas.height);
-            const cw = sidebarCanvas.width / artGridSize; const ch = sidebarCanvas.height / currentLevelArt.length;
+            const cw = sidebarCanvas.width / artGridSize, ch = sidebarCanvas.height / currentLevelArt.length;
 
             targetPixels.forEach(p => {
                 if (p.filled) {
                     if (p.char !== '_') {
-                        // FIX: Convert hex to proper string format for canvas
                         const colorHex = CHAR_TO_COLOR[p.char].hex;
                         const hexString = typeof colorHex === 'number'
                             ? '#' + colorHex.toString(16).padStart(6, '0')
@@ -807,6 +954,14 @@ levelSelect.appendChild(opt);
                     ctx.fillRect(p.x * cw, p.y * ch, cw, ch);
                 }
             });
+
+            // Draw hint highlights if enabled
+            if (showHint && hintMove && gameState === STATE.IDLE) {
+                ctx.strokeStyle = '#FFFF00';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(hintMove.x1 * cw, hintMove.y1 * ch, cw, ch);
+                ctx.strokeRect(hintMove.x2 * cw, hintMove.y2 * ch, cw, ch);
+            }
 
             for (let i = particles2d.length - 1; i >= 0; i--) {
                 let part = particles2d[i];
@@ -837,9 +992,7 @@ levelSelect.appendChild(opt);
             if (available.length > 0) {
                 let target = available[Math.floor(Math.random() * available.length)];
                 target.targeted = true;
-
                 updateActiveColors();
-
                 const cw = sidebarCanvas.width / artGridSize;
                 particles2d.push({
                     x: target.x * cw + (Math.random()*10 - 5), y: -20,
@@ -868,9 +1021,11 @@ levelSelect.appendChild(opt);
         const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
         const colorBombGeo = new THREE.IcosahedronGeometry(CONFIG.blockSize*0.4);
         const colorBombMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8 });
-        const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.blockSize*1.1, CONFIG.blockSize*1.1, CONFIG.blockSize*1.1), new THREE.MeshBasicMaterial({ color:
-0xffffff, wireframe: true, transparent: true, opacity: 0.8 }));
+        const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.blockSize*1.1, CONFIG.blockSize*1.1, CONFIG.blockSize*1.1), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.8 }));
         highlightMesh.visible = false; scene.add(highlightMesh);
+
+        // Hint highlight material (yellow wireframe)
+        const hintMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00, wireframe: true, transparent: true, opacity: 0.7 });
 
         function ensureHexColor(val) {
             if (typeof val === 'number') {
@@ -900,8 +1055,7 @@ levelSelect.appendChild(opt);
             }
             applyPowerupVisuals() {
                 if (this.powerup === 'line') { this.mesh.add(new THREE.LineSegments(lineGeo, lineMat)); }
-                else if (this.powerup === 'color') { this.baseMesh.visible = false; this.bombCore = new THREE.Mesh(colorBombGeo, colorBombMat);
-this.mesh.add(this.bombCore); }
+                else if (this.powerup === 'color') { this.baseMesh.visible = false; this.bombCore = new THREE.Mesh(colorBombGeo, colorBombMat); this.mesh.add(this.bombCore); }
             }
             changeToPowerup(type) { this.powerup = type; this.applyPowerupVisuals(); }
             updatePos(delta) {
@@ -909,6 +1063,159 @@ this.mesh.add(this.bombCore); }
                 if (this.powerup === 'color' && this.bombCore) { this.bombCore.rotation.x += delta * 5; this.bombCore.rotation.y += delta * 5; }
             }
             setGridPos(x, y) { this.gridX = x; this.gridY = y; this.targetPos.set(x * CONFIG.spacing, y * CONFIG.spacing, 0); }
+        }
+
+        function findValidMove() {
+            for (let x = 0; x < CONFIG.gridSize; x++) {
+                for (let y = 0; y < CONFIG.gridSize; y++) {
+                    if (x < CONFIG.gridSize - 1 && testSwap(x, y, x+1, y)) {
+                        return { x1: x, y1: y, x2: x+1, y2: y };
+                    }
+                    if (y < CONFIG.gridSize - 1 && testSwap(x, y, x, y+1)) {
+                        return { x1: x, y1: y, x2: x, y2: y+1 };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function hasPossibleMoves() {
+            return findValidMove() !== null;
+        }
+
+        // Fix board by finding a strategic swap that creates valid moves
+        function fixBoard() {
+            console.log("Fixing board - no valid moves found");
+            clearHint();
+
+            // Try up to 100 random swaps to find one that creates valid moves
+            for (let attempts = 0; attempts < 100; attempts++) {
+                const x1 = Math.floor(Math.random() * CONFIG.gridSize);
+                const y1 = Math.floor(Math.random() * CONFIG.gridSize);
+                const x2 = x1 + (Math.random() > 0.5 ? 1 : 0);
+                const y2 = y1 + (Math.random() > 0.5 ? 1 : 0);
+
+                if (x2 >= CONFIG.gridSize || y2 >= CONFIG.gridSize) continue;
+
+                const b1 = grid[x1][y1];
+                const b2 = grid[x2][y2];
+
+                if (!b1 || !b2) continue;
+                if (b1.charKey === b2.charKey) continue; // Don't swap same colors
+
+                // Temporarily swap and check if this creates ANY valid moves
+                grid[x1][y1] = b2; grid[x2][y2] = b1;
+                const hasMovesAfterSwap = hasPossibleMoves();
+                grid[x1][y1] = b1; grid[x2][y2] = b2;
+
+                if (hasMovesAfterSwap) {
+                    // Execute this swap
+                    grid[x1][y1] = b2; grid[x2][y2] = b1;
+                    b1.setGridPos(x2, y2); b2.setGridPos(x1, y1);
+
+                    gameState = STATE.SWAPPING;
+                    setTimeout(() => {
+                        const matchData = findMatches();
+                        if (matchData.list.length > 0) {
+                            processMatches(matchData);
+                        } else {
+                            gameState = STATE.IDLE;
+                            updateHint();
+                        }
+                    }, 300);
+
+                    return true;
+                }
+            }
+
+            // If strategic swap failed, do a full shuffle
+            console.log("Strategic swap failed, shuffling entire board");
+            return shuffleBoardLogic();
+        }
+
+        function shuffleBoardLogic() {
+            const MAX_ATTEMPTS = 50;
+            let attempts = 0;
+            let valid = false;
+
+            while (attempts < MAX_ATTEMPTS && !valid) {
+                // Shuffle all block colors
+                let chars = [], pu = [];
+                for(let x = 0; x < CONFIG.gridSize; x++) {
+                    for(let y = 0; y < CONFIG.gridSize; y++) {
+                        if(grid[x] && grid[x][y]) {
+                            chars.push(grid[x][y].charKey);
+                            pu.push(grid[x][y].powerup);
+                        }
+                    }
+                }
+
+                // Fisher-Yates shuffle
+                for (let i = chars.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [chars[i], chars[j]] = [chars[j], chars[i]];
+                    [pu[i], pu[j]] = [pu[j], pu[i]];
+                }
+
+                // Reassign blocks
+                let i = 0;
+                for(let x = 0; x < CONFIG.gridSize; x++) {
+                    for(let y = 0; y < CONFIG.gridSize; y++) {
+                        if(grid[x] && grid[x][y]) {
+                            boardGroup.remove(grid[x][y].mesh);
+                            grid[x][y] = new Block(x, y, chars[i], pu[i]);
+                            i++;
+                        }
+                    }
+                }
+
+                // Check if board is valid (no initial matches and has possible moves)
+                const noMatches = findMatches().list.length === 0;
+                const hasMoves = hasPossibleMoves();
+                valid = noMatches && hasMoves;
+                attempts++;
+            }
+
+            if (valid) {
+                console.log(`Board fixed after ${attempts} shuffle attempt(s)`);
+                setTimeout(() => {
+                    document.getElementById('shuffle-msg').style.opacity = 0;
+                    gameState = STATE.IDLE;
+                    updateHint();
+                }, 500);
+            } else {
+                console.error("Failed to fix board after maximum attempts");
+                // As last resort, force create a move by swapping two adjacent different blocks
+                for (let attempts = 0; attempts < 50; attempts++) {
+                    const x1 = Math.floor(Math.random() * CONFIG.gridSize);
+                    const y1 = Math.floor(Math.random() * CONFIG.gridSize);
+                    const directions = [[1,0], [0,1], [-1,0], [0,-1]];
+                    const [dx, dy] = directions[Math.floor(Math.random() * directions.length)];
+                    const x2 = x1 + dx, y2 = y1 + dy;
+
+                    if (x2 < 0 || x2 >= CONFIG.gridSize || y2 < 0 || y2 >= CONFIG.gridSize) continue;
+
+                    const b1 = grid[x1][y1];
+                    const b2 = grid[x2][y2];
+
+                    if (!b1 || !b2 || b1.charKey === b2.charKey) continue;
+
+                    grid[x1][y1] = b2; grid[x2][y2] = b1;
+                    b1.setGridPos(x2, y2); b2.setGridPos(x1, y1);
+
+                    if (hasPossibleMoves()) {
+                        gameState = STATE.IDLE;
+                        updateHint();
+                        return true;
+                    }
+
+                    // Swap back
+                    grid[x1][y1] = b1; grid[x2][y2] = b2;
+                    b1.setGridPos(x1, y1); b2.setGridPos(x2, y2);
+                }
+            }
+
+            return valid;
         }
 
         function initBoard() {
@@ -921,7 +1228,6 @@ this.mesh.add(this.bombCore); }
             COLOR_CHARS.forEach(char => {
                 const rawColor = CHAR_TO_COLOR[char].hex;
                 const cleanHex = ensureHexColor(rawColor);
-
                 materials[char] = new THREE.MeshStandardMaterial({
                     color: new THREE.Color(cleanHex),
                     roughness: 0.2,
@@ -931,133 +1237,51 @@ this.mesh.add(this.bombCore); }
                 });
             });
 
+            // Generate initial board
             for (let x = 0; x < CONFIG.gridSize; x++) {
                 grid[x] = [];
                 for (let y = 0; y < CONFIG.gridSize; y++) {
                     let charKey;
                     do { charKey = getRandomSpawnColor(); } while (
                         (x >= 2 && grid[x-1] && grid[x-1][y].charKey === charKey && grid[x-2] && grid[x-2][y].charKey === charKey) ||
-                        (y >= 2 && grid[x][y-1].charKey === charKey && grid[x][y-2].charKey === charKey)
+                        (y >= 2 && grid[x][y-1] && grid[x][y-1].charKey === charKey && grid[x][y-2] && grid[x][y-2].charKey === charKey)
                     );
                     grid[x][y] = new Block(x, y, charKey);
                 }
             }
-            if(!hasPossibleMoves()) shuffleBoardLogic();
-        }
 
-        function hasPossibleMoves() {
-            if (grid.length === 0) return false;
-            for (let x = 0; x < CONFIG.gridSize; x++) {
-                for (let y = 0; y < CONFIG.gridSize; y++) {
-                    if (grid[x][y].powerup === 'color') return true;
-                    if (x < CONFIG.gridSize - 1 && testSwap(x, y, x+1, y)) return true;
-                    if (y < CONFIG.gridSize - 1 && testSwap(x, y, x, y+1)) return true;
+            // Check if board is playable and fix if needed
+            if (!hasPossibleMoves() || findMatches().list.length > 0) {
+                console.log("Initial board invalid, fixing...");
+                if (!fixBoard()) {
+                    console.error("Failed to create valid board");
                 }
             }
-            return false;
         }
 
         function testSwap(x1, y1, x2, y2) {
-            let b1 = grid[x1][y1]; let b2 = grid[x2][y2];
+            let b1 = grid[x1][y1], b2 = grid[x2][y2];
+            if (!b1 || !b2) return false;
             grid[x1][y1] = b2; grid[x2][y2] = b1;
             let m = findMatches().list.length > 0;
-            grid[x1][y1] = b1; grid[x2][y2] = b2; return m;
-        }
-
-        function executeShuffle() {
-            gameState = STATE.SHUFFLING;
-            const msg = document.getElementById('shuffle-msg'); msg.style.opacity = 1;
-            setTimeout(() => { shuffleBoardLogic(); msg.style.opacity = 0; gameState = STATE.IDLE; }, 1000);
-        }
-
-        function shuffleBoardLogic() {
-            let chars = []; let pu = [];
-            for(let x=0; x<CONFIG.gridSize; x++) {
-                for(let y=0; y<CONFIG.gridSize; y++) {
-                    if(grid[x] && grid[x][y]) { chars.push(grid[x][y].charKey); pu.push(grid[x][y].powerup); }
-                }
-            }
-            for (let i = chars.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [chars[i], chars[j]] = [chars[j], chars[i]]; [pu[i], pu[j]] = [pu[j], pu[i]];
-            }
-            let i = 0;
-            for(let x=0; x<CONFIG.gridSize; x++) {
-                for(let y=0; y<CONFIG.gridSize; y++) {
-                    if(grid[x] && grid[x][y]) {
-                        boardGroup.remove(grid[x][y].mesh);
-                        grid[x][y] = new Block(x, y, chars[i], pu[i]); i++;
-                    }
-                }
-            }
-            if (findMatches().list.length > 0 || !hasPossibleMoves()) { shuffleBoardLogic(); }
-        }
-
-        const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2(); let selectedBlock = null;
-        container.addEventListener('touchstart', (e) => e.preventDefault(), {passive: false});
-
-        container.addEventListener('pointerdown', (event) => {
-            if (gameState !== STATE.IDLE) return;
-            const rect = container.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            let intersectObjects = [];
-            boardGroup.children.forEach(g => { if(g.type === 'Group') intersectObjects.push(g.children[0]); });
-            const intersects = raycaster.intersectObjects(intersectObjects);
-
-            if (intersects.length > 0) {
-                const block = intersects[0].object.parent.userData.block;
-                if (!block) return;
-                if (!selectedBlock) {
-                    selectedBlock = block;
-                    highlightMesh.position.copy(block.mesh.position).add(boardGroup.position);
-                    highlightMesh.visible = true;
-                } else {
-                    const isAdjacent = Math.abs(selectedBlock.gridX - block.gridX) + Math.abs(selectedBlock.gridY - block.gridY) === 1;
-                    if (isAdjacent) attemptSwap(selectedBlock, block);
-                    selectedBlock = null; highlightMesh.visible = false;
-                }
-            } else { selectedBlock = null; highlightMesh.visible = false; }
-        });
-
-        function attemptSwap(b1, b2) {
-            gameState = STATE.SWAPPING; lastInteraction = { x: b2.gridX, y: b2.gridY };
-            grid[b1.gridX][b1.gridY] = b2; grid[b2.gridX][b2.gridY] = b1;
-            const tempX = b1.gridX; const tempY = b1.gridY;
-            b1.setGridPos(b2.gridX, b2.gridY); b2.setGridPos(tempX, tempY);
-
-            let colorBombUsed = false; let blocksToDestroy = new Set();
-            if (b1.powerup === 'color') { colorBombUsed = true; blocksToDestroy = destroyColor(b2.charKey); blocksToDestroy.add(b1); }
-            else if (b2.powerup === 'color') { colorBombUsed = true; blocksToDestroy = destroyColor(b1.charKey); blocksToDestroy.add(b2); }
-
-            setTimeout(() => {
-                if (colorBombUsed) { executeDestruction(Array.from(blocksToDestroy)); }
-                else {
-                    const matchData = findMatches();
-                    if (matchData.list.length > 0) { processMatches(matchData); }
-                    else {
-                        grid[b1.gridX][b1.gridY] = b2; grid[b2.gridX][b2.gridY] = b1;
-                        const rx = b1.gridX; const ry = b1.gridY;
-                        b1.setGridPos(b2.gridX, b2.gridY); b2.setGridPos(rx, ry);
-                        setTimeout(() => { gameState = STATE.IDLE; }, 300);
-                    }
-                }
-            }, 300);
+            grid[x1][y1] = b1; grid[x2][y2] = b2;
+            return m;
         }
 
         function findMatches() {
-            let matchedBlocks = new Set(); let sequences = [];
+            let matchedBlocks = new Set(), sequences = [];
             for (let y = 0; y < CONFIG.gridSize; y++) {
                 let currentLen = 1;
                 for (let x = 0; x < CONFIG.gridSize; x++) {
-                    let b = grid[x][y]; let nextB = (x < CONFIG.gridSize - 1) ? grid[x+1][y] : null;
+                    let b = grid[x][y], nextB = (x < CONFIG.gridSize - 1) ? grid[x+1][y] : null;
                     if (b && nextB && b.charKey === nextB.charKey && b.powerup !== 'color' && nextB.powerup !== 'color') { currentLen++; }
                     else {
                         if (currentLen >= 3) {
                             let seq = [];
-                            for(let i=0; i<currentLen; i++) { seq.push(grid[x-i][y]); matchedBlocks.add(grid[x-i][y]); }
+                            for(let i = 0; i < currentLen; i++) {
+                                seq.push(grid[x - i][y]);
+                                matchedBlocks.add(grid[x - i][y]);
+                            }
                             sequences.push({ len: currentLen, blocks: seq, type: 'row' });
                         }
                         currentLen = 1;
@@ -1067,12 +1291,15 @@ this.mesh.add(this.bombCore); }
             for (let x = 0; x < CONFIG.gridSize; x++) {
                 let currentLen = 1;
                 for (let y = 0; y < CONFIG.gridSize; y++) {
-                    let b = grid[x][y]; let nextB = (y < CONFIG.gridSize - 1) ? grid[x][y+1] : null;
+                    let b = grid[x][y], nextB = (y < CONFIG.gridSize - 1) ? grid[x][y+1] : null;
                     if (b && nextB && b.charKey === nextB.charKey && b.powerup !== 'color' && nextB.powerup !== 'color') { currentLen++; }
                     else {
                         if (currentLen >= 3) {
                             let seq = [];
-                            for(let i=0; i<currentLen; i++) { seq.push(grid[x][y-i]); matchedBlocks.add(grid[x][y-i]); }
+                            for(let i = 0; i < currentLen; i++) {
+                                seq.push(grid[x][y - i]);
+                                matchedBlocks.add(grid[x][y - i]);
+                            }
                             sequences.push({ len: currentLen, blocks: seq, type: 'col' });
                         }
                         currentLen = 1;
@@ -1084,15 +1311,18 @@ this.mesh.add(this.bombCore); }
 
         function destroyColor(charKey) {
             let toDestroy = new Set();
-            for(let x=0; x<CONFIG.gridSize; x++) {
-                for(let y=0; y<CONFIG.gridSize; y++) { if(grid[x][y] && grid[x][y].charKey === charKey) toDestroy.add(grid[x][y]); }
+            for(let x = 0; x < CONFIG.gridSize; x++) {
+                for(let y = 0; y < CONFIG.gridSize; y++) {
+                    if(grid[x][y] && grid[x][y].charKey === charKey)
+                        toDestroy.add(grid[x][y]);
+                }
             }
             return toDestroy;
         }
 
         function destroyLine(block) {
             let toDestroy = new Set();
-            for(let i=0; i<CONFIG.gridSize; i++) {
+            for(let i = 0; i < CONFIG.gridSize; i++) {
                 if(grid[i][block.gridY]) toDestroy.add(grid[i][block.gridY]);
                 if(grid[block.gridX][i]) toDestroy.add(grid[block.gridX][i]);
             }
@@ -1101,7 +1331,8 @@ this.mesh.add(this.bombCore); }
 
         function processMatches(matchData) {
             gameState = STATE.MATCHING;
-            let powerupToSpawn = null; let spawnTarget = null;
+            clearHint();
+            let powerupToSpawn = null, spawnTarget = null;
             matchData.sequences.sort((a,b) => b.len - a.len);
             if (matchData.sequences.length > 0) {
                 let topSeq = matchData.sequences[0];
@@ -1116,13 +1347,16 @@ this.mesh.add(this.bombCore); }
                 }
             }
 
-            let fullDestructionSet = new Set(matchData.list); let checkQueue = [...matchData.list];
+            let fullDestructionSet = new Set(matchData.list), checkQueue = [...matchData.list];
             while(checkQueue.length > 0) {
                 let b = checkQueue.pop();
                 if (b.powerup === 'line') {
                     let lineBlocks = destroyLine(b);
                     lineBlocks.forEach(lb => {
-                        if (!fullDestructionSet.has(lb) && lb !== spawnTarget) { fullDestructionSet.add(lb); checkQueue.push(lb); }
+                        if (!fullDestructionSet.has(lb) && lb !== spawnTarget) {
+                            fullDestructionSet.add(lb);
+                            checkQueue.push(lb);
+                        }
                     });
                 }
             }
@@ -1137,54 +1371,142 @@ this.mesh.add(this.bombCore); }
                 const worldPos = new THREE.Vector3(); block.mesh.getWorldPosition(worldPos);
                 spawnVoxelExplosion(worldPos, block.charKey);
 
-                if(block.powerup === 'none') { setTimeout(() => { triggerArtFill(block.charKey); }, index * 40); }
-                boardGroup.remove(block.mesh); grid[block.gridX][block.gridY] = null;
+                if(block.powerup === 'none') {
+                    setTimeout(() => { triggerArtFill(block.charKey); }, index * 40);
+                }
+                boardGroup.remove(block.mesh);
+                grid[block.gridX][block.gridY] = null;
             });
             setTimeout(() => { applyGravity(); }, 400);
         }
 
         function applyGravity() {
             gameState = STATE.DROPPING;
+            clearHint();
             for (let x = 0; x < CONFIG.gridSize; x++) {
                 let emptySpaces = 0;
                 for (let y = 0; y < CONFIG.gridSize; y++) {
                     if (grid[x][y] === null) { emptySpaces++; }
                     else if (emptySpaces > 0) {
-                        let block = grid[x][y]; grid[x][y - emptySpaces] = block; grid[x][y] = null;
+                        let block = grid[x][y];
+                        grid[x][y - emptySpaces] = block;
+                        grid[x][y] = null;
                         block.setGridPos(x, y - emptySpaces);
                     }
                 }
                 for (let i = 0; i < emptySpaces; i++) {
-                    let charKey = getRandomSpawnColor(); let newY = CONFIG.gridSize - 1 - i;
+                    let charKey = getRandomSpawnColor();
+                    let newY = CONFIG.gridSize - 1 - i;
                     let block = new Block(x, newY, charKey);
-                    block.mesh.position.y += (emptySpaces + 1) * CONFIG.spacing; grid[x][newY] = block;
+                    block.mesh.position.y += (emptySpaces + 1) * CONFIG.spacing;
+                    grid[x][newY] = block;
                 }
             }
             setTimeout(() => {
                 const matchData = findMatches();
-                if (matchData.list.length > 0) { processMatches(matchData); }
-                else {
-                    if (!hasPossibleMoves()) executeShuffle(); else gameState = STATE.IDLE;
+                if (matchData.list.length > 0) {
+                    processMatches(matchData);
+                } else {
+                    if (!hasPossibleMoves()) {
+                        fixBoard();
+                    } else {
+                        gameState = STATE.IDLE;
+                        updateHint();
+                    }
                 }
             }, 500);
         }
 
-        function updateScore(points) { score += points; document.getElementById('score-display').innerText = score; }
+        function updateScore(points) {
+            score += points;
+            document.getElementById('score-display').innerText = score;
+        }
+
+        /** HINT SYSTEM */
+        function updateHint() {
+            clearHint();
+            if (!showHint || gameState !== STATE.IDLE) return;
+
+            const move = findValidMove();
+            if (move) {
+                hintMove = move;
+                const b1 = grid[move.x1][move.y1];
+                const b2 = grid[move.x2][move.y2];
+
+                if (b1 && b2) {
+                    const wf1 = new THREE.LineSegments(lineGeo, hintMaterial);
+                    const wf2 = new THREE.LineSegments(lineGeo, hintMaterial);
+                    b1.mesh.add(wf1);
+                    b2.mesh.add(wf2);
+                    b1.hintWireframe = wf1;
+                    b2.hintWireframe = wf2;
+                    hintWireframes = [wf1, wf2];
+                }
+            }
+        }
+
+        function clearHint() {
+            hintWireframes.forEach(wf => {
+                if (wf.parent) wf.parent.remove(wf);
+            });
+            hintWireframes = [];
+            hintMove = null;
+        }
+
+        /** AUTO-PLAY SYSTEM */
+        function startAutoPlay() {
+            stopAutoPlay();
+            autoPlay = true;
+            document.getElementById('auto-status').classList.add('active');
+            document.getElementById('auto-status-text').innerText = 'Auto Playing...';
+
+            autoPlayInterval = setInterval(() => {
+                if (gameState === STATE.IDLE) {
+                    const move = findValidMove();
+                    if (move) {
+                        const b1 = grid[move.x1][move.y1];
+                        const b2 = grid[move.x2][move.y2];
+                        if (b1 && b2) {
+                            attemptSwap(b1, b2);
+                        }
+                    } else {
+                        fixBoard();
+                    }
+                }
+            }, 1000);
+        }
+
+        function stopAutoPlay() {
+            autoPlay = false;
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+            }
+            document.getElementById('auto-status').classList.remove('active');
+            document.getElementById('auto-status-text').innerText = 'Manual';
+        }
 
         /** 3D PARTICLES */
         const particles = []; const miniGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
 
         function spawnVoxelExplosion(position, charKey) {
-            for(let x=-1; x<=1; x++) {
-                for(let y=-1; y<=1; y++) {
-                    for(let z=-1; z<=1; z++) {
-                        if(x===0 && y===0 && z===0) continue;
+            for(let x = -1; x <= 1; x++) {
+                for(let y = -1; y <= 1; y++) {
+                    for(let z = -1; z <= 1; z++) {
+                        if(x === 0 && y === 0 && z === 0) continue;
                         if(Math.random() > 0.5) continue;
                         const mesh = new THREE.Mesh(miniGeo, materials[charKey]);
                         mesh.position.copy(position).add(new THREE.Vector3(x*0.25, y*0.25, z*0.25));
-                        const velocity = new THREE.Vector3( x*(Math.random()*0.15), y*(Math.random()*0.15)+0.15, z*(Math.random()*0.15) );
-                        const rotSpeed = new THREE.Vector3( Math.random()*0.3, Math.random()*0.3, Math.random()*0.3 );
-                        scene.add(mesh); particles.push({ mesh, velocity, rotSpeed, charKey, life: 600 });
+                        const velocity = new THREE.Vector3(
+                            x*(Math.random()*0.15),
+                            y*(Math.random()*0.15)+0.15,
+                            z*(Math.random()*0.15)
+                        );
+                        const rotSpeed = new THREE.Vector3(
+                            Math.random()*0.3, Math.random()*0.3, Math.random()*0.3
+                        );
+                        scene.add(mesh);
+                        particles.push({ mesh, velocity, rotSpeed, charKey, life: 600 });
                     }
                 }
             }
@@ -1193,35 +1515,127 @@ this.mesh.add(this.bombCore); }
         function update3DParticles() {
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                p.velocity.y -= 0.012; p.mesh.position.add(p.velocity);
-                p.mesh.rotation.x += p.rotSpeed.x; p.mesh.rotation.y += p.rotSpeed.y; p.mesh.rotation.z += p.rotSpeed.z;
+                p.velocity.y -= 0.012;
+                p.mesh.position.add(p.velocity);
+                p.mesh.rotation.x += p.rotSpeed.x;
+                p.mesh.rotation.y += p.rotSpeed.y;
+                p.mesh.rotation.z += p.rotSpeed.z;
                 p.life--;
-                if (p.mesh.position.y < -12 || p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
+                if (p.mesh.position.y < -12 || p.life <= 0) {
+                    scene.remove(p.mesh);
+                    particles.splice(i, 1);
+                }
             }
+        }
+
+        /** GAME INPUT HANDLING */
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let selectedBlock = null;
+        container.addEventListener('touchstart', (e) => e.preventDefault(), {passive: false});
+
+        container.addEventListener('pointerdown', (event) => {
+            if (gameState !== STATE.IDLE || autoPlay) return;
+
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            let intersectObjects = [];
+            boardGroup.children.forEach(g => {
+                if(g.type === 'Group') intersectObjects.push(g.children[0]);
+            });
+            const intersects = raycaster.intersectObjects(intersectObjects);
+
+            if (intersects.length > 0) {
+                const block = intersects[0].object.parent.userData.block;
+                if (!block) return;
+                if (!selectedBlock) {
+                    selectedBlock = block;
+                    highlightMesh.position.copy(block.mesh.position).add(boardGroup.position);
+                    highlightMesh.visible = true;
+                } else {
+                    const isAdjacent = Math.abs(selectedBlock.gridX - block.gridX) +
+                                      Math.abs(selectedBlock.gridY - block.gridY) === 1;
+                    if (isAdjacent) attemptSwap(selectedBlock, block);
+                    selectedBlock = null;
+                    highlightMesh.visible = false;
+                }
+            } else {
+                selectedBlock = null;
+                highlightMesh.visible = false;
+            }
+        });
+
+        function attemptSwap(b1, b2) {
+            gameState = STATE.SWAPPING;
+            lastInteraction = { x: b2.gridX, y: b2.gridY };
+            grid[b1.gridX][b1.gridY] = b2;
+            grid[b2.gridX][b2.gridY] = b1;
+            const tempX = b1.gridX, tempY = b1.gridY;
+            b1.setGridPos(b2.gridX, b2.gridY);
+            b2.setGridPos(tempX, tempY);
+
+            let colorBombUsed = false, blocksToDestroy = new Set();
+            if (b1.powerup === 'color') {
+                colorBombUsed = true;
+                blocksToDestroy = destroyColor(b2.charKey);
+                blocksToDestroy.add(b1);
+            }
+            else if (b2.powerup === 'color') {
+                colorBombUsed = true;
+                blocksToDestroy = destroyColor(b1.charKey);
+                blocksToDestroy.add(b2);
+            }
+
+            setTimeout(() => {
+                if (colorBombUsed) {
+                    executeDestruction(Array.from(blocksToDestroy));
+                } else {
+                    const matchData = findMatches();
+                    if (matchData.list.length > 0) {
+                        processMatches(matchData);
+                    } else {
+                        // Swap back
+                        grid[b1.gridX][b1.gridY] = b2;
+                        grid[b2.gridX][b2.gridY] = b1;
+                        b1.setGridPos(b2.gridX, b2.gridY);
+                        b2.setGridPos(tempX, tempY);
+                        setTimeout(() => { gameState = STATE.IDLE; }, 300);
+                    }
+                }
+            }, 300);
         }
 
         /** RENDER LOOP & RESIZE */
         const clock = new THREE.Clock();
-        initFluid();
 
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
+
             if (grid && grid.length > 0) {
                 for (let x = 0; x < CONFIG.gridSize; x++) {
                     for (let y = 0; y < CONFIG.gridSize; y++) {
-                        if (grid[x] && grid[x][y]) grid[x][y].updatePos(delta);
+                        if (grid[x] && grid[x][y])
+                            grid[x][y].updatePos(delta);
                     }
                 }
             }
-            if(highlightMesh.visible) highlightMesh.scale.setScalar(1 + Math.sin(Date.now() * 0.01) * 0.05);
-            update3DParticles(); drawSidebarArt(); updateFluid();
+
+            if(highlightMesh.visible)
+                highlightMesh.scale.setScalar(1 + Math.sin(Date.now() * 0.01) * 0.05);
+
+            update3DParticles();
+            drawSidebarArt();
+            updateFluid();
             renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', onWindowResize);
         function onWindowResize() {
-            const width = container.clientWidth; const height = container.clientHeight;
+            const width = container.clientWidth, height = container.clientHeight;
             if(width === 0 || height === 0) return;
             renderer.setSize(width, height);
             camera.aspect = width / height; camera.updateProjectionMatrix();
@@ -1231,9 +1645,20 @@ this.mesh.add(this.bombCore); }
         document.getElementById('btn-play-solo').addEventListener('click', async () => {
             const lvlKey = document.getElementById('level-select').value;
             const lvl = LEVELS[lvlKey];
-
-            // FIX: Set currentLevelName for built-in levels
             currentLevelName = lvl.name;
+
+            // Get toggle states from sidebar
+            autoPlay = document.getElementById('auto-play-toggle').checked;
+            showHint = document.getElementById('show-hint-toggle').checked;
+
+            // Update UI status
+            if (autoPlay) {
+                document.getElementById('auto-status').classList.add('active');
+                document.getElementById('auto-status-text').innerText = 'Auto Playing...';
+            } else {
+                document.getElementById('auto-status').classList.remove('active');
+                document.getElementById('auto-status-text').innerText = 'Manual';
+            }
 
             const artData = await loadImageToArt(lvl.imageUrl, lvl.resolution || 16, lvl.keepBg || false);
 
@@ -1246,6 +1671,10 @@ this.mesh.add(this.bombCore); }
 
                 document.getElementById('start-screen').style.display = 'none';
                 setTimeout(onWindowResize, 100);
+
+                if (autoPlay) {
+                    setTimeout(startAutoPlay, 1000);
+                }
             }
         });
 
@@ -1253,6 +1682,8 @@ this.mesh.add(this.bombCore); }
         document.getElementById('btn-win-menu').addEventListener('click', goToMenu);
 
         function goToMenu() {
+            stopAutoPlay();
+            clearHint();
             location.reload();
         }
 
@@ -1261,24 +1692,36 @@ this.mesh.add(this.bombCore); }
             let shareUrl = document.location;
             try { shareUrl = window.top.location.href || document.location.href; }
             catch(e) { try { shareUrl = document.location.href; } catch(e){} }
-            if (shareUrl.includes('about:srcdoc') || shareUrl.includes('about:blank')) shareUrl = document.location;
+            if (shareUrl.includes('about:srcdoc') || shareUrl.includes('about:blank'))
+                shareUrl = document.location;
             return shareUrl;
         }
 
         document.getElementById('btn-export-card').addEventListener('click', () => {
-            const c = document.createElement('canvas'); c.width = 800; c.height = 1000;
+            const c = document.createElement('canvas');
+            c.width = 800; c.height = 1000;
             const ctx = c.getContext('2d');
             ctx.fillStyle = '#0f0f1a'; ctx.fillRect(0, 0, c.width, c.height);
-            ctx.strokeStyle = '#4a4a7a'; ctx.lineWidth = 12; ctx.strokeRect(20, 20, c.width - 40, c.height - 40);
+            ctx.strokeStyle = '#4a4a7a'; ctx.lineWidth = 12;
+            ctx.strokeRect(20, 20, c.width - 40, c.height - 40);
 
-            ctx.fillStyle = '#FF3366'; ctx.font = 'bold 80px "Fredoka", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('VOXEL CRASH', c.width/2, 120);
-            ctx.fillStyle = '#33CCFF'; ctx.font = 'bold 45px "Fredoka", sans-serif'; ctx.fillText(currentLevelName, c.width/2, 200);
+            ctx.fillStyle = '#FF3366';
+            ctx.font = 'bold 80px "Fredoka", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('VOXEL CRASH', c.width/2, 120);
+            ctx.fillStyle = '#33CCFF';
+            ctx.font = 'bold 45px "Fredoka", sans-serif';
+            ctx.fillText(currentLevelName, c.width/2, 200);
 
-            const artSize = 480; const startX = (c.width - artSize) / 2; const startY = 260;
-            ctx.fillStyle = '#111122'; ctx.fillRect(startX-20, startY-20, artSize+40, artSize+40);
-            ctx.strokeStyle = '#2a2a4a'; ctx.lineWidth = 6; ctx.strokeRect(startX-20, startY-20, artSize+40, artSize+40);
+            const artSize = 480;
+            const startX = (c.width - artSize) / 2;
+            const startY = 260;
+            ctx.fillStyle = '#111122';
+            ctx.fillRect(startX-20, startY-20, artSize+40, artSize+40);
+            ctx.strokeStyle = '#2a2a4a'; ctx.lineWidth = 6;
+            ctx.strokeRect(startX-20, startY-20, artSize+40, artSize+40);
 
-            const pw = artSize / currentArtRes; const ph = artSize / currentArtRes;
+            const pw = artSize / currentArtRes, ph = artSize / currentArtRes;
             targetPixels.forEach(p => {
                 if (p.char !== '_') {
                     const colorHex = CHAR_TO_COLOR[p.char].hex;
@@ -1290,12 +1733,17 @@ this.mesh.add(this.bombCore); }
                 }
             });
 
-            ctx.fillStyle = '#ffffff'; ctx.font = '30px "Fredoka", sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '30px "Fredoka", sans-serif';
             ctx.fillText(`Grid Size: ${currentGridSize}x${currentGridSize}  |  Art: ${currentArtRes}x${currentArtRes}`, c.width/2, 830);
-            ctx.fillStyle = '#8888aa'; ctx.font = '22px monospace'; ctx.fillText(getSafeShareUrl(), c.width/2, 910);
+            ctx.fillStyle = '#8888aa';
+            ctx.font = '22px monospace';
+            ctx.fillText(getSafeShareUrl(), c.width/2, 910);
 
-            const link = document.createElement('a'); link.download = `voxel-crash-${currentLevelName.replace(/\s+/g, '-').toLowerCase()}.png`;
-            link.href = c.toDataURL('image/png'); link.click();
+            const link = document.createElement('a');
+            link.download = `voxel-crash-${currentLevelName.replace(/\s+/g, '-').toLowerCase()}.png`;
+            link.href = c.toDataURL('image/png');
+            link.click();
         });
 
         document.getElementById('btn-share-sms').addEventListener('click', () => {
@@ -1309,8 +1757,10 @@ this.mesh.add(this.bombCore); }
                 try { await navigator.share({ title: 'VOXEL CRASH', text: text, url: getSafeShareUrl() }); } catch (e) {}
             } else {
                 navigator.clipboard.writeText(text).then(() => {
-                    const btn = document.getElementById('btn-share-matrix'); const orig = btn.innerText;
-                    btn.innerText = "✓ Copied!"; setTimeout(() => btn.innerText = orig, 2000);
+                    const btn = document.getElementById('btn-share-matrix');
+                    const orig = btn.innerText;
+                    btn.innerText = "✓ Copied!";
+                    setTimeout(() => btn.innerText = orig, 2000);
                 });
             }
         });
@@ -1323,9 +1773,6 @@ this.mesh.add(this.bombCore); }
         document.getElementById('image-upload').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const paletteSize = parseInt(urlParams.get('colors')) || 10;
 
             const res = parseInt(document.getElementById('import-res').value);
             const keepBg = document.getElementById('import-keep-bg').checked;
@@ -1354,11 +1801,11 @@ this.mesh.add(this.bombCore); }
                             return dist > threshold;
                         });
 
-                        if (isNewColor && palette.length < paletteSize) {
+                        if (isNewColor && palette.length < 10) {
                             palette.push([r, g, b]);
                         }
 
-                        if (palette.length >= paletteSize) break;
+                        if (palette.length >= 10) break;
                     }
 
                     let jsonArray = [];
@@ -1371,8 +1818,7 @@ this.mesh.add(this.bombCore); }
                             if (a < 10) {
                                 rowStr += keepBg ? 'k' : '_';
                             } else {
-                                let minVal = Infinity;
-                                let bestIdx = 0;
+                                let minVal = Infinity, bestIdx = 0;
                                 palette.forEach((pColor, pIdx) => {
                                     const distance = Math.sqrt(
                                         Math.pow(r - pColor[0], 2) +
@@ -1392,13 +1838,10 @@ this.mesh.add(this.bombCore); }
 
                     let newPalette = [];
                     palette.forEach((color, i) => {
-                        newPalette.push(`  "${getChar(i)}": {"hex":
-"${`#${color[0].toString(16).padStart(2,'0')}${color[1].toString(16).padStart(2,'0')}${color[2].toString(16).padStart(2,'0')}`}", "rgb": {"r": ${color[0]}, "g":
-${color[1]}, "b": ${color[2]}}}`)
+                        newPalette.push(`  "${getChar(i)}": {"hex": "${`#${color[0].toString(16).padStart(2,'0')}${color[1].toString(16).padStart(2,'0')}${color[2].toString(16).padStart(2,'0')}`}", "rgb": {"r": ${color[0]}, "g": ${color[1]}, "b": ${color[2]}}}`)
                     });
 
-                    document.getElementById('json-export-area').value = `{\n  "palette":{\n  ${newPalette.join(',\n  ')}\n  },\n  "art":[\n  ${jsonArray.join(',\n  ')}\n
-]\n}`;
+                    document.getElementById('json-export-area').value = `{\n  "palette":{\n  ${newPalette.join(',\n  ')}\n  },\n  "art":[\n  ${jsonArray.join(',\n  ')}\n  ]\n}`;
                 };
                 img.src = event.target.result;
             };
@@ -1406,7 +1849,8 @@ ${color[1]}, "b": ${color[2]}}}`)
         });
 
         document.getElementById('btn-copy-json').addEventListener('click', () => {
-            document.getElementById('json-export-area').select(); document.execCommand('copy');
+            document.getElementById('json-export-area').select();
+            document.execCommand('copy');
         });
 
         document.getElementById('btn-play-custom').addEventListener('click', () => {
@@ -1415,27 +1859,62 @@ ${color[1]}, "b": ${color[2]}}}`)
 
             try {
                 let parsed = JSON.parse(area.value);
-
                 if (parsed.art && parsed.art.length > 0) {
                     currentLevelName = "Custom Upload Art";
                     currentGridSize = CONFIG.gridSize;
 
+                    autoPlay = document.getElementById('auto-play-toggle').checked;
+                    showHint = document.getElementById('show-hint-toggle').checked;
+
                     importerModal.style.display = 'none';
                     document.getElementById('start-screen').style.display = 'none';
-
                     loadLevelArt(parsed);
                     initBoard();
                     setTimeout(onWindowResize, 100);
+
+                    if (autoPlay) {
+                        setTimeout(startAutoPlay, 1000);
+                    }
                 }
             } catch(e) {
                 console.error("JSON Parse Error:", e);
                 const originalText = btn.innerText;
                 btn.innerText = "Invalid JSON!";
                 btn.style.backgroundColor = "#ff3333";
-                setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 1500);
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.backgroundColor = "";
+                }, 1500);
             }
         });
 
+        // Initialize toggle states from localStorage
+        document.getElementById('auto-play-toggle').addEventListener('change', (e) => {
+            autoPlay = e.target.checked;
+            if (autoPlay && gameState === STATE.IDLE) {
+                startAutoPlay();
+            } else if (!autoPlay) {
+                stopAutoPlay();
+            }
+            localStorage.setItem('voxelCrash_autoplay', autoPlay);
+        });
+
+        document.getElementById('show-hint-toggle').addEventListener('change', (e) => {
+            showHint = e.target.checked;
+            if (!showHint) clearHint();
+            else if (gameState === STATE.IDLE) updateHint();
+            localStorage.setItem('voxelCrash_showhint', showHint);
+        });
+
+        // Load saved preferences
+        const savedAutoPlay = localStorage.getItem('voxelCrash_autoplay') === 'true';
+        const savedShowHint = localStorage.getItem('voxelCrash_showhint') === 'true';
+        document.getElementById('auto-play-toggle').checked = savedAutoPlay;
+        document.getElementById('show-hint-toggle').checked = savedShowHint;
+        autoPlay = savedAutoPlay;
+        showHint = savedShowHint;
+
+        // Initialize
         animate();
     </script>
 </body>
