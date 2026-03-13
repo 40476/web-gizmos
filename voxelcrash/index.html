@@ -330,7 +330,7 @@
 
     <!-- Game Logic -->
     <script>
-        const CHAR_TO_COLOR = {
+        var CHAR_TO_COLOR = {
             'r': { hex: 0xFF3333, rgb: {r:255, g:51, b:51} },
             'g': { hex: 0x33FF33, rgb: {r:51, g:255, b:51} },
             'b': { hex: 0x3333FF, rgb: {r:51, g:51, b:255} },
@@ -342,7 +342,7 @@
             'w': { hex: 0xFFFFFF, rgb: {r:255, g:255, b:255} },
             'k': { hex: 0x333333, rgb: {r:51, g:51, b:51} }
         };
-        const COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
+        var COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
         const FALLBACK_COLORS = ['b', 'r', 'g', 'y', 'c', 'm', 'p', 'o'];
 
         const CONFIG = { gridSize: 8, blockSize: 1, spacing: 1.1, swapSpeed: 10.0 };
@@ -356,37 +356,7 @@
         let currentGridSize = 8;
         let targetPixels = [];
 
-        function getClosestColorChar(r, g, b) {
-            let closestChar = 'k'; let minDistance = Infinity;
-            for (let char of COLOR_CHARS) {
-                const c = CHAR_TO_COLOR[char].rgb;
-                const dist = Math.pow(r - c.r, 2) + Math.pow(g - c.g, 2) + Math.pow(b - c.b, 2);
-                if (dist < minDistance) { minDistance = dist; closestChar = char; }
-            }
-            return closestChar;
-        }
-
         const LEVELS = {
-            'heart': {
-                name: '8-Bit Heart', grid: 8,
-                art: [
-                    '________________', '________________', '____rrrr__rrrr__', '__rrrrrrrrrrrr__',
-                    '__rrrrwwwwrrrr__', '__rrrrwwwwrrrr__', '____rrrrrrrr____', '______rrrr______',
-                    '________r_______', '________________', '________________', '________________',
-                    '________________', '________________', '________________', '________________'
-                ]
-            },
-
-            'diamond': {
-                name: 'Blue Diamond', grid: 8,
-                art: [
-                    '________________', '_______cc_______', '_____cccccc_____', '___cccccccccc___',
-                    '_cccccccccccccc_', '_cwwwwcccccccc__', '__cccccccccccc__', '___cccccccccc___',
-                    '____cccccccc____', '_____cccccc_____', '______cccc______', '_______cc_______',
-                    '________c_______', '________________', '________________', '________________'
-                ]
-            },
-
             'potion': {
                 name: 'Magic Potion', grid: 9, resolution: 16, keepBg: false,
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 2h4v2H6z" fill="#ccc"/><path d="M7 4h2v3l3 4v3H4v-3l3-4V4z" fill="#33ccff"/><path d="M4 14h8v1H4z" fill="#ccc"/></svg>')
@@ -517,27 +487,104 @@
             return Math.max(0, Math.min(100, percentage));
         }
 
+        function getClosestColorChar(r, g, b) {
+            if (!COLOR_CHARS || COLOR_CHARS.length === 0) return 'w';
+
+            let closestChar = 'w';
+            let minDistance = Infinity;
+
+            for (let i = 0; i < COLOR_CHARS.length; i++) {
+                const char = COLOR_CHARS[i];
+                if (char === '_') continue;
+
+                const colorData = CHAR_TO_COLOR[char];
+
+                // Safety check to prevent the "c is undefined" error from before
+                if (!colorData || !colorData.rgb) continue;
+
+                const c = colorData.rgb;
+
+                // Squared distance calculation
+                const dist = (r - c.r)**2 + (g - c.g)**2 + (b - c.b)**2;
+
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestChar = char;
+                }
+            }
+            return closestChar;
+        }
+
+        function getChar(index) {
+            if (index < 10) return index.toString();
+            if (index < 36) return String.fromCharCode(87 + index); // 10 -> 'a' (ASCII 97)
+            if (index < 62) return String.fromCharCode(29 + index); // 36 -> 'A' (ASCII 65)
+            return '?'; // Fallback if somehow > 62 colors requested
+        }
+        function getColorDistance(rgb1, rgb2) {
+            return Math.pow(rgb1.r - rgb2.r, 2) +
+                Math.pow(rgb1.g - rgb2.g, 2) +
+                Math.pow(rgb1.b - rgb2.b, 2);
+        }
+
         function loadImageToArt(url, res, keepBg) {
             return new Promise((resolve, reject) => {
-                const img = new Image(); img.crossOrigin = "Anonymous";
+                const THRESHOLD = 1200; // Increase this to merge more shades, decrease to keep more detail
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
                 img.onload = () => {
                     const cvs = document.createElement('canvas');
                     cvs.width = res; cvs.height = res;
                     const pCtx = cvs.getContext('2d', { willReadFrequently: true });
                     pCtx.drawImage(img, 0, 0, res, res);
                     const imgData = pCtx.getImageData(0, 0, res, res).data;
+
+                    CHAR_TO_COLOR = {};
                     let jsonArray = [];
-                    for(let y=0; y<res; y++) {
+                    let colorCounter = 0;
+
+                    for (let y = 0; y < res; y++) {
                         let rowStr = '';
-                        for(let x=0; x<res; x++) {
+                        for (let x = 0; x < res; x++) {
                             const idx = (y * res + x) * 4;
-                            const r = imgData[idx]; const g = imgData[idx+1];
-                            const b = imgData[idx+2]; const a = imgData[idx+3];
-                            if (a < 10) rowStr += keepBg ? 'k' : '_';
-                            else rowStr += getClosestColorChar(r, g, b);
+                            const r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2], a = imgData[idx+3];
+
+                            if (a < 10) {
+                                rowStr += keepBg ? 'k' : '_';
+                                if (keepBg && !CHAR_TO_COLOR['k']) {
+                                    CHAR_TO_COLOR['k'] = { hex: "#333333", rgb: {r:51, g:51, b:51} };
+                                }
+                            } else {
+                                const currentRGB = { r, g, b };
+                                let matchedChar = null;
+
+                                // Check existing palette for a "similar enough" color
+                                for (let char in CHAR_TO_COLOR) {
+                                    if (char === 'k' || char === '_') continue;
+
+                                    const dist = getColorDistance(currentRGB, CHAR_TO_COLOR[char].rgb);
+                                    if (dist < THRESHOLD) {
+                                        matchedChar = char;
+                                        break;
+                                    }
+                                }
+
+                                if (!matchedChar) {
+                                    // No similar color found, create a new one
+                                    const char = getChar(colorCounter++);
+                                    CHAR_TO_COLOR[char] = {
+                                        hex: "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1),
+                                        rgb: currentRGB
+                                    };
+                                    matchedChar = char;
+                                }
+                                rowStr += matchedChar;
+                            }
                         }
                         jsonArray.push(rowStr);
                     }
+
+                    COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
                     resolve(jsonArray);
                 };
                 img.onerror = () => reject(new Error("Failed to load image"));
@@ -552,27 +599,43 @@
         let blobs = [];
 
         function getArtColors() {
-            if (!targetPixels || targetPixels.length === 0) return ['b', 'r', 'g', 'y', 'c', 'm', 'p', 'o'];
+            // If targetPixels isn't ready, use a safe default palette
+            if (!targetPixels || targetPixels.length === 0) return ['r', 'g', 'b', 'y'];
+
             let active = new Set();
             targetPixels.forEach(p => {
-                // Only count colors we still need to collect
-                if (!p.filled && !p.targeted && p.char !== '_') active.add(p.char);
+                // Only collect characters that actually exist in your CHAR_TO_COLOR map
+                if (!p.filled && !p.targeted && p.char !== '_' && CHAR_TO_COLOR[p.char]) {
+                    active.add(p.char);
+                }
             });
+
             let colors = Array.from(active).sort();
 
-            // If art is complete, celebratory gold and white
+            // If level is empty or finished, use celebratory colors
             if (colors.length === 0) return ['w', 'y'];
             return colors;
         }
 
         function updateActiveColors() {
             currentActiveColors = getArtColors();
-            if (blobs.length > 0 && currentActiveColors.length > 0) {
-                // Distribute blobs evenly among remaining needed colors
-                let blobsPerColor = Math.ceil(blobs.length / currentActiveColors.length);
-                let cIdx = 0; let count = 0;
+
+            // SAFETY: If somehow empty, default to white to prevent division by zero
+            if (!currentActiveColors || currentActiveColors.length === 0) {
+                currentActiveColors = ['w'];
+            }
+
+            if (blobs.length > 0) {
+                // Calculate distribution safely
+                let blobsPerColor = Math.max(1, Math.ceil(blobs.length / currentActiveColors.length));
+                let cIdx = 0;
+                let count = 0;
+
                 blobs.forEach((b) => {
-                    b.targetColorChar = currentActiveColors[cIdx];
+                    // Assign the target color object character
+                    let targetChar = currentActiveColors[cIdx] || currentActiveColors[0];
+                    b.targetColorChar = targetChar;
+
                     count++;
                     if (count >= blobsPerColor) {
                         count = 0;
@@ -621,20 +684,17 @@
                 if(b.y < -b.r) b.y = fCanvas.height + b.r;
                 if(b.y > fCanvas.height + b.r) b.y = -b.r;
 
-                // Determine if we need to fade out to change colors
+                // Fade logic
                 if (b.colorChar !== b.targetColorChar) {
                     b.targetOpacity = 0;
                 } else {
                     b.targetOpacity = 0.6;
                 }
 
-                // Smooth fade
                 b.opacity += (b.targetOpacity - b.opacity) * 0.08;
 
-                // Teleport and swap color when fully faded out
+                // Swap color when faded
                 if (b.opacity <= 0.02 && b.colorChar !== b.targetColorChar) {
-                    b.x = Math.random() * fCanvas.width;
-                    b.y = Math.random() * fCanvas.height;
                     b.colorChar = b.targetColorChar;
                     b.opacity = 0.02;
                 }
@@ -642,8 +702,19 @@
                 if (b.opacity > 0.01) {
                     fCtx.beginPath();
                     fCtx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-                    let rgb = CHAR_TO_COLOR[b.colorChar] ? CHAR_TO_COLOR[b.colorChar].rgb : {r:255,g:255,b:255};
-                    fCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${b.opacity})`;
+
+                    // DATA ACCESS FIX:
+                    // Check if character exists in palette AND has an rgb property
+                    const colorData = CHAR_TO_COLOR[b.colorChar];
+                    let r = 255, g = 255, bl = 255; // Default white
+
+                    if (colorData && colorData.rgb) {
+                        r = colorData.rgb.r;
+                        g = colorData.rgb.g;
+                        bl = colorData.rgb.b;
+                    }
+
+                    fCtx.fillStyle = `rgba(${r}, ${g}, ${bl}, ${b.opacity})`;
                     fCtx.fill();
                 }
             });
@@ -659,14 +730,60 @@
         let filledPixels = 0;
         let particles2d = [];
 
-        function loadLevelArt(jsonArray) {
+        function loadLevelArt(data) {
+            // 1. Guard against null/undefined/empty data
+            if (!data) {
+                console.error("loadLevelArt: No data provided.");
+                return;
+            }
+
+            let jsonArray;
+
+            // 2. Determine if we have the custom object {palette, art} or just a raw array
+            if (data.art && Array.isArray(data.art)) {
+                jsonArray = data.art;
+                // Handle palette conversion here (see step 2 below)
+            } else if (Array.isArray(data)) {
+                jsonArray = data;
+            } else {
+                console.error("loadLevelArt: Data is not an array or valid level object", data);
+                return;
+            }
+
+            // 3. Final check before accessing index 0
+            if (jsonArray.length === 0 || !jsonArray[0]) {
+                console.error("loadLevelArt: jsonArray is empty or first row is missing.");
+                return;
+            }
+
+            // Now it's safe to continue
+            currentLevelArt = jsonArray;
+            artGridSize = jsonArray[0].trim().length;
+            let paletteSource;
+
+            // 1. Update Palettes safely
+            if (paletteSource) {
+                // We need a global to store the RGB values for the Fluid effect
+                window.CURRENT_PALETTE_OBJ = paletteSource;
+
+                for (let key in paletteSource) {
+                    // Flatten for Three.js/Canvas
+                    CHAR_TO_COLOR[key] = paletteSource[key].hex;
+                }
+                COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
+            }
+
+            // 2. Set Dimensions (Fixes the freezing/length errors)
             currentLevelArt = jsonArray;
             artGridSize = jsonArray[0].length;
             sidebarCanvas.width = artGridSize * 20;
             sidebarCanvas.height = jsonArray.length * 20;
             currentArtRes = artGridSize;
 
-            targetPixels = []; totalTargetPixels = 0; filledPixels = 0;
+            // 3. Reset Logic
+            targetPixels = [];
+            totalTargetPixels = 0;
+            filledPixels = 0;
 
             for (let y = 0; y < jsonArray.length; y++) {
                 for (let x = 0; x < artGridSize; x++) {
@@ -679,7 +796,8 @@
                     }
                 }
             }
-            updateActiveColors(); // Sync background colors to the loaded art
+
+            updateActiveColors();
             drawSidebarArt();
             updateProgressText();
         }
@@ -688,14 +806,6 @@
             let needed = new Set();
             targetPixels.forEach(p => { if (!p.filled && !p.targeted && p.char !== '_') needed.add(p.char); });
             let colors = Array.from(needed).sort();
-
-            // If the board needs blocks but the art is almost done, pad with fallbacks
-            if (colors.length < 4) {
-                for (let c of FALLBACK_COLORS) {
-                    if (colors.length >= 4) break;
-                    if (!colors.includes(c)) colors.push(c);
-                }
-            }
             return colors;
         }
 
@@ -718,7 +828,7 @@
 
             targetPixels.forEach(p => {
                 if (p.char !== '_') {
-                    wctx.fillStyle = '#' + CHAR_TO_COLOR[p.char].hex.toString(16).padStart(6, '0');
+                    wctx.fillStyle = CHAR_TO_COLOR[p.char];
                     wctx.fillRect(p.x * pw, p.y * ph, pw, ph);
                 }
             });
@@ -727,13 +837,14 @@
         }
 
         function drawSidebarArt() {
+            if (!currentLevelArt || currentLevelArt.length === 0) return;
             ctx.clearRect(0, 0, sidebarCanvas.width, sidebarCanvas.height);
             const cw = sidebarCanvas.width / artGridSize; const ch = sidebarCanvas.height / currentLevelArt.length;
 
             targetPixels.forEach(p => {
                 if (p.filled) {
                     if (p.char !== '_') {
-                        ctx.fillStyle = '#' + CHAR_TO_COLOR[p.char].hex.toString(16).padStart(6, '0');
+                        ctx.fillStyle = CHAR_TO_COLOR[p.char];
                         ctx.fillRect(p.x * cw, p.y * ch, cw, ch);
                     }
                 } else {
@@ -780,7 +891,7 @@
                     x: target.x * cw + (Math.random()*10 - 5), y: -20,
                     vx: 0, vy: 4 + Math.random()*2,
                     targetX: target.x, targetY: target.y,
-                    color: '#' + CHAR_TO_COLOR[colorChar].hex.toString(16).padStart(6, '0')
+                    color: CHAR_TO_COLOR[colorChar]
                 });
             }
         }
@@ -803,6 +914,7 @@
             materials[char] = new THREE.MeshStandardMaterial({
                 color: CHAR_TO_COLOR[char].hex, roughness: 0.2, metalness: 0.1, emissive: CHAR_TO_COLOR[char].hex, emissiveIntensity: 0.1
             });
+            console.log(CHAR_TO_COLOR[char].hex)
         });
 
         const lineGeo = new THREE.EdgesGeometry(blockGeometry);
@@ -811,6 +923,18 @@
         const colorBombMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8 });
         const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.blockSize*1.1, CONFIG.blockSize*1.1, CONFIG.blockSize*1.1), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.8 }));
         highlightMesh.visible = false; scene.add(highlightMesh);
+
+        function ensureHexColor(val) {
+            if (typeof val === 'number') {
+                // Converts decimal number to hex string with padding
+                return '#' + val.toString(16).padStart(6, '0');
+            }
+            if (typeof val === 'string') {
+                // Ensure it starts with #
+                return val.startsWith('#') ? val : '#' + val;
+            }
+            return '#ffffff'; // Fallback
+        }
 
         let grid = [];
         const boardGroup = new THREE.Group(); scene.add(boardGroup);
@@ -846,6 +970,19 @@
             const offset = (CONFIG.gridSize * CONFIG.spacing) / 2 - (CONFIG.spacing / 2);
             boardGroup.position.set(-offset, -offset, 0);
             camera.position.set(0, -2, Math.max(16, CONFIG.gridSize * 2.2)); camera.lookAt(0, 0, 0);
+
+            COLOR_CHARS.forEach(char => {
+                const rawColor = CHAR_TO_COLOR[char].hex;
+                const cleanHex = ensureHexColor(rawColor);
+
+                materials[char] = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(cleanHex), // THREE.Color works perfectly with # strings
+                    roughness: 0.2,
+                    metalness: 0.1,
+                    emissive: new THREE.Color(cleanHex),
+                    emissiveIntensity: 0.1
+                });
+            });
 
             for (let x = 0; x < CONFIG.gridSize; x++) {
                 grid[x] = [];
@@ -1145,25 +1282,25 @@
 
         /** UI LOGIC */
         document.getElementById('btn-play-solo').addEventListener('click', async () => {
-            const btn = document.getElementById('btn-play-solo');
-            const origText = btn.innerText; btn.innerText = "Loading Image..."; btn.disabled = true;
+            const lvlKey = document.getElementById('level-select').value;
+            const lvl = LEVELS[lvlKey];
 
-            try {
-                let lvl = LEVELS[document.getElementById('level-select').value];
-                currentLevelName = lvl.name; currentGridSize = CONFIG.gridSize;
+            // 1. Process image and BUILD the palette automatically
+            const artData = await loadImageToArt(lvl.imageUrl, lvl.resolution || 16, lvl.keepBg || false);
 
-                let artData;
-                if (lvl.imageUrl) artData = await loadImageToArt(lvl.imageUrl, lvl.resolution || 16, lvl.keepBg || false);
-                else artData = lvl.art;
+            if (artData) {
+                currentLevelArt = artData;
 
-                document.getElementById('start-screen').style.display = 'none';
+                // 2. Initialize Game with the newly generated palette
                 loadLevelArt(artData);
                 initBoard();
-                setTimeout(onWindowResize, 50);
-            } catch (err) {
-                btn.innerText = "Error Loading URL!"; setTimeout(() => { btn.innerText = origText; btn.disabled = false; }, 2000);
-            } finally {
-                if (btn.innerText === "Loading Image...") { btn.disabled = false; btn.innerText = origText; }
+
+                // 3. Update Fluid colors based on the generated CHAR_TO_COLOR keys
+                updateActiveColors();
+                initFluid();
+
+                document.getElementById('start-screen').style.display = 'none';
+                setTimeout(onWindowResize, 100);
             }
         });
 
@@ -1171,11 +1308,12 @@
         document.getElementById('btn-win-menu').addEventListener('click', goToMenu);
 
         function goToMenu() {
-            document.getElementById('start-screen').style.display = 'flex';
-            document.getElementById('win-screen').style.display = 'none';
-            grid = []; while(boardGroup.children.length > 0) boardGroup.remove(boardGroup.children[0]);
-            targetPixels = []; // Reset target pixels
-            updateActiveColors(); // Reset fluid to full rainbow colors
+            // document.getElementById('start-screen').style.display = 'flex';
+            // document.getElementById('win-screen').style.display = 'none';
+            // grid = []; while(boardGroup.children.length > 0) boardGroup.remove(boardGroup.children[0]);
+            // targetPixels = []; // Reset target pixels
+            // updateActiveColors(); // Reset fluid to full rainbow colors
+            location.reload();
         }
 
         /** EXPORT & SHARE */
@@ -1239,30 +1377,95 @@
         document.getElementById('btn-close-importer').addEventListener('click', () => importerModal.style.display = 'none');
 
         document.getElementById('image-upload').addEventListener('change', (e) => {
-            const file = e.target.files[0]; if (!file) return;
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 1. Get palette size from URL query string (?colors=NUMBER)
+            const urlParams = new URLSearchParams(window.location.search);
+            const paletteSize = parseInt(urlParams.get('colors')) || 10;
+
             const res = parseInt(document.getElementById('import-res').value);
             const keepBg = document.getElementById('import-keep-bg').checked;
             const processCanvas = document.getElementById('hidden-process-canvas');
-            processCanvas.width = res; processCanvas.height = res;
+            processCanvas.width = res;
+            processCanvas.height = res;
             const pCtx = processCanvas.getContext('2d', { willReadFrequently: true });
 
             const reader = new FileReader();
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
-                    pCtx.clearRect(0, 0, res, res); pCtx.drawImage(img, 0, 0, res, res);
+                    pCtx.clearRect(0, 0, res, res);
+                    pCtx.drawImage(img, 0, 0, res, res);
                     const imgData = pCtx.getImageData(0, 0, res, res).data;
-                    let jsonArray = [];
-                    for(let y=0; y<res; y++) {
-                        let rowStr = '';
-                        for(let x=0; x<res; x++) {
-                            const idx = (y * res + x) * 4;
-                            if (imgData[idx+3] < 10) rowStr += keepBg ? 'k' : '_';
-                            else rowStr += getClosestColorChar(imgData[idx], imgData[idx+1], imgData[idx+2]);
+                    const palette = [];
+                    const threshold = 50; // Minimum visual difference to consider it a "new" color
+
+                    // 1. Build a diverse palette (Distance-based sampling)
+                    for (let i = 0; i < imgData.length; i += 4) {
+                        if (imgData[i + 3] < 128) continue; // Skip transparent/semi-transparent
+
+                        const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+
+                        // Check if this color is already represented in our palette
+                        const isNewColor = palette.every(p => {
+                            const dist = Math.sqrt((r-p[0])**2 + (g-p[1])**2 + (b-p[2])**2);
+                            return dist > threshold;
+                        });
+
+                        if (isNewColor && palette.length < paletteSize) {
+                            palette.push([r, g, b]);
                         }
-                        jsonArray.push(`'${rowStr}'`);
+
+                        if (palette.length >= paletteSize) break;
                     }
-                    document.getElementById('json-export-area').value = `[\n  ${jsonArray.join(',\n  ')}\n]`;
+
+                    // 2. Fallback: If the image is very monotone and we didn't hit paletteSize,
+                    // we just proceed with what we found.
+                    // Map index to a character (0-9, then a-z)
+                    const getChar = (index) => {
+                        if (index < 10) return index.toString();
+                        return String.fromCharCode(87 + index); // 10 -> 'a', 11 -> 'b'...
+                    };
+
+                    // 3. Process Pixels using the new palette
+                    let jsonArray = [];
+                    for (let y = 0; y < res; y++) {
+                        let rowStr = '';
+                        for (let x = 0; x < res; x++) {
+                            const idx = (y * res + x) * 4;
+                            const r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2], a = imgData[idx+3];
+
+                            if (a < 10) {
+                                rowStr += keepBg ? 'k' : '_';
+                            } else {
+                                // Find closest color in our dynamic palette
+                                let minVal = Infinity;
+                                let bestIdx = 0;
+                                palette.forEach((pColor, pIdx) => {
+                                    const distance = Math.sqrt(
+                                        Math.pow(r - pColor[0], 2) +
+                                        Math.pow(g - pColor[1], 2) +
+                                        Math.pow(b - pColor[2], 2)
+                                    );
+                                    if (distance < minVal) {
+                                        minVal = distance;
+                                        bestIdx = pIdx;
+                                    }
+                                });
+                                rowStr += getChar(bestIdx);
+                            }
+                        }
+                        jsonArray.push(`  "${rowStr}"`);
+                    }
+
+                    let newPalette = [];
+                    palette.forEach((color, i) => {
+                        newPalette.push(`  "${getChar(i)}": {"hex": "${`#${color[0].toString(16).padStart(2,'0')}${color[1].toString(16).padStart(2,'0')}${color[2].toString(16).padStart(2,'0')}`}", "rgb": {"r": ${color[0]}, "g": ${color[1]}, "b": ${color[2]}}}`)
+                    });
+
+                    document.getElementById('json-export-area').value = `{\n  "palette":{\n  ${newPalette.join(',\n  ')}\n  },\n  "art":[\n  ${jsonArray.join(',\n  ')}\n  ]\n}`;
+                    // console.log("Generated Palette:", newPalette);
                 };
                 img.src = event.target.result;
             };
@@ -1275,15 +1478,44 @@
 
         document.getElementById('btn-play-custom').addEventListener('click', () => {
             const btn = document.getElementById('btn-play-custom');
+            const area = document.getElementById('json-export-area');
+
             try {
-                let parsed = JSON.parse(document.getElementById('json-export-area').value.replace(/'/g, '"'));
-                if(parsed && parsed.length > 0) {
-                    currentLevelName = "Custom Upload Art"; currentGridSize = CONFIG.gridSize;
-                    importerModal.style.display = 'none'; document.getElementById('start-screen').style.display = 'none';
-                    loadLevelArt(parsed); initBoard(); setTimeout(onWindowResize, 100);
+                // Parse the JSON
+                let parsed = JSON.parse(area.value);
+
+                if (parsed.art && parsed.art.length > 0) {
+                    currentLevelName = "Custom Upload Art";
+                    currentGridSize = CONFIG.gridSize;
+
+                    // 1. Clean up the palette strings for the game logic
+                    // We turn {"0": {"hex": "#..."}, ...} into {"0": "#...", ...}
+                    const flattenedPalette = {};
+                    for (let key in parsed.palette) {
+                        flattenedPalette[key] = parsed.palette[key].hex;
+                    }
+
+                    // 2. Assign back to global state
+                    CHAR_TO_COLOR = flattenedPalette;
+                    COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
+
+                    // 3. UI Cleanup
+                    importerModal.style.display = 'none';
+                    document.getElementById('start-screen').style.display = 'none';
+
+                    // 4. Load using the parsed object
+                    // Note: Use the version of loadLevelArt from my previous response
+                    // that handles the {palette, art} object structure!
+                    loadLevelArt(parsed);
+
+                    initBoard();
+                    setTimeout(onWindowResize, 100);
                 }
             } catch(e) {
-                const originalText = btn.innerText; btn.innerText = "Upload First!"; btn.style.backgroundColor = "#ff3333";
+                console.error("JSON Parse Error:", e);
+                const originalText = btn.innerText;
+                btn.innerText = "Invalid JSON!";
+                btn.style.backgroundColor = "#ff3333";
                 setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 1500);
             }
         });
