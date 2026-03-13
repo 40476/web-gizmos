@@ -382,44 +382,14 @@
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 1l2.2 4.5 4.8.7-3.5 3.4.8 4.8L8 12l-4.3 2.4.8-4.8L1 6.2l4.8-.7L8 1z" fill="#ffff33"/><rect x="6" y="7" width="1" height="3" fill="#000000"/><rect x="9" y="7" width="1" height="3" fill="#000000"/></svg>')
             },
 
-            'potion': {
+            'potion2': {
                 name: 'Health Potion', grid: 10, resolution: 16, keepBg: false,
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 3h4v2l3 4v5H3v-5l3-4V3z" fill="#ccffff" stroke="#999999" stroke-width="1"/><path d="M4 10v3h8v-3H4z" fill="#ff3333"/><rect x="6" y="1" width="4" height="2" fill="#996633"/></svg>')
-            },
-
-            'sword': {
-                name: 'Iron Sword', grid: 10, resolution: 16, keepBg: false,
-                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M14 2L9 7l-2-2L12 0l2 2z" fill="#cccccc"/><path d="M8 8L3 13l2 2 5-5-2-2z" fill="#663300"/><rect x="7" y="6" width="3" height="3" transform="rotate(45 8.5 7.5)" fill="#ffcc00"/></svg>')
             },
 
             'chest': {
                 name: 'Treasure Chest', grid: 10, resolution: 16, keepBg: false,
                 imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="2" y="6" width="12" height="8" fill="#8B4513"/><rect x="2" y="3" width="12" height="3" fill="#A0522D"/><rect x="1" y="5" width="14" height="1" fill="#FFD700"/><rect x="7" y="5" width="2" height="3" fill="#FFD700"/><rect x="7.5" y="6" width="1" height="1" fill="#000000"/></svg>')
-            },
-
-            'ruby': {
-                name: 'Red Ruby', grid: 8, resolution: 24, keepBg: false,
-                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="12,2 22,9 12,22 2,9" fill="#e60000"/><polygon points="12,2 12,22 2,9" fill="#ff3333" opacity="0.6"/><polygon points="7,4 17,4 12,9" fill="#ff8080"/></svg>')
-            },
-
-            'sapphire': {
-                name: 'Blue Sapphire', grid: 8, resolution: 32, keepBg: false,
-                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><polygon points="9,4 23,4 30,16 23,28 9,28 2,16" fill="#0055ff"/><polygon points="9,4 23,4 16,16" fill="#6699ff"/><polygon points="16,16 23,28 9,28" fill="#0022cc"/></svg>')
-            },
-
-            'emerald': {
-                name: 'Green Emerald', grid: 6, resolution: 16, keepBg: false,
-                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><polygon points="4,1 12,1 15,8 12,15 4,15 1,8" fill="#00b33c"/><rect x="6" y="3" width="4" height="10" fill="#33ff77" opacity="0.5"/></svg>')
-            },
-
-            'topaz': {
-                name: 'Yellow Topaz', grid: 10, resolution: 48, keepBg: false,
-                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><polygon points="24,4 40,24 24,44 8,24" fill="#ffcc00"/><polygon points="24,12 32,24 24,36 16,24" fill="#ffee66"/></svg>')
-            },
-
-            'amethyst': {
-                name: 'Purple Amethyst', grid: 6, resolution: 20, keepBg: false,
-                imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><polygon points="10,2 18,18 2,18" fill="#9933ff"/><polygon points="10,2 10,18 2,18" fill="#c266ff" opacity="0.6"/></svg>')
             },
 
             'water_drop': {
@@ -449,19 +419,22 @@
         const levelSelect = document.getElementById('level-select');
         Object.keys(LEVELS).forEach(key => {
             const opt = document.createElement('option');
-            opt.value = key; opt.innerText = `${LEVELS[key].name} (difficulty: ${Math.ceil(mapValueToPercent(resolutions,LEVELS[key].resolution))})`; levelSelect.appendChild(opt);
+            opt.value = key; opt.innerText = `${LEVELS[key].name} (difficulty: ${Math.ceil(mapValueToPercent(resolutions,LEVELS[key].resolution))})`;
+levelSelect.appendChild(opt);
         });
 
         const gridSlider = document.getElementById('grid-size-slider');
         const gridDisplay = document.getElementById('grid-size-display');
         gridSlider.addEventListener('input', (e) => {
             CONFIG.gridSize = parseInt(e.target.value);
+            currentGridSize = CONFIG.gridSize; // FIX: Update currentGridSize when slider changes
             gridDisplay.innerText = `${CONFIG.gridSize}x${CONFIG.gridSize}`;
         });
 
         document.getElementById('level-select').addEventListener('change', (e) => {
             let lvl = LEVELS[e.target.value];
             gridSlider.value = lvl.grid; CONFIG.gridSize = lvl.grid;
+            currentGridSize = lvl.grid; // FIX: Update currentGridSize when level changes
             gridDisplay.innerText = `${CONFIG.gridSize}x${CONFIG.gridSize}`;
         });
         document.getElementById('level-select').dispatchEvent(new Event('change'));
@@ -471,19 +444,15 @@
                 return null;
             }
 
-            // Find min and max values in the array
             const min = Math.min(...valuesArray);
             const max = Math.max(...valuesArray);
 
-            // Check if the range is zero to avoid division by zero
             if (max === min) {
                 return (inputValue === min) ? 100 : 0;
             }
 
-            // Apply the mapping formula
             const percentage = ((inputValue - min) / (max - min)) * 100;
 
-            // Optional: Clamp the result between 0 and 100
             return Math.max(0, Math.min(100, percentage));
         }
 
@@ -499,12 +468,10 @@
 
                 const colorData = CHAR_TO_COLOR[char];
 
-                // Safety check to prevent the "c is undefined" error from before
                 if (!colorData || !colorData.rgb) continue;
 
                 const c = colorData.rgb;
 
-                // Squared distance calculation
                 const dist = (r - c.r)**2 + (g - c.g)**2 + (b - c.b)**2;
 
                 if (dist < minDistance) {
@@ -517,10 +484,11 @@
 
         function getChar(index) {
             if (index < 10) return index.toString();
-            if (index < 36) return String.fromCharCode(87 + index); // 10 -> 'a' (ASCII 97)
-            if (index < 62) return String.fromCharCode(29 + index); // 36 -> 'A' (ASCII 65)
-            return '?'; // Fallback if somehow > 62 colors requested
+            if (index < 36) return String.fromCharCode(87 + index);
+            if (index < 62) return String.fromCharCode(29 + index);
+            return '?';
         }
+
         function getColorDistance(rgb1, rgb2) {
             return Math.pow(rgb1.r - rgb2.r, 2) +
                 Math.pow(rgb1.g - rgb2.g, 2) +
@@ -529,7 +497,7 @@
 
         function loadImageToArt(url, res, keepBg) {
             return new Promise((resolve, reject) => {
-                const THRESHOLD = 1200; // Increase this to merge more shades, decrease to keep more detail
+                const THRESHOLD = 1200;
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
                 img.onload = () => {
@@ -558,7 +526,6 @@
                                 const currentRGB = { r, g, b };
                                 let matchedChar = null;
 
-                                // Check existing palette for a "similar enough" color
                                 for (let char in CHAR_TO_COLOR) {
                                     if (char === 'k' || char === '_') continue;
 
@@ -570,7 +537,6 @@
                                 }
 
                                 if (!matchedChar) {
-                                    // No similar color found, create a new one
                                     const char = getChar(colorCounter++);
                                     CHAR_TO_COLOR[char] = {
                                         hex: "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1),
@@ -599,12 +565,10 @@
         let blobs = [];
 
         function getArtColors() {
-            // If targetPixels isn't ready, use a safe default palette
             if (!targetPixels || targetPixels.length === 0) return ['r', 'g', 'b', 'y'];
 
             let active = new Set();
             targetPixels.forEach(p => {
-                // Only collect characters that actually exist in your CHAR_TO_COLOR map
                 if (!p.filled && !p.targeted && p.char !== '_' && CHAR_TO_COLOR[p.char]) {
                     active.add(p.char);
                 }
@@ -612,7 +576,6 @@
 
             let colors = Array.from(active).sort();
 
-            // If level is empty or finished, use celebratory colors
             if (colors.length === 0) return ['w', 'y'];
             return colors;
         }
@@ -620,19 +583,16 @@
         function updateActiveColors() {
             currentActiveColors = getArtColors();
 
-            // SAFETY: If somehow empty, default to white to prevent division by zero
             if (!currentActiveColors || currentActiveColors.length === 0) {
                 currentActiveColors = ['w'];
             }
 
             if (blobs.length > 0) {
-                // Calculate distribution safely
                 let blobsPerColor = Math.max(1, Math.ceil(blobs.length / currentActiveColors.length));
                 let cIdx = 0;
                 let count = 0;
 
                 blobs.forEach((b) => {
-                    // Assign the target color object character
                     let targetChar = currentActiveColors[cIdx] || currentActiveColors[0];
                     b.targetColorChar = targetChar;
 
@@ -684,7 +644,6 @@
                 if(b.y < -b.r) b.y = fCanvas.height + b.r;
                 if(b.y > fCanvas.height + b.r) b.y = -b.r;
 
-                // Fade logic
                 if (b.colorChar !== b.targetColorChar) {
                     b.targetOpacity = 0;
                 } else {
@@ -693,7 +652,6 @@
 
                 b.opacity += (b.targetOpacity - b.opacity) * 0.08;
 
-                // Swap color when faded
                 if (b.opacity <= 0.02 && b.colorChar !== b.targetColorChar) {
                     b.colorChar = b.targetColorChar;
                     b.opacity = 0.02;
@@ -703,10 +661,8 @@
                     fCtx.beginPath();
                     fCtx.arc(b.x, b.y, b.r, 0, Math.PI*2);
 
-                    // DATA ACCESS FIX:
-                    // Check if character exists in palette AND has an rgb property
                     const colorData = CHAR_TO_COLOR[b.colorChar];
-                    let r = 255, g = 255, bl = 255; // Default white
+                    let r = 255, g = 255, bl = 255;
 
                     if (colorData && colorData.rgb) {
                         r = colorData.rgb.r;
@@ -731,18 +687,17 @@
         let particles2d = [];
 
         function loadLevelArt(data) {
-            // 1. Guard against null/undefined/empty data
             if (!data) {
                 console.error("loadLevelArt: No data provided.");
                 return;
             }
 
             let jsonArray;
+            let paletteSource = null;
 
-            // 2. Determine if we have the custom object {palette, art} or just a raw array
             if (data.art && Array.isArray(data.art)) {
                 jsonArray = data.art;
-                // Handle palette conversion here (see step 2 below)
+                paletteSource = data.palette;
             } else if (Array.isArray(data)) {
                 jsonArray = data;
             } else {
@@ -750,37 +705,27 @@
                 return;
             }
 
-            // 3. Final check before accessing index 0
             if (jsonArray.length === 0 || !jsonArray[0]) {
                 console.error("loadLevelArt: jsonArray is empty or first row is missing.");
                 return;
             }
 
-            // Now it's safe to continue
             currentLevelArt = jsonArray;
             artGridSize = jsonArray[0].trim().length;
-            let paletteSource;
 
-            // 1. Update Palettes safely
             if (paletteSource) {
-                // We need a global to store the RGB values for the Fluid effect
                 window.CURRENT_PALETTE_OBJ = paletteSource;
 
                 for (let key in paletteSource) {
-                    // Flatten for Three.js/Canvas
-                    CHAR_TO_COLOR[key] = paletteSource[key].hex;
+                    CHAR_TO_COLOR[key] = paletteSource[key];
                 }
                 COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
             }
 
-            // 2. Set Dimensions (Fixes the freezing/length errors)
-            currentLevelArt = jsonArray;
-            artGridSize = jsonArray[0].length;
             sidebarCanvas.width = artGridSize * 20;
             sidebarCanvas.height = jsonArray.length * 20;
             currentArtRes = artGridSize;
 
-            // 3. Reset Logic
             targetPixels = [];
             totalTargetPixels = 0;
             filledPixels = 0;
@@ -816,7 +761,7 @@
 
         function triggerWinSequence() {
             gameState = STATE.WON;
-            updateActiveColors(); // Triggers gold/white background
+            updateActiveColors();
 
             document.getElementById('win-level-name').innerText = currentLevelName;
             document.getElementById('win-stats').innerText = `Grid: ${currentGridSize}x${currentGridSize} | Art: ${currentArtRes}x${currentArtRes}`;
@@ -828,7 +773,12 @@
 
             targetPixels.forEach(p => {
                 if (p.char !== '_') {
-                    wctx.fillStyle = CHAR_TO_COLOR[p.char];
+                    // FIX: Convert hex to proper string format for canvas
+                    const colorHex = CHAR_TO_COLOR[p.char].hex;
+                    const hexString = typeof colorHex === 'number'
+                        ? '#' + colorHex.toString(16).padStart(6, '0')
+                        : colorHex.startsWith('#') ? colorHex : '#' + colorHex;
+                    wctx.fillStyle = hexString;
                     wctx.fillRect(p.x * pw, p.y * ph, pw, ph);
                 }
             });
@@ -844,7 +794,12 @@
             targetPixels.forEach(p => {
                 if (p.filled) {
                     if (p.char !== '_') {
-                        ctx.fillStyle = CHAR_TO_COLOR[p.char];
+                        // FIX: Convert hex to proper string format for canvas
+                        const colorHex = CHAR_TO_COLOR[p.char].hex;
+                        const hexString = typeof colorHex === 'number'
+                            ? '#' + colorHex.toString(16).padStart(6, '0')
+                            : colorHex.startsWith('#') ? colorHex : '#' + colorHex;
+                        ctx.fillStyle = hexString;
                         ctx.fillRect(p.x * cw, p.y * ch, cw, ch);
                     }
                 } else {
@@ -883,7 +838,6 @@
                 let target = available[Math.floor(Math.random() * available.length)];
                 target.targeted = true;
 
-                // Immediately fade out this color from background if it's the last one needed
                 updateActiveColors();
 
                 const cw = sidebarCanvas.width / artGridSize;
@@ -891,7 +845,7 @@
                     x: target.x * cw + (Math.random()*10 - 5), y: -20,
                     vx: 0, vy: 4 + Math.random()*2,
                     targetX: target.x, targetY: target.y,
-                    color: CHAR_TO_COLOR[colorChar]
+                    color: CHAR_TO_COLOR[colorChar].hex
                 });
             }
         }
@@ -910,30 +864,22 @@
 
         const blockGeometry = new THREE.BoxGeometry(CONFIG.blockSize, CONFIG.blockSize, CONFIG.blockSize);
         const materials = {};
-        COLOR_CHARS.forEach(char => {
-            materials[char] = new THREE.MeshStandardMaterial({
-                color: CHAR_TO_COLOR[char].hex, roughness: 0.2, metalness: 0.1, emissive: CHAR_TO_COLOR[char].hex, emissiveIntensity: 0.1
-            });
-            console.log(CHAR_TO_COLOR[char].hex)
-        });
-
         const lineGeo = new THREE.EdgesGeometry(blockGeometry);
         const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
         const colorBombGeo = new THREE.IcosahedronGeometry(CONFIG.blockSize*0.4);
         const colorBombMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8 });
-        const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.blockSize*1.1, CONFIG.blockSize*1.1, CONFIG.blockSize*1.1), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.8 }));
+        const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.blockSize*1.1, CONFIG.blockSize*1.1, CONFIG.blockSize*1.1), new THREE.MeshBasicMaterial({ color:
+0xffffff, wireframe: true, transparent: true, opacity: 0.8 }));
         highlightMesh.visible = false; scene.add(highlightMesh);
 
         function ensureHexColor(val) {
             if (typeof val === 'number') {
-                // Converts decimal number to hex string with padding
                 return '#' + val.toString(16).padStart(6, '0');
             }
             if (typeof val === 'string') {
-                // Ensure it starts with #
                 return val.startsWith('#') ? val : '#' + val;
             }
-            return '#ffffff'; // Fallback
+            return '#ffffff';
         }
 
         let grid = [];
@@ -954,7 +900,8 @@
             }
             applyPowerupVisuals() {
                 if (this.powerup === 'line') { this.mesh.add(new THREE.LineSegments(lineGeo, lineMat)); }
-                else if (this.powerup === 'color') { this.baseMesh.visible = false; this.bombCore = new THREE.Mesh(colorBombGeo, colorBombMat); this.mesh.add(this.bombCore); }
+                else if (this.powerup === 'color') { this.baseMesh.visible = false; this.bombCore = new THREE.Mesh(colorBombGeo, colorBombMat);
+this.mesh.add(this.bombCore); }
             }
             changeToPowerup(type) { this.powerup = type; this.applyPowerupVisuals(); }
             updatePos(delta) {
@@ -976,7 +923,7 @@
                 const cleanHex = ensureHexColor(rawColor);
 
                 materials[char] = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(cleanHex), // THREE.Color works perfectly with # strings
+                    color: new THREE.Color(cleanHex),
                     roughness: 0.2,
                     metalness: 0.1,
                     emissive: new THREE.Color(cleanHex),
@@ -1285,17 +1232,15 @@
             const lvlKey = document.getElementById('level-select').value;
             const lvl = LEVELS[lvlKey];
 
-            // 1. Process image and BUILD the palette automatically
+            // FIX: Set currentLevelName for built-in levels
+            currentLevelName = lvl.name;
+
             const artData = await loadImageToArt(lvl.imageUrl, lvl.resolution || 16, lvl.keepBg || false);
 
             if (artData) {
                 currentLevelArt = artData;
-
-                // 2. Initialize Game with the newly generated palette
                 loadLevelArt(artData);
                 initBoard();
-
-                // 3. Update Fluid colors based on the generated CHAR_TO_COLOR keys
                 updateActiveColors();
                 initFluid();
 
@@ -1308,11 +1253,6 @@
         document.getElementById('btn-win-menu').addEventListener('click', goToMenu);
 
         function goToMenu() {
-            // document.getElementById('start-screen').style.display = 'flex';
-            // document.getElementById('win-screen').style.display = 'none';
-            // grid = []; while(boardGroup.children.length > 0) boardGroup.remove(boardGroup.children[0]);
-            // targetPixels = []; // Reset target pixels
-            // updateActiveColors(); // Reset fluid to full rainbow colors
             location.reload();
         }
 
@@ -1341,7 +1281,11 @@
             const pw = artSize / currentArtRes; const ph = artSize / currentArtRes;
             targetPixels.forEach(p => {
                 if (p.char !== '_') {
-                    ctx.fillStyle = '#' + CHAR_TO_COLOR[p.char].hex.toString(16).padStart(6, '0');
+                    const colorHex = CHAR_TO_COLOR[p.char].hex;
+                    const hexString = typeof colorHex === 'number'
+                        ? '#' + colorHex.toString(16).padStart(6, '0')
+                        : colorHex.startsWith('#') ? colorHex : '#' + colorHex;
+                    ctx.fillStyle = hexString;
                     ctx.fillRect(startX + p.x * pw, startY + p.y * ph, pw, ph);
                 }
             });
@@ -1380,7 +1324,6 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            // 1. Get palette size from URL query string (?colors=NUMBER)
             const urlParams = new URLSearchParams(window.location.search);
             const paletteSize = parseInt(urlParams.get('colors')) || 10;
 
@@ -1399,15 +1342,13 @@
                     pCtx.drawImage(img, 0, 0, res, res);
                     const imgData = pCtx.getImageData(0, 0, res, res).data;
                     const palette = [];
-                    const threshold = 50; // Minimum visual difference to consider it a "new" color
+                    const threshold = 50;
 
-                    // 1. Build a diverse palette (Distance-based sampling)
                     for (let i = 0; i < imgData.length; i += 4) {
-                        if (imgData[i + 3] < 128) continue; // Skip transparent/semi-transparent
+                        if (imgData[i + 3] < 128) continue;
 
                         const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
 
-                        // Check if this color is already represented in our palette
                         const isNewColor = palette.every(p => {
                             const dist = Math.sqrt((r-p[0])**2 + (g-p[1])**2 + (b-p[2])**2);
                             return dist > threshold;
@@ -1420,15 +1361,6 @@
                         if (palette.length >= paletteSize) break;
                     }
 
-                    // 2. Fallback: If the image is very monotone and we didn't hit paletteSize,
-                    // we just proceed with what we found.
-                    // Map index to a character (0-9, then a-z)
-                    const getChar = (index) => {
-                        if (index < 10) return index.toString();
-                        return String.fromCharCode(87 + index); // 10 -> 'a', 11 -> 'b'...
-                    };
-
-                    // 3. Process Pixels using the new palette
                     let jsonArray = [];
                     for (let y = 0; y < res; y++) {
                         let rowStr = '';
@@ -1439,7 +1371,6 @@
                             if (a < 10) {
                                 rowStr += keepBg ? 'k' : '_';
                             } else {
-                                // Find closest color in our dynamic palette
                                 let minVal = Infinity;
                                 let bestIdx = 0;
                                 palette.forEach((pColor, pIdx) => {
@@ -1461,11 +1392,13 @@
 
                     let newPalette = [];
                     palette.forEach((color, i) => {
-                        newPalette.push(`  "${getChar(i)}": {"hex": "${`#${color[0].toString(16).padStart(2,'0')}${color[1].toString(16).padStart(2,'0')}${color[2].toString(16).padStart(2,'0')}`}", "rgb": {"r": ${color[0]}, "g": ${color[1]}, "b": ${color[2]}}}`)
+                        newPalette.push(`  "${getChar(i)}": {"hex":
+"${`#${color[0].toString(16).padStart(2,'0')}${color[1].toString(16).padStart(2,'0')}${color[2].toString(16).padStart(2,'0')}`}", "rgb": {"r": ${color[0]}, "g":
+${color[1]}, "b": ${color[2]}}}`)
                     });
 
-                    document.getElementById('json-export-area').value = `{\n  "palette":{\n  ${newPalette.join(',\n  ')}\n  },\n  "art":[\n  ${jsonArray.join(',\n  ')}\n  ]\n}`;
-                    // console.log("Generated Palette:", newPalette);
+                    document.getElementById('json-export-area').value = `{\n  "palette":{\n  ${newPalette.join(',\n  ')}\n  },\n  "art":[\n  ${jsonArray.join(',\n  ')}\n
+]\n}`;
                 };
                 img.src = event.target.result;
             };
@@ -1481,33 +1414,16 @@
             const area = document.getElementById('json-export-area');
 
             try {
-                // Parse the JSON
                 let parsed = JSON.parse(area.value);
 
                 if (parsed.art && parsed.art.length > 0) {
                     currentLevelName = "Custom Upload Art";
                     currentGridSize = CONFIG.gridSize;
 
-                    // 1. Clean up the palette strings for the game logic
-                    // We turn {"0": {"hex": "#..."}, ...} into {"0": "#...", ...}
-                    const flattenedPalette = {};
-                    for (let key in parsed.palette) {
-                        flattenedPalette[key] = parsed.palette[key].hex;
-                    }
-
-                    // 2. Assign back to global state
-                    CHAR_TO_COLOR = flattenedPalette;
-                    COLOR_CHARS = Object.keys(CHAR_TO_COLOR);
-
-                    // 3. UI Cleanup
                     importerModal.style.display = 'none';
                     document.getElementById('start-screen').style.display = 'none';
 
-                    // 4. Load using the parsed object
-                    // Note: Use the version of loadLevelArt from my previous response
-                    // that handles the {palette, art} object structure!
                     loadLevelArt(parsed);
-
                     initBoard();
                     setTimeout(onWindowResize, 100);
                 }
