@@ -534,19 +534,18 @@
         <div class="summary-content">
           <section>
   <ul>
-    <li>Match-3 puzzle game with voxel-style 3D blocks</li>
-    <li>Complete pixel art by filling target pixels with collected blocks</li>
-    <li>Swap adjacent blocks to create matches of 3+ same colors</li>
-    <li>Special blocks: Line clears entire row/column, Color bomb clears all of that color</li>
-    <li>Custom art importer with drag-and-drop image processing</li>
+    <li>3D match-3 puzzle game with voxel-style blocks that swaps to create matches</li>
+    <li>Features art importer that converts images into playable puzzle levels with color-coded blocks</li>
+    <li>Dynamic background fluid effects that change colors based on the current level's palette</li>
+    <li>Includes win screen with export/share functionality and particle explosion effects</li>
   </ul>
 
   <pre>
-    <code>const gameState = { IDLE: 0, SWAPPING: 1, MATCHING: 2, DROPPING: 3, SHUFFLING: 4, WON: 5 };</code>
-    <code>function findMatches() { /* checks rows/columns for 3+ same color */ }</code>
+    <code>const CHAR_TO_COLOR = { 'r': { hex: 0xFF3333, rgb: {r:255, g:51, b:51} }, ... };</code>
+    <code>class Block { constructor(x, y, charKey, powerupType = 'none') { ... } }</code>
   </pre>
 
-  <p>VOXEL CRASH combines match-3 mechanics with pixel art completion. Players swap blocks to match colors, clear them, and collect pixels to fill target art. The game features 3D voxel graphics, special power-up blocks, and a custom art importer that converts images into playable levels.</p>
+  <p>A WebGL-based match-3 game featuring 3D voxel blocks, an image-to-level converter, and dynamic fluid backgrounds that adapt to each level's color palette. The game includes power-ups, particle effects, and export/share functionality for completed levels.</p>
 </section>
         </div>
       </section>
