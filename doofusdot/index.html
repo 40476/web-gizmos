@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doofus Dot</title>
+    <style>
+        body { margin: 0; height: 100vh; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        
+        #ui-layer {
+            position: absolute; top: 15px; left: 15px; background: rgba(255, 255, 255, 0.95);
+            padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px;
+            z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 220px;
+        }
+
+        .dot {
+            position: absolute; width: 16px; height: 16px; border-radius: 50%;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none; /* Mouse detection is handled by the script */
+        }
+
+        .row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        input, select, button { padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #333; color: white; cursor: pointer; margin-top: 5px; border: none; padding: 8px; }
+        button:hover { background: #000; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <h2 style="margin:0; font-size: 18px;">Doofus Dot</h2>
+    <div class="row">
+        <label>How many doofuses?</label>
+        <input type="number" id="dotCount" value="25" min="1" max="150">
+    </div>
+    <div class="row">
+        <label>Color Style:</label>
+        <select id="colorMode">
+            <option value="single">Same Color</option>
+            <option value="rainbow">Rainbow</option>
+        </select>
+    </div>
+    <div id="pickerRow" class="row">
+        <label>Pick Color:</label>
+        <input type="color" id="colorPicker" value="#00ff88">
+    </div>
+    <div class="row">
+        <label>Sound FX:</label>
+        <select id="soundSelect"></select>
+    </div>
+    <button id="applyBtn">Apply & Respawn</button>
+</div>
+
+<div id="dot-container"></div>
+
+<script>
+    const container = document.getElementById('dot-container');
+    const soundSelect = document.getElementById('soundSelect');
+    const applyBtn = document.getElementById('applyBtn');
+    
+    let doofuses = [];
+    const proximity = 100; // Pixels until they run away
+
+    // 1. Fetch Sound Atlas and set default to 'bruh'
+    async function initSounds() {
+        try {
+            const response = await fetch('../shared/atlas.json');
+            const data = await response.json();
+            
+            data.forEach(file => {
+                const opt = document.createElement('option');
+                opt.value = `../shared/${file.name}`;
+                opt.textContent = file.name;
+                // Set default to bruh.mp3
+                if (file.name === 'bruh.mp3') opt.selected = true;
+                soundSelect.appendChild(opt);
+            });
+        } catch (e) {
+            console.error("Atlas not found, using fallback names.");
+            // Fallback if fetch fails
+            ['bruh.mp3', 'brainfart.mp3', 'stickykeysbb.mp3'].forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = `../shared/${name}`;
+                opt.textContent = name;
+                if(name === 'bruh.mp3') opt.selected = true;
+                soundSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function playSound() {
+        const audio = new Audio(soundSelect.value);
+        audio.volume = 0.4;
+        audio.play().catch(() => {}); 
+    }
+
+    class Doofus {
+        constructor() {
+            this.el = document.createElement('div');
+            this.el.className = 'dot';
+            this.spawn();
+            container.appendChild(this.el);
+        }
+
+        spawn() {
+            this.x = Math.random() * (window.innerWidth - 20);
+            this.y = Math.random() * (window.innerHeight - 20);
+            
+            const mode = document.getElementById('colorMode').value;
+            const picker = document.getElementById('colorPicker').value;
+            
+            this.el.style.backgroundColor = mode === 'rainbow' 
+                ? `hsl(${Math.random() * 360}, 80%, 60%)` 
+                : picker;
+            
+            this.updatePosition();
+        }
+
+        updatePosition() {
+            this.el.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        }
+
+        flee(mouseX, mouseY) {
+            const dx = this.x - mouseX;
+            const dy = this.y - mouseY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist < proximity) {
+                // Pick a new random spot
+                this.x = Math.random() * (window.innerWidth - 20);
+                this.y = Math.random() * (window.innerHeight - 20);
+                this.updatePosition();
+                playSound();
+            }
+        }
+    }
+
+    function createSwarm() {
+        container.innerHTML = '';
+        doofuses = [];
+        const count = document.getElementById('dotCount').value;
+        for(let i=0; i < count; i++) {
+            doofuses.push(new Doofus());
+        }
+    }
+
+    // Input Listeners
+    window.addEventListener('mousemove', (e) => {
+        doofuses.forEach(d => d.flee(e.clientX, e.clientY));
+    });
+
+    document.getElementById('colorMode').addEventListener('change', (e) => {
+        document.getElementById('pickerRow').style.visibility = 
+            e.target.value === 'rainbow' ? 'hidden' : 'visible';
+    });
+
+    applyBtn.addEventListener('click', createSwarm);
+
+    // Startup
+    initSounds();
+    createSwarm();
+</script>
+
+</body>
+</html>
