@@ -206,6 +206,8 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
+        <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">> doofusdot</a>
+      
     </div>
     <button id="themeToggle">Toggle Theme</button>
   </nav>
@@ -546,6 +548,27 @@
   </pre>
 
   <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-doofusdot" data-name="doofusdot">
+        <a class="app-link" href="doofusdot/index.html">[ Run Application ]</a>
+        <h2>doofusdot</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Creates an interactive web page with animated "doofus" dots that flee from mouse movement</li>
+    <li>Features a UI panel for configuring dot count, color mode (single or rainbow), custom color picker, and sound effects</li>
+    <li>Plays sounds when dots are scared away and fetches sound options from an external JSON file</li>
+  </ul>
+
+  <pre>
+    <code>const proximity = 100; // Pixels until they run away</code>
+    <code>this.el.style.backgroundColor = mode === 'rainbow' ? `hsl(${Math.random() * 360}, 80%, 60%)` : picker;</code>
+  </pre>
+
+  <p>This web application creates a swarm of animated dots that react to mouse movement by fleeing when the cursor gets too close. Users can customize the number of dots, their colors, and sound effects through an interactive control panel. The dots spawn randomly on screen and play audio when scared away, creating an engaging and playful interactive experience.</p>
 </section>
         </div>
       </section>
