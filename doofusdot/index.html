@@ -11,6 +11,7 @@
             background: #1a1a1a; 
             font-family: 'Segoe UI', system-ui, sans-serif; 
             overflow: hidden; 
+            user-select: none;
         }
         
         #ui-layer {
@@ -31,7 +32,6 @@
         .dot {
             position: absolute; 
             border-radius: 50%;
-            /* Glide effect + scale transition */
             transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), 
                         width 0.3s ease, height 0.3s ease;
             pointer-events: none; 
@@ -51,18 +51,17 @@
             border-radius: 6px;
         }
         button:hover { background: #686de0; }
+        .hint { font-size: 10px; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
 
 <div id="ui-layer">
     <h2>Doofus Dot</h2>
-    
     <div class="row">
         <label>Count:</label>
         <input type="number" id="dotCount" value="40" min="1" max="200">
     </div>
-
     <div class="row">
         <label>Mode:</label>
         <select id="colorMode">
@@ -70,18 +69,16 @@
             <option value="rainbow">Rainbow</option>
         </select>
     </div>
-
     <div id="pickerRow" class="row">
         <label>Color:</label>
         <input type="color" id="colorPicker" value="#f0932b">
     </div>
-
     <div class="row">
         <label>Sound:</label>
         <select id="soundSelect"></select>
     </div>
-
-    <button id="applyBtn">Respawn Doofuses</button>
+    <button id="applyBtn">Respawn & Cache</button>
+    <span class="hint">Note: Click screen once to enable audio.</span>
 </div>
 
 <div id="dot-container"></div>
@@ -96,46 +93,66 @@
     const AUDIO_BASE = '../shared/audio/';
     let doofuses = [];
     const proximityLimit = 90;
+    
+    // Simple Audio Cache
+    let cachedAudioBlob = null;
 
-    // Load atlas from the specific audio subfolder
     async function initSounds() {
         try {
             const response = await fetch(`${AUDIO_BASE}atlas.json`);
             const data = await response.json();
             
-            soundSelect.innerHTML = ''; // Clear fallback
+            soundSelect.innerHTML = '';
             data.forEach(file => {
                 const opt = document.createElement('option');
                 opt.value = `${AUDIO_BASE}${file.name}`;
                 opt.textContent = file.name;
-                
-                // Default to bruh.mp3
                 if (file.name === 'bruh.mp3') opt.selected = true;
                 soundSelect.appendChild(opt);
             });
+            // Initial cache
+            cacheCurrentSound();
         } catch (e) {
-            console.error("Path incorrect or atlas.json missing at " + AUDIO_BASE);
+            console.error("Path incorrect or atlas.json missing.");
+        }
+    }
+
+    // Fetches the sound once and stores it as a Blob URL for instant re-play
+    async function cacheCurrentSound() {
+        try {
+            const response = await fetch(soundSelect.value);
+            const blob = await response.blob();
+            if (cachedAudioBlob) URL.revokeObjectURL(cachedAudioBlob);
+            cachedAudioBlob = URL.createObjectURL(blob);
+        } catch (e) {
+            console.error("Failed to cache sound", e);
         }
     }
 
     function playEffect() {
-        const audio = new Audio(soundSelect.value);
-        audio.volume = 0.4;
-        audio.play().catch(() => {}); 
+        if (!cachedAudioBlob) return;
+        
+        // Creating a new instance every time allows overlapping sounds
+        const snd = new Audio(cachedAudioBlob);
+        snd.volume = 0.3;
+        snd.play().catch(() => {});
+        
+        // Cleanup memory after play
+        snd.onended = () => { snd.remove(); };
     }
 
     class Doofus {
         constructor() {
             this.el = document.createElement('div');
             this.el.className = 'dot';
-            this.size = 15;
+            this.size = 18;
             this.spawn();
             container.appendChild(this.el);
         }
 
         spawn() {
-            this.x = Math.random() * (window.innerWidth - 50);
-            this.y = Math.random() * (window.innerHeight - 50);
+            this.x = Math.random() * (window.innerWidth - 60);
+            this.y = Math.random() * (window.innerHeight - 60);
             
             const isRainbow = colorMode.value === 'rainbow';
             this.el.style.backgroundColor = isRainbow 
@@ -162,13 +179,12 @@
         }
 
         flee() {
-            // New random position
             this.x = Math.random() * (window.innerWidth - this.size);
             this.y = Math.random() * (window.innerHeight - this.size);
             
             // Growth Logic
-            // this.size += 10;
-            // if (this.size > 100) this.size = 15; // Reset if too big
+            // this.size += 8;
+            // if (this.size > 120) this.size = 18;
             
             this.updateStyles();
             playEffect();
@@ -176,6 +192,7 @@
     }
 
     function createNewSet() {
+        cacheCurrentSound(); // Re-cache if sound selection changed
         container.innerHTML = '';
         doofuses = [];
         const count = document.getElementById('dotCount').value;
@@ -184,7 +201,6 @@
         }
     }
 
-    // Event Listeners
     window.addEventListener('mousemove', (e) => {
         doofuses.forEach(d => d.checkProximity(e.clientX, e.clientY));
     });
@@ -195,7 +211,7 @@
 
     applyBtn.addEventListener('click', createNewSet);
 
-    // Run
+    // Initial load
     initSounds();
     createNewSet();
 </script>
