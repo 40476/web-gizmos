@@ -6,58 +6,40 @@
     <title>Doofus Dot</title>
     <style>
         body { 
-            margin: 0; 
-            height: 100vh; 
-            background: #1a1a1a; 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            overflow: hidden; 
+            margin: 0; height: 100vh; background: #1a1a1a; 
+            font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; 
             user-select: none;
         }
         
         #ui-layer {
-            position: absolute; 
-            top: 15px; 
-            left: 15px; 
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px; 
-            border-radius: 12px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px;
-            z-index: 100; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5); 
-            width: 220px;
+            position: absolute; top: 15px; left: 15px; background: rgba(255, 255, 255, 0.95);
+            padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px;
+            z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.5); width: 220px;
         }
 
         .dot {
-            position: absolute; 
-            border-radius: 50%;
+            position: absolute; border-radius: 50%;
             transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), 
                         width 0.3s ease, height 0.3s ease;
-            pointer-events: none; 
-            will-change: transform;
+            pointer-events: none; will-change: transform;
         }
 
         .row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
         input, select, button { padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
         h2 { margin: 0; font-size: 20px; color: #333; }
         button { 
-            background: #4834d4; 
-            color: white; 
-            cursor: pointer; 
-            border: none; 
-            padding: 10px; 
-            font-weight: bold;
-            border-radius: 6px;
+            background: #4834d4; color: white; cursor: pointer; border: none; 
+            padding: 10px; font-weight: bold; border-radius: 6px;
         }
         button:hover { background: #686de0; }
-        .hint { font-size: 10px; color: #666; font-style: italic; }
+        #status { font-size: 10px; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
 
 <div id="ui-layer">
     <h2>Doofus Dot</h2>
+    <div id="status">Click anywhere to enable audio</div>
     <div class="row">
         <label>Count:</label>
         <input type="number" id="dotCount" value="40" min="1" max="200">
@@ -77,8 +59,7 @@
         <label>Sound:</label>
         <select id="soundSelect"></select>
     </div>
-    <button id="applyBtn">Respawn & Cache</button>
-    <span class="hint">Note: Click screen once to enable audio.</span>
+    <button id="applyBtn">Respawn Doofuses</button>
 </div>
 
 <div id="dot-container"></div>
@@ -87,15 +68,27 @@
     const container = document.getElementById('dot-container');
     const soundSelect = document.getElementById('soundSelect');
     const applyBtn = document.getElementById('applyBtn');
-    const colorMode = document.getElementById('colorMode');
-    const pickerRow = document.getElementById('pickerRow');
     
     const AUDIO_BASE = '../shared/audio/';
     let doofuses = [];
     const proximityLimit = 90;
-    
-    // Simple Audio Cache
-    let cachedAudioBlob = null;
+
+    // --- WEB AUDIO API SETUP ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const soundBuffers = {}; // This is our cache
+
+    async function loadSoundToBuffer(url) {
+        if (soundBuffers[url]) return soundBuffers[url];
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            soundBuffers[url] = decodedBuffer;
+            return decodedBuffer;
+        } catch (e) {
+            console.error("Failed to load/decode sound:", url);
+        }
+    }
 
     async function initSounds() {
         try {
@@ -103,62 +96,61 @@
             const data = await response.json();
             
             soundSelect.innerHTML = '';
-            data.forEach(file => {
+            for (const file of data) {
                 const opt = document.createElement('option');
-                opt.value = `${AUDIO_BASE}${file.name}`;
+                const fullPath = `${AUDIO_BASE}${file.name}`;
+                opt.value = fullPath;
                 opt.textContent = file.name;
                 if (file.name === 'bruh.mp3') opt.selected = true;
                 soundSelect.appendChild(opt);
-            });
-            // Initial cache
-            cacheCurrentSound();
-        } catch (e) {
-            console.error("Path incorrect or atlas.json missing.");
-        }
-    }
 
-    // Fetches the sound once and stores it as a Blob URL for instant re-play
-    async function cacheCurrentSound() {
-        try {
-            const response = await fetch(soundSelect.value);
-            const blob = await response.blob();
-            if (cachedAudioBlob) URL.revokeObjectURL(cachedAudioBlob);
-            cachedAudioBlob = URL.createObjectURL(blob);
+                // Pre-cache immediately
+                loadSoundToBuffer(fullPath);
+            }
         } catch (e) {
-            console.error("Failed to cache sound", e);
+            console.error("Path error: Check ../shared/audio/atlas.json");
         }
     }
 
     function playEffect() {
-        if (!cachedAudioBlob) return;
+        // Resume context if suspended (browser security)
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const url = soundSelect.value;
+        const buffer = soundBuffers[url];
         
-        // Creating a new instance every time allows overlapping sounds
-        const snd = new Audio(cachedAudioBlob);
-        snd.volume = 0.3;
-        snd.play().catch(() => {});
-        
-        // Cleanup memory after play
-        snd.onended = () => { snd.remove(); };
+        if (buffer) {
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            
+            // Add a GainNode to control volume and prevent clipping
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.4; 
+            
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            source.start(0);
+        }
     }
 
+    // --- DOT LOGIC ---
     class Doofus {
         constructor() {
             this.el = document.createElement('div');
             this.el.className = 'dot';
-            this.size = 18;
+            this.size = 15;
             this.spawn();
             container.appendChild(this.el);
         }
 
         spawn() {
-            this.x = Math.random() * (window.innerWidth - 60);
-            this.y = Math.random() * (window.innerHeight - 60);
-            
-            const isRainbow = colorMode.value === 'rainbow';
+            this.x = Math.random() * (window.innerWidth - 50);
+            this.y = Math.random() * (window.innerHeight - 50);
+            const isRainbow = document.getElementById('colorMode').value === 'rainbow';
             this.el.style.backgroundColor = isRainbow 
                 ? `hsl(${Math.random() * 360}, 80%, 60%)` 
                 : document.getElementById('colorPicker').value;
-            
             this.updateStyles();
         }
 
@@ -181,18 +173,14 @@
         flee() {
             this.x = Math.random() * (window.innerWidth - this.size);
             this.y = Math.random() * (window.innerHeight - this.size);
-            
-            // Growth Logic
             // this.size += 8;
-            // if (this.size > 120) this.size = 18;
-            
+            // if (this.size > 120) this.size = 15; 
             this.updateStyles();
             playEffect();
         }
     }
 
     function createNewSet() {
-        cacheCurrentSound(); // Re-cache if sound selection changed
         container.innerHTML = '';
         doofuses = [];
         const count = document.getElementById('dotCount').value;
@@ -201,17 +189,22 @@
         }
     }
 
+    // --- EVENTS ---
     window.addEventListener('mousemove', (e) => {
         doofuses.forEach(d => d.checkProximity(e.clientX, e.clientY));
     });
 
-    colorMode.addEventListener('change', () => {
-        pickerRow.style.display = colorMode.value === 'rainbow' ? 'none' : 'flex';
+    // Browser requirement: Resume audio on first interaction
+    window.addEventListener('mousedown', () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        document.getElementById('status').style.display = 'none';
     });
+
+    soundSelect.addEventListener('change', (e) => loadSoundToBuffer(e.target.value));
 
     applyBtn.addEventListener('click', createNewSet);
 
-    // Initial load
+    // Bootstrap
     initSounds();
     createNewSet();
 </script>
