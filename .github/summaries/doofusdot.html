@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Creates an interactive web page with animated "doofus" dots that flee from mouse movement</li>
-    <li>Features a UI panel for configuring dot count, color mode (single or rainbow), custom color picker, and sound effects</li>
-    <li>Plays sounds when dots are scared away and fetches sound options from an external JSON file</li>
+    <li>Creates an interactive web page with animated "Doofus" dots that flee from mouse proximity and play sound effects</li>
+    <li>Features a UI panel for customizing dot count, color mode (solid or rainbow), and selecting audio files from a JSON manifest</li>
+    <li>Implements audio caching to enable instant sound playback and supports overlapping audio effects</li>
   </ul>
 
   <pre>
-    <code>const proximity = 100; // Pixels until they run away</code>
-    <code>this.el.style.backgroundColor = mode === 'rainbow' ? `hsl(${Math.random() * 360}, 80%, 60%)` : picker;</code>
+    <code>const snd = new Audio(cachedAudioBlob);</code>
+    <code>snd.play().catch(() => {});</code>
   </pre>
 
-  <p>This web application creates a swarm of animated dots that react to mouse movement by fleeing when the cursor gets too close. Users can customize the number of dots, their colors, and sound effects through an interactive control panel. The dots spawn randomly on screen and play audio when scared away, creating an engaging and playful interactive experience.</p>
+  <p>This HTML page displays animated dots that react to mouse movement by fleeing and playing sound effects. Users can customize the number of dots, choose between solid or rainbow colors, and select different audio files through a JSON-based sound system. The implementation includes audio caching for instant playback and a responsive UI for configuration.</p>
 </section>
