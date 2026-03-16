@@ -204,9 +204,9 @@
       
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
       
-        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
-      
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
+      
+        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -528,28 +528,6 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
-        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
-        <h2>voxelcrash</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>3D match-3 puzzle game with voxel-style blocks that swaps to create matches</li>
-    <li>Features art importer that converts images into playable puzzle levels with color-coded blocks</li>
-    <li>Dynamic background fluid effects that change colors based on the current level's palette</li>
-    <li>Includes win screen with export/share functionality and particle explosion effects</li>
-  </ul>
-
-  <pre>
-    <code>const CHAR_TO_COLOR = { 'r': { hex: 0xFF3333, rgb: {r:255, g:51, b:51} }, ... };</code>
-    <code>class Block { constructor(x, y, charKey, powerupType = 'none') { ... } }</code>
-  </pre>
-
-  <p>A WebGL-based match-3 game featuring 3D voxel blocks, an image-to-level converter, and dynamic fluid backgrounds that adapt to each level's color palette. The game includes power-ups, particle effects, and export/share functionality for completed levels.</p>
-</section>
-        </div>
-      </section>
-    
       <section class="app-section" id="section-voxelracing" data-name="voxelracing">
         <a class="app-link" href="voxelracing/index.html">[ Run Application ]</a>
         <h2>voxelracing</h2>
@@ -569,6 +547,29 @@
   </pre>
 
   <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
+        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
+        <h2>voxelcrash</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Three.js-based 3D match-3 puzzle game with voxel art themes</li>
+    <li>Responsive design with sidebar for settings and art preview</li>
+    <li>Auto-play mode and hint system for assisted gameplay</li>
+    <li>Custom art importer for creating personalized levels</li>
+    <li>Win screen with export and share functionality</li>
+  </ul>
+
+  <pre>
+    <code>const LEVELS = { 'flower': { name: 'Fire Flower', grid: 10, resolution: 16, keepBg: false, imageUrl: "..." } };</code>
+    <code>function findMatches() { /* checks for 3+ matching colors in rows/columns */ }</code>
+  </pre>
+
+  <p>This is a 3D match-3 puzzle game built with Three.js that features voxel-style blocks and themed art levels. The game includes auto-play mode, hint system, custom art import functionality, and responsive design with a sidebar for settings and art preview. Players swap blocks to create matches of three or more, triggering chain reactions and filling in pixel art patterns.</p>
 </section>
         </div>
       </section>
