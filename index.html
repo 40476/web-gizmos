@@ -180,6 +180,8 @@
       
         <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
       
+        <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">> doofusdot</a>
+      
         <a class="nav-item" href="fonttester/index.html" data-name="fonttester">> fonttester</a>
       
         <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
@@ -202,11 +204,9 @@
       
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
       
-        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
-      
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">> doofusdot</a>
+        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -254,6 +254,27 @@
   </pre>
 
   <p>This webpage allows users to enter text and play corresponding ASL (American Sign Language) sequences. It features an input field with autocomplete suggestions and a video player to display the ASL sequences. The page includes a button to fetch and play the ASL sequence based on the user's input text.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-doofusdot" data-name="doofusdot">
+        <a class="app-link" href="doofusdot/index.html">[ Run Application ]</a>
+        <h2>doofusdot</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Creates an interactive web page with animated "Doofus" dots that flee from mouse proximity and play sound effects</li>
+    <li>Features a UI panel for customizing dot count, color mode (solid or rainbow), and selecting audio files from a JSON manifest</li>
+    <li>Implements audio caching to enable instant sound playback and supports overlapping audio effects</li>
+  </ul>
+
+  <pre>
+    <code>const snd = new Audio(cachedAudioBlob);</code>
+    <code>snd.play().catch(() => {});</code>
+  </pre>
+
+  <p>This HTML page displays animated dots that react to mouse movement by fleeing and playing sound effects. Users can customize the number of dots, choose between solid or rainbow colors, and select different audio files through a JSON-based sound system. The implementation includes audio caching for instant playback and a responsive UI for configuration.</p>
 </section>
         </div>
       </section>
@@ -507,28 +528,6 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
-        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
-        <h2>voxelcrash</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>3D match-3 puzzle game with voxel-style blocks that swaps to create matches</li>
-    <li>Features art importer that converts images into playable puzzle levels with color-coded blocks</li>
-    <li>Dynamic background fluid effects that change colors based on the current level's palette</li>
-    <li>Includes win screen with export/share functionality and particle explosion effects</li>
-  </ul>
-
-  <pre>
-    <code>const CHAR_TO_COLOR = { 'r': { hex: 0xFF3333, rgb: {r:255, g:51, b:51} }, ... };</code>
-    <code>class Block { constructor(x, y, charKey, powerupType = 'none') { ... } }</code>
-  </pre>
-
-  <p>A WebGL-based match-3 game featuring 3D voxel blocks, an image-to-level converter, and dynamic fluid backgrounds that adapt to each level's color palette. The game includes power-ups, particle effects, and export/share functionality for completed levels.</p>
-</section>
-        </div>
-      </section>
-    
       <section class="app-section" id="section-voxelracing" data-name="voxelracing">
         <a class="app-link" href="voxelracing/index.html">[ Run Application ]</a>
         <h2>voxelracing</h2>
@@ -552,23 +551,25 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-doofusdot" data-name="doofusdot">
-        <a class="app-link" href="doofusdot/index.html">[ Run Application ]</a>
-        <h2>doofusdot</h2>
+      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
+        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
+        <h2>voxelcrash</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>Creates an interactive web page with animated "Doofus" dots that flee from mouse proximity and play sound effects</li>
-    <li>Features a UI panel for customizing dot count, color mode (solid or rainbow), and selecting audio files from a JSON manifest</li>
-    <li>Implements audio caching to enable instant sound playback and supports overlapping audio effects</li>
+    <li>Three.js-based 3D match-3 puzzle game with voxel art themes</li>
+    <li>Responsive design with sidebar for settings and art preview</li>
+    <li>Auto-play mode and hint system for assisted gameplay</li>
+    <li>Custom art importer for creating personalized levels</li>
+    <li>Win screen with export and share functionality</li>
   </ul>
 
   <pre>
-    <code>const snd = new Audio(cachedAudioBlob);</code>
-    <code>snd.play().catch(() => {});</code>
+    <code>const LEVELS = { 'flower': { name: 'Fire Flower', grid: 10, resolution: 16, keepBg: false, imageUrl: "..." } };</code>
+    <code>function findMatches() { /* checks for 3+ matching colors in rows/columns */ }</code>
   </pre>
 
-  <p>This HTML page displays animated dots that react to mouse movement by fleeing and playing sound effects. Users can customize the number of dots, choose between solid or rainbow colors, and select different audio files through a JSON-based sound system. The implementation includes audio caching for instant playback and a responsive UI for configuration.</p>
+  <p>This is a 3D match-3 puzzle game built with Three.js that features voxel-style blocks and themed art levels. The game includes auto-play mode, hint system, custom art import functionality, and responsive design with a sidebar for settings and art preview. Players swap blocks to create matches of three or more, triggering chain reactions and filling in pixel art patterns.</p>
 </section>
         </div>
       </section>
