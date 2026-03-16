@@ -1569,44 +1569,54 @@
         });
 
         function attemptSwap(b1, b2) {
-            gameState = STATE.SWAPPING;
-            lastInteraction = { x: b2.gridX, y: b2.gridY };
-            grid[b1.gridX][b1.gridY] = b2;
-            grid[b2.gridX][b2.gridY] = b1;
-            const tempX = b1.gridX, tempY = b1.gridY;
-            b1.setGridPos(b2.gridX, b2.gridY);
-            b2.setGridPos(tempX, tempY);
-
-            let colorBombUsed = false, blocksToDestroy = new Set();
-            if (b1.powerup === 'color') {
-                colorBombUsed = true;
-                blocksToDestroy = destroyColor(b2.charKey);
-                blocksToDestroy.add(b1);
-            }
-            else if (b2.powerup === 'color') {
-                colorBombUsed = true;
-                blocksToDestroy = destroyColor(b1.charKey);
-                blocksToDestroy.add(b2);
-            }
-
-            setTimeout(() => {
-                if (colorBombUsed) {
-                    executeDestruction(Array.from(blocksToDestroy));
-                } else {
-                    const matchData = findMatches();
-                    if (matchData.list.length > 0) {
-                        processMatches(matchData);
-                    } else {
-                        // Swap back
-                        grid[b1.gridX][b1.gridY] = b2;
-                        grid[b2.gridX][b2.gridY] = b1;
-                        b1.setGridPos(b2.gridX, b2.gridY);
-                        b2.setGridPos(tempX, tempY);
-                        setTimeout(() => { gameState = STATE.IDLE; }, 300);
-                    }
-                }
-            }, 300);
-        }
+		    gameState = STATE.SWAPPING;
+		    lastInteraction = { x: b2.gridX, y: b2.gridY };
+		
+		    // 1. Store the ORIGINAL positions of both blocks
+		    const orig1X = b1.gridX, orig1Y = b1.gridY;
+		    const orig2X = b2.gridX, orig2Y = b2.gridY;
+		
+		    // 2. Perform the initial swap in the grid array
+		    grid[orig1X][orig1Y] = b2;
+		    grid[orig2X][orig2Y] = b1;
+		
+		    // 3. Update the block objects to their new positions
+		    b1.setGridPos(orig2X, orig2Y);
+		    b2.setGridPos(orig1X, orig1Y);
+		
+		    let colorBombUsed = false, blocksToDestroy = new Set();
+		    if (b1.powerup === 'color') {
+		        colorBombUsed = true;
+		        blocksToDestroy = destroyColor(b2.charKey);
+		        blocksToDestroy.add(b1);
+		    }
+		    else if (b2.powerup === 'color') {
+		        colorBombUsed = true;
+		        blocksToDestroy = destroyColor(b1.charKey);
+		        blocksToDestroy.add(b2);
+		    }
+		
+		    setTimeout(() => {
+		        if (colorBombUsed) {
+		            executeDestruction(Array.from(blocksToDestroy));
+		        } else {
+		            const matchData = findMatches();
+		            if (matchData.list.length > 0) {
+		                processMatches(matchData);
+		            } else {
+		                // --- SWAP BACK LOGIC ---
+		                // 4. Move them back to their saved ORIGINAL positions
+		                grid[orig1X][orig1Y] = b1;
+		                grid[orig2X][orig2Y] = b2;
+		                
+		                b1.setGridPos(orig1X, orig1Y);
+		                b2.setGridPos(orig2X, orig2Y);
+		
+		                setTimeout(() => { gameState = STATE.IDLE; }, 300);
+		            }
+		        }
+		    }, 300);
+		}
 
         /** RENDER LOOP & RESIZE */
         const clock = new THREE.Clock();
