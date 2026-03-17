@@ -100,12 +100,19 @@ total and utter crap, that may "help" you program, but causes:</p>
 <script>
     const inputField = document.getElementById('userInput');
     const targets = document.querySelectorAll('.replace');
+    const urlField =  new URLSearchParams(window.location.search).get('text');
     inputField.addEventListener('input', (event) => {
         const newValue = event.target.value;
         targets.forEach(element => {
             element.textContent = newValue || "[empty]";
         });
     });
+    
+    if(urlField){
+        targets.forEach(element => {
+            element.textContent = urlField;
+        });
+    }
 </script>
 
 </body>
