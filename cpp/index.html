@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ Linus Rant Meme</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+        }
+        /* This ensures all elements with the class 'replace' are bold */
+        .replace {
+            font-weight: bold;
+            color: #2c3e50; /* Added a slight color shift for visibility */
+        }
+        .preview-area {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-left: 5px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>C++ Linus Rant Meme</h2>
+    
+    <input type="text" id="userInput" placeholder="Enter text here...">
+
+    <div class="preview-area">
+        <p><span class="replace">C++</span> is a horrible language. It's made more horrible by the fact that a lot 
+of substandard programmers use it, to the point where it's much much 
+easier to generate total and utter crap with it. Quite frankly, even if 
+the choice of C were to do *nothing* but keep the C++ programmers out, 
+that in itself would be a huge reason to use C.</p>
+
+<p>In other words: the choice of C is the only sane choice. I know Miles 
+Bader jokingly said "to piss you off", but it's actually true. I've come 
+to the conclusion that any programmer that would prefer the project to be 
+in <span class="replace">C++</span> over C is likely a programmer that I really *would* prefer to piss 
+off, so that he doesn't come and screw up any project I'm involved with.</p>
+
+<p><span class="replace">C++</span> leads to really really bad design choices. You invariably start using 
+the "nice" library features of the language like STL and Boost and other 
+total and utter crap, that may "help" you program, but causes:</p>
+      <ul>
+       <li>
+         infinite amounts of pain when they don't work (and anybody who tells me 
+         that STL and especially Boost are stable and portable is just so full 
+         of BS that it's not even funny)
+        </li>
+        <li>
+           inefficient abstracted programming models where two years down the road 
+           you notice that some abstraction wasn't very efficient, but now all 
+           your code depends on all the nice object models around it, and you 
+           cannot fix it without rewriting your app.
+        </li>
+      </ul>
+      <p>
+        In other words, the only way to do good, efficient, and system-level and 
+        portable <span class="replace">C++</span> ends up to limit yourself to all the things that are 
+        basically available in C. And limiting your project to C means that people 
+        don't screw that up, and also means that you get a lot of programmers that 
+        do actually understand low-level issues and don't screw things up with any 
+        idiotic "object model" crap.
+      </p>
+      <p>
+        So I'm sorry, but for something like git, where efficiency was a primary 
+        objective, the "advantages" of <span class="replace">C++</span> is just a huge mistake. The fact that 
+        we also piss off people who cannot see that is just a big additional 
+        advantage.
+      </p>
+      <p>
+        If you want a VCS that is written in <span class="replace">C++</span>, go play with Monotone. Really. 
+        They use a "real database". They use "nice object-oriented libraries". 
+        They use "nice C++ abstractions". And quite frankly, as a result of all 
+        these design decisions that sound so appealing to some CS people, the end 
+        result is a horrible and unmaintainable mess.
+      </p>
+    </div>
+</div>
+
+<script>
+    const inputField = document.getElementById('userInput');
+    const targets = document.querySelectorAll('.replace');
+    inputField.addEventListener('input', (event) => {
+        const newValue = event.target.value;
+        targets.forEach(element => {
+            element.textContent = newValue || "[empty]";
+        });
+    });
+</script>
+
+</body>
+</html>
