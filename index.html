@@ -204,9 +204,11 @@
       
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
       
+        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
+      
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
+        <a class="nav-item" href="cpp/index.html" data-name="cpp">> cpp</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -528,6 +530,28 @@
         </div>
       </section>
     
+      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
+        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
+        <h2>voxelcrash</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>A 3D match-3 puzzle game with voxel blocks where players swap adjacent blocks to create matches of 3 or more same-colored pieces</li>
+    <li>Features auto-play mode, hint system, and visual effects including particle explosions and fluid background animations</li>
+    <li>Includes level selection with pre-made pixel art targets, custom image importer, and win screen with sharing/export options</li>
+    <li>Responsive design with mobile support, smooth animations using Three.js, and modern glass-morphism UI</li>
+  </ul>
+
+  <pre>
+    <code>class Block { constructor(x, y, charKey, powerupType = 'none') { /*...*/ } }</code>
+    <code>function findMatches() { /* returns matched blocks and sequences */ } </code>
+  </pre>
+
+  <p>This is a 3D match-3 puzzle game built with Three.js featuring voxel blocks that players swap to create matches. The game includes auto-play mode, hint system, and visual effects like particle explosions. Players can choose from pre-made levels with pixel art targets or import custom images. The responsive design supports both desktop and mobile, with smooth animations and a modern glass-morphism UI including a sidebar for controls and art display.</p>
+</section>
+        </div>
+      </section>
+    
       <section class="app-section" id="section-voxelracing" data-name="voxelracing">
         <a class="app-link" href="voxelracing/index.html">[ Run Application ]</a>
         <h2>voxelracing</h2>
@@ -551,24 +575,23 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
-        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
-        <h2>voxelcrash</h2>
+      <section class="app-section" id="section-cpp" data-name="cpp">
+        <a class="app-link" href="cpp/index.html">[ Run Application ]</a>
+        <h2>cpp</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>A 3D match-3 puzzle game with voxel blocks where players swap adjacent blocks to create matches of 3 or more same-colored pieces</li>
-    <li>Features auto-play mode, hint system, and visual effects including particle explosions and fluid background animations</li>
-    <li>Includes level selection with pre-made pixel art targets, custom image importer, and win screen with sharing/export options</li>
-    <li>Responsive design with mobile support, smooth animations using Three.js, and modern glass-morphism UI</li>
+    <li>Interactive web page with a text input that replaces all instances of "C++" in a Linus Torvalds rant</li>
+    <li>Uses CSS for styling with a container, input field, and styled text replacement</li>
+    <li>JavaScript dynamically updates the text content of all ".replace" elements as the user types</li>
   </ul>
 
   <pre>
-    <code>class Block { constructor(x, y, charKey, powerupType = 'none') { /*...*/ } }</code>
-    <code>function findMatches() { /* returns matched blocks and sequences */ } </code>
+    <code>const inputField = document.getElementById('userInput');</code>
+    <code>inputField.addEventListener('input', (event) => { ... });</code>
   </pre>
 
-  <p>This is a 3D match-3 puzzle game built with Three.js featuring voxel blocks that players swap to create matches. The game includes auto-play mode, hint system, and visual effects like particle explosions. Players can choose from pre-made levels with pixel art targets or import custom images. The responsive design supports both desktop and mobile, with smooth animations and a modern glass-morphism UI including a sidebar for controls and art display.</p>
+  <p>This HTML page creates an interactive meme generator where users can replace all instances of "C++" in a famous Linus Torvalds rant with their own text. The page uses CSS for styling and JavaScript to dynamically update the text content of all ".replace" elements as the user types in the input field.</p>
 </section>
         </div>
       </section>
