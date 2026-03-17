@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Dynamic text replacement in a C++ rant meme generator</li>
-    <li>Real-time input field updates bolded C++ references</li>
-    <li>Minimal CSS styling with preview area for the rant text</li>
+    <li>A C++ rant meme generator with live text replacement</li>
+    <li>Uses URL parameter to pre-fill text content</li>
+    <li>Styled with a clean, readable layout</li>
   </ul>
 
   <pre>
-    <code>inputField.addEventListener('input', (event) => {</code>
-    <code>    targets.forEach(element => element.textContent = newValue || "[empty]");</code>
+    <code>const inputField = document.getElementById('userInput');</code>
+    <code>const targets = document.querySelectorAll('.replace');</code>
   </pre>
 
-  <p>This web application lets users dynamically replace all instances of "C++" in a Linus Torvalds rant with custom text. The input field updates in real-time, and the CSS styles the replaced text with bold formatting and a subtle color shift for visibility. The layout includes a preview area with a distinct background to display the modified rant.</p>
+  <p>This web application creates a customizable version of Linus Torvalds' famous C++ rant. Users can enter their own text in the input field, which dynamically replaces all instances of "C++" throughout the rant. The application also supports URL parameters for pre-filling the text, making it easy to share customized versions of the meme.</p>
 </section>
