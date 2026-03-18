@@ -293,12 +293,6 @@
             if (e.target.files && e.target.files[0]) {
                 const file = e.target.files[0];
                 
-                // Check file size (10MB limit)
-                if (file.size > 10485760) {
-                    showError("Image too large (10MB limit).");
-                    return;
-                }
-                
                 statusEl.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
                 convertBtn.disabled = false;
                 errorMessageEl.textContent = '';
