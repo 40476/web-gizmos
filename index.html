@@ -198,6 +198,8 @@
       
         <a class="nav-item" href="pcb/index.html" data-name="pcb">> pcb</a>
       
+        <a class="nav-item" href="pic2html/index.html" data-name="pic2html">> pic2html</a>
+      
         <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">> pixelreducer</a>
       
         <a class="nav-item" href="racing/index.html" data-name="racing">> racing</a>
@@ -208,7 +210,7 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="pic2html/index.html" data-name="pic2html">> pic2html</a>
+        <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">> rusticrealms</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -462,6 +464,27 @@
         </div>
       </section>
     
+      <section class="app-section" id="section-pic2html" data-name="pic2html">
+        <a class="app-link" href="pic2html/index.html">[ Run Application ]</a>
+        <h2>pic2html</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Converts images to HTML text art with customizable settings</li>
+    <li>Features grayscale conversion, contrast adjustment, and multiple export options</li>
+    <li>Responsive design with controls and output display</li>
+  </ul>
+
+  <pre>
+    <code>const contrastCurve = [...]; // Sine contrast curve</code>
+    <code>function generateTextImage(ctx, width, height) { // Text generation logic }</code>
+  </pre>
+
+  <p>This JavaScript application converts uploaded images into HTML text art using configurable settings like character set, width, background color, and font size. It includes grayscale conversion, contrast adjustment, and can export the results as HTML, SVG, or PNG formats.</p>
+</section>
+        </div>
+      </section>
+    
       <section class="app-section" id="section-pixelreducer" data-name="pixelreducer">
         <a class="app-link" href="pixelreducer/index.html">[ Run Application ]</a>
         <h2>pixelreducer</h2>
@@ -575,23 +598,28 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-pic2html" data-name="pic2html">
-        <a class="app-link" href="pic2html/index.html">[ Run Application ]</a>
-        <h2>pic2html</h2>
+      <section class="app-section" id="section-rusticrealms" data-name="rusticrealms">
+        <a class="app-link" href="rusticrealms/index.html">[ Run Application ]</a>
+        <h2>rusticrealms</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>Converts images to HTML text art with customizable settings</li>
-    <li>Features grayscale conversion, contrast adjustment, and multiple export options</li>
-    <li>Responsive design with controls and output display</li>
+    <li>A multiplayer survival game built with vanilla JavaScript, HTML5 Canvas, and MQTT for networking</li>
+    <li>Features procedurally generated terrain with trees, rocks, and iron nodes across infinite chunks</li>
+    <li>Includes crafting system, building mechanics, and day/night cycles with dynamic lighting</li>
+    <li>Implements real-time multiplayer where players can see each other's movements and constructions</li>
+    <li>Supports cloud synchronization through Puter for saving game state across sessions</li>
   </ul>
 
   <pre>
-    <code>const contrastCurve = [...]; // Sine contrast curve</code>
-    <code>function generateTextImage(ctx, width, height) { // Text generation logic }</code>
+    <code>function moveEntity(ent, dx, dy, dt, speed, isPlayer=false, isGhost=false) {</code>
+    <code>    let tx = ent.x + dx * speed * dt; let ty = ent.y + dy * speed * dt;</code>
+    <code>    // Resolve collisions with walls and objects</code>
+    <code>    return {x: tx, y: ty};</code>
+    <code>}</code>
   </pre>
 
-  <p>This JavaScript application converts uploaded images into HTML text art using configurable settings like character set, width, background color, and font size. It includes grayscale conversion, contrast adjustment, and can export the results as HTML, SVG, or PNG formats.</p>
+  <p>This is a modular survival game featuring multiplayer capabilities, procedural world generation, and real-time networking. Players can gather resources, craft items, build structures, and interact with others in a shared persistent world. The game uses MQTT for low-latency communication and includes cloud storage for cross-session progress.</p>
 </section>
         </div>
       </section>
