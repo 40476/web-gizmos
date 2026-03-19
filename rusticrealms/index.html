@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rustic Realms - Modular Survival</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        :root {
+            --wood-dark: #3e2723; --wood-med: #5d4037; --wood-light: #8d6e63;
+            --text-gold: #ffecb3; --bg-dark: #1a1a1a; --slot-bg: rgba(0,0,0,0.6);
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg-dark); 
+            color: var(--text-gold); font-family: 'VT323', monospace; overflow: hidden; user-select: none;
+        }
+
+        .wood-panel {
+            background: linear-gradient(to bottom, var(--wood-med), var(--wood-dark));
+            border: 4px solid #2e1a10; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.8);
+        }
+        
+        .btn {
+            background: var(--wood-light); border: 2px solid var(--wood-dark); color: var(--text-gold); 
+            font-family: 'VT323', monospace; font-size: 20px; padding: 8px 16px; cursor: pointer; 
+            text-shadow: 1px 1px 2px #000; transition: all 0.1s;
+        }
+        .btn:hover { background: #a1887f; transform: scale(1.05); }
+        .btn:active { transform: scale(0.95); }
+
+        input, select {
+            background: rgba(0,0,0,0.5); border: 2px inset var(--wood-dark); color: white; 
+            font-family: 'VT323', monospace; font-size: 18px; padding: 6px; outline: none; width: 100%; box-sizing: border-box;
+        }
+
+        /* Overlays */
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #2c3e50, #000000); z-index: 100;
+        }
+        #login-box { padding: 30px; width: 450px; text-align: center; }
+        
+        #game-ui { display: none; width: 100%; height: 100%; position: relative; }
+        #game-canvas, #light-canvas { display: block; width: 100%; height: 100%; position: absolute; top:0; left:0; pointer-events: none; }
+        #game-canvas { pointer-events: auto; cursor: crosshair; }
+        
+        /* UI Elements */
+        #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
+        #health-bar-container { width: 300px; height: 30px; background: #000; border: 2px solid #333; margin-top: 10px; }
+        #health-bar { width: 100%; height: 100%; background: #e74c3c; transition: width 0.2s; }
+        #time-display { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 32px; text-shadow: 2px 2px 0 #000; }
+
+        #hotbar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; pointer-events: auto; padding: 5px; }
+        .slot { width: 50px; height: 50px; background: var(--slot-bg); border: 2px outset var(--wood-light); position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .slot.active { border-color: #ffeb3b; box-shadow: 0 0 10px #ffeb3b; }
+        .slot .hotkey { position: absolute; top: 2px; left: 4px; font-size: 14px; color: #aaa; text-shadow: 1px 1px 0 #000; }
+        .slot .qty { position: absolute; bottom: 2px; right: 4px; font-size: 16px; color: white; text-shadow: 1px 1px 0 #000; }
+        .slot canvas { width: 32px; height: 32px; image-rendering: pixelated; pointer-events: none; }
+
+        /* Modal */
+        #inv-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 750px; height: 500px; pointer-events: auto; z-index: 50; padding: 15px; flex-direction: column; }
+        .modal-tabs { display: flex; gap: 5px; border-bottom: 2px solid var(--wood-dark); padding-bottom: 5px; margin-bottom: 10px;}
+        .tab-btn { background: var(--wood-med); border: none; color: var(--text-gold); padding: 5px 15px; font-family: 'VT323'; font-size: 20px; cursor: pointer; }
+        .tab-btn.active { background: var(--wood-light); font-weight: bold; }
+        
+        .tab-content { display: none; flex: 1; gap: 15px; overflow: hidden; }
+        .tab-content.active { display: flex; }
+        .inv-pane { flex: 1; background: rgba(0,0,0,0.4); border: 2px inset var(--wood-dark); padding: 10px; overflow-y: auto; }
+        .grid { display: flex; flex-wrap: wrap; gap: 5px; }
+        
+        .craft-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(0,0,0,0.5); margin-bottom: 5px; border: 1px solid var(--wood-dark); }
+        .keybind-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 20px; }
+        .keybind-row input { width: 80px; text-align: center; }
+
+        /* Chat & Hints */
+        #chat-container { position: absolute; bottom: 80px; left: 10px; width: 300px; background: rgba(0,0,0,0.6); border: 2px solid var(--wood-dark); display: flex; flex-direction: column; pointer-events: auto; }
+        #chat-messages { height: 150px; overflow-y: auto; padding: 5px; font-size: 18px; }
+        #chat-input { border: none; border-top: 2px solid var(--wood-dark); }
+        #action-hint { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; text-shadow: 2px 2px 0 #000; opacity: 0; transition: opacity 0.2s; pointer-events: none;}
+    </style>
+</head>
+<body>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <div id="login-box" class="wood-panel">
+            <h1 style="font-size: 48px; margin: 0 0 20px 0; text-shadow: 2px 2px 4px #000;">Rustic Realms</h1>
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label>Character Name:</label>
+                <input type="text" id="player-name" value="Survivor" maxlength="12">
+            </div>
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label>Skin Color:</label>
+                <select id="player-color">
+                    <option value="0">Blue Tunic</option>
+                    <option value="1">Red Tunic</option>
+                    <option value="2">Green Tunic</option>
+                    <option value="3">Gold Tunic</option>
+                    <option value="4">Purple Tunic</option>
+                </select>
+            </div>
+            <button class="btn" style="width: 100%; margin-top: 15px; font-size: 24px;" onclick="startGame()">ENTER WORLD</button>
+            <div style="margin-top: 20px; border-top: 2px dashed var(--wood-dark); padding-top: 15px;">
+                <button class="btn" id="puter-auth-btn" onclick="togglePuterAuth()">Sign in to Puter (Cloud Sync)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game UI -->
+    <div id="game-ui">
+        <canvas id="game-canvas"></canvas>
+        <canvas id="light-canvas"></canvas> <!-- Separate canvas for day/night lighting compositing -->
+        
+        <div id="time-display">Day 1 - 12:00</div>
+
+        <div id="top-bar">
+            <div style="pointer-events: auto;">
+                <div class="wood-panel" style="padding: 10px; font-size: 20px; display: flex; align-items: center; gap: 10px;">
+                    <div id="status-dot" style="width: 15px; height: 15px; border-radius: 50%; background: red;"></div>
+                    <span id="status-text">Connecting...</span>
+                </div>
+                <div id="health-bar-container"><div id="health-bar"></div></div>
+            </div>
+        </div>
+
+        <div id="action-hint">Press [E] to interact</div>
+
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Press Enter to chat..." maxlength="64">
+        </div>
+
+        <div id="hotbar" class="wood-panel"></div>
+
+        <!-- Inventory Modal -->
+        <div id="inv-modal" class="wood-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h2 style="margin: 0;">Menu</h2>
+                <button class="btn" onclick="toggleModal()">X</button>
+            </div>
+            
+            <div class="modal-tabs">
+                <button class="tab-btn active" onclick="switchTab('inv')">Inventory & Crafting</button>
+                <button class="tab-btn" onclick="switchTab('settings')">Settings & Keybinds</button>
+            </div>
+
+            <div id="tab-inv" class="tab-content active">
+                <div class="inv-pane">
+                    <h3 style="margin-top:0;">Items</h3>
+                    <p style="font-size: 14px; color: #ccc;">Click an item to assign to active Hotbar slot.</p>
+                    <div class="grid" id="inv-grid"></div>
+                </div>
+                <div class="inv-pane">
+                    <h3 style="margin-top:0;">Crafting</h3>
+                    <div id="craft-list"></div>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="tab-content">
+                <div class="inv-pane" style="max-width: 300px;">
+                    <h3 style="margin-top:0;">Keybinds</h3>
+                    <div id="keybinds-list"></div>
+                    <button class="btn" style="margin-top: 15px; width: 100%;" onclick="saveSettings()">Save Settings</button>
+                </div>
+                <div class="inv-pane">
+                    <h3 style="margin-top:0;">How to Play</h3>
+                    <ul>
+                        <li>Move with WASD.</li>
+                        <li>Left Click to Attack, Gather, or Place objects.</li>
+                        <li>Right Click to cancel building.</li>
+                        <li>Doors automatically break and snap into walls when clicked on a wall edge.</li>
+                        <li>Torches and Campfires provide light at night.</li>
+                        <li>Zombies and Ghosts spawn at night. Slimes spawn anytime.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// --- MODULAR JSON DATABASE ---
+const DB = {
+    items: {
+        // Resources & Consumables
+        wood:      { name: 'Wood', type: 'resource' },
+        stone:     { name: 'Stone', type: 'resource' },
+        iron:      { name: 'Iron Ore', type: 'resource' },
+        slimeball: { name: 'Slimeball', type: 'resource' },
+        bone:      { name: 'Bone', type: 'resource' },
+        apple:     { name: 'Apple', type: 'consumable', action: 'heal', val: 25 },
+        meat:      { name: 'Raw Meat', type: 'consumable', action: 'heal', val: 10 },
+        cookedMeat:{ name: 'Cooked Meat', type: 'consumable', action: 'heal', val: 40, cost: {meat: 1, wood: 1} }, // Crafted at campfire ideally, but here just craftable
+        
+        // Equipment
+        woodSword: { name: 'Wood Sword', type: 'weapon', dmg: 12, reach: 60, cost: {wood: 5} },
+        ironSword: { name: 'Iron Sword', type: 'weapon', dmg: 25, reach: 70, cost: {wood: 2, iron: 4} },
+        stoneAxe:  { name: 'Stone Axe', type: 'tool', toolType: 'axe', power: 3, cost: {wood: 2, stone: 3} },
+        ironPick:  { name: 'Iron Pick', type: 'tool', toolType: 'pick', power: 5, cost: {wood: 2, iron: 4} },
+        
+        // Buildables
+        woodWall:  { name: 'Wood Wall', type: 'wall', color: '#8d6e63', cost: {wood: 2} },
+        stoneWall: { name: 'Stone Wall', type: 'wall', color: '#7f8c8d', cost: {stone: 3} },
+        ironWall:  { name: 'Iron Wall', type: 'wall', color: '#bdc3c7', cost: {iron: 2} },
+        
+        door:      { name: 'Wood Door', type: 'object', objType: 'door', size: 40, cost: {wood: 4}, isSolid: true },
+        chest:     { name: 'Chest', type: 'object', objType: 'chest', size: 30, cost: {wood: 8}, isSolid: true },
+        campfire:  { name: 'Campfire', type: 'object', objType: 'campfire', size: 25, cost: {wood: 5, stone: 2}, isSolid: true, light: 250 },
+        torch:     { name: 'Torch', type: 'object', objType: 'torch', size: 10, cost: {wood: 1, slimeball: 1}, isSolid: false, light: 150 }
+    },
+    mobs: {
+        slime:  { name: 'Slime', hp: 30, dmg: 5, speed: 40, radius: 14, color: '#2ecc71', drops: {slimeball: 1, apple: 0.2}, light: 0, time: 'any' },
+        zombie: { name: 'Zombie', hp: 60, dmg: 15, speed: 60, radius: 16, color: '#27ae60', drops: {meat: 1}, light: 0, time: 'night' },
+        ghost:  { name: 'Ghost', hp: 40, dmg: 10, speed: 85, radius: 12, color: 'rgba(236,240,241,0.6)', drops: {bone: 1}, light: 80, time: 'night', ghost: true } // Ghost ignores walls
+    },
+    colors: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6']
+};
+
+// --- CORE STATE & CONFIG ---
+const CHUNK_SIZE = 800; 
+let myId = Math.floor(Math.random() * 0xFFFFFFFF);
+let mqttClient = null;
+let gameActive = false;
+let puterAuthed = false;
+let textures = {};
+
+// Default Configs
+let keybinds = { up: 'w', down: 's', left: 'a', right: 'd', interact: 'e', inv: 'tab' };
+
+const state = {
+    x: 0, y: 0, health: 100, colorIdx: 0, name: "Survivor",
+    inventory: { wood: 0, stone: 0, woodSword: 1, apple: 2 },
+    hotbar: ['woodSword', 'apple', null, null, null, null, null, null, null],
+    activeSlot: 0,
+    
+    players: {}, mobs: [], walls: {}, objects: {}, brokenNodes: new Set(),
+    
+    // Actions & World
+    attackTimer: 0, buildStep: 0, buildStartX: 0, buildStartY: 0,
+    timeOfDay: 6000 // 0 to 24000 (Minecraft scale). 12000 is sunset.
+};
+
+// Packets
+const PKT = { MOVE: 1, CHAT: 2, ADD_WALL: 3, DEL_WALL: 4, ADD_OBJ: 5, INTERACT: 6, BREAK: 7, SYNC_REQ: 8, SYNC_RES: 9, DMG_MOB: 10 };
+
+// --- TEXTURES ---
+function generateTextures() {
+    function createTex(w, h, renderFn) {
+        let c = document.createElement('canvas'); c.width = w; c.height = h;
+        let ctx = c.getContext('2d'); renderFn(ctx, w, h); return c;
+    }
+    
+    textures.grass = createTex(64, 64, (ctx) => {
+        ctx.fillStyle = '#2d5a27'; ctx.fillRect(0,0,64,64);
+        for(let i=0; i<30; i++) {
+            ctx.fillStyle = Math.random()>0.5 ? '#24471f' : '#366b2f';
+            ctx.fillRect(Math.random()*64, Math.random()*64, 2, 4);
+        }
+    });
+    textures.tree = createTex(64, 64, (ctx) => {
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(32, 32, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#5d4037'; ctx.beginPath(); ctx.arc(32, 32, 8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#27ae60'; ctx.beginPath(); ctx.arc(32, 32, 24, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(28, 28, 18, 0, Math.PI*2); ctx.fill();
+    });
+    textures.rock = createTex(40, 40, (ctx) => {
+        ctx.fillStyle = '#95a5a6'; ctx.beginPath(); ctx.moveTo(10,5); ctx.lineTo(30,10); ctx.lineTo(35,30); ctx.lineTo(20,38); ctx.lineTo(5,25); ctx.fill();
+        ctx.fillStyle = '#7f8c8d'; ctx.beginPath(); ctx.moveTo(15,10); ctx.lineTo(25,15); ctx.lineTo(20,25); ctx.lineTo(10,20); ctx.fill();
+    });
+    textures.ironNode = createTex(40, 40, (ctx) => {
+        ctx.fillStyle = '#7f8c8d'; ctx.beginPath(); ctx.arc(20,20,18,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#e67e22'; ctx.fillRect(10,10,6,6); ctx.fillRect(22,15,5,5); ctx.fillRect(15,25,7,4); // Iron flecks
+    });
+
+    // Objects
+    textures.door = createTex(40, 10, (ctx) => {
+        ctx.fillStyle = '#d35400'; ctx.fillRect(0,0,40,10);
+        ctx.fillStyle = '#e67e22'; ctx.fillRect(2,2,16,6); ctx.fillRect(22,2,16,6);
+        ctx.fillStyle = 'gold'; ctx.beginPath(); ctx.arc(35, 5, 2, 0, Math.PI*2); ctx.fill();
+    });
+    textures.chest = createTex(30, 30, (ctx) => {
+        ctx.fillStyle = '#8e44ad'; ctx.fillRect(0,0,30,30); ctx.fillStyle = '#9b59b6'; ctx.fillRect(2,2,26,26);
+        ctx.fillStyle = 'gold'; ctx.fillRect(12, 25, 6, 4);
+    });
+    textures.campfire = createTex(25, 25, (ctx) => {
+        ctx.fillStyle = '#5d4037'; ctx.fillRect(2,10,21,5); ctx.fillRect(10,2,5,21);
+        ctx.fillStyle = '#e67e22'; ctx.beginPath(); ctx.moveTo(5,15); ctx.lineTo(12,2); ctx.lineTo(20,15); ctx.fill();
+        ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(8,15); ctx.lineTo(12,6); ctx.lineTo(16,15); ctx.fill();
+    });
+    textures.torch = createTex(10, 10, (ctx) => {
+        ctx.fillStyle = '#5d4037'; ctx.fillRect(3,3,4,7);
+        ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(5,3,4,0,Math.PI*2); ctx.fill();
+    });
+
+    // Icons
+    textures.apple = createTex(32,32, ctx=>{ ctx.fillStyle='#e74c3c'; ctx.beginPath(); ctx.arc(16,18,10,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#27ae60'; ctx.fillRect(15,4,2,6); });
+    textures.meat = createTex(32,32, ctx=>{ ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.ellipse(16,16,12,8,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(24,16,4,0,Math.PI*2); ctx.fill(); });
+    textures.cookedMeat = createTex(32,32, ctx=>{ ctx.fillStyle='#8d6e63'; ctx.beginPath(); ctx.ellipse(16,16,12,8,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#d35400'; ctx.beginPath(); ctx.arc(24,16,4,0,Math.PI*2); ctx.fill(); });
+    
+    // Tools (Procedural generic generator for tools)
+    function drawTool(ctx, handleColor, headColor, type) {
+        ctx.translate(16,16); ctx.rotate(Math.PI/4); ctx.translate(-16,-16);
+        ctx.fillStyle = handleColor; ctx.fillRect(14,10,4,20); // handle
+        ctx.fillStyle = headColor;
+        if(type==='sword') { ctx.fillRect(10,14,12,3); ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(18,14); ctx.lineTo(14,14); ctx.fill(); }
+        if(type==='axe') { ctx.beginPath(); ctx.moveTo(14,10); ctx.lineTo(6,5); ctx.lineTo(6,15); ctx.fill(); }
+        if(type==='pick') { ctx.beginPath(); ctx.moveTo(4,10); ctx.lineTo(16,4); ctx.lineTo(28,10); ctx.lineTo(16,8); ctx.fill(); }
+    }
+    textures.woodSword = createTex(32,32, ctx=>drawTool(ctx, '#5d4037', '#8d6e63', 'sword'));
+    textures.ironSword = createTex(32,32, ctx=>drawTool(ctx, '#5d4037', '#bdc3c7', 'sword'));
+    textures.stoneAxe = createTex(32,32, ctx=>drawTool(ctx, '#5d4037', '#7f8c8d', 'axe'));
+    textures.ironPick = createTex(32,32, ctx=>drawTool(ctx, '#5d4037', '#bdc3c7', 'pick'));
+}
+
+function drawIcon(ctx, key, x, y, size) {
+    if(!key || !DB.items[key]) return;
+    let tex = textures[key]; 
+    if(!tex) {
+        let item = DB.items[key];
+        if(item.type === 'wall') tex = textures.wood; // Fallback
+        else if (item.type === 'object') tex = textures[item.objType];
+    }
+    if(tex) ctx.drawImage(tex, x, y, size, size);
+    else { ctx.fillStyle=DB.items[key].color||'#ccc'; ctx.fillRect(x+4,y+4,size-8,size-8); }
+}
+
+// --- PROCEDURAL WORLD ---
+function mulberry32(a) {
+    return function() {
+      var t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+function getChunkNodes(cx, cy) {
+    let rng = mulberry32(Math.abs(cx * 3456 + cy * 8912 + 12345)); let nodes = [];
+    for(let i=0; i<10; i++) nodes.push({ index: i, type: 'tree', x: cx*CHUNK_SIZE + (rng()*CHUNK_SIZE), y: cy*CHUNK_SIZE + (rng()*CHUNK_SIZE), radius: 24 });
+    for(let i=10; i<14; i++) nodes.push({ index: i, type: 'rock', x: cx*CHUNK_SIZE + (rng()*CHUNK_SIZE), y: cy*CHUNK_SIZE + (rng()*CHUNK_SIZE), radius: 15 });
+    for(let i=14; i<15; i++) nodes.push({ index: i, type: 'ironNode', x: cx*CHUNK_SIZE + (rng()*CHUNK_SIZE), y: cy*CHUNK_SIZE + (rng()*CHUNK_SIZE), radius: 15 });
+    return nodes;
+}
+
+// --- STORAGE & PUTER ---
+const Storage = {
+    db: null,
+    init: function() {
+        return new Promise((resolve) => {
+            let req = indexedDB.open("RusticV4", 1);
+            req.onupgradeneeded = e => {
+                let db = e.target.result;
+                if(!db.objectStoreNames.contains('data')) db.createObjectStore('data');
+            };
+            req.onsuccess = e => { this.db = e.target.result; resolve(); };
+        });
+    },
+    save: function() {
+        let tx = this.db.transaction('data', 'readwrite');
+        tx.objectStore('data').put({ 
+            w: state.walls, o: state.objects, b: Array.from(state.brokenNodes),
+            i: state.inventory, h: state.hotbar, hp: state.health, binds: keybinds 
+        }, 'save');
+    },
+    load: function() {
+        return new Promise(resolve => {
+            let req = this.db.transaction('data', 'readonly').objectStore('data').get('save');
+            req.onsuccess = () => {
+                let d = req.result; if(d) {
+                    state.walls = d.w || {}; state.objects = d.o || {}; state.brokenNodes = new Set(d.b || []);
+                    state.inventory = d.i || state.inventory; state.hotbar = d.h || state.hotbar;
+                    state.health = d.hp || 100; keybinds = d.binds || keybinds;
+                }
+                updateUI(); resolve();
+            };
+            req.onerror = () => resolve();
+        });
+    }
+};
+
+async function togglePuterAuth() {
+    if (puterAuthed) { puter.auth.signOut(); updatePuterUI(); return; }
+    try { await puter.auth.signIn(); updatePuterUI(); syncFromCloud(); } catch(e) {}
+}
+function updatePuterUI() {
+    puterAuthed = puter.auth.isSignedIn();
+    const btn = document.getElementById('puter-auth-btn');
+    if (puterAuthed) { btn.innerText = "Sign out (Cloud Sync Active)"; btn.style.background = "#2ecc71"; } 
+}
+async function syncToCloud() {
+    if (!puterAuthed) return;
+    try { await puter.fs.write('rustic4_save.json', JSON.stringify({ w: state.walls, o: state.objects, b: Array.from(state.brokenNodes), i: state.inventory, h: state.hotbar })); } catch(e) {}
+}
+async function syncFromCloud() {
+    if (!puterAuthed) return;
+    try {
+        let file = await puter.fs.read('rustic4_save.json'); let data = JSON.parse(await file.text());
+        Object.assign(state.walls, data.w); Object.assign(state.objects, data.o);
+        data.b.forEach(n => state.brokenNodes.add(n));
+        state.inventory = data.i || state.inventory; state.hotbar = data.h || state.hotbar;
+        updateUI(); Storage.save();
+    } catch(e) {}
+}
+
+// --- INIT ---
+async function startGame() {
+    state.name = document.getElementById('player-name').value || "Survivor";
+    state.colorIdx = parseInt(document.getElementById('player-color').value) || 0;
+    
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-ui').style.display = 'block';
+
+    generateTextures(); await Storage.init(); await Storage.load();
+    if(puterAuthed) await syncFromCloud();
+
+    buildUI(); initNetwork(); initInput();
+    
+    // Serverless time sync roughly based on Date.now()
+    state.timeOfDay = ((Date.now() / 1000) * 20) % 24000; 
+    
+    setInterval(spawnMobs, 3000);
+    gameActive = true; requestAnimationFrame(gameLoop);
+}
+
+// --- UI & MENUS ---
+function buildUI() {
+    let hb = document.getElementById('hotbar'); hb.innerHTML = '';
+    for(let i=0; i<9; i++) {
+        let slot = document.createElement('div'); slot.className = 'slot' + (i === state.activeSlot ? ' active' : '');
+        slot.innerHTML = `<span class="hotkey">${i+1}</span><canvas id="hb-canv-${i}"></canvas><span class="qty" id="hb-qty-${i}"></span>`;
+        slot.onclick = () => selectHotbarSlot(i); hb.appendChild(slot);
+    }
+    
+    let cl = document.getElementById('craft-list'); cl.innerHTML = '';
+    Object.keys(DB.items).forEach(key => {
+        let item = DB.items[key];
+        if(item.cost) {
+            let costStr = Object.entries(item.cost).map(([k,v]) => `${v} ${DB.items[k].name}`).join(', ');
+            cl.innerHTML += `<div class="craft-item"><div><strong>${item.name}</strong><br><small style="color:#aaa">${costStr}</small></div>
+                <button class="btn" onclick="craftItem('${key}')">Craft</button></div>`;
+        }
+    });
+
+    let kbl = document.getElementById('keybinds-list'); kbl.innerHTML = '';
+    Object.keys(keybinds).forEach(k => {
+        kbl.innerHTML += `<div class="keybind-row"><span>${k.toUpperCase()}</span> <input type="text" id="kb-${k}" value="${keybinds[k]}" maxlength="10"></div>`;
+    });
+    updateUI();
+}
+
+function updateUI() {
+    for(let i=0; i<9; i++) {
+        let key = state.hotbar[i]; let c = document.getElementById(`hb-canv-${i}`); let q = document.getElementById(`hb-qty-${i}`);
+        if(c) {
+            c.width=32; c.height=32; let ctx = c.getContext('2d'); ctx.clearRect(0,0,32,32);
+            if(key) { drawIcon(ctx, key, 0, 0, 32); q.innerText = DB.items[key].type==='resource' || DB.items[key].type==='consumable' || DB.items[key].type==='wall' || DB.items[key].type==='object' ? (state.inventory[key] || '') : ''; } 
+            else { q.innerText = ''; }
+        }
+    }
+    
+    let ig = document.getElementById('inv-grid'); ig.innerHTML = '';
+    Object.keys(state.inventory).forEach(key => {
+        if(state.inventory[key] > 0) {
+            let slot = document.createElement('div'); slot.className = 'slot';
+            slot.innerHTML = `<canvas id="inv-canv-${key}"></canvas><span class="qty">${state.inventory[key]}</span>`;
+            slot.onclick = () => { state.hotbar[state.activeSlot] = key; Storage.save(); updateUI(); };
+            ig.appendChild(slot);
+            setTimeout(() => { let c = document.getElementById(`inv-canv-${key}`); if(c) { c.width=32; c.height=32; drawIcon(c.getContext('2d'), key, 0, 0, 32); } }, 0);
+        }
+    });
+    document.getElementById('health-bar').style.width = Math.max(0, state.health) + '%';
+}
+
+function selectHotbarSlot(idx) {
+    state.activeSlot = idx; state.buildStep = 0;
+    document.querySelectorAll('#hotbar .slot').forEach((el, i) => el.className = 'slot' + (i === idx ? ' active' : ''));
+}
+
+function craftItem(key) {
+    let cost = DB.items[key].cost;
+    for(let res in cost) { if((state.inventory[res]||0) < cost[res]) return addChat('Sys', `Need more ${DB.items[res].name}`); }
+    for(let res in cost) state.inventory[res] -= cost[res];
+    state.inventory[key] = (state.inventory[key] || 0) + 1;
+    Storage.save(); updateUI();
+}
+
+function toggleModal() {
+    let m = document.getElementById('inv-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+    if(m.style.display === 'flex') updateUI();
+}
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`button[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+}
+
+function saveSettings() {
+    Object.keys(keybinds).forEach(k => { let val = document.getElementById(`kb-${k}`).value.toLowerCase(); if(val) keybinds[k] = val; });
+    Storage.save(); addChat("Sys", "Settings saved."); toggleModal();
+}
+
+function addChat(sender, msg) {
+    let c = document.getElementById('chat-messages');
+    let s = sender ? `<strong>[${sender}]</strong> ` : `<strong style="color:#f1c40f">[World]</strong> `;
+    c.innerHTML += `<div>${s}${msg}</div>`; c.scrollTop = c.scrollHeight;
+}
+
+// --- NETWORK ---
+function initNetwork() {
+    mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt'); // Public fallback
+    mqttClient.on('connect', () => {
+        document.getElementById('status-dot').style.background = '#2ecc71';
+        document.getElementById('status-text').innerText = "Online";
+        mqttClient.subscribe('rrmod/play/#');
+        
+        // Request Sync
+        let b = new ArrayBuffer(5); let d = new DataView(b);
+        d.setUint8(0, PKT.SYNC_REQ); d.setUint32(1, myId); mqttClient.publish('rrmod/play/sync', new Uint8Array(b));
+    });
+
+    mqttClient.on('message', (topic, payload) => {
+        let buf = payload.buffer.slice(payload.byteOffset, payload.byteOffset + payload.byteLength);
+        if(buf.byteLength === 0) return; let dv = new DataView(buf); let type = dv.getUint8(0);
+
+        if (type === PKT.MOVE) {
+            let id = dv.getUint32(1); if(id === myId) return;
+            state.players[id] = { x: dv.getFloat32(5), y: dv.getFloat32(9), colorIdx: dv.getUint8(13), last: Date.now() };
+        } 
+        else if (type === PKT.CHAT) { addChat("", new TextDecoder().decode(new Uint8Array(buf, 1))); }
+        else if (type === PKT.ADD_WALL) {
+            let wid = dv.getUint32(1); let tLen = dv.getUint8(5);
+            let tKey = new TextDecoder().decode(new Uint8Array(buf, 6, tLen)); let off = 6+tLen;
+            state.walls[wid] = { type: tKey, x1: dv.getFloat32(off), y1: dv.getFloat32(off+4), x2: dv.getFloat32(off+8), y2: dv.getFloat32(off+12) };
+        }
+        else if (type === PKT.DEL_WALL) { delete state.walls[dv.getUint32(1)]; }
+        else if (type === PKT.ADD_OBJ) {
+            let oid = dv.getUint32(1); let tLen = dv.getUint8(5);
+            let tKey = new TextDecoder().decode(new Uint8Array(buf, 6, tLen)); let off = 6+tLen;
+            state.objects[oid] = { type: tKey, x: dv.getFloat32(off), y: dv.getFloat32(off+4), angle: dv.getFloat32(off+8), state: 0 };
+        }
+        else if (type === PKT.INTERACT) { let oid = dv.getUint32(1); if(state.objects[oid]) state.objects[oid].state = dv.getUint8(5); }
+        else if (type === PKT.BREAK) { state.brokenNodes.add(`${dv.getInt32(1)},${dv.getInt32(5)},${dv.getUint16(9)}`); }
+        else if (type === PKT.SYNC_REQ) {
+            if (dv.getUint32(1) !== myId) {
+                let data = JSON.stringify({ id: myId, w: state.walls, o: state.objects, b: Array.from(state.brokenNodes) });
+                let p = new Uint8Array(1 + data.length); p[0] = PKT.SYNC_RES; p.set(new TextEncoder().encode(data), 1);
+                mqttClient.publish('rrmod/play/sync', p);
+            }
+        }
+        else if (type === PKT.SYNC_RES) {
+            try {
+                let data = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 1)));
+                if(data.id !== myId) { Object.assign(state.walls, data.w); Object.assign(state.objects, data.o); data.b.forEach(n => state.brokenNodes.add(n)); }
+            } catch(e) {}
+        }
+    });
+
+    setInterval(() => {
+        if(!gameActive || !mqttClient.connected) return;
+        let b = new ArrayBuffer(14); let d = new DataView(b);
+        d.setUint8(0, PKT.MOVE); d.setUint32(1, myId); d.setFloat32(5, state.x); d.setFloat32(9, state.y); d.setUint8(13, state.colorIdx);
+        mqttClient.publish('rrmod/play/pos', new Uint8Array(b));
+        let now = Date.now(); for(let id in state.players) if(now - state.players[id].last > 5000) delete state.players[id];
+    }, 100);
+}
+
+// Net Senders
+function netAddWall(wid, wall) {
+    let tBuf = new TextEncoder().encode(wall.type);
+    let b = new ArrayBuffer(22 + tBuf.length); let d = new DataView(b);
+    d.setUint8(0, PKT.ADD_WALL); d.setUint32(1, wid); d.setUint8(5, tBuf.length);
+    new Uint8Array(b, 6).set(tBuf); let off = 6 + tBuf.length;
+    d.setFloat32(off, wall.x1); d.setFloat32(off+4, wall.y1); d.setFloat32(off+8, wall.x2); d.setFloat32(off+12, wall.y2);
+    mqttClient.publish('rrmod/play/build', new Uint8Array(b));
+}
+function netDelWall(wid) {
+    let b = new ArrayBuffer(5); let d = new DataView(b);
+    d.setUint8(0, PKT.DEL_WALL); d.setUint32(1, wid); mqttClient.publish('rrmod/play/build', new Uint8Array(b));
+}
+function netAddObj(oid, obj) {
+    let tBuf = new TextEncoder().encode(obj.type);
+    let b = new ArrayBuffer(18 + tBuf.length); let d = new DataView(b);
+    d.setUint8(0, PKT.ADD_OBJ); d.setUint32(1, oid); d.setUint8(5, tBuf.length);
+    new Uint8Array(b, 6).set(tBuf); let off = 6 + tBuf.length;
+    d.setFloat32(off, obj.x); d.setFloat32(off+4, obj.y); d.setFloat32(off+8, obj.angle);
+    mqttClient.publish('rrmod/play/build', new Uint8Array(b));
+}
+
+// --- MATH & PHYSICS ---
+function dist(x1, y1, x2, y2) { return Math.hypot(x2-x1, y2-y1); }
+function distToSeg(px, py, x1, y1, x2, y2) {
+    let l2 = (x2-x1)**2 + (y2-y1)**2; if (l2 === 0) return dist(px, py, x1, y1);
+    let t = Math.max(0, Math.min(1, ((px-x1)*(x2-x1) + (py-y1)*(y2-y1)) / l2));
+    return dist(px, py, x1 + t*(x2-x1), y1 + t*(y2-y1));
+}
+function getSegProj(px, py, x1, y1, x2, y2) {
+    let l2 = (x2-x1)**2 + (y2-y1)**2; if (l2 === 0) return {x:x1, y:y1, t:0};
+    let t = Math.max(0, Math.min(1, ((px-x1)*(x2-x1) + (py-y1)*(y2-y1)) / l2));
+    return { x: x1 + t*(x2-x1), y: y1 + t*(y2-y1), t: t, l: Math.sqrt(l2) };
+}
+function resolveCircSeg(cx, cy, r, x1, y1, x2, y2) {
+    let p = getSegProj(cx, cy, x1, y1, x2, y2); let d = dist(cx, cy, p.x, p.y);
+    if(d < r) {
+        let over = r - d; let nx = (cx - p.x) / d; let ny = (cy - p.y) / d;
+        if(d===0) { nx=1; ny=0; } return {x: cx + nx*over, y: cy + ny*over, hit: true};
+    }
+    return {x: cx, y: cy, hit: false};
+}
+
+function moveEntity(ent, dx, dy, dt, speed, isPlayer=false, isGhost=false) {
+    let tx = ent.x + dx * speed * dt; let ty = ent.y + dy * speed * dt;
+    let r = ent.radius || 12;
+
+    if(!isGhost) {
+        Object.values(state.walls).forEach(w => {
+            let res = resolveCircSeg(tx, ty, r, w.x1, w.y1, w.x2, w.y2);
+            if(res.hit) { tx = res.x; ty = res.y; }
+        });
+        Object.values(state.objects).forEach(o => {
+            let item = DB.items[o.type]; if(!item) return;
+            if (item.objType === 'door') {
+                if (o.state === 1) return; // Open
+                let ang = o.angle || 0; let cdx = Math.cos(ang) * (item.size/2); let cdy = Math.sin(ang) * (item.size/2);
+                let res = resolveCircSeg(tx, ty, r, o.x - cdx, o.y - cdy, o.x + cdx, o.y + cdy);
+                if(res.hit) { tx = res.x; ty = res.y; }
+            } else if (item.isSolid) {
+                let d = dist(tx, ty, o.x, o.y); let sr = item.size/2;
+                if(d < r + sr) {
+                    let over = (r + sr) - d; let nx = (tx - o.x) / d; let ny = (ty - o.y) / d;
+                    tx += nx*over; ty += ny*over;
+                }
+            }
+        });
+    }
+    ent.x = tx; ent.y = ty;
+}
+
+// --- INPUT ---
+const keys = {}; let mouse = { x:0, y:0, wx:0, wy:0 }; let hintObj = null;
+
+function initInput() {
+    window.addEventListener('keydown', e => { 
+        if(document.activeElement.tagName === "INPUT") return;
+        let k = e.key.toLowerCase(); keys[k] = true; 
+        
+        if(k === keybinds.interact) {
+            if(hintObj && hintObj.type === 'door') {
+                state.objects[hintObj.id].state = state.objects[hintObj.id].state === 0 ? 1 : 0;
+                let b = new ArrayBuffer(6); let d = new DataView(b);
+                d.setUint8(0, PKT.INTERACT); d.setUint32(1, hintObj.id); d.setUint8(5, state.objects[hintObj.id].state);
+                mqttClient.publish('rrmod/play/action', new Uint8Array(b)); Storage.save();
+            }
+        }
+        if(k === keybinds.inv) { e.preventDefault(); toggleModal(); }
+        if(k >= '1' && k <= '9') selectHotbarSlot(parseInt(k)-1);
+    });
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    
+    let canvas = document.getElementById('game-canvas');
+    canvas.addEventListener('mousemove', e => { let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
+    canvas.addEventListener('mousedown', e => {
+        if(document.getElementById('inv-modal').style.display === 'flex') return;
+        if(e.button === 0) handleLeftClick();
+        if(e.button === 2) state.buildStep = 0;
+    });
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+    
+    document.getElementById('chat-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && this.value.trim() !== "") {
+            let text = state.name + ": " + this.value; addChat(state.name, this.value);
+            let p = new Uint8Array(1 + new TextEncoder().encode(text).length); p[0] = PKT.CHAT; p.set(new TextEncoder().encode(text), 1);
+            mqttClient.publish('rrmod/play/chat', p); this.value = ""; this.blur(); canvas.focus();
+        }
+    });
+}
+
+function handleLeftClick() {
+    if(state.attackTimer > 0) return;
+    let activeKey = state.hotbar[state.activeSlot]; let item = DB.items[activeKey];
+
+    // CONSUME
+    if(item && item.action === 'heal') {
+        if((state.inventory[activeKey]||0)>0 && state.health < 100) {
+            state.health = Math.min(100, state.health + item.val);
+            state.inventory[activeKey]--; updateUI(); Storage.save();
+        }
+        return;
+    }
+
+    // BUILD WALL
+    if (item && item.type === 'wall') {
+        if((state.inventory[activeKey] || 0) <= 0) return;
+        if(state.buildStep === 0) { state.buildStartX = mouse.wx; state.buildStartY = mouse.wy; state.buildStep = 1; } 
+        else {
+            if(dist(state.buildStartX, state.buildStartY, mouse.wx, mouse.wy) > 10) {
+                state.inventory[activeKey]--; updateUI();
+                let wid = Math.floor(Math.random() * 0xFFFFFFFF);
+                let wObj = { type: activeKey, x1: state.buildStartX, y1: state.buildStartY, x2: mouse.wx, y2: mouse.wy };
+                state.walls[wid] = wObj; netAddWall(wid, wObj); Storage.save(); if(puterAuthed) syncToCloud();
+                state.buildStep = 0;
+            }
+        }
+    } 
+    // BUILD OBJECT / DOOR
+    else if (item && item.type === 'object') {
+        if((state.inventory[activeKey] || 0) <= 0) return;
+        let angle = 0; let px = mouse.wx, py = mouse.wy;
+        
+        // --- DOOR WALL-SPLITTING LOGIC ---
+        if(item.objType === 'door') {
+            let closeDist = 40, closeWId = null, proj = null;
+            Object.keys(state.walls).forEach(wid => {
+                let w = state.walls[wid]; let p = getSegProj(mouse.wx, mouse.wy, w.x1, w.y1, w.x2, w.y2);
+                let d = dist(mouse.wx, mouse.wy, p.x, p.y);
+                if(d < closeDist && p.l > item.size + 5) { closeDist = d; closeWId = wid; proj = p; }
+            });
+
+            if(closeWId && proj) {
+                let w = state.walls[closeWId];
+                let dx = (w.x2 - w.x1) / proj.l; let dy = (w.y2 - w.y1) / proj.l;
+                angle = Math.atan2(dy, dx); px = proj.x; py = proj.y;
+                
+                // Check if door fits without hanging off edge
+                let halfDoor = item.size / 2;
+                let tPx = proj.t * proj.l; // distance from start
+                if(tPx < halfDoor || proj.l - tPx < halfDoor) return; // Too close to edge, cancel
+                
+                // SPLIT
+                let w1Id = Math.floor(Math.random()*0xFFFFFFFF); let w2Id = Math.floor(Math.random()*0xFFFFFFFF);
+                let w1 = {type: w.type, x1: w.x1, y1: w.y1, x2: px - dx*halfDoor, y2: py - dy*halfDoor};
+                let w2 = {type: w.type, x1: px + dx*halfDoor, y1: py + dy*halfDoor, x2: w.x2, y2: w.y2};
+                
+                delete state.walls[closeWId]; netDelWall(closeWId);
+                state.walls[w1Id] = w1; netAddWall(w1Id, w1);
+                state.walls[w2Id] = w2; netAddWall(w2Id, w2);
+            }
+        }
+
+        state.inventory[activeKey]--; updateUI();
+        let oid = Math.floor(Math.random() * 0xFFFFFFFF); let oObj = { type: activeKey, x: px, y: py, angle: angle, state: 0 };
+        state.objects[oid] = oObj; netAddObj(oid, oObj);
+        Storage.save(); if(puterAuthed) syncToCloud();
+
+    } else {
+        // ATTACK / GATHER
+        state.attackTimer = 0.3;
+        let ma = Math.atan2(mouse.wy - state.y, mouse.wx - state.x);
+        let reach = item && item.reach ? item.reach : 60; let hitArc = Math.PI / 2;
+        let dmg = item && item.dmg ? item.dmg : 5;
+
+        // Hit Mobs
+        for(let i=state.mobs.length-1; i>=0; i--) {
+            let m = state.mobs[i]; let d = dist(state.x, state.y, m.x, m.y);
+            if(d < reach + m.radius) {
+                let adiff = Math.abs(Math.atan2(m.y - state.y, m.x - state.x) - ma); if(adiff > Math.PI) adiff = Math.PI*2 - adiff;
+                if(adiff < hitArc) {
+                    m.hp -= dmg; m.flash = 0.2; m.vx = Math.cos(ma)*300; m.vy = Math.sin(ma)*300;
+                    if(m.hp <= 0) {
+                        let mData = DB.mobs[m.type];
+                        if(mData && mData.drops) {
+                            for(let dKey in mData.drops) {
+                                if(Math.random() <= mData.drops[dKey]) {
+                                    state.inventory[dKey] = (state.inventory[dKey]||0) + 1;
+                                    addChat(null, `+1 ${DB.items[dKey].name}`);
+                                }
+                            }
+                        }
+                        state.mobs.splice(i, 1); updateUI(); Storage.save();
+                    }
+                    return; // Hit one per swing
+                }
+            }
+        }
+
+        // Hit Nodes
+        let cx = Math.floor(mouse.wx / CHUNK_SIZE); let cy = Math.floor(mouse.wy / CHUNK_SIZE);
+        for(let i=-1; i<=1; i++) {
+            for(let j=-1; j<=1; j++) {
+                for(let n of getChunkNodes(cx+i, cy+j)) {
+                    if(state.brokenNodes.has(`${cx+i},${cy+j},${n.index}`)) continue;
+                    let d = dist(state.x, state.y, n.x, n.y);
+                    if(d < reach + n.radius) {
+                        let adiff = Math.abs(Math.atan2(n.y - state.y, n.x - state.x) - ma); if(adiff > Math.PI) adiff = Math.PI*2 - adiff;
+                        if(adiff < hitArc) {
+                            let p = 1;
+                            if(item && item.toolType === 'axe' && n.type === 'tree') p = item.power;
+                            if(item && item.toolType === 'pick' && (n.type === 'rock' || n.type === 'ironNode')) p = item.power;
+                            if(n.type === 'ironNode' && (!item || item.toolType !== 'pick')) p = 0; // Require pick for iron
+                            
+                            if(p > 0) {
+                                state.brokenNodes.add(`${cx+i},${cy+j},${n.index}`);
+                                if(n.type === 'tree') { state.inventory.wood = (state.inventory.wood||0) + 3*p; addChat(null, `+${3*p} Wood`); }
+                                if(n.type === 'rock') { state.inventory.stone = (state.inventory.stone||0) + 3*p; addChat(null, `+${3*p} Stone`); }
+                                if(n.type === 'ironNode') { state.inventory.iron = (state.inventory.iron||0) + 2*p; addChat(null, `+${2*p} Iron Ore`); }
+                                
+                                updateUI(); Storage.save();
+                                let b = new ArrayBuffer(11); let dv = new DataView(b);
+                                dv.setUint8(0, PKT.BREAK); dv.setInt32(1, cx+i); dv.setInt32(5, cy+j); dv.setUint16(9, n.index);
+                                mqttClient.publish('rrmod/play/action', new Uint8Array(b));
+                            } else {
+                                addChat(null, "Tool not strong enough!");
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// --- MOBS & TIME ---
+function spawnMobs() {
+    if(!gameActive || state.mobs.length > 10) return;
+    
+    // Determine time state
+    let isNight = state.timeOfDay > 12000 && state.timeOfDay < 23000;
+    
+    // Pick valid mob
+    let validMobs = Object.keys(DB.mobs).filter(k => {
+        let m = DB.mobs[k]; return m.time === 'any' || (m.time === 'night' && isNight) || (m.time === 'day' && !isNight);
+    });
+    if(validMobs.length === 0) return;
+    
+    let type = validMobs[Math.floor(Math.random()*validMobs.length)];
+    let mData = DB.mobs[type];
+    
+    let a = Math.random() * Math.PI * 2;
+    state.mobs.push({ type: type, x: state.x + Math.cos(a)*800, y: state.y + Math.sin(a)*800, hp: mData.hp, vx: 0, vy: 0, flash: 0 });
+}
+
+// --- MAIN LOOP ---
+let lastTime = 0;
+function gameLoop(timestamp) {
+    if(!gameActive) return;
+    let dt = (timestamp - lastTime) / 1000; lastTime = timestamp; if(dt > 0.1) dt = 0.1;
+
+    update(dt); render(dt);
+    requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+    if(state.attackTimer > 0) state.attackTimer -= dt;
+
+    // Time
+    state.timeOfDay = (state.timeOfDay + dt * 50) % 24000;
+    let hour = Math.floor(state.timeOfDay / 1000); let min = Math.floor((state.timeOfDay % 1000) / 1000 * 60);
+    document.getElementById('time-display').innerText = `Time: ${hour.toString().padStart(2,'0')}:${min.toString().padStart(2,'0')}`;
+
+    // Movement
+    let dx = 0, dy = 0;
+    if(keys[keybinds.up]) dy -= 1; if(keys[keybinds.down]) dy += 1;
+    if(keys[keybinds.left]) dx -= 1; if(keys[keybinds.right]) dx += 1;
+    if(dx !== 0 || dy !== 0) { let len = Math.hypot(dx, dy); moveEntity(state, dx/len, dy/len, dt, 200, true); }
+
+    if (state.health <= 0) { state.x = 0; state.y = 0; state.health = 100; addChat("System", "You died."); updateUI(); } 
+    else if (state.health < 100) { state.health = Math.min(100, state.health + 0.5*dt); if(Math.random()<0.02) updateUI(); }
+
+    // Mobs
+    for(let i=state.mobs.length-1; i>=0; i--) {
+        let m = state.mobs[i]; let mData = DB.mobs[m.type];
+        let d = dist(m.x, m.y, state.x, state.y);
+        
+        m.vx *= 0.8; m.vy *= 0.8; let mdx = m.vx * dt; let mdy = m.vy * dt;
+
+        if(d > 1500) { state.mobs.splice(i, 1); continue; }
+        if(d > 20 && d < 500) { mdx += ((state.x - m.x)/d) * mData.speed * dt; mdy += ((state.y - m.y)/d) * mData.speed * dt; }
+
+        moveEntity(m, mdx/dt, mdy/dt, dt, 1, false, mData.ghost);
+        if(m.flash > 0) m.flash -= dt;
+
+        if (d < 30 && mData.dmg) { state.health -= mData.dmg * dt; updateUI(); }
+    }
+
+    // Interaction Hint
+    hintObj = null; let hintEl = document.getElementById('action-hint');
+    Object.keys(state.objects).forEach(id => {
+        let o = state.objects[id]; let item = DB.items[o.type];
+        if(item && item.objType === 'door' && dist(state.x, state.y, o.x, o.y) < 60) hintObj = {id: id, type: 'door'};
+    });
+    
+    if(hintObj) { hintEl.style.opacity = 1; hintEl.innerText = `Press [${keybinds.interact.toUpperCase()}] to Use Door`; } 
+    else { hintEl.style.opacity = 0; }
+}
+
+function render(dt) {
+    const canvas = document.getElementById('game-canvas');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    
+    let cx = canvas.width/2; let cy = canvas.height/2;
+    mouse.wx = state.x + (mouse.x - cx); mouse.wy = state.y + (mouse.y - cy);
+
+    ctx.fillStyle = '#1e381a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.save(); ctx.translate(cx - state.x, cy - state.y);
+
+    let sCx = Math.floor((state.x - cx) / CHUNK_SIZE); let eCx = Math.floor((state.x + cx) / CHUNK_SIZE);
+    let sCy = Math.floor((state.y - cy) / CHUNK_SIZE); let eCy = Math.floor((state.y + cy) / CHUNK_SIZE);
+
+    if(textures.grass) {
+        for(let ccy=sCy; ccy<=eCy; ccy++) {
+            for(let ccx=sCx; ccx<=eCx; ccx++) {
+                for(let ty=0; ty<CHUNK_SIZE; ty+=64) for(let tx=0; tx<CHUNK_SIZE; tx+=64) ctx.drawImage(textures.grass, ccx*CHUNK_SIZE + tx, ccy*CHUNK_SIZE + ty);
+            }
+        }
+    }
+
+    for(let ccy=sCy-1; ccy<=eCy+1; ccy++) {
+        for(let ccx=sCx-1; ccx<=eCx+1; ccx++) {
+            for(let n of getChunkNodes(ccx, ccy)) {
+                if(state.brokenNodes.has(`${ccx},${ccy},${n.index}`)) continue;
+                if(n.type === 'tree' && textures.tree) ctx.drawImage(textures.tree, n.x - 32, n.y - 48, 64, 64);
+                else if (n.type === 'rock' && textures.rock) ctx.drawImage(textures.rock, n.x - 20, n.y - 20, 40, 40);
+                else if (n.type === 'ironNode' && textures.ironNode) ctx.drawImage(textures.ironNode, n.x - 20, n.y - 20, 40, 40);
+            }
+        }
+    }
+
+    // Walls
+    ctx.lineWidth = 10; ctx.lineCap = 'butt';
+    Object.values(state.walls).forEach(w => {
+        let r = DB.items[w.type]; ctx.strokeStyle = r ? r.color : '#8d6e63';
+        ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
+    });
+
+    // Objects
+    Object.values(state.objects).forEach(o => {
+        let item = DB.items[o.type]; if(!item) return;
+        ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.angle || 0);
+        if(item.objType === 'door' && o.state === 1) { ctx.rotate(Math.PI/2); ctx.translate(item.size/2, 0); }
+        if(textures[item.objType]) ctx.drawImage(textures[item.objType], -item.size/2, -item.size/2, item.size, item.objType==='door'?10:item.size);
+        ctx.restore();
+    });
+
+    // Build Preview
+    let activeKey = state.hotbar[state.activeSlot]; let item = DB.items[activeKey];
+    if(item && (state.inventory[activeKey]||0)>0) {
+        ctx.globalAlpha = 0.5;
+        if(item.type === 'wall') {
+            if(state.buildStep === 1) {
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 10;
+                ctx.beginPath(); ctx.moveTo(state.buildStartX, state.buildStartY); ctx.lineTo(mouse.wx, mouse.wy); ctx.stroke();
+            }
+            ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(mouse.wx, mouse.wy, 5, 0, Math.PI*2); ctx.fill();
+        } else if (item.type === 'object') {
+            let pAng = 0, px = mouse.wx, py = mouse.wy;
+            if(item.objType === 'door') {
+                let closeDist = 40, proj = null;
+                Object.values(state.walls).forEach(w => {
+                    let p = getSegProj(mouse.wx, mouse.wy, w.x1, w.y1, w.x2, w.y2); let d = dist(mouse.wx, mouse.wy, p.x, p.y);
+                    if(d < closeDist && p.l > item.size+5) { closeDist = d; proj = p; pAng = Math.atan2(w.y2-w.y1, w.x2-w.x1); }
+                });
+                if(proj) { px = proj.x; py = proj.y; }
+            }
+            ctx.save(); ctx.translate(px, py); ctx.rotate(pAng);
+            if(textures[item.objType]) ctx.drawImage(textures[item.objType], -item.size/2, -item.size/2, item.size, item.objType==='door'?10:item.size);
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Players
+    for(let id in state.players) {
+        let p = state.players[id]; ctx.fillStyle = DB.colors[p.colorIdx||0];
+        ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'white'; ctx.font="14px VT323"; ctx.fillText("Player", p.x-20, p.y-20);
+    }
+
+    // Mobs
+    for(let m of state.mobs) {
+        let mData = DB.mobs[m.type]; ctx.fillStyle = m.flash > 0 ? '#fff' : mData.color;
+        ctx.beginPath(); ctx.arc(m.x, m.y, mData.radius + Math.sin(Date.now()/200)*2, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'red'; ctx.fillRect(m.x-10, m.y-20, 20*(m.hp/mData.hp), 4);
+    }
+
+    // Local Player
+    ctx.fillStyle = DB.colors[state.colorIdx]; ctx.beginPath(); ctx.arc(state.x, state.y, 12, 0, Math.PI*2); ctx.fill();
+    let pma = Math.atan2(mouse.wy - state.y, mouse.wx - state.x);
+    
+    ctx.save(); ctx.translate(state.x, state.y);
+    if(state.attackTimer > 0 && item && (item.type === 'weapon' || item.type === 'tool')) {
+        let swing = (0.3 - state.attackTimer) / 0.3; ctx.rotate(pma - Math.PI/4 + (swing * Math.PI/1.5)); ctx.translate(10, -5);
+        if(textures[activeKey]) ctx.drawImage(textures[activeKey], -16, -16, 32, 32);
+    } else {
+        ctx.rotate(pma); ctx.fillStyle = '#e67e22'; 
+        ctx.beginPath(); ctx.arc(10, 8, 4, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(10, -8, 4, 0, Math.PI*2); ctx.fill();
+        if(item && textures[activeKey]) { ctx.translate(15, 0); ctx.rotate(Math.PI/4); ctx.drawImage(textures[activeKey], -8, -8, 16, 16); }
+    }
+    ctx.restore();
+
+    ctx.fillStyle = 'white'; ctx.font="16px VT323"; ctx.fillText(state.name, state.x-20, state.y-20);
+    ctx.restore();
+
+    // --- DAY/NIGHT LIGHTING ---
+    let lCanv = document.getElementById('light-canvas');
+    lCanv.width = canvas.width; lCanv.height = canvas.height; let lctx = lCanv.getContext('2d');
+    
+    // Calculate darkness (0 to 0.95)
+    let darkness = 0;
+    if(state.timeOfDay > 12000 && state.timeOfDay < 23000) {
+        if(state.timeOfDay < 14000) darkness = ((state.timeOfDay - 12000) / 2000) * 0.95;
+        else if(state.timeOfDay > 21000) darkness = ((23000 - state.timeOfDay) / 2000) * 0.95;
+        else darkness = 0.95;
+    }
+
+    if(darkness > 0) {
+        lctx.fillStyle = `rgba(5, 5, 15, ${darkness})`; lctx.fillRect(0, 0, lCanv.width, lCanv.height);
+        lctx.globalCompositeOperation = 'destination-out';
+
+        function drawLight(lx, ly, radius) {
+            let rx = lx - state.x + cx; let ry = ly - state.y + cy;
+            let grad = lctx.createRadialGradient(rx, ry, 0, rx, ry, radius);
+            grad.addColorStop(0, `rgba(255,255,255,1)`); grad.addColorStop(1, `rgba(255,255,255,0)`);
+            lctx.fillStyle = grad; lctx.beginPath(); lctx.arc(rx, ry, radius, 0, Math.PI*2); lctx.fill();
+        }
+
+        // Player Light (small radius)
+        drawLight(state.x, state.y, 100);
+
+        // Object Lights
+        Object.values(state.objects).forEach(o => { let item = DB.items[o.type]; if(item && item.light) drawLight(o.x, o.y, item.light + Math.random()*5); });
+
+        // Mob Lights (Ghosts)
+        for(let m of state.mobs) { let mData = DB.mobs[m.type]; if(mData.light) drawLight(m.x, m.y, mData.light); }
+    }
+}
+
+window.onload = updatePuterUI;
+</script>
+</body>
+</html>
