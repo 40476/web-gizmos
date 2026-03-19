@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BIG SPINNING TEXT</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; color: white; }
+
+        /* The Menu */
+        #ui {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            background: rgba(15,15,15,0.95); padding: 20px; border-radius: 12px;
+            width: 280px; border: 1px solid #333; transition: opacity 0.3s, transform 0.3s;
+        }
+        #ui.hidden { opacity: 0; pointer-events: none; transform: translateX(-20px); }
+
+        h2 { margin: 0 0 15px 0; font-size: 14px; letter-spacing: 2px; color: #00ffcc; text-transform: uppercase; }
+        .row { margin-bottom: 12px; }
+        label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #888; display: block; margin-bottom: 5px; }
+        input, select, button { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
+        input[type="range"] { padding: 0; accent-color: #00ffcc; }
+
+        .hint {font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
+        .status { position: fixed; bottom: 20px; left: 20px; font-size: 11px; color: #00ffcc; background: rgba(0,0,0,0.8); padding: 8px 15px; border-radius: 20px; display: none; border: 1px solid #00ffcc; }
+
+        #results { position: absolute; background: #222; width: 100%; max-height: 150px; overflow-y: auto; border: 1px solid #444; display: none; z-index: 100; border-radius: 6px; margin-top: 5px; }
+        .font-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #333; }
+        .font-item:hover { background: #00ffcc; color: #000; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <h2>Big Spinning Text</h2>
+    <div class="row"><label>Text</label><input type="text" id="textInput"></div>
+    <div class="row" style="position: relative;">
+        <label>Font Search</label>
+        <input type="text" id="fontSearch" placeholder="Search GitHub..." autocomplete="off">
+        <div id="results"></div>
+    </div>
+    <div class="row"><label>Size</label><input type="range" id="size" min="1" max="10" step="0.1"></div>
+    <div class="row"><label>Thickness</label><input type="range" id="thickness" min="0.1" max="3" step="0.1"></div>
+    <div class="row"><label>Spin Speed</label><input type="range" id="speed" min="0" max="0.5" step="0.001"></div>
+    <div class="row"><label>Color</label><input type="color" id="colorPicker"></div>
+    <button id="copyLink">Copy Share URL</button>
+    <div class="hint"><br>Press any key to hide/show menu</div>
+</div>
+
+<div id="loader" class="status">Loading...</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+    import { TTFLoader } from 'three/addons/loaders/TTFLoader.js';
+    import { Font } from 'three/addons/loaders/FontLoader.js';
+
+    // --- Configuration Handling ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const state = {
+        text: urlParams.get('text') || 'Bottom Text',
+        folder: urlParams.get('font') || 'orbitron',
+        size: parseFloat(urlParams.get('size')) || 2,
+        thickness: parseFloat(urlParams.get('thick')) || 0.5,
+        speed: parseFloat(urlParams.get('speed')) || 0.03,
+        color: urlParams.get('color') || '#00ffcc'
+    };
+
+    // Sync UI with state
+    document.getElementById('textInput').value = state.text;
+    document.getElementById('size').value = state.size;
+    document.getElementById('thickness').value = state.thickness;
+    document.getElementById('speed').value = state.speed;
+    document.getElementById('colorPicker').value = state.color;
+
+    function updateURL() {
+        const url = new URL(window.location);
+        url.searchParams.set('text', state.text);
+        url.searchParams.set('font', state.folder);
+        url.searchParams.set('size', state.size);
+        url.searchParams.set('thick', state.thickness);
+        url.searchParams.set('speed', state.speed);
+        url.searchParams.set('color', state.color);
+        window.history.replaceState({}, '', url);
+    }
+
+    // --- Three.js Setup ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const light = new THREE.PointLight(0xffffff, 1000);
+    light.position.set(10, 10, 15);
+    scene.add(light);
+
+    let textMesh, repoFolders = [];
+    const ttfLoader = new TTFLoader();
+    const uiLoader = document.getElementById('loader');
+
+    // --- Binary Fetch Logic ---
+    async function loadFont() {
+        uiLoader.style.display = 'block';
+        const cacheKey = `font_${state.folder}`;
+        let files = JSON.parse(localStorage.getItem(cacheKey));
+
+        if (!files) {
+            const res = await fetch(`https://api.github.com/repos/google/fonts/contents/ofl/${state.folder}`);
+            files = await res.json();
+            localStorage.setItem(cacheKey, JSON.stringify(files));
+        }
+
+        const ttfFile = files.find(f => f.name.includes('[wght].ttf')) ||
+                        files.find(f => f.name.includes('Regular.ttf')) ||
+                        files.find(f => f.name.endsWith('.ttf'));
+
+        const url = `https://raw.githubusercontent.com/google/fonts/main/ofl/${state.folder}/${ttfFile.name}`;
+        const buffer = await (await fetch(url)).arrayBuffer();
+        const font = new Font(ttfLoader.parse(buffer));
+
+        if (textMesh) { scene.remove(textMesh); textMesh.geometry.dispose(); }
+        const geo = new TextGeometry(state.text, { font, size: state.size, height: state.thickness, curveSegments: 12, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.05 });
+        geo.center();
+        textMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: state.color, metalness: 0.8, roughness: 0.2 }));
+        scene.add(textMesh);
+        uiLoader.style.display = 'none';
+        updateURL();
+    }
+
+    // --- UI Controls ---
+    window.addEventListener('keydown', (e) => {
+        if (e.target.tagName !== 'INPUT') document.getElementById('ui').classList.toggle('hidden');
+    });
+
+    document.getElementById('textInput').oninput = (e) => { state.text = e.target.value; loadFont(); };
+    document.getElementById('size').oninput = (e) => { state.size = parseFloat(e.target.value); loadFont(); };
+    document.getElementById('thickness').oninput = (e) => { state.thickness = parseFloat(e.target.value); loadFont(); };
+    document.getElementById('speed').oninput = (e) => { state.speed = parseFloat(e.target.value); updateURL(); };
+    document.getElementById('colorPicker').oninput = (e) => { state.color = e.target.value; loadFont(); };
+    document.getElementById('copyLink').onclick = () => { navigator.clipboard.writeText(window.location.href); alert("Share URL copied!"); };
+
+    // Search Logic
+    const search = document.getElementById('fontSearch');
+    const results = document.getElementById('results');
+    search.oninput = async () => {
+        if (repoFolders.length === 0) {
+            const res = await fetch('https://api.github.com/repos/google/fonts/contents/ofl');
+            repoFolders = (await res.json()).map(f => f.name);
+        }
+        const val = search.value.toLowerCase();
+        results.innerHTML = '';
+        if (!val) return results.style.display = 'none';
+        repoFolders.filter(f => f.includes(val)).slice(0, 10).forEach(f => {
+            const d = document.createElement('div');
+            d.className = 'font-item'; d.innerText = f;
+            d.onclick = () => { state.folder = f; search.value = f; results.style.display = 'none'; loadFont(); };
+            results.appendChild(d);
+        });
+        results.style.display = 'block';
+    };
+
+    camera.position.z = 15;
+    function animate() {
+        requestAnimationFrame(animate);
+        if(textMesh) textMesh.rotation.y += state.speed;
+        renderer.render(scene, camera);
+    }
+
+    loadFont();
+    animate();
+    window.onresize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); };
+</script>
+</body>
+</html>
