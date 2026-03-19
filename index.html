@@ -204,13 +204,15 @@
       
         <a class="nav-item" href="racing/index.html" data-name="racing">> racing</a>
       
+        <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">> rusticrealms</a>
+      
         <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
       
         <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">> rusticrealms</a>
+        <a class="nav-item" href="BST/index.html" data-name="BST">> BST</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -530,6 +532,32 @@
         </div>
       </section>
     
+      <section class="app-section" id="section-rusticrealms" data-name="rusticrealms">
+        <a class="app-link" href="rusticrealms/index.html">[ Run Application ]</a>
+        <h2>rusticrealms</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>A multiplayer survival game built with vanilla JavaScript, HTML5 Canvas, and MQTT for networking</li>
+    <li>Features procedurally generated terrain with trees, rocks, and iron nodes across infinite chunks</li>
+    <li>Includes crafting system, building mechanics, and day/night cycles with dynamic lighting</li>
+    <li>Implements real-time multiplayer where players can see each other's movements and constructions</li>
+    <li>Supports cloud synchronization through Puter for saving game state across sessions</li>
+  </ul>
+
+  <pre>
+    <code>function moveEntity(ent, dx, dy, dt, speed, isPlayer=false, isGhost=false) {</code>
+    <code>    let tx = ent.x + dx * speed * dt; let ty = ent.y + dy * speed * dt;</code>
+    <code>    // Resolve collisions with walls and objects</code>
+    <code>    return {x: tx, y: ty};</code>
+    <code>}</code>
+  </pre>
+
+  <p>This is a modular survival game featuring multiplayer capabilities, procedural world generation, and real-time networking. Players can gather resources, craft items, build structures, and interact with others in a shared persistent world. The game uses MQTT for low-latency communication and includes cloud storage for cross-session progress.</p>
+</section>
+        </div>
+      </section>
+    
       <section class="app-section" id="section-turtle" data-name="turtle">
         <a class="app-link" href="turtle/index.html">[ Run Application ]</a>
         <h2>turtle</h2>
@@ -598,28 +626,23 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-rusticrealms" data-name="rusticrealms">
-        <a class="app-link" href="rusticrealms/index.html">[ Run Application ]</a>
-        <h2>rusticrealms</h2>
+      <section class="app-section" id="section-BST" data-name="BST">
+        <a class="app-link" href="BST/index.html">[ Run Application ]</a>
+        <h2>BST</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>A multiplayer survival game built with vanilla JavaScript, HTML5 Canvas, and MQTT for networking</li>
-    <li>Features procedurally generated terrain with trees, rocks, and iron nodes across infinite chunks</li>
-    <li>Includes crafting system, building mechanics, and day/night cycles with dynamic lighting</li>
-    <li>Implements real-time multiplayer where players can see each other's movements and constructions</li>
-    <li>Supports cloud synchronization through Puter for saving game state across sessions</li>
+    <li>Interactive 3D spinning text generator using Three.js with real-time parameter controls</li>
+    <li>Dynamic font loading from Google Fonts GitHub repository with search functionality</li>
+    <li>URL state management for sharing configurations and keyboard shortcut for UI toggle</li>
   </ul>
 
   <pre>
-    <code>function moveEntity(ent, dx, dy, dt, speed, isPlayer=false, isGhost=false) {</code>
-    <code>    let tx = ent.x + dx * speed * dt; let ty = ent.y + dy * speed * dt;</code>
-    <code>    // Resolve collisions with walls and objects</code>
-    <code>    return {x: tx, y: ty};</code>
-    <code>}</code>
+    <code>textMesh.rotation.y += state.speed;</code>
+    <code>const geo = new TextGeometry(state.text, { font, size: state.size, height: state.thickness })</code>
   </pre>
 
-  <p>This is a modular survival game featuring multiplayer capabilities, procedural world generation, and real-time networking. Players can gather resources, craft items, build structures, and interact with others in a shared persistent world. The game uses MQTT for low-latency communication and includes cloud storage for cross-session progress.</p>
+  <p>A WebGL-based spinning text visualizer that lets users customize text, font, size, thickness, rotation speed, and color. The application fetches fonts from Google Fonts, caches them locally, and provides a shareable URL with all current settings. Users can search through available fonts and toggle the control panel with any key press.</p>
 </section>
         </div>
       </section>
