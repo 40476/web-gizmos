@@ -1,15 +1,19 @@
 <section>
   <ul>
-    <li>Mega Miner NG is a browser-based multiplayer mining game with procedurally generated maps.</li>
-    <li>Features include building structures, upgrading equipment, trading with other players, and exploring underground.</li>
-    <li>Uses MQTT for real-time multiplayer networking and IndexedDB for local save storage.</li>
-    <li>Mobile controls are available with touch-friendly interface and chat system.</li>
-    <li>Includes texture import system and cloud sync capabilities through Puter integration.</li>
+    <li>HTML5 game using JavaScript and MQTT for multiplayer</li>
+    <li>Pixel art mining game with procedurally generated maps</li>
+    <li>Real-time multiplayer with WebSocket/MQTT broker connections</li>
+    <li>Custom UI system with CSS3 bevel borders and mobile controls</li>
+    <li>Cloud save system using IndexedDB and Puter cloud storage</li>
+    <li>Sound engine with Web Audio API for mining and ambient effects</li>
+    <li>Shop system for upgrades and items with in-game economy</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, x: 0, y: 0, fuel: 100, maxFuel: 100, hull: 100, maxHull: 100, cargo: 0, maxCargo: 50, money: 0, temp: 0, maxTemp: 100, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 3, multiMine:0, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; this.map = []; this.discovered = []; this.remotePlayers = {}; this.camera = { x: 0, y: 0 }; this.zoom = 1.0; this.particles = []; this.explosives = []; this.isAdmin = false; this.hostId = null; this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]'); this.lastActionTime = 0; this.lastAutosave = 0; this.lastViewportSync = 0; this.fallHeight = 0; this.stationGridX = CONSTANTS.MAP_WIDTH / 2; this.stationGridY = 4; this.lastHostHeartbeat = 0; } }</code>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>class SoundManager { init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } }</code>
+    <code>class ShopSystem { buy(item) { const p = Game.localPlayer; if(p.money >= cost) { p.money -= cost; p.drillTier++; } } }</code>
   </pre>
 
-  <p>Mega Miner NG is a comprehensive multiplayer mining game that combines procedural generation with real-time networking. The game features a full 3D mining experience where players can dig for resources, build structures, upgrade equipment, and interact with other players through trading and chat systems. With mobile support, cloud sync capabilities, and extensive customization options, it provides a complete mining adventure that can be played across different devices and platforms.</p>
+  <p>This is a browser-based multiplayer mining game with procedurally generated maps, real-time multiplayer networking via MQTT, and a complete in-game economy system. The game features pixel art graphics, sound effects using the Web Audio API, cloud saves through IndexedDB and Puter, and a shop system for upgrades and items.</p>
 </section>
