@@ -176,6 +176,8 @@
     <input id="search" type="text" placeholder="Filter..." />
     <div class="nav-items-container">
       
+        <a class="nav-item" href="BST/index.html" data-name="BST">> BST</a>
+      
         <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
       
         <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
@@ -187,8 +189,6 @@
         <a class="nav-item" href="fonttester/index.html" data-name="fonttester">> fonttester</a>
       
         <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
-      
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
       
         <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
@@ -212,7 +212,7 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="BST/index.html" data-name="BST">> BST</a>
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
       
     </div>
     <button id="themeToggle">Toggle Theme</button>
@@ -221,6 +221,27 @@
   <main>
     <h1>web-gizmos (fun inside!)</h1>
 
+    
+      <section class="app-section" id="section-BST" data-name="BST">
+        <a class="app-link" href="BST/index.html">[ Run Application ]</a>
+        <h2>BST</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>Interactive 3D spinning text generator using Three.js with real-time parameter controls</li>
+    <li>Dynamic font loading from Google Fonts GitHub repository with search functionality</li>
+    <li>URL state management for sharing configurations and keyboard shortcut for UI toggle</li>
+  </ul>
+
+  <pre>
+    <code>textMesh.rotation.y += state.speed;</code>
+    <code>const geo = new TextGeometry(state.text, { font, size: state.size, height: state.thickness })</code>
+  </pre>
+
+  <p>A WebGL-based spinning text visualizer that lets users customize text, font, size, thickness, rotation speed, and color. The application fetches fonts from Google Fonts, caches them locally, and provides a shareable URL with all current settings. Users can search through available fonts and toggle the control panel with any key press.</p>
+</section>
+        </div>
+      </section>
     
       <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader">
         <a class="app-link" href="animeboydownloader/index.html">[ Run Application ]</a>
@@ -347,29 +368,6 @@
   </pre>
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
-</section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>HTML5 game with pixel art mining mechanics and multiplayer support</li>
-    <li>Procedurally generated underground maps with various ores and resources</li>
-    <li>Real-time multiplayer via MQTT broker with WebSocket connections</li>
-    <li>Upgrade system for drills, cargo, fuel capacity, and special abilities</li>
-    <li>Cloud save system using Puter storage for cross-device progress</li>
-  </ul>
-
-  <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, ...</code>
-    <code>class GameEngine { update() { /* movement, mining, fuel consumption */ } draw() { /* render tiles */ } }</code>
-  </pre>
-
-  <p>Mega Miner NG is a multiplayer mining game where players dig through procedurally generated underground terrain to collect valuable resources. The game features real-time multiplayer gameplay through WebSocket connections, an upgrade system for mining equipment, and cloud-based save functionality. Players can trade resources, build structures, and explore a vast underground world filled with various ores and minerals.</p>
 </section>
         </div>
       </section>
@@ -626,23 +624,24 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-BST" data-name="BST">
-        <a class="app-link" href="BST/index.html">[ Run Application ]</a>
-        <h2>BST</h2>
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
         <div class="summary-content">
           <section>
   <ul>
-    <li>Interactive 3D spinning text generator using Three.js with real-time parameter controls</li>
-    <li>Dynamic font loading from Google Fonts GitHub repository with search functionality</li>
-    <li>URL state management for sharing configurations and keyboard shortcut for UI toggle</li>
+    <li>Mega Miner NG is a browser-based multiplayer mining game with procedurally generated maps.</li>
+    <li>Features include building structures, upgrading equipment, trading with other players, and exploring underground.</li>
+    <li>Uses MQTT for real-time multiplayer networking and IndexedDB for local save storage.</li>
+    <li>Mobile controls are available with touch-friendly interface and chat system.</li>
+    <li>Includes texture import system and cloud sync capabilities through Puter integration.</li>
   </ul>
 
   <pre>
-    <code>textMesh.rotation.y += state.speed;</code>
-    <code>const geo = new TextGeometry(state.text, { font, size: state.size, height: state.thickness })</code>
+    <code>class GameEngine { constructor() { this.localPlayer = { id: uuid(), gridX: CONSTANTS.MAP_WIDTH/2, gridY: 4, x: 0, y: 0, fuel: 100, maxFuel: 100, hull: 100, maxHull: 100, cargo: 0, maxCargo: 50, money: 0, temp: 0, maxTemp: 100, rotation: 0, isDrilling: false, drillTier: 0, heatResist: 0, xrayRange: 3, multiMine:0, inventory: {}, selectedBlock: TILE_TYPES.CASING, stats: { blocksMined: {}, totalMined: 0, startTime: now() }, joinedAt: now(), teleporters: [] }; this.map = []; this.discovered = []; this.remotePlayers = {}; this.camera = { x: 0, y: 0 }; this.zoom = 1.0; this.particles = []; this.explosives = []; this.isAdmin = false; this.hostId = null; this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]'); this.lastActionTime = 0; this.lastAutosave = 0; this.lastViewportSync = 0; this.fallHeight = 0; this.stationGridX = CONSTANTS.MAP_WIDTH / 2; this.stationGridY = 4; this.lastHostHeartbeat = 0; } }</code>
   </pre>
 
-  <p>A WebGL-based spinning text visualizer that lets users customize text, font, size, thickness, rotation speed, and color. The application fetches fonts from Google Fonts, caches them locally, and provides a shareable URL with all current settings. Users can search through available fonts and toggle the control panel with any key press.</p>
+  <p>Mega Miner NG is a comprehensive multiplayer mining game that combines procedural generation with real-time networking. The game features a full 3D mining experience where players can dig for resources, build structures, upgrade equipment, and interact with other players through trading and chat systems. With mobile support, cloud sync capabilities, and extensive customization options, it provides a complete mining adventure that can be played across different devices and platforms.</p>
 </section>
         </div>
       </section>
