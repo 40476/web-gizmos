@@ -18,9 +18,7 @@
       --border: #444;
     }
 
-    /* Light Theme Overrides */
     body.light-theme {
-
       --primary: #01bb70;
       --primary-hover: #2e0040;
       --bg: #f4f4f4;
@@ -31,6 +29,7 @@
       --border: #ccc;
       --code-bg: #eee;
     }
+
     html { font-size: 16px; scroll-behavior: smooth; }
     
     body {
@@ -41,10 +40,9 @@
       display: flex;
       min-height: 100vh;
       line-height: 1.45;
-      overflow-x: hidden; /* Prevent global horizontal scroll */
+      overflow-x: hidden;
     }
 
-    /* Sidebar - Fixed and Stable */
     nav {
       width: 280px;
       background: var(--sidebar-bg);
@@ -59,11 +57,7 @@
       z-index: 100;
     }
 
-    nav h2 { 
-      font-size: 1.5rem; 
-      color: var(--primary); 
-      margin-top: 0;
-    }
+    nav h2 { font-size: 1.5rem; color: var(--primary); margin-top: 0; }
 
     #search {
       width: 100%;
@@ -76,10 +70,7 @@
       outline: none;
     }
 
-    .nav-items-container {
-      overflow-y: auto;
-      flex-grow: 1;
-    }
+    .nav-items-container { overflow-y: auto; flex-grow: 1; }
 
     .nav-item {
       display: block;
@@ -89,16 +80,15 @@
       font-size: 0.9rem;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis; /* Truncate long names in sidebar */
+      text-overflow: ellipsis;
     }
 
     .nav-item:hover { color: var(--primary); }
 
-    /* Main Content Area */
     main {
       flex: 1;
       padding: 2rem 3rem;
-      max-width: 50rem; /* Keeps lines readable */
+      max-width: 50rem;
       margin: 0 auto;
       box-sizing: border-box;
       width: 100%;
@@ -107,14 +97,12 @@
     h1 { font-size: 2.5rem; color: var(--primary); margin-top: 0; }
     h2 { font-size: 1.8rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 
-    /* Application Section Styling */
     .app-section {
       background: var(--card-bg);
       padding: 2rem;
       margin-bottom: 3rem;
       border-radius: 8px;
       border: 1px solid var(--border);
-      /* Prevent injected content from breaking the card */
       word-wrap: break-word;
       overflow-wrap: break-word;
     }
@@ -130,11 +118,10 @@
 
     .app-link:hover { text-decoration: underline; }
 
-    /* Injected Code Stability (The "Retro" Fix) */
     pre {
       background-color: var(--code-bg);
       padding: 1rem;
-      overflow-x: auto; /* Forces scrollbar on long code lines */
+      overflow-x: auto;
       border-left: 3px solid var(--primary);
       margin: 1.5rem 0;
     }
@@ -142,13 +129,18 @@
     code {
       font-family: Menlo, Monaco, "Courier New", monospace;
       font-size: 0.9rem;
-      color: #01ff70;
+      color: var(--primary);
     }
 
-    ul { padding-left: 1.2rem; }
-    li { margin-bottom: 0.5rem; }
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
 
-    /* Theme Toggle */
     #themeToggle {
       margin-top: 1rem;
       background: none;
@@ -161,7 +153,6 @@
 
     #themeToggle:hover { background: var(--primary); color: #000; }
 
-    /* Mobile - Stack Layout */
     @media (max-width: 850px) {
       body { flex-direction: column; }
       nav { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
@@ -183,7 +174,7 @@
   </nav>
 
   <main>
-    <h1>web-gizmos (fun inside!)</h1>
+    <h1>web-gizmos</h1>
 
     {% for name, summary in applications.items() %}
       <section class="app-section" id="section-{{ name }}" data-name="{{ name }}">
@@ -194,6 +185,11 @@
         </div>
       </section>
     {% endfor %}
+
+    <footer>
+      <p>Registry last updated: {{ last_updated }}</p>
+      <p>Total Gizmos: {{ applications | length }}</p>
+    </footer>
   </main>
 
   <script>
@@ -212,19 +208,10 @@
     });
 
     const themeToggle = document.getElementById("themeToggle");
-
     themeToggle.addEventListener("click", () => {
-      // This toggles the 'light-theme' class on the body
       document.body.classList.toggle("light-theme");
-
-      // Optional: Change the button text based on the mode
-      if (document.body.classList.contains("light-theme")) {
-        themeToggle.textContent = "Dark Mode";
-      } else {
-        themeToggle.textContent = "Light Mode";
-      }
+      themeToggle.textContent = document.body.classList.contains("light-theme") ? "Dark Mode" : "Light Mode";
     });
   </script>
-
 </body>
 </html>
