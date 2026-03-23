@@ -42,12 +42,10 @@
 
     *, *::before, *::after { box-sizing: border-box; }
 
-    /* Fix for "too tall" and "not sticky" */
     html, body { 
       margin: 0; padding: 0; 
-      height: 100%; 
-      width: 100%;
-      overflow: hidden; /* We scroll the main element, not the body */
+      height: 100%; width: 100%;
+      overflow: hidden; 
       font-family: "Courier New", Courier, monospace;
     }
 
@@ -55,8 +53,7 @@
       background: var(--bg); 
       color: var(--text); 
       display: flex; 
-      /* Re-enabling the smooth theme fade */
-      transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease; 
+      transition: background 0.4s ease, color 0.4s ease; 
     }
 
     /* --- SIDEBAR --- */
@@ -68,13 +65,13 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      height: 100%; /* Fill the fixed body height */
+      height: 100vh;
       transition: background 0.4s ease, border-color 0.4s ease;
     }
 
-    nav h2 { color: var(--primary); margin: 0 0 1.5rem 0; font-size: 1.4rem; }
+    nav h2 { color: var(--primary); margin: 0 0 1.5rem 0; font-size: 1.4rem; flex-shrink: 0; }
 
-    .search-wrapper { position: relative; margin-bottom: 1.5rem; }
+    .search-wrapper { position: relative; margin-bottom: 1rem; flex-shrink: 0; }
     #search {
       width: 100%;
       padding: 10px 35px 10px 10px;
@@ -83,7 +80,7 @@
       color: var(--primary);
       border-radius: 4px;
       outline: none;
-      transition: all 0.4s ease;
+      transition: border-color 0.4s ease;
     }
     #clearSearch {
       position: absolute;
@@ -92,19 +89,30 @@
       cursor: pointer; display: none; font-weight: bold;
     }
 
+    /* The Scroll Limiter */
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      flex: 1; /* Takes up all available space between search and theme */
+      min-height: 0; /* Critical for nested flex scrolling */
+      margin-bottom: 1.5rem;
+    }
+
     .nav-menu summary { 
       list-style: none; color: var(--primary); font-weight: bold; 
-      padding: 10px 0; cursor: pointer;
+      padding: 10px 0; cursor: pointer; flex-shrink: 0;
     }
     .nav-menu summary::-webkit-details-marker { display: none; }
-    .toggle-indicator { display: inline-block; margin-right: 8px; transition: transform 0.2s; }
-    details[open] .toggle-indicator { transform: rotate(90deg); }
-
+    
     .nav-items-container {
-      margin-top: 10px;
-      flex-grow: 1;
-      overflow-y: auto;
+      overflow-y: auto; /* Only the list scrolls! */
+      padding-right: 5px;
     }
+
+    /* Custom Scrollbar for Sidebar */
+    .nav-items-container::-webkit-scrollbar { width: 4px; }
+    .nav-items-container::-webkit-scrollbar-track { background: transparent; }
+    .nav-items-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
     .nav-item {
       display: block;
@@ -115,17 +123,15 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: color 0.2s;
     }
     .nav-item:hover { color: var(--primary); }
 
-    /* --- MAIN CONTENT (The scrollable part) --- */
+    /* --- MAIN --- */
     main { 
       flex: 1; 
       padding: 2rem;
-      overflow-y: auto; /* This makes the sidebar "effectively" sticky */
+      overflow-y: auto;
       min-width: 0;
-      transition: background 0.4s ease;
     }
 
     .app-section {
@@ -138,25 +144,30 @@
       transition: background 0.4s ease, border-color 0.4s ease;
     }
 
-    /* --- MOBILE OVERRIDES --- */
+    /* --- THEME CONTROLS (Pinned to bottom) --- */
+    .theme-controls { 
+      font-size: 0.75rem; 
+      padding-top: 1rem; 
+      border-top: 1px solid var(--border); 
+      flex-shrink: 0; 
+    }
+    .theme-controls label { display: block; margin: 5px 0; cursor: pointer; }
+
+    /* --- MOBILE --- */
     @media (max-width: 850px) {
       html, body { overflow: auto; height: auto; }
       body { flex-direction: column; }
-      nav { width: 100%; min-width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      nav { width: 100%; min-width: 100%; height: auto; border-right: none; }
+      .nav-menu { flex: none; height: auto; }
       main { overflow-y: visible; }
     }
 
-    /* Desktop constraints */
     @media (min-width: 851px) {
-      .nav-menu { display: block !important; }
-      .nav-menu summary { cursor: default; pointer-events: none; }
-      .nav-menu .toggle-indicator { display: none; }
+      .nav-menu summary { pointer-events: none; cursor: default; }
     }
 
-    .theme-controls { font-size: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-    .theme-controls label { display: block; margin: 5px 0; cursor: pointer; }
     .highlight { background: var(--primary); color: #000; font-weight: bold; padding: 0 2px; }
-    pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-left: 4px solid var(--primary); font-size: 0.85rem; transition: background 0.4s ease;}
+    pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-left: 4px solid var(--primary); font-size: 0.85rem; transition: background 0.4s ease; }
     code { color: var(--primary); }
   </style>
 </head>
@@ -170,7 +181,7 @@
     </div>
 
     <details class="nav-menu" open>
-      <summary><span class="toggle-indicator">▶</span>PROJECTS</summary>
+      <summary>PROJECTS</summary>
       <div class="nav-items-container">
         {% for name, summary in applications.items() %}
           <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">> {{ name }}</a>
@@ -179,7 +190,7 @@
     </details>
 
     <div class="theme-controls">
-      <strong>APPEARANCE</strong>
+      <strong>UI THEME</strong>
       <label><input type="radio" name="theme" value="theme-dark"> DARK</label>
       <label><input type="radio" name="theme" value="theme-light"> LIGHT</label>
       <label><input type="radio" name="theme" value="theme-auto" checked> AUTO</label>
@@ -205,27 +216,23 @@
   </main>
 
   <script>
-    // Theme Engine with persist fade
     const radios = document.querySelectorAll('input[name="theme"]');
     const setTheme = (t) => {
       document.body.className = t;
-      localStorage.setItem("gizmo-pref-v3", t);
+      localStorage.setItem("gizmo-v4-theme", t);
     };
     radios.forEach(r => r.addEventListener("change", e => setTheme(e.target.value)));
-    const saved = localStorage.getItem("gizmo-pref-v3") || "theme-auto";
+    const saved = localStorage.getItem("gizmo-v4-theme") || "theme-auto";
     setTheme(saved);
     const radioEl = document.querySelector(`input[value="${saved}"]`);
     if(radioEl) radioEl.checked = true;
 
-    // Filter Logic
     const search = document.getElementById("search");
     const clearBtn = document.getElementById("clearSearch");
-    const menu = document.querySelector(".nav-menu");
 
     function doFilter(val) {
       const term = val.toLowerCase();
       clearBtn.style.display = term.length > 0 ? "block" : "none";
-      if (term.length > 0 && window.innerWidth <= 850) menu.open = true;
 
       document.querySelectorAll(".app-section").forEach(sec => {
         const name = sec.dataset.name.toLowerCase();
