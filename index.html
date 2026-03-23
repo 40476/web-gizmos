@@ -18,9 +18,7 @@
       --border: #444;
     }
 
-    /* Light Theme Overrides */
     body.light-theme {
-
       --primary: #01bb70;
       --primary-hover: #2e0040;
       --bg: #f4f4f4;
@@ -31,6 +29,7 @@
       --border: #ccc;
       --code-bg: #eee;
     }
+
     html { font-size: 16px; scroll-behavior: smooth; }
     
     body {
@@ -41,10 +40,9 @@
       display: flex;
       min-height: 100vh;
       line-height: 1.45;
-      overflow-x: hidden; /* Prevent global horizontal scroll */
+      overflow-x: hidden;
     }
 
-    /* Sidebar - Fixed and Stable */
     nav {
       width: 280px;
       background: var(--sidebar-bg);
@@ -59,11 +57,7 @@
       z-index: 100;
     }
 
-    nav h2 { 
-      font-size: 1.5rem; 
-      color: var(--primary); 
-      margin-top: 0;
-    }
+    nav h2 { font-size: 1.5rem; color: var(--primary); margin-top: 0; }
 
     #search {
       width: 100%;
@@ -76,10 +70,7 @@
       outline: none;
     }
 
-    .nav-items-container {
-      overflow-y: auto;
-      flex-grow: 1;
-    }
+    .nav-items-container { overflow-y: auto; flex-grow: 1; }
 
     .nav-item {
       display: block;
@@ -89,16 +80,15 @@
       font-size: 0.9rem;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis; /* Truncate long names in sidebar */
+      text-overflow: ellipsis;
     }
 
     .nav-item:hover { color: var(--primary); }
 
-    /* Main Content Area */
     main {
       flex: 1;
       padding: 2rem 3rem;
-      max-width: 50rem; /* Keeps lines readable */
+      max-width: 50rem;
       margin: 0 auto;
       box-sizing: border-box;
       width: 100%;
@@ -107,14 +97,12 @@
     h1 { font-size: 2.5rem; color: var(--primary); margin-top: 0; }
     h2 { font-size: 1.8rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 
-    /* Application Section Styling */
     .app-section {
       background: var(--card-bg);
       padding: 2rem;
       margin-bottom: 3rem;
       border-radius: 8px;
       border: 1px solid var(--border);
-      /* Prevent injected content from breaking the card */
       word-wrap: break-word;
       overflow-wrap: break-word;
     }
@@ -130,11 +118,10 @@
 
     .app-link:hover { text-decoration: underline; }
 
-    /* Injected Code Stability (The "Retro" Fix) */
     pre {
       background-color: var(--code-bg);
       padding: 1rem;
-      overflow-x: auto; /* Forces scrollbar on long code lines */
+      overflow-x: auto;
       border-left: 3px solid var(--primary);
       margin: 1.5rem 0;
     }
@@ -142,13 +129,18 @@
     code {
       font-family: Menlo, Monaco, "Courier New", monospace;
       font-size: 0.9rem;
-      color: #01ff70;
+      color: var(--primary);
     }
 
-    ul { padding-left: 1.2rem; }
-    li { margin-bottom: 0.5rem; }
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
 
-    /* Theme Toggle */
     #themeToggle {
       margin-top: 1rem;
       background: none;
@@ -161,7 +153,6 @@
 
     #themeToggle:hover { background: var(--primary); color: #000; }
 
-    /* Mobile - Stack Layout */
     @media (max-width: 850px) {
       body { flex-direction: column; }
       nav { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
@@ -190,6 +181,8 @@
       
         <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
       
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+      
         <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
       
         <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
@@ -212,14 +205,12 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
-      
     </div>
     <button id="themeToggle">Toggle Theme</button>
   </nav>
 
   <main>
-    <h1>web-gizmos (fun inside!)</h1>
+    <h1>web-gizmos</h1>
 
     
       <section class="app-section" id="section-BST" data-name="BST">
@@ -368,6 +359,32 @@
   </pre>
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
+</section>
+        </div>
+      </section>
+    
+      <section class="app-section" id="section-megaminer" data-name="megaminer">
+        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
+        <h2>megaminer</h2>
+        <div class="summary-content">
+          <section>
+  <ul>
+    <li>HTML5 game using JavaScript and MQTT for multiplayer</li>
+    <li>Pixel art mining game with procedurally generated maps</li>
+    <li>Real-time multiplayer with WebSocket/MQTT broker connections</li>
+    <li>Custom UI system with CSS3 bevel borders and mobile controls</li>
+    <li>Cloud save system using IndexedDB and Puter cloud storage</li>
+    <li>Sound engine with Web Audio API for mining and ambient effects</li>
+    <li>Shop system for upgrades and items with in-game economy</li>
+  </ul>
+
+  <pre>
+    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
+    <code>class SoundManager { init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } }</code>
+    <code>class ShopSystem { buy(item) { const p = Game.localPlayer; if(p.money >= cost) { p.money -= cost; p.drillTier++; } } }</code>
+  </pre>
+
+  <p>This is a browser-based multiplayer mining game with procedurally generated maps, real-time multiplayer networking via MQTT, and a complete in-game economy system. The game features pixel art graphics, sound effects using the Web Audio API, cloud saves through IndexedDB and Puter, and a shop system for upgrades and items.</p>
 </section>
         </div>
       </section>
@@ -624,32 +641,11 @@
         </div>
       </section>
     
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
-        <div class="summary-content">
-          <section>
-  <ul>
-    <li>HTML5 game using JavaScript and MQTT for multiplayer</li>
-    <li>Pixel art mining game with procedurally generated maps</li>
-    <li>Real-time multiplayer with WebSocket/MQTT broker connections</li>
-    <li>Custom UI system with CSS3 bevel borders and mobile controls</li>
-    <li>Cloud save system using IndexedDB and Puter cloud storage</li>
-    <li>Sound engine with Web Audio API for mining and ambient effects</li>
-    <li>Shop system for upgrades and items with in-game economy</li>
-  </ul>
 
-  <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
-    <code>class SoundManager { init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } }</code>
-    <code>class ShopSystem { buy(item) { const p = Game.localPlayer; if(p.money >= cost) { p.money -= cost; p.drillTier++; } } }</code>
-  </pre>
-
-  <p>This is a browser-based multiplayer mining game with procedurally generated maps, real-time multiplayer networking via MQTT, and a complete in-game economy system. The game features pixel art graphics, sound effects using the Web Audio API, cloud saves through IndexedDB and Puter, and a shop system for upgrades and items.</p>
-</section>
-        </div>
-      </section>
-    
+    <footer>
+      <p>Registry last updated: </p>
+      <p>Total Gizmos: 19</p>
+    </footer>
   </main>
 
   <script>
@@ -668,19 +664,10 @@
     });
 
     const themeToggle = document.getElementById("themeToggle");
-
     themeToggle.addEventListener("click", () => {
-      // This toggles the 'light-theme' class on the body
       document.body.classList.toggle("light-theme");
-
-      // Optional: Change the button text based on the mode
-      if (document.body.classList.contains("light-theme")) {
-        themeToggle.textContent = "Dark Mode";
-      } else {
-        themeToggle.textContent = "Light Mode";
-      }
+      themeToggle.textContent = document.body.classList.contains("light-theme") ? "Dark Mode" : "Light Mode";
     });
   </script>
-
 </body>
 </html>
