@@ -4,48 +4,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Applications Overview</title>
-
   <style>
     :root {
       --primary: #01ff70;
-      --primary-hover: #2ecc40;
       --bg: #111;
       --card-bg: #222;
       --text: #fafafa;
       --text-muted: #bbb;
-      --code-bg: #333;
-      --sidebar-bg: #000;
       --border: #444;
+      --code-bg: #333;
     }
 
-    body.light-theme {
-      --primary: #01bb70;
-      --primary-hover: #2e0040;
+    /* Light Theme Class (Triggered by JS) */
+    body.theme-light {
+      --primary: #0074d9;
       --bg: #f4f4f4;
       --card-bg: #ffffff;
-      --sidebar-bg: #e0e0e0;
-      --text: #111111;
-      --text-muted: #444444;
+      --text: #111;
+      --text-muted: #444;
       --border: #ccc;
       --code-bg: #eee;
     }
 
-    html { font-size: 16px; scroll-behavior: smooth; }
-    
-    body {
-      margin: 0;
-      font-family: "Courier New", Courier, monospace;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      min-height: 100vh;
-      line-height: 1.45;
-      overflow-x: hidden;
+    /* Pure CSS Auto-Detect (System Preference) */
+    @media (prefers-color-scheme: light) {
+      body:not(.theme-dark):not(.theme-light) {
+        --primary: #0074d9;
+        --bg: #f4f4f4;
+        --card-bg: #ffffff;
+        --text: #111;
+        --text-muted: #444;
+        --border: #ccc;
+        --code-bg: #eee;
+      }
     }
 
+    html { scroll-behavior: smooth; font-family: "Courier New", Courier, monospace; }
+    body { margin: 0; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; transition: background 0.2s; }
+
+    /* Hide search if no-script */
+    .search-wrapper noscript + #search { display: none; }
+
+    /* Layout */
     nav {
       width: 280px;
-      background: var(--sidebar-bg);
+      background: #000;
       padding: 1.5rem;
       border-right: 1px solid var(--border);
       display: flex;
@@ -54,164 +57,141 @@
       top: 0;
       height: 100vh;
       box-sizing: border-box;
-      z-index: 100;
     }
 
-    nav h2 { font-size: 1.5rem; color: var(--primary); margin-top: 0; }
+    main { flex: 1; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
-    #search {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 1rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--primary);
-      border-radius: 4px;
-      outline: none;
-    }
-
-    .nav-items-container { overflow-y: auto; flex-grow: 1; }
-
-    .nav-item {
-      display: block;
-      color: var(--text-muted);
-      text-decoration: none;
-      padding: 5px 0;
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .nav-item:hover { color: var(--primary); }
-
-    main {
-      flex: 1;
-      padding: 2rem 3rem;
-      max-width: 50rem;
-      margin: 0 auto;
-      box-sizing: border-box;
-      width: 100%;
-    }
-
-    h1 { font-size: 2.5rem; color: var(--primary); margin-top: 0; }
-    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
-
-    .app-section {
-      background: var(--card-bg);
-      padding: 2rem;
-      margin-bottom: 3rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
-
-    .app-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .app-link:hover { text-decoration: underline; }
-
-    pre {
-      background-color: var(--code-bg);
-      padding: 1rem;
-      overflow-x: auto;
-      border-left: 3px solid var(--primary);
-      margin: 1.5rem 0;
-    }
-
-    code {
-      font-family: Menlo, Monaco, "Courier New", monospace;
-      font-size: 0.9rem;
-      color: var(--primary);
-    }
-
-    footer {
-      margin-top: 4rem;
-      padding-top: 2rem;
+    /* Pure CSS Theme Toggle UI */
+    .theme-controls {
+      margin-top: auto;
+      padding-top: 1rem;
       border-top: 1px solid var(--border);
-      color: var(--text-muted);
       font-size: 0.8rem;
-      text-align: center;
     }
+    .theme-controls label { cursor: pointer; display: block; padding: 5px; color: var(--text-muted); }
+    .theme-controls input { margin-right: 10px; }
 
-    #themeToggle {
-      margin-top: 1rem;
-      background: none;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 5px 10px;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    #themeToggle:hover { background: var(--primary); color: #000; }
-
+    /* Responsive / Mobile Mode */
     @media (max-width: 850px) {
       body { flex-direction: column; }
       nav { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
-      main { padding: 1.5rem; width: 100%; }
+      .nav-items-container { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
+      .nav-item { white-space: nowrap; }
     }
+
+    .app-section {
+      background: var(--card-bg);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .app-link { color: var(--primary); text-decoration: none; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
+    h1 { color: var(--primary); }
+    h2 { border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+    pre { background: var(--code-bg); padding: 10px; overflow-x: auto; border-left: 3px solid var(--primary); }
+    code { color: var(--primary); }
+
+    footer { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 3rem; }
+    
+    /* Highlight class for search */
+    .highlight { background: var(--primary); color: #000; font-weight: bold; }
   </style>
 </head>
-<body>
+<body class="theme-auto">
 
   <nav>
     <h2>GIZMOS</h2>
-    <input id="search" type="text" placeholder="Filter..." />
-    <div class="nav-items-container">
+    
+    <div class="search-wrapper">
+      <noscript><style>#search { display: none !important; }</style></noscript>
+      <input id="search" type="text" placeholder="Filter gizmos..." autocomplete="off" />
+    </div>
+
+    <div class="nav-items-container" id="sideNav">
       {% for name, summary in applications.items() %}
         <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">> {{ name }}</a>
       {% endfor %}
     </div>
-    <button id="themeToggle">Toggle Theme</button>
+
+    <div class="theme-controls">
+      <p>THEME</p>
+      <label><input type="radio" name="theme" value="theme-dark"> Dark</label>
+      <label><input type="radio" name="theme" value="theme-light"> Light</label>
+      <label><input type="radio" name="theme" value="theme-auto" checked> Auto</label>
+    </div>
   </nav>
 
   <main>
     <h1>web-gizmos</h1>
 
-    {% for name, summary in applications.items() %}
-      <section class="app-section" id="section-{{ name }}" data-name="{{ name }}">
-        <a class="app-link" href="{{ name }}/index.html">[ Run Application ]</a>
-        <h2>{{ name }}</h2>
-        <div class="summary-content">
-          {{ summary | safe }}
-        </div>
-      </section>
-    {% endfor %}
+    <div id="appContainer">
+      {% for name, summary in applications.items() %}
+        <section class="app-section" id="section-{{ name }}" data-name="{{ name }}">
+          <a class="app-link" href="{{ name }}/index.html">[ Launch ]</a>
+          <h2 class="app-title">{{ name }}</h2>
+          <div class="summary-content">
+            {{ summary | safe }}
+          </div>
+        </section>
+      {% endfor %}
+    </div>
 
     <footer>
-      <p>Registry last updated: {{ last_updated }}</p>
-      <p>Total Gizmos: {{ applications | length }}</p>
+      <p>Last Sync: {{ last_updated }}</p>
+      <p>Total: {{ applications | length }} | JS Status: <script>document.write("Active")</script><noscript>Disabled</noscript></p>
     </footer>
   </main>
 
   <script>
+    // 1. Search with Highlighting
     const search = document.getElementById("search");
-    const navItems = document.querySelectorAll(".nav-item");
     const sections = document.querySelectorAll(".app-section");
+    const navItems = document.querySelectorAll(".nav-item");
 
-    search.addEventListener("input", () => {
-      const q = search.value.toLowerCase();
-      navItems.forEach(item => {
-        item.style.display = item.dataset.name.toLowerCase().includes(q) ? "block" : "none";
-      });
+    search.addEventListener("input", (e) => {
+      const term = e.target.value.toLowerCase();
+      
       sections.forEach(sec => {
-        sec.style.display = sec.dataset.name.toLowerCase().includes(q) ? "block" : "none";
+        const name = sec.dataset.name.toLowerCase();
+        const titleEl = sec.querySelector(".app-title");
+        
+        if (name.includes(term)) {
+          sec.style.display = "block";
+          // Highlight logic
+          if (term.length > 0) {
+            const regex = new RegExp(`(${term})`, "gi");
+            titleEl.innerHTML = sec.dataset.name.replace(regex, `<span class="highlight">$1</span>`);
+          } else {
+            titleEl.textContent = sec.dataset.name;
+          }
+        } else {
+          sec.style.display = "none";
+        }
+      });
+
+      navItems.forEach(item => {
+        item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
       });
     });
 
-    const themeToggle = document.getElementById("themeToggle");
-    themeToggle.addEventListener("click", () => {
-      document.body.classList.toggle("light-theme");
-      themeToggle.textContent = document.body.classList.contains("light-theme") ? "Dark Mode" : "Light Mode";
+    // 2. Theme Persistance & Logic
+    const themeRadios = document.querySelectorAll('input[name="theme"]');
+    
+    function setTheme(theme) {
+      document.body.className = theme;
+      localStorage.setItem("gizmo-theme", theme);
+    }
+
+    themeRadios.forEach(radio => {
+      radio.addEventListener("change", (e) => setTheme(e.target.value));
     });
+
+    // Init theme
+    const savedTheme = localStorage.getItem("gizmo-theme") || "theme-auto";
+    setTheme(savedTheme);
+    document.querySelector(`input[value="${savedTheme}"]`).checked = true;
   </script>
 </body>
 </html>
