@@ -15,7 +15,6 @@
       --code-bg: #333;
     }
 
-    /* Light Theme Class (Triggered by JS) */
     body.theme-light {
       --primary: #0074d9;
       --bg: #f4f4f4;
@@ -26,9 +25,9 @@
       --code-bg: #eee;
     }
 
-    /* Pure CSS Auto-Detect (System Preference) */
+    /* System Auto-Detect */
     @media (prefers-color-scheme: light) {
-      body:not(.theme-dark):not(.theme-light) {
+      body.theme-auto {
         --primary: #0074d9;
         --bg: #f4f4f4;
         --card-bg: #ffffff;
@@ -42,12 +41,10 @@
     html { scroll-behavior: smooth; font-family: "Courier New", Courier, monospace; }
     body { margin: 0; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; transition: background 0.2s; }
 
-    /* Hide search if no-script */
-    .search-wrapper noscript + #search { display: none; }
-
-    /* Layout */
+    /* Sidebar Fixes */
     nav {
       width: 280px;
+      min-width: 280px;
       background: #000;
       padding: 1.5rem;
       border-right: 1px solid var(--border);
@@ -57,47 +54,87 @@
       top: 0;
       height: 100vh;
       box-sizing: border-box;
+      z-index: 100;
     }
 
-    main { flex: 1; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-
-    /* Pure CSS Theme Toggle UI */
-    .theme-controls {
-      margin-top: auto;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.8rem;
-    }
-    .theme-controls label { cursor: pointer; display: block; padding: 5px; color: var(--text-muted); }
-    .theme-controls input { margin-right: 10px; }
-
-    /* Responsive / Mobile Mode */
-    @media (max-width: 850px) {
-      body { flex-direction: column; }
-      nav { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
-      .nav-items-container { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
-      .nav-item { white-space: nowrap; }
+    /* Search Bar Visibility Fix */
+    .search-wrapper { margin-bottom: 1.5rem; width: 100%; }
+    #search {
+      display: block; /* Ensure it is visible by default */
+      width: 100%;
+      padding: 10px;
+      background: #111;
+      border: 1px solid var(--border);
+      color: var(--primary);
+      border-radius: 4px;
+      box-sizing: border-box;
     }
 
+    /* Sidebar Scroll Area */
+    .nav-items-container {
+      overflow-y: auto;
+      flex-grow: 1;
+      margin-bottom: 1rem;
+    }
+
+    .nav-item {
+      display: block;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+    }
+    .nav-item:hover { color: var(--primary); border-bottom: 1px solid var(--border); }
+
+    /* Content Area */
+    main { flex: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
     .app-section {
       background: var(--card-bg);
-      padding: 1.5rem;
-      margin-bottom: 2rem;
+      padding: 2rem;
+      margin-bottom: 3rem;
       border-radius: 8px;
       border: 1px solid var(--border);
     }
 
-    .app-link { color: var(--primary); text-decoration: none; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
-    h1 { color: var(--primary); }
-    h2 { border-bottom: 1px solid var(--border); padding-bottom: 5px; }
-    pre { background: var(--code-bg); padding: 10px; overflow-x: auto; border-left: 3px solid var(--primary); }
-    code { color: var(--primary); }
+    /* Theme Controls */
+    .theme-controls { font-size: 0.75rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+    .theme-controls label { cursor: pointer; display: block; margin-bottom: 5px; color: var(--text-muted); }
 
-    footer { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 3rem; }
-    
-    /* Highlight class for search */
-    .highlight { background: var(--primary); color: #000; font-weight: bold; }
+    /* Mobile Responsive Mode */
+    @media (max-width: 850px) {
+      body { flex-direction: column; }
+      nav { 
+        width: 100%; 
+        min-width: 100%; 
+        height: auto; 
+        position: relative; 
+        border-right: none; 
+        border-bottom: 1px solid var(--border); 
+      }
+      .nav-items-container { 
+        display: flex; 
+        flex-direction: row; 
+        overflow-x: auto; 
+        gap: 15px; 
+        padding-bottom: 10px; 
+      }
+      .nav-item { white-space: nowrap; }
+    }
+
+    /* Utility */
+    .highlight { background: var(--primary); color: #000; font-weight: bold; padding: 0 2px; }
+    .app-link { color: var(--primary); text-decoration: none; font-size: 0.8rem; font-weight: bold; }
+    h1 { font-size: 2rem; color: var(--primary); }
+    pre { background: var(--code-bg); padding: 15px; overflow-x: auto; border-left: 4px solid var(--primary); }
   </style>
+
+  <noscript>
+    <style>
+      #search { display: none !important; }
+      .theme-controls { display: none; } /* Hide JS theme selector if JS is off */
+    </style>
+  </noscript>
 </head>
 <body class="theme-auto">
 
@@ -105,21 +142,20 @@
     <h2>GIZMOS</h2>
     
     <div class="search-wrapper">
-      <noscript><style>#search { display: none !important; }</style></noscript>
       <input id="search" type="text" placeholder="Filter gizmos..." autocomplete="off" />
     </div>
 
-    <div class="nav-items-container" id="sideNav">
+    <div class="nav-items-container">
       {% for name, summary in applications.items() %}
         <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">> {{ name }}</a>
       {% endfor %}
     </div>
 
     <div class="theme-controls">
-      <p>THEME</p>
-      <label><input type="radio" name="theme" value="theme-dark"> Dark</label>
-      <label><input type="radio" name="theme" value="theme-light"> Light</label>
-      <label><input type="radio" name="theme" value="theme-auto" checked> Auto</label>
+      <strong>UI THEME</strong>
+      <label><input type="radio" name="theme" value="theme-dark"> DARK</label>
+      <label><input type="radio" name="theme" value="theme-light"> LIGHT</label>
+      <label><input type="radio" name="theme" value="theme-auto" checked> SYSTEM</label>
     </div>
   </nav>
 
@@ -129,7 +165,7 @@
     <div id="appContainer">
       {% for name, summary in applications.items() %}
         <section class="app-section" id="section-{{ name }}" data-name="{{ name }}">
-          <a class="app-link" href="{{ name }}/index.html">[ Launch ]</a>
+          <a class="app-link" href="{{ name }}/index.html">[ RUN APPLICATION ]</a>
           <h2 class="app-title">{{ name }}</h2>
           <div class="summary-content">
             {{ summary | safe }}
@@ -138,19 +174,19 @@
       {% endfor %}
     </div>
 
-    <footer>
-      <p>Last Sync: {{ last_updated }}</p>
-      <p>Total: {{ applications | length }} | JS Status: <script>document.write("Active")</script><noscript>Disabled</noscript></p>
+    <footer style="text-align: center; margin-top: 5rem; font-size: 0.8rem; opacity: 0.6;">
+      <p>Registry updated: {{ last_updated }}</p>
+      <p>JS status: <script>document.write("Online")</script><noscript>Offline (Fallback Mode)</noscript></p>
     </footer>
   </main>
 
   <script>
-    // 1. Search with Highlighting
-    const search = document.getElementById("search");
+    // Search + Highlighting logic
+    const searchInput = document.getElementById("search");
     const sections = document.querySelectorAll(".app-section");
     const navItems = document.querySelectorAll(".nav-item");
 
-    search.addEventListener("input", (e) => {
+    searchInput.addEventListener("input", (e) => {
       const term = e.target.value.toLowerCase();
       
       sections.forEach(sec => {
@@ -159,7 +195,6 @@
         
         if (name.includes(term)) {
           sec.style.display = "block";
-          // Highlight logic
           if (term.length > 0) {
             const regex = new RegExp(`(${term})`, "gi");
             titleEl.innerHTML = sec.dataset.name.replace(regex, `<span class="highlight">$1</span>`);
@@ -176,22 +211,23 @@
       });
     });
 
-    // 2. Theme Persistance & Logic
+    // Theme Persistance logic
     const themeRadios = document.querySelectorAll('input[name="theme"]');
     
     function setTheme(theme) {
-      document.body.className = theme;
-      localStorage.setItem("gizmo-theme", theme);
+      document.body.classList.remove('theme-dark', 'theme-light', 'theme-auto');
+      document.body.classList.add(theme);
+      localStorage.setItem("gizmo-preference", theme);
     }
 
     themeRadios.forEach(radio => {
       radio.addEventListener("change", (e) => setTheme(e.target.value));
     });
 
-    // Init theme
-    const savedTheme = localStorage.getItem("gizmo-theme") || "theme-auto";
-    setTheme(savedTheme);
-    document.querySelector(`input[value="${savedTheme}"]`).checked = true;
+    const saved = localStorage.getItem("gizmo-preference") || "theme-auto";
+    setTheme(saved);
+    const radioToCheck = document.querySelector(`input[value="${saved}"]`);
+    if(radioToCheck) radioToCheck.checked = true;
   </script>
 </body>
 </html>
