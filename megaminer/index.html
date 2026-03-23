@@ -1969,7 +1969,7 @@ display: flex;
                             <option>modern</option>
                             <option>pill</option>
                             <option>analog</option>
-                            <option>glitch</option>
+                            <option>horizonal-bars</option>
                             <option>industrial-step</option>
                         </select>
                         &nbsp;&nbsp;Gauge Style
@@ -4563,7 +4563,6 @@ class GameEngine {
                 break;
 
             case "pill":
-                // --- STYLE: PILL ---
                 const barW = r * 0.7;
                 const barH = r * 2.2;
                 const pillX = x - barW / 2;
@@ -4604,7 +4603,6 @@ class GameEngine {
                 break;
 
                 case "modern":
-                    // --- STYLE: MODERN (Clean segmented ring) ---
                     // Background track
                     ctx.beginPath();
                     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -4631,7 +4629,6 @@ class GameEngine {
                     break;
                 case "classic":
                 default:
-                    // --- STYLE: CLASSIC (Original) ---
                     ctx.beginPath();
                     ctx.arc(x, y, r, 0, Math.PI*2);
                     ctx.fillStyle = "rgba(0,0,0,0.7)";
@@ -4658,7 +4655,6 @@ class GameEngine {
                     break;
 
                 case "horizonal-bars":
-                    // --- STYLE: GLITCH (Digital/Cyberpunk Offset) ---
                     const gw = r * 1.5;
                     const gh = 10 * dpr;
                     const gx = x - gw / 2;
@@ -4690,7 +4686,6 @@ class GameEngine {
 
 
                 case "industrial-step":
-                        // --- STYLE: INDUSTRIAL STEP ---
                         const innerR = r * 0.7;
                         const outerR = r;
                         const stepStart = Math.PI * 0.9;
