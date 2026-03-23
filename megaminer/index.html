@@ -3348,6 +3348,7 @@ class GameEngine {
 
                     // --- MOVEMENT REQUEST ---
                     if (tile === TILE_TYPES.EMPTY || tile === TILE_TYPES.TELEPORTER) {
+                        Network.broadcastMove();
                         // Moving into empty space
                         p.nextGridX = nx; p.nextGridY = ny;
                         if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
@@ -3359,6 +3360,7 @@ class GameEngine {
                             // CHECK IF MINABLE (testOnly = true)
                             // This checks if we have the correct Drill Tier to even start mining
                             if (this.tryMine(nx, ny, true)) {
+                                Network.broadcastMove();
                                 p.nextGridX = nx; p.nextGridY = ny;
                                 p.isDrilling = true; // Start drilling animation
                                 if (p.gridY > 5 && p.fuel > 0) p.fuel -= CONSTANTS.FUEL_CONSUMPTION;
