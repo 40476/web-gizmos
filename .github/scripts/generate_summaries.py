@@ -6,6 +6,7 @@ import subprocess
 import requests
 import re
 import argparse
+from datetime import datetime
 from jinja2 import Template
 
 # Force unbuffered output for live logging
@@ -98,7 +99,6 @@ def main():
     print(f"::group::Startup Scan")
     for entry in all_entries:
         summary_file = os.path.join(SUMMARY_DIR, f"{entry}.html")
-        
         needs_api = not os.path.exists(summary_file) or dir_changed(entry)
 
         if needs_api:
@@ -137,23 +137,29 @@ def main():
             print("Waiting 10s for rate limits...")
             time.sleep(10)
 
-    # --- REBUILD & CHECK FOR CHANGES ---
+    # --- REBUILD ---
     with open(TEMPLATE_FILE, "r", encoding="utf-8") as f:
         template = Template(f.read())
     
-    # Render to a string first for comparison
-    new_html = template.render(applications=summaries)
+    # Alphabetical sorting (case-insensitive)
+    sorted_summaries = dict(sorted(summaries.items(), key=lambda item: item[0].lower()))
+    
+    # Current timestamp for metadata
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    # Check if index.html already exists and compare content
+    new_html = template.render(
+        applications=sorted_summaries, 
+        last_updated=timestamp
+    )
+
     if os.path.exists(OUTPUT_FILE):
         with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
             existing_html = f.read()
         
         if existing_html == new_html:
-            print("No changes detected in index.html. Exiting without update.")
-            sys.exit(0) # Successful exit, no work needed
+            print("No changes detected in index.html. Exiting.")
+            sys.exit(0)
 
-    # If we get here, either file doesn't exist or content changed
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(new_html)
     
