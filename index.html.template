@@ -43,44 +43,63 @@
     *, *::before, *::after { box-sizing: border-box; }
 
     html, body { 
-      margin: 0; padding: 0; width: 100%; overflow-x: hidden;
+      margin: 0; padding: 0; 
+      width: 100%; 
+      height: 100%; /* Required for sticky children */
       font-family: "Courier New", Courier, monospace;
     }
 
-    body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+    body { 
+      background: var(--bg); 
+      color: var(--text); 
+      display: flex; 
+      align-items: stretch;
+    }
 
-    /* --- SIDEBAR --- */
+    /* --- SIDEBAR (THE STICKY FIX) --- */
     nav {
       width: 300px;
       min-width: 300px;
       background: var(--nav-bg);
       padding: 1.5rem;
       border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
+      
+      /* Sticky Core */
       position: sticky;
       top: 0;
-      height: 100vh;
-      z-index: 100;
-      transition: background 0.2s;
+      height: 100vh; 
+      
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
     }
 
     nav h2 { color: var(--primary); margin: 0 0 1.5rem 0; font-size: 1.4rem; }
 
-    /* Search Bar in Sidebar */
-    .search-container { margin-bottom: 1.5rem; }
+    /* Search Bar with Clear Button */
+    .search-wrapper { position: relative; margin-bottom: 1.5rem; }
     #search {
       width: 100%;
-      padding: 10px;
+      padding: 10px 35px 10px 10px;
       background: var(--bg);
       border: 1px solid var(--border);
       color: var(--primary);
       border-radius: 4px;
       outline: none;
-      font-family: inherit;
+    }
+    #clearSearch {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: none;
+      font-weight: bold;
     }
 
-    /* Projects List Logic */
     .nav-menu summary { 
       list-style: none; 
       color: var(--primary); 
@@ -89,15 +108,13 @@
       cursor: pointer;
     }
     .nav-menu summary::-webkit-details-marker { display: none; }
-    
     .toggle-indicator { display: inline-block; margin-right: 8px; transition: transform 0.2s; }
     details[open] .toggle-indicator { transform: rotate(90deg); }
 
     .nav-items-container {
       margin-top: 10px;
-      max-height: 60vh;
+      flex-grow: 1;
       overflow-y: auto;
-      padding-right: 5px;
     }
 
     .nav-item {
@@ -112,72 +129,57 @@
     }
     .nav-item:hover { color: var(--primary); }
 
-    /* --- MAIN CONTENT --- */
+    /* --- MAIN --- */
     main { 
       flex: 1; 
-      padding: 2rem; 
-      width: 100%;
-      overflow-y: auto;
+      padding: 2rem;
+      min-width: 0; /* Prevents flex-child from growing infinitely */
     }
 
     .app-section {
       background: var(--card-bg);
-      padding: 2rem;
+      padding: 2.5rem;
       margin: 0 auto 3rem auto;
-      max-width: 800px; /* Constrains card width */
-      width: 100%;
+      max-width: 800px;
       border-radius: 8px;
       border: 1px solid var(--border);
     }
 
-    /* --- RESPONSIVE BEHAVIOR --- */
-    
-    /* Desktop: List is always visible, Summary is just a label */
+    /* --- RESPONSIVE --- */
     @media (min-width: 851px) {
       .nav-menu { display: block !important; }
       .nav-menu summary { cursor: default; pointer-events: none; }
       .nav-menu .toggle-indicator { display: none; }
-      .nav-items-container { display: block !important; }
     }
 
-    /* Mobile: List is a collapsible drawer */
     @media (max-width: 850px) {
       body { flex-direction: column; }
       nav { 
         width: 100%; min-width: 100%; height: auto; 
         position: relative; border-right: none; border-bottom: 1px solid var(--border); 
-        padding: 1rem;
       }
       .nav-items-container { max-height: 40vh; }
-      .nav-menu summary { border-bottom: 1px dashed var(--border); }
     }
 
-    /* Theme Controls */
-    .theme-controls { font-size: 0.75rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .theme-controls { font-size: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
     .theme-controls label { display: block; margin: 5px 0; cursor: pointer; }
-
-    /* Utility */
-    .highlight { background: var(--primary); color: #000; font-weight: bold; }
+    .highlight { background: var(--primary); color: #000; font-weight: bold; padding: 0 2px; }
     pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-left: 4px solid var(--primary); font-size: 0.85rem; }
-    code { color: var(--primary); }
   </style>
-
-  <noscript>
-    <style>#search, .theme-controls { display: none !important; }</style>
-  </noscript>
 </head>
 <body class="theme-auto">
 
   <nav>
     <h2>GIZMOS</h2>
     
-    <div class="search-container">
+    <div class="search-wrapper">
       <input id="search" type="text" placeholder="Search..." autocomplete="off" />
+      <button id="clearSearch" title="Clear search">×</button>
     </div>
 
     <details class="nav-menu" open>
       <summary><span class="toggle-indicator">▶</span>PROJECTS</summary>
-      <div class="nav-items-container" id="navList">
+      <div class="nav-items-container">
         {% for name, summary in applications.items() %}
           <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">> {{ name }}</a>
         {% endfor %}
@@ -208,7 +210,7 @@
     </div>
 
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Last Sync: {{ last_updated }}</p>
+      <p>Registry Sync: {{ last_updated }}</p>
     </footer>
   </main>
 
@@ -217,34 +219,33 @@
     const radios = document.querySelectorAll('input[name="theme"]');
     const setTheme = (t) => {
       document.body.className = t;
-      localStorage.setItem("gizmo-theme-key", t);
+      localStorage.setItem("gizmo-theme-v2", t);
     };
     radios.forEach(r => r.addEventListener("change", e => setTheme(e.target.value)));
-    const saved = localStorage.getItem("gizmo-theme-key") || "theme-auto";
+    const saved = localStorage.getItem("gizmo-theme-v2") || "theme-auto";
     setTheme(saved);
     const checked = document.querySelector(`input[value="${saved}"]`);
     if(checked) checked.checked = true;
 
     // Filter Logic
     const search = document.getElementById("search");
+    const clearBtn = document.getElementById("clearSearch");
     const menu = document.querySelector(".nav-menu");
 
-    search.addEventListener("input", e => {
-      const term = e.target.value.toLowerCase();
+    function doFilter(val) {
+      const term = val.toLowerCase();
+      clearBtn.style.display = term.length > 0 ? "block" : "none";
       
-      // Auto-expand mobile drawer if searching
       if (term.length > 0 && window.innerWidth <= 850) menu.open = true;
 
       document.querySelectorAll(".app-section").forEach(sec => {
         const name = sec.dataset.name.toLowerCase();
         const titleEl = sec.querySelector(".app-title");
         const match = name.includes(term);
-        
         sec.style.display = match ? "block" : "none";
         
         if (match && term.length > 0) {
-          const regex = new RegExp(`(${term})`, "gi");
-          titleEl.innerHTML = sec.dataset.name.replace(regex, '<span class="highlight">$1</span>');
+          titleEl.innerHTML = sec.dataset.name.replace(new RegExp(`(${term})`, "gi"), '<span class="highlight">$1</span>');
         } else {
           titleEl.textContent = sec.dataset.name;
         }
@@ -253,6 +254,13 @@
       document.querySelectorAll(".nav-item").forEach(item => {
         item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
       });
+    }
+
+    search.addEventListener("input", e => doFilter(e.target.value));
+    clearBtn.addEventListener("click", () => {
+      search.value = "";
+      doFilter("");
+      search.focus();
     });
   </script>
 </body>
