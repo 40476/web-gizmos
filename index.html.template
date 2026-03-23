@@ -51,8 +51,8 @@
 
     /* --- SIDEBAR --- */
     nav {
-      width: 280px;
-      min-width: 280px;
+      width: 300px;
+      min-width: 300px;
       background: var(--nav-bg);
       padding: 1.5rem;
       border-right: 1px solid var(--border);
@@ -62,20 +62,42 @@
       top: 0;
       height: 100vh;
       z-index: 100;
+      transition: background 0.2s;
     }
 
-    /* Desktop Navigation: Always Visible */
-    .nav-menu summary { list-style: none; color: var(--primary); font-weight: bold; padding: 10px 0; }
+    nav h2 { color: var(--primary); margin: 0 0 1.5rem 0; font-size: 1.4rem; }
+
+    /* Search Bar in Sidebar */
+    .search-container { margin-bottom: 1.5rem; }
+    #search {
+      width: 100%;
+      padding: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--primary);
+      border-radius: 4px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    /* Projects List Logic */
+    .nav-menu summary { 
+      list-style: none; 
+      color: var(--primary); 
+      font-weight: bold; 
+      padding: 10px 0;
+      cursor: pointer;
+    }
     .nav-menu summary::-webkit-details-marker { display: none; }
     
-    /* Mobile-only toggle indicator */
-    .toggle-indicator { display: none; transition: transform 0.3s; }
+    .toggle-indicator { display: inline-block; margin-right: 8px; transition: transform 0.2s; }
     details[open] .toggle-indicator { transform: rotate(90deg); }
 
     .nav-items-container {
       margin-top: 10px;
-      max-height: 70vh;
+      max-height: 60vh;
       overflow-y: auto;
+      padding-right: 5px;
     }
 
     .nav-item {
@@ -83,72 +105,60 @@
       color: var(--text-muted);
       text-decoration: none;
       padding: 8px 0;
-      font-size: 0.9rem;
-      border-bottom: 1px solid transparent;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .nav-item:hover { color: var(--primary); border-bottom: 1px solid var(--border); }
+    .nav-item:hover { color: var(--primary); }
 
     /* --- MAIN CONTENT --- */
     main { 
       flex: 1; 
       padding: 2rem; 
       width: 100%;
+      overflow-y: auto;
     }
 
-    /* Fixed Width Filter Bar */
-    .filter-container {
-      max-width: 800px;
-      margin: 0 auto 2rem auto;
-    }
-
-    #search {
-      width: 100%;
-      padding: 12px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--primary);
-      border-radius: 4px;
-      outline: none;
-    }
-
-    /* Fixed Width Project Cards */
     .app-section {
       background: var(--card-bg);
       padding: 2rem;
       margin: 0 auto 3rem auto;
-      max-width: 800px; /* Card width constraint */
+      max-width: 800px; /* Constrains card width */
+      width: 100%;
       border-radius: 8px;
       border: 1px solid var(--border);
     }
 
-    /* --- RESPONSIVE / MOBILE --- */
+    /* --- RESPONSIVE BEHAVIOR --- */
+    
+    /* Desktop: List is always visible, Summary is just a label */
+    @media (min-width: 851px) {
+      .nav-menu { display: block !important; }
+      .nav-menu summary { cursor: default; pointer-events: none; }
+      .nav-menu .toggle-indicator { display: none; }
+      .nav-items-container { display: block !important; }
+    }
+
+    /* Mobile: List is a collapsible drawer */
     @media (max-width: 850px) {
       body { flex-direction: column; }
       nav { 
         width: 100%; min-width: 100%; height: auto; 
         position: relative; border-right: none; border-bottom: 1px solid var(--border); 
+        padding: 1rem;
       }
-      .toggle-indicator { display: inline-block; margin-right: 8px; }
+      .nav-items-container { max-height: 40vh; }
       .nav-menu summary { border-bottom: 1px dashed var(--border); }
-      
-      /* Force Desktop sidebar to be a real accordion on mobile */
-      .nav-menu:not([open]) .nav-items-container { display: none; }
-    }
-
-    /* On Desktop, we force the details to stay open and hide the toggle */
-    @media (min-width: 851px) {
-      .nav-menu { pointer-events: none; } /* Disable clicking on Desktop */
-      .nav-menu .nav-items-container { display: block !important; }
-      .nav-menu summary { cursor: default; }
     }
 
     /* Theme Controls */
-    .theme-controls { font-size: 0.8rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .theme-controls { font-size: 0.75rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
     .theme-controls label { display: block; margin: 5px 0; cursor: pointer; }
 
     /* Utility */
     .highlight { background: var(--primary); color: #000; font-weight: bold; }
-    pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-left: 4px solid var(--primary); }
+    pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-left: 4px solid var(--primary); font-size: 0.85rem; }
     code { color: var(--primary); }
   </style>
 
@@ -159,11 +169,15 @@
 <body class="theme-auto">
 
   <nav>
-    <h2 style="color: var(--primary); margin: 0 0 1rem 0;">GIZMOS</h2>
+    <h2>GIZMOS</h2>
     
+    <div class="search-container">
+      <input id="search" type="text" placeholder="Search..." autocomplete="off" />
+    </div>
+
     <details class="nav-menu" open>
       <summary><span class="toggle-indicator">▶</span>PROJECTS</summary>
-      <div class="nav-items-container">
+      <div class="nav-items-container" id="navList">
         {% for name, summary in applications.items() %}
           <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">> {{ name }}</a>
         {% endfor %}
@@ -171,7 +185,7 @@
     </details>
 
     <div class="theme-controls">
-      <strong>UI THEME</strong>
+      <strong>APPEARANCE</strong>
       <label><input type="radio" name="theme" value="theme-dark"> DARK</label>
       <label><input type="radio" name="theme" value="theme-light"> LIGHT</label>
       <label><input type="radio" name="theme" value="theme-auto" checked> AUTO</label>
@@ -179,16 +193,12 @@
   </nav>
 
   <main>
-    <h1 style="text-align: center; margin-bottom: 2rem;">web-gizmos</h1>
-
-    <div class="filter-container">
-        <input id="search" type="text" placeholder="Filter gizmos..." autocomplete="off" />
-    </div>
+    <h1 style="text-align: center; margin-bottom: 3rem;">web-gizmos</h1>
 
     <div id="appContainer">
       {% for name, summary in applications.items() %}
         <section class="app-section" id="section-{{ name }}" data-name="{{ name }}">
-          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="{{ name }}/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="{{ name }}/index.html">[ RUN GIZMO ]</a>
           <h2 class="app-title">{{ name }}</h2>
           <div class="summary-content">
             {{ summary | safe }}
@@ -197,46 +207,46 @@
       {% endfor %}
     </div>
 
-    <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.5;">
+    <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
       <p>Last Sync: {{ last_updated }}</p>
     </footer>
   </main>
 
   <script>
-    // Theme Persistance
+    // Theme Engine
     const radios = document.querySelectorAll('input[name="theme"]');
     const setTheme = (t) => {
       document.body.className = t;
-      localStorage.setItem("gizmo-ui-pref", t);
+      localStorage.setItem("gizmo-theme-key", t);
     };
     radios.forEach(r => r.addEventListener("change", e => setTheme(e.target.value)));
-    const saved = localStorage.getItem("gizmo-ui-pref") || "theme-auto";
+    const saved = localStorage.getItem("gizmo-theme-key") || "theme-auto";
     setTheme(saved);
-    const checkedRadio = document.querySelector(`input[value="${saved}"]`);
-    if(checkedRadio) checkedRadio.checked = true;
+    const checked = document.querySelector(`input[value="${saved}"]`);
+    if(checked) checked.checked = true;
 
-    // Filter logic with Highlighting
+    // Filter Logic
     const search = document.getElementById("search");
     const menu = document.querySelector(".nav-menu");
 
     search.addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
       
-      // Expand menu on mobile if user starts searching
+      // Auto-expand mobile drawer if searching
       if (term.length > 0 && window.innerWidth <= 850) menu.open = true;
 
       document.querySelectorAll(".app-section").forEach(sec => {
         const name = sec.dataset.name.toLowerCase();
-        const title = sec.querySelector(".app-title");
-        const isMatch = name.includes(term);
+        const titleEl = sec.querySelector(".app-title");
+        const match = name.includes(term);
         
-        sec.style.display = isMatch ? "block" : "none";
+        sec.style.display = match ? "block" : "none";
         
-        if (isMatch && term.length > 0) {
+        if (match && term.length > 0) {
           const regex = new RegExp(`(${term})`, "gi");
-          title.innerHTML = sec.dataset.name.replace(regex, '<span class="highlight">$1</span>');
+          titleEl.innerHTML = sec.dataset.name.replace(regex, '<span class="highlight">$1</span>');
         } else {
-          title.textContent = sec.dataset.name;
+          titleEl.textContent = sec.dataset.name;
         }
       });
 
