@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Applications Overview</title>
   <style>
+    /* 1. The Variable Engine */
     :root {
       --primary: #01ff70;
       --bg: #111;
+      --nav-bg: #000;
       --card-bg: #222;
       --text: #fafafa;
       --text-muted: #bbb;
@@ -18,6 +20,7 @@
     body.theme-light {
       --primary: #0074d9;
       --bg: #f4f4f4;
+      --nav-bg: #e0e0e0;
       --card-bg: #ffffff;
       --text: #111;
       --text-muted: #444;
@@ -25,11 +28,11 @@
       --code-bg: #eee;
     }
 
-    /* System Auto-Detect */
     @media (prefers-color-scheme: light) {
       body.theme-auto {
         --primary: #0074d9;
         --bg: #f4f4f4;
+        --nav-bg: #e0e0e0;
         --card-bg: #ffffff;
         --text: #111;
         --text-muted: #444;
@@ -38,14 +41,30 @@
       }
     }
 
-    html { scroll-behavior: smooth; font-family: "Courier New", Courier, monospace; }
-    body { margin: 0; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; transition: background 0.2s; }
+    /* 2. Global Resets to fix "Larger than Screen" issues */
+    *, *::before, *::after { box-sizing: border-box; }
 
-    /* Sidebar Fixes */
+    html, body { 
+      margin: 0; 
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden; /* Hard stop for horizontal scrolling */
+      font-family: "Courier New", Courier, monospace;
+    }
+
+    body { 
+      background: var(--bg); 
+      color: var(--text); 
+      display: flex; 
+      min-height: 100vh; 
+      transition: background 0.2s, color 0.2s; 
+    }
+
+    /* 3. Sidebar Styling */
     nav {
       width: 280px;
       min-width: 280px;
-      background: #000;
+      background: var(--nav-bg); /* Use variable here */
       padding: 1.5rem;
       border-right: 1px solid var(--border);
       display: flex;
@@ -53,55 +72,56 @@
       position: sticky;
       top: 0;
       height: 100vh;
-      box-sizing: border-box;
       z-index: 100;
+      transition: background 0.2s;
     }
 
-    /* Search Bar Visibility Fix */
-    .search-wrapper { margin-bottom: 1.5rem; width: 100%; }
-    #search {
-      display: block; /* Ensure it is visible by default */
-      width: 100%;
-      padding: 10px;
-      background: #111;
-      border: 1px solid var(--border);
-      color: var(--primary);
-      border-radius: 4px;
-      box-sizing: border-box;
+    /* Collapsible Navigation */
+    details.nav-menu { margin-top: 1rem; flex-grow: 1; }
+    details.nav-menu summary { 
+      cursor: pointer; 
+      color: var(--primary); 
+      font-weight: bold; 
+      list-style: none;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
     }
-
-    /* Sidebar Scroll Area */
+    details.nav-menu summary::-webkit-details-marker { display: none; }
+    
     .nav-items-container {
+      margin-top: 10px;
+      max-height: 60vh;
       overflow-y: auto;
-      flex-grow: 1;
-      margin-bottom: 1rem;
     }
 
     .nav-item {
       display: block;
       color: var(--text-muted);
       text-decoration: none;
-      padding: 6px 0;
+      padding: 8px 0;
       font-size: 0.9rem;
-      border-bottom: 1px solid transparent;
     }
-    .nav-item:hover { color: var(--primary); border-bottom: 1px solid var(--border); }
+    .nav-item:hover { color: var(--primary); }
 
-    /* Content Area */
-    main { flex: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+    /* 4. Main Content Fixes */
+    main { 
+      flex: 1; 
+      padding: 2rem; 
+      max-width: 100%; /* Fix width overflow */
+      width: 100%;
+    }
+
     .app-section {
       background: var(--card-bg);
       padding: 2rem;
-      margin-bottom: 3rem;
+      margin: 0 auto 3rem auto;
+      max-width: 800px; /* Centered readable cards */
       border-radius: 8px;
       border: 1px solid var(--border);
+      transition: background 0.2s;
     }
 
-    /* Theme Controls */
-    .theme-controls { font-size: 0.75rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-    .theme-controls label { cursor: pointer; display: block; margin-bottom: 5px; color: var(--text-muted); }
-
-    /* Mobile Responsive Mode */
+    /* 5. Mobile Adjustments */
     @media (max-width: 850px) {
       body { flex-direction: column; }
       nav { 
@@ -112,96 +132,97 @@
         border-right: none; 
         border-bottom: 1px solid var(--border); 
       }
-      .nav-items-container { 
-        display: flex; 
-        flex-direction: row; 
-        overflow-x: auto; 
-        gap: 15px; 
-        padding-bottom: 10px; 
-      }
-      .nav-item { white-space: nowrap; }
+      .nav-items-container { max-height: 40vh; }
     }
 
     /* Utility */
-    .highlight { background: var(--primary); color: #000; font-weight: bold; padding: 0 2px; }
-    .app-link { color: var(--primary); text-decoration: none; font-size: 0.8rem; font-weight: bold; }
-    h1 { font-size: 2rem; color: var(--primary); }
-    pre { background: var(--code-bg); padding: 15px; overflow-x: auto; border-left: 4px solid var(--primary); }
+    #search {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--primary);
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    .highlight { background: var(--primary); color: #000; font-weight: bold; }
+    .theme-controls { font-size: 0.8rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .theme-controls label { display: block; margin: 5px 0; cursor: pointer; }
+    pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-left: 4px solid var(--primary); }
+    code { color: var(--primary); }
   </style>
 
   <noscript>
-    <style>
-      #search { display: none !important; }
-      .theme-controls { display: none; } /* Hide JS theme selector if JS is off */
-    </style>
+    <style>#search, .theme-controls { display: none !important; }</style>
   </noscript>
 </head>
 <body class="theme-auto">
 
   <nav>
-    <h2>GIZMOS</h2>
+    <h2 style="color: var(--primary); margin: 0 0 1rem 0;">GIZMOS</h2>
     
-    <div class="search-wrapper">
-      <input id="search" type="text" placeholder="Filter gizmos..." autocomplete="off" />
-    </div>
+    <input id="search" type="text" placeholder="Filter..." autocomplete="off" />
 
-    <div class="nav-items-container">
-      
-        <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
-      
-        <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
-      
-        <a class="nav-item" href="BST/index.html" data-name="BST">> BST</a>
-      
-        <a class="nav-item" href="cpp/index.html" data-name="cpp">> cpp</a>
-      
-        <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">> doofusdot</a>
-      
-        <a class="nav-item" href="fonttester/index.html" data-name="fonttester">> fonttester</a>
-      
-        <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
-      
-        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
-      
-        <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
-      
-        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
-      
-        <a class="nav-item" href="pattern/index.html" data-name="pattern">> pattern</a>
-      
-        <a class="nav-item" href="pcb/index.html" data-name="pcb">> pcb</a>
-      
-        <a class="nav-item" href="pic2html/index.html" data-name="pic2html">> pic2html</a>
-      
-        <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">> pixelreducer</a>
-      
-        <a class="nav-item" href="racing/index.html" data-name="racing">> racing</a>
-      
-        <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">> rusticrealms</a>
-      
-        <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
-      
-        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
-      
-        <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
-      
-    </div>
+    <details class="nav-menu">
+      <summary>PROJECTS [ + ]</summary>
+      <div class="nav-items-container">
+        
+          <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
+        
+          <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
+        
+          <a class="nav-item" href="BST/index.html" data-name="BST">> BST</a>
+        
+          <a class="nav-item" href="cpp/index.html" data-name="cpp">> cpp</a>
+        
+          <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">> doofusdot</a>
+        
+          <a class="nav-item" href="fonttester/index.html" data-name="fonttester">> fonttester</a>
+        
+          <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
+        
+          <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+        
+          <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
+        
+          <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
+        
+          <a class="nav-item" href="pattern/index.html" data-name="pattern">> pattern</a>
+        
+          <a class="nav-item" href="pcb/index.html" data-name="pcb">> pcb</a>
+        
+          <a class="nav-item" href="pic2html/index.html" data-name="pic2html">> pic2html</a>
+        
+          <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">> pixelreducer</a>
+        
+          <a class="nav-item" href="racing/index.html" data-name="racing">> racing</a>
+        
+          <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">> rusticrealms</a>
+        
+          <a class="nav-item" href="turtle/index.html" data-name="turtle">> turtle</a>
+        
+          <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">> voxelcrash</a>
+        
+          <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
+        
+      </div>
+    </details>
 
     <div class="theme-controls">
-      <strong>UI THEME</strong>
+      <strong>APPEARANCE</strong>
       <label><input type="radio" name="theme" value="theme-dark"> DARK</label>
       <label><input type="radio" name="theme" value="theme-light"> LIGHT</label>
-      <label><input type="radio" name="theme" value="theme-auto" checked> SYSTEM</label>
+      <label><input type="radio" name="theme" value="theme-auto" checked> AUTO</label>
     </div>
   </nav>
 
   <main>
-    <h1>web-gizmos</h1>
+    <h1 style="text-align: center;">web-gizmos</h1>
 
     <div id="appContainer">
       
         <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader">
-          <a class="app-link" href="animeboydownloader/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="animeboydownloader/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">animeboydownloader</h2>
           <div class="summary-content">
             <section>
@@ -222,7 +243,7 @@
         </section>
       
         <section class="app-section" id="section-asl" data-name="asl">
-          <a class="app-link" href="asl/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="asl/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">asl</h2>
           <div class="summary-content">
             <section>
@@ -243,7 +264,7 @@
         </section>
       
         <section class="app-section" id="section-BST" data-name="BST">
-          <a class="app-link" href="BST/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="BST/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">BST</h2>
           <div class="summary-content">
             <section>
@@ -264,7 +285,7 @@
         </section>
       
         <section class="app-section" id="section-cpp" data-name="cpp">
-          <a class="app-link" href="cpp/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="cpp/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">cpp</h2>
           <div class="summary-content">
             <section>
@@ -285,7 +306,7 @@
         </section>
       
         <section class="app-section" id="section-doofusdot" data-name="doofusdot">
-          <a class="app-link" href="doofusdot/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="doofusdot/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">doofusdot</h2>
           <div class="summary-content">
             <section>
@@ -306,7 +327,7 @@
         </section>
       
         <section class="app-section" id="section-fonttester" data-name="fonttester">
-          <a class="app-link" href="fonttester/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="fonttester/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">fonttester</h2>
           <div class="summary-content">
             <section>
@@ -330,7 +351,7 @@
         </section>
       
         <section class="app-section" id="section-matrix" data-name="matrix">
-          <a class="app-link" href="matrix/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="matrix/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">matrix</h2>
           <div class="summary-content">
             <section>
@@ -351,7 +372,7 @@
         </section>
       
         <section class="app-section" id="section-megaminer" data-name="megaminer">
-          <a class="app-link" href="megaminer/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="megaminer/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">megaminer</h2>
           <div class="summary-content">
             <section>
@@ -375,7 +396,7 @@
         </section>
       
         <section class="app-section" id="section-microviz" data-name="microviz">
-          <a class="app-link" href="microviz/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="microviz/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">microviz</h2>
           <div class="summary-content">
             <section>
@@ -399,7 +420,7 @@
         </section>
       
         <section class="app-section" id="section-midibeat" data-name="midibeat">
-          <a class="app-link" href="midibeat/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="midibeat/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">midibeat</h2>
           <div class="summary-content">
             <section>
@@ -422,7 +443,7 @@
         </section>
       
         <section class="app-section" id="section-pattern" data-name="pattern">
-          <a class="app-link" href="pattern/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="pattern/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">pattern</h2>
           <div class="summary-content">
             <section>
@@ -444,7 +465,7 @@
         </section>
       
         <section class="app-section" id="section-pcb" data-name="pcb">
-          <a class="app-link" href="pcb/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="pcb/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">pcb</h2>
           <div class="summary-content">
             <section>
@@ -467,7 +488,7 @@
         </section>
       
         <section class="app-section" id="section-pic2html" data-name="pic2html">
-          <a class="app-link" href="pic2html/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="pic2html/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">pic2html</h2>
           <div class="summary-content">
             <section>
@@ -488,7 +509,7 @@
         </section>
       
         <section class="app-section" id="section-pixelreducer" data-name="pixelreducer">
-          <a class="app-link" href="pixelreducer/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="pixelreducer/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">pixelreducer</h2>
           <div class="summary-content">
             <section>
@@ -510,7 +531,7 @@
         </section>
       
         <section class="app-section" id="section-racing" data-name="racing">
-          <a class="app-link" href="racing/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="racing/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">racing</h2>
           <div class="summary-content">
             <section>
@@ -533,7 +554,7 @@
         </section>
       
         <section class="app-section" id="section-rusticrealms" data-name="rusticrealms">
-          <a class="app-link" href="rusticrealms/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="rusticrealms/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">rusticrealms</h2>
           <div class="summary-content">
             <section>
@@ -559,7 +580,7 @@
         </section>
       
         <section class="app-section" id="section-turtle" data-name="turtle">
-          <a class="app-link" href="turtle/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="turtle/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">turtle</h2>
           <div class="summary-content">
             <section>
@@ -582,7 +603,7 @@
         </section>
       
         <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
-          <a class="app-link" href="voxelcrash/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="voxelcrash/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">voxelcrash</h2>
           <div class="summary-content">
             <section>
@@ -604,7 +625,7 @@
         </section>
       
         <section class="app-section" id="section-voxelracing" data-name="voxelracing">
-          <a class="app-link" href="voxelracing/index.html">[ RUN APPLICATION ]</a>
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem;" href="voxelracing/index.html">[ LAUNCH ]</a>
           <h2 class="app-title">voxelracing</h2>
           <div class="summary-content">
             <section>
@@ -628,60 +649,49 @@
       
     </div>
 
-    <footer style="text-align: center; margin-top: 5rem; font-size: 0.8rem; opacity: 0.6;">
-      <p>Registry updated: Mar 23, 2026 - 17:04</p>
-      <p>JS status: <script>document.write("Online")</script><noscript>Offline (Fallback Mode)</noscript></p>
+    <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border);">
+      <p>Registry Sync: Mar 23, 2026 - 17:11</p>
     </footer>
   </main>
 
   <script>
-    // Search + Highlighting logic
-    const searchInput = document.getElementById("search");
-    const sections = document.querySelectorAll(".app-section");
-    const navItems = document.querySelectorAll(".nav-item");
+    // Theme Engine
+    const radios = document.querySelectorAll('input[name="theme"]');
+    const setTheme = (t) => {
+      document.body.className = t;
+      localStorage.setItem("gizmo-pref", t);
+    };
+    radios.forEach(r => r.addEventListener("change", e => setTheme(e.target.value)));
+    const saved = localStorage.getItem("gizmo-pref") || "theme-auto";
+    setTheme(saved);
+    document.querySelector(`input[value="${saved}"]`).checked = true;
 
-    searchInput.addEventListener("input", (e) => {
+    // Search + Highlighting + Auto-Expand
+    const search = document.getElementById("search");
+    const menu = document.querySelector(".nav-menu");
+
+    search.addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
       
-      sections.forEach(sec => {
+      // Auto-open menu when searching
+      if (term.length > 0) menu.open = true;
+
+      document.querySelectorAll(".app-section").forEach(sec => {
         const name = sec.dataset.name.toLowerCase();
-        const titleEl = sec.querySelector(".app-title");
-        
-        if (name.includes(term)) {
-          sec.style.display = "block";
-          if (term.length > 0) {
-            const regex = new RegExp(`(${term})`, "gi");
-            titleEl.innerHTML = sec.dataset.name.replace(regex, `<span class="highlight">$1</span>`);
-          } else {
-            titleEl.textContent = sec.dataset.name;
-          }
+        const title = sec.querySelector(".app-title");
+        const match = name.includes(term);
+        sec.style.display = match ? "block" : "none";
+        if (match && term.length > 0) {
+          title.innerHTML = sec.dataset.name.replace(new RegExp(`(${term})`, "gi"), '<span class="highlight">$1</span>');
         } else {
-          sec.style.display = "none";
+          title.textContent = sec.dataset.name;
         }
       });
 
-      navItems.forEach(item => {
+      document.querySelectorAll(".nav-item").forEach(item => {
         item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
       });
     });
-
-    // Theme Persistance logic
-    const themeRadios = document.querySelectorAll('input[name="theme"]');
-    
-    function setTheme(theme) {
-      document.body.classList.remove('theme-dark', 'theme-light', 'theme-auto');
-      document.body.classList.add(theme);
-      localStorage.setItem("gizmo-preference", theme);
-    }
-
-    themeRadios.forEach(radio => {
-      radio.addEventListener("change", (e) => setTheme(e.target.value));
-    });
-
-    const saved = localStorage.getItem("gizmo-preference") || "theme-auto";
-    setTheme(saved);
-    const radioToCheck = document.querySelector(`input[value="${saved}"]`);
-    if(radioToCheck) radioToCheck.checked = true;
   </script>
 </body>
 </html>
