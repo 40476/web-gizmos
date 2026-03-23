@@ -4,48 +4,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Applications Overview</title>
-
   <style>
     :root {
       --primary: #01ff70;
-      --primary-hover: #2ecc40;
       --bg: #111;
       --card-bg: #222;
       --text: #fafafa;
       --text-muted: #bbb;
-      --code-bg: #333;
-      --sidebar-bg: #000;
       --border: #444;
+      --code-bg: #333;
     }
 
-    body.light-theme {
-      --primary: #01bb70;
-      --primary-hover: #2e0040;
+    /* Light Theme Class (Triggered by JS) */
+    body.theme-light {
+      --primary: #0074d9;
       --bg: #f4f4f4;
       --card-bg: #ffffff;
-      --sidebar-bg: #e0e0e0;
-      --text: #111111;
-      --text-muted: #444444;
+      --text: #111;
+      --text-muted: #444;
       --border: #ccc;
       --code-bg: #eee;
     }
 
-    html { font-size: 16px; scroll-behavior: smooth; }
-    
-    body {
-      margin: 0;
-      font-family: "Courier New", Courier, monospace;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      min-height: 100vh;
-      line-height: 1.45;
-      overflow-x: hidden;
+    /* Pure CSS Auto-Detect (System Preference) */
+    @media (prefers-color-scheme: light) {
+      body:not(.theme-dark):not(.theme-light) {
+        --primary: #0074d9;
+        --bg: #f4f4f4;
+        --card-bg: #ffffff;
+        --text: #111;
+        --text-muted: #444;
+        --border: #ccc;
+        --code-bg: #eee;
+      }
     }
 
+    html { scroll-behavior: smooth; font-family: "Courier New", Courier, monospace; }
+    body { margin: 0; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; transition: background 0.2s; }
+
+    /* Hide search if no-script */
+    .search-wrapper noscript + #search { display: none; }
+
+    /* Layout */
     nav {
       width: 280px;
-      background: var(--sidebar-bg);
+      background: #000;
       padding: 1.5rem;
       border-right: 1px solid var(--border);
       display: flex;
@@ -54,118 +57,59 @@
       top: 0;
       height: 100vh;
       box-sizing: border-box;
-      z-index: 100;
     }
 
-    nav h2 { font-size: 1.5rem; color: var(--primary); margin-top: 0; }
+    main { flex: 1; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
-    #search {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 1rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--primary);
-      border-radius: 4px;
-      outline: none;
-    }
-
-    .nav-items-container { overflow-y: auto; flex-grow: 1; }
-
-    .nav-item {
-      display: block;
-      color: var(--text-muted);
-      text-decoration: none;
-      padding: 5px 0;
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .nav-item:hover { color: var(--primary); }
-
-    main {
-      flex: 1;
-      padding: 2rem 3rem;
-      max-width: 50rem;
-      margin: 0 auto;
-      box-sizing: border-box;
-      width: 100%;
-    }
-
-    h1 { font-size: 2.5rem; color: var(--primary); margin-top: 0; }
-    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
-
-    .app-section {
-      background: var(--card-bg);
-      padding: 2rem;
-      margin-bottom: 3rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
-
-    .app-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .app-link:hover { text-decoration: underline; }
-
-    pre {
-      background-color: var(--code-bg);
-      padding: 1rem;
-      overflow-x: auto;
-      border-left: 3px solid var(--primary);
-      margin: 1.5rem 0;
-    }
-
-    code {
-      font-family: Menlo, Monaco, "Courier New", monospace;
-      font-size: 0.9rem;
-      color: var(--primary);
-    }
-
-    footer {
-      margin-top: 4rem;
-      padding-top: 2rem;
+    /* Pure CSS Theme Toggle UI */
+    .theme-controls {
+      margin-top: auto;
+      padding-top: 1rem;
       border-top: 1px solid var(--border);
-      color: var(--text-muted);
       font-size: 0.8rem;
-      text-align: center;
     }
+    .theme-controls label { cursor: pointer; display: block; padding: 5px; color: var(--text-muted); }
+    .theme-controls input { margin-right: 10px; }
 
-    #themeToggle {
-      margin-top: 1rem;
-      background: none;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 5px 10px;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    #themeToggle:hover { background: var(--primary); color: #000; }
-
+    /* Responsive / Mobile Mode */
     @media (max-width: 850px) {
       body { flex-direction: column; }
       nav { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
-      main { padding: 1.5rem; width: 100%; }
+      .nav-items-container { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
+      .nav-item { white-space: nowrap; }
     }
+
+    .app-section {
+      background: var(--card-bg);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .app-link { color: var(--primary); text-decoration: none; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
+    h1 { color: var(--primary); }
+    h2 { border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+    pre { background: var(--code-bg); padding: 10px; overflow-x: auto; border-left: 3px solid var(--primary); }
+    code { color: var(--primary); }
+
+    footer { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 3rem; }
+    
+    /* Highlight class for search */
+    .highlight { background: var(--primary); color: #000; font-weight: bold; }
   </style>
 </head>
-<body>
+<body class="theme-auto">
 
   <nav>
     <h2>GIZMOS</h2>
-    <input id="search" type="text" placeholder="Filter..." />
-    <div class="nav-items-container">
+    
+    <div class="search-wrapper">
+      <noscript><style>#search { display: none !important; }</style></noscript>
+      <input id="search" type="text" placeholder="Filter gizmos..." autocomplete="off" />
+    </div>
+
+    <div class="nav-items-container" id="sideNav">
       
         <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
       
@@ -206,18 +150,25 @@
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">> voxelracing</a>
       
     </div>
-    <button id="themeToggle">Toggle Theme</button>
+
+    <div class="theme-controls">
+      <p>THEME</p>
+      <label><input type="radio" name="theme" value="theme-dark"> Dark</label>
+      <label><input type="radio" name="theme" value="theme-light"> Light</label>
+      <label><input type="radio" name="theme" value="theme-auto" checked> Auto</label>
+    </div>
   </nav>
 
   <main>
     <h1>web-gizmos</h1>
 
-    
-      <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader">
-        <a class="app-link" href="animeboydownloader/index.html">[ Run Application ]</a>
-        <h2>animeboydownloader</h2>
-        <div class="summary-content">
-          <section>
+    <div id="appContainer">
+      
+        <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader">
+          <a class="app-link" href="animeboydownloader/index.html">[ Launch ]</a>
+          <h2 class="app-title">animeboydownloader</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Web app fetches random anime boy images from Nekos API through a proxy</li>
     <li>Displays image with metadata including ID, rating, tags, source link, and color palette</li>
@@ -231,14 +182,14 @@
 
   <p>This application displays random anime boy images from the Nekos API with accompanying metadata and color palette swatches. Users can fetch new images by clicking a button, and each image card shows details like ID, rating, tags, and source link. The interface uses a playful pink-themed design with Comic Sans font and smooth hover effects.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-asl" data-name="asl">
-        <a class="app-link" href="asl/index.html">[ Run Application ]</a>
-        <h2>asl</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-asl" data-name="asl">
+          <a class="app-link" href="asl/index.html">[ Launch ]</a>
+          <h2 class="app-title">asl</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Webpage for playing ASL sequences based on user input text</li>
     <li>Features an input field with autocomplete suggestions</li>
@@ -252,14 +203,14 @@
 
   <p>This webpage allows users to enter text and play corresponding ASL (American Sign Language) sequences. It features an input field with autocomplete suggestions and a video player to display the ASL sequences. The page includes a button to fetch and play the ASL sequence based on the user's input text.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-BST" data-name="BST">
-        <a class="app-link" href="BST/index.html">[ Run Application ]</a>
-        <h2>BST</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-BST" data-name="BST">
+          <a class="app-link" href="BST/index.html">[ Launch ]</a>
+          <h2 class="app-title">BST</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Interactive 3D spinning text generator using Three.js with real-time parameter controls</li>
     <li>Dynamic font loading from Google Fonts GitHub repository with search functionality</li>
@@ -273,14 +224,14 @@
 
   <p>A WebGL-based spinning text visualizer that lets users customize text, font, size, thickness, rotation speed, and color. The application fetches fonts from Google Fonts, caches them locally, and provides a shareable URL with all current settings. Users can search through available fonts and toggle the control panel with any key press.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-cpp" data-name="cpp">
-        <a class="app-link" href="cpp/index.html">[ Run Application ]</a>
-        <h2>cpp</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-cpp" data-name="cpp">
+          <a class="app-link" href="cpp/index.html">[ Launch ]</a>
+          <h2 class="app-title">cpp</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Interactive C++ Linus rant meme generator</li>
     <li>Dynamic text replacement in predefined rant text</li>
@@ -294,14 +245,14 @@
 
   <p>This web application creates an interactive version of Linus Torvalds' famous C++ rant. Users can input text that replaces all instances of "C++" in the rant, with real-time preview functionality and URL parameter support for direct text input.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-doofusdot" data-name="doofusdot">
-        <a class="app-link" href="doofusdot/index.html">[ Run Application ]</a>
-        <h2>doofusdot</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-doofusdot" data-name="doofusdot">
+          <a class="app-link" href="doofusdot/index.html">[ Launch ]</a>
+          <h2 class="app-title">doofusdot</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Creates an interactive web page with animated "Doofus" dots that flee from mouse proximity and play sound effects</li>
     <li>Features a UI panel for customizing dot count, color mode (solid or rainbow), and selecting audio files from a JSON manifest</li>
@@ -315,14 +266,14 @@
 
   <p>This HTML page displays animated dots that react to mouse movement by fleeing and playing sound effects. Users can customize the number of dots, choose between solid or rainbow colors, and select different audio files through a JSON-based sound system. The implementation includes audio caching for instant playback and a responsive UI for configuration.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-fonttester" data-name="fonttester">
-        <a class="app-link" href="fonttester/index.html">[ Run Application ]</a>
-        <h2>fonttester</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-fonttester" data-name="fonttester">
+          <a class="app-link" href="fonttester/index.html">[ Launch ]</a>
+          <h2 class="app-title">fonttester</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Custom font tester application with responsive design</li>
     <li>Features font file upload (.ttf, .otf, .woff, .woff2) with @font-face implementation</li>
@@ -339,14 +290,14 @@
 
   <p>This web application provides a comprehensive environment for testing custom fonts across various typographic elements. Users can upload font files, adjust font sizes with a slider, and input custom text to see real-time rendering results. The application includes a wide range of test cases including headings, paragraphs, lists, forms, and special characters, all styled with a modern, responsive design using CSS variables and grid layouts.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-matrix" data-name="matrix">
-        <a class="app-link" href="matrix/index.html">[ Run Application ]</a>
-        <h2>matrix</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-matrix" data-name="matrix">
+          <a class="app-link" href="matrix/index.html">[ Launch ]</a>
+          <h2 class="app-title">matrix</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Creates a Matrix-style falling text animation with customizable parameters</li>
     <li>Uses canvas to render animated characters that fall vertically and move horizontally</li>
@@ -360,14 +311,14 @@
 
   <p>This HTML page creates a Matrix-style falling text animation using canvas. The animation features customizable parameters through URL query strings, including text display, color, speed, and font settings. Characters fall down the screen while optionally moving horizontally, creating a dynamic visual effect with configurable transparency and framerate.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-megaminer" data-name="megaminer">
-        <a class="app-link" href="megaminer/index.html">[ Run Application ]</a>
-        <h2>megaminer</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-megaminer" data-name="megaminer">
+          <a class="app-link" href="megaminer/index.html">[ Launch ]</a>
+          <h2 class="app-title">megaminer</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Implements a 2D mining game with multiplayer support using WebSockets/MQTT</li>
     <li>Features procedurally generated terrain with various ore types and upgradeable mining equipment</li>
@@ -384,14 +335,14 @@
 
   <p>This HTML file contains a complete 2D mining game implementation with multiplayer functionality, procedural world generation, upgrade systems, and cloud synchronization. The game features a tile-based mining system where players can extract resources, upgrade their equipment, and interact with other players in real-time. The codebase includes a sophisticated UI system with mobile controls, inventory management, and settings customization.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-microviz" data-name="microviz">
-        <a class="app-link" href="microviz/index.html">[ Run Application ]</a>
-        <h2>microviz</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-microviz" data-name="microviz">
+          <a class="app-link" href="microviz/index.html">[ Launch ]</a>
+          <h2 class="app-title">microviz</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Audio visualizer with 2D canvas overlay and 3D background canvas</li>
     <li>Multiple visualizer modes including bars, waveform, and circle visualizations</li>
@@ -408,14 +359,14 @@
 
   <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-midibeat" data-name="midibeat">
-        <a class="app-link" href="midibeat/index.html">[ Run Application ]</a>
-        <h2>midibeat</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-midibeat" data-name="midibeat">
+          <a class="app-link" href="midibeat/index.html">[ Launch ]</a>
+          <h2 class="app-title">midibeat</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>HTML5-based MIDI sequencer with audio visualization</li>
     <li>Loads audio samples and MIDI files from local library or uploads</li>
@@ -431,14 +382,14 @@
 
   <p>This MIDI sequencer combines Tone.js audio engine with MidiPlayer.js for playback. Users can select from pre-loaded libraries or upload custom audio/MIDI files, adjust playback speed and pitch in real-time, and export compositions as WAV files. The interface features a live waveform visualizer and generates shareable links with current settings.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-pattern" data-name="pattern">
-        <a class="app-link" href="pattern/index.html">[ Run Application ]</a>
-        <h2>pattern</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-pattern" data-name="pattern">
+          <a class="app-link" href="pattern/index.html">[ Launch ]</a>
+          <h2 class="app-title">pattern</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>SVG pattern generator with seeded randomness for reproducible designs</li>
     <li>Six distinct style engines: Memphis, Bauhaus, Isometric, Voronoi, Waves, Op-Art</li>
@@ -453,14 +404,14 @@
 
   <p>This web application generates deterministic SVG patterns using seeded pseudorandom number generation. Users can customize dimensions, select from six artistic styles, adjust complexity, choose color palettes, and export their creations as vector SVG or raster PNG files. The seed-based approach ensures identical patterns can be recreated by reusing the same settings.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-pcb" data-name="pcb">
-        <a class="app-link" href="pcb/index.html">[ Run Application ]</a>
-        <h2>pcb</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-pcb" data-name="pcb">
+          <a class="app-link" href="pcb/index.html">[ Launch ]</a>
+          <h2 class="app-title">pcb</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Procedural PCB simulator with logic gates, switches, displays, and LEDs</li>
     <li>Smart A* routing algorithm with fan-out limits and force-connect option</li>
@@ -476,14 +427,14 @@
 
   <p>This procedural PCB simulator generates random circuit boards with logic components that interact through signal propagation. Users can adjust parameters like component density and fan-out limits, then interact with switches and observe signal flow through traces. The A* routing algorithm intelligently connects components while avoiding collisions, with optional force-connect mode for crowded boards.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-pic2html" data-name="pic2html">
-        <a class="app-link" href="pic2html/index.html">[ Run Application ]</a>
-        <h2>pic2html</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-pic2html" data-name="pic2html">
+          <a class="app-link" href="pic2html/index.html">[ Launch ]</a>
+          <h2 class="app-title">pic2html</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Converts images to HTML text art with customizable settings</li>
     <li>Features grayscale conversion, contrast adjustment, and multiple export options</li>
@@ -497,14 +448,14 @@
 
   <p>This JavaScript application converts uploaded images into HTML text art using configurable settings like character set, width, background color, and font size. It includes grayscale conversion, contrast adjustment, and can export the results as HTML, SVG, or PNG formats.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-pixelreducer" data-name="pixelreducer">
-        <a class="app-link" href="pixelreducer/index.html">[ Run Application ]</a>
-        <h2>pixelreducer</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-pixelreducer" data-name="pixelreducer">
+          <a class="app-link" href="pixelreducer/index.html">[ Launch ]</a>
+          <h2 class="app-title">pixelreducer</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Web app that degrades image/video quality over time by scaling down resolution and crushing audio.</li>
     <li>Supports uploading images or videos, then applying pixelation and audio degradation to create a GIF or degraded video file.</li>
@@ -519,14 +470,14 @@
 
   <p>This web application lets users upload images or videos and apply progressive degradation effects including pixelation and audio bitcrushing. It provides real-time preview, customizable parameters for final scale, pixelation step, audio crush strength, and output options like GIF or degraded video. The app uses canvas manipulation for visual degradation and Web Audio API for audio processing, with optional recording capabilities for video output.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-racing" data-name="racing">
-        <a class="app-link" href="racing/index.html">[ Run Application ]</a>
-        <h2>racing</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-racing" data-name="racing">
+          <a class="app-link" href="racing/index.html">[ Launch ]</a>
+          <h2 class="app-title">racing</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Real-time multiplayer racing game using MQTT for networking</li>
     <li>Pixelated 2D graphics with neon cyberpunk aesthetic</li>
@@ -542,14 +493,14 @@
 
   <p>DRiFT.js is a browser-based multiplayer racing game featuring real-time physics, custom map creation, and chat functionality. Players connect via MQTT to race together, with the host controlling physics settings and the ability to share maps. The game includes a map editor, particle effects, and supports both desktop and mobile controls.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-rusticrealms" data-name="rusticrealms">
-        <a class="app-link" href="rusticrealms/index.html">[ Run Application ]</a>
-        <h2>rusticrealms</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-rusticrealms" data-name="rusticrealms">
+          <a class="app-link" href="rusticrealms/index.html">[ Launch ]</a>
+          <h2 class="app-title">rusticrealms</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>A multiplayer survival game built with vanilla JavaScript, HTML5 Canvas, and MQTT for networking</li>
     <li>Features procedurally generated terrain with trees, rocks, and iron nodes across infinite chunks</li>
@@ -568,14 +519,14 @@
 
   <p>This is a modular survival game featuring multiplayer capabilities, procedural world generation, and real-time networking. Players can gather resources, craft items, build structures, and interact with others in a shared persistent world. The game uses MQTT for low-latency communication and includes cloud storage for cross-session progress.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-turtle" data-name="turtle">
-        <a class="app-link" href="turtle/index.html">[ Run Application ]</a>
-        <h2>turtle</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-turtle" data-name="turtle">
+          <a class="app-link" href="turtle/index.html">[ Launch ]</a>
+          <h2 class="app-title">turtle</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Interactive turtle simulation with multiple turtle personalities and behaviors</li>
     <li>Pathfinding AI using A* algorithm with obstacle avoidance and 8-directional movement</li>
@@ -591,14 +542,14 @@
 
   <p>This web-based turtle simulation features intelligent AI turtles with distinct personalities, pathfinding capabilities, and interactive behaviors. Users can spawn turtles, place food and obstacles, edit terrain, and customize simulation settings through a responsive control panel. The simulation includes advanced features like A* pathfinding, turtle vision cones, food detection systems, and mobile touch controls.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
-        <a class="app-link" href="voxelcrash/index.html">[ Run Application ]</a>
-        <h2>voxelcrash</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-voxelcrash" data-name="voxelcrash">
+          <a class="app-link" href="voxelcrash/index.html">[ Launch ]</a>
+          <h2 class="app-title">voxelcrash</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>A 3D match-3 puzzle game with voxel blocks where players swap adjacent blocks to create matches of 3 or more same-colored pieces</li>
     <li>Features auto-play mode, hint system, and visual effects including particle explosions and fluid background animations</li>
@@ -613,14 +564,14 @@
 
   <p>This is a 3D match-3 puzzle game built with Three.js featuring voxel blocks that players swap to create matches. The game includes auto-play mode, hint system, and visual effects like particle explosions. Players can choose from pre-made levels with pixel art targets or import custom images. The responsive design supports both desktop and mobile, with smooth animations and a modern glass-morphism UI including a sidebar for controls and art display.</p>
 </section>
-        </div>
-      </section>
-    
-      <section class="app-section" id="section-voxelracing" data-name="voxelracing">
-        <a class="app-link" href="voxelracing/index.html">[ Run Application ]</a>
-        <h2>voxelracing</h2>
-        <div class="summary-content">
-          <section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-voxelracing" data-name="voxelracing">
+          <a class="app-link" href="voxelracing/index.html">[ Launch ]</a>
+          <h2 class="app-title">voxelracing</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Multiplayer racing game using Three.js for 3D graphics and MQTT for real-time networking</li>
     <li>Procedurally generated terrain with five biomes (grasslands, desert, snow, mars, caves) using simplex noise</li>
@@ -636,36 +587,65 @@
 
   <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
 </section>
-        </div>
-      </section>
-    
+          </div>
+        </section>
+      
+    </div>
 
     <footer>
-      <p>Registry last updated: 2026-03-23 16:54:08 UTC</p>
-      <p>Total Gizmos: 19</p>
+      <p>Last Sync: Mar 23, 2026 - 17:00</p>
+      <p>Total: 19 | JS Status: <script>document.write("Active")</script><noscript>Disabled</noscript></p>
     </footer>
   </main>
 
   <script>
+    // 1. Search with Highlighting
     const search = document.getElementById("search");
-    const navItems = document.querySelectorAll(".nav-item");
     const sections = document.querySelectorAll(".app-section");
+    const navItems = document.querySelectorAll(".nav-item");
 
-    search.addEventListener("input", () => {
-      const q = search.value.toLowerCase();
-      navItems.forEach(item => {
-        item.style.display = item.dataset.name.toLowerCase().includes(q) ? "block" : "none";
-      });
+    search.addEventListener("input", (e) => {
+      const term = e.target.value.toLowerCase();
+      
       sections.forEach(sec => {
-        sec.style.display = sec.dataset.name.toLowerCase().includes(q) ? "block" : "none";
+        const name = sec.dataset.name.toLowerCase();
+        const titleEl = sec.querySelector(".app-title");
+        
+        if (name.includes(term)) {
+          sec.style.display = "block";
+          // Highlight logic
+          if (term.length > 0) {
+            const regex = new RegExp(`(${term})`, "gi");
+            titleEl.innerHTML = sec.dataset.name.replace(regex, `<span class="highlight">$1</span>`);
+          } else {
+            titleEl.textContent = sec.dataset.name;
+          }
+        } else {
+          sec.style.display = "none";
+        }
+      });
+
+      navItems.forEach(item => {
+        item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
       });
     });
 
-    const themeToggle = document.getElementById("themeToggle");
-    themeToggle.addEventListener("click", () => {
-      document.body.classList.toggle("light-theme");
-      themeToggle.textContent = document.body.classList.contains("light-theme") ? "Dark Mode" : "Light Mode";
+    // 2. Theme Persistance & Logic
+    const themeRadios = document.querySelectorAll('input[name="theme"]');
+    
+    function setTheme(theme) {
+      document.body.className = theme;
+      localStorage.setItem("gizmo-theme", theme);
+    }
+
+    themeRadios.forEach(radio => {
+      radio.addEventListener("change", (e) => setTheme(e.target.value));
     });
+
+    // Init theme
+    const savedTheme = localStorage.getItem("gizmo-theme") || "theme-auto";
+    setTheme(savedTheme);
+    document.querySelector(`input[value="${savedTheme}"]`).checked = true;
   </script>
 </body>
 </html>
