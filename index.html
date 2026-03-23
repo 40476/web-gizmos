@@ -369,22 +369,20 @@
         <div class="summary-content">
           <section>
   <ul>
-    <li>HTML5 game using JavaScript and MQTT for multiplayer</li>
-    <li>Pixel art mining game with procedurally generated maps</li>
-    <li>Real-time multiplayer with WebSocket/MQTT broker connections</li>
-    <li>Custom UI system with CSS3 bevel borders and mobile controls</li>
-    <li>Cloud save system using IndexedDB and Puter cloud storage</li>
-    <li>Sound engine with Web Audio API for mining and ambient effects</li>
-    <li>Shop system for upgrades and items with in-game economy</li>
+    <li>Implements a 2D mining game with multiplayer support using WebSockets/MQTT</li>
+    <li>Features procedurally generated terrain with various ore types and upgradeable mining equipment</li>
+    <li>Includes a comprehensive UI system with mobile controls, chat, inventory management, and settings</li>
+    <li>Provides cloud save functionality using Puter's file system and IndexedDB for local storage</li>
+    <li>Utilizes custom shaders and texture engine for enhanced visual effects and tile rendering</li>
   </ul>
 
   <pre>
-    <code>const TILE_PROPS = { [TILE_TYPES.COAL]: { name: "Coal", color: '#2c3e50', hardness: 2, value: 10, tier: 0 } };</code>
-    <code>class SoundManager { init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } }</code>
-    <code>class ShopSystem { buy(item) { const p = Game.localPlayer; if(p.money >= cost) { p.money -= cost; p.drillTier++; } } }</code>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99 };</code>
+    <code>const GameEngine = new class { ... };</code>
+    <code>class NetworkManager { ... }</code>
   </pre>
 
-  <p>This is a browser-based multiplayer mining game with procedurally generated maps, real-time multiplayer networking via MQTT, and a complete in-game economy system. The game features pixel art graphics, sound effects using the Web Audio API, cloud saves through IndexedDB and Puter, and a shop system for upgrades and items.</p>
+  <p>This HTML file contains a complete 2D mining game implementation with multiplayer functionality, procedural world generation, upgrade systems, and cloud synchronization. The game features a tile-based mining system where players can extract resources, upgrade their equipment, and interact with other players in real-time. The codebase includes a sophisticated UI system with mobile controls, inventory management, and settings customization.</p>
 </section>
         </div>
       </section>
@@ -643,7 +641,7 @@
     
 
     <footer>
-      <p>Registry last updated: 2026-03-23 16:49:57 UTC</p>
+      <p>Registry last updated: 2026-03-23 16:54:08 UTC</p>
       <p>Total Gizmos: 19</p>
     </footer>
   </main>
