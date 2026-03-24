@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D MQTT Checkers</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <style>
+        /* Base Layout */
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+        .hidden { display: none !important; }
+        .interactive { pointer-events: auto; }
+
+        /* 3D Canvas */
+        #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+        /* Setup Modal Layout */
+        .layout-fullscreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; }
+        .setup-modal { display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,1); }
+        .setup-content { display: flex; flex-direction: column; width: 350px; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+
+        /* Game UI Layout */
+        .game-ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+
+        /* Top Status Bar */
+        .top-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 15px; }
+
+        /* Win/Sweep Overlay */
+        .win-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+
+        /* Chat Box Layout */
+        .chat-panel { position: absolute; bottom: 20px; right: 20px; width: 320px; display: flex; flex-direction: column; }
+        .chat-header { display: flex; justify-content: space-between; align-items: center; }
+        .chat-messages { height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+        .chat-input-area { display: flex; }
+        .chat-input-area input { flex: 1; }
+
+        /* https://github.com/metakirby5/yorha */
+        body {
+        background-color: #d1cdb7;
+        -webkit-background-size: 0.3rem 0.3rem;
+        -moz-background-size: 0.3rem 0.3rem;
+        background-size: 0.3rem 0.3rem;
+        background-image: -webkit-linear-gradient(left, #ccc8b1 1px, rgba(204,200,177,0) 1px), -webkit-linear-gradient(top, #ccc8b1 1px, rgba(204,200,177,0) 1px);
+        background-image: -moz-linear-gradient(left, #ccc8b1 1px, rgba(204,200,177,0) 1px), -moz-linear-gradient(top, #ccc8b1 1px, rgba(204,200,177,0) 1px);
+        background-image: -o-linear-gradient(left, #ccc8b1 1px, rgba(204,200,177,0) 1px), -o-linear-gradient(top, #ccc8b1 1px, rgba(204,200,177,0) 1px);
+        background-image: -ms-linear-gradient(left, #ccc8b1 1px, rgba(204,200,177,0) 1px), -ms-linear-gradient(top, #ccc8b1 1px, rgba(204,200,177,0) 1px);
+        background-image: linear-gradient(to right, #ccc8b1 1px, rgba(204,200,177,0) 1px), linear-gradient(to bottom, #ccc8b1 1px, rgba(204,200,177,0) 1px);
+        font-family: helvetica, sans-serif;
+        letter-spacing: 0.03rem;
+        font-weight: lighter;
+        color: #454138;
+        }
+        ::selection {
+        background-color: #bab5a1;
+        }
+        a {
+        color: inherit;
+        }
+        p {
+        margin: 0 0 1rem 0;
+        }
+        mark {
+        background-color: #454138;
+        color: #dcd8c0;
+        }
+        h1 {
+        font-weight: normal;
+        text-transform: uppercase;
+        letter-spacing: 0.5rem;
+        text-shadow: 0.3rem 0.3rem 0 #bab5a1;
+        }
+        h2 {
+        font-weight: lighter;
+        border: solid #454138;
+        border-width: 0.1rem 0;
+        padding: 0.1rem 1rem;
+        }
+        h3,
+        h4,
+        h5,
+        h6 {
+        font-weight: lighter;
+        letter-spacing: 0.1rem;
+        }
+        blockquote {
+        position: relative;
+        padding: 0.5rem;
+        }
+        blockquote:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -1.5rem;
+        bottom: 0;
+        height: 100%;
+        width: 0.3rem;
+        border: solid #bab5a1;
+        border-width: 0 0.2rem 0 0.6rem;
+        }
+        cite {
+        position: relative;
+        padding-left: 2rem;
+        }
+        cite:before {
+        content: '';
+        position: absolute;
+        width: 0.7rem;
+        height: 0.7rem;
+        background-color: #454138;
+        margin-left: -1rem;
+        top: 0.25em;
+        }
+        hr {
+        margin: 1rem 0;
+        border-top: solid #bab5a1;
+        border-width: 0.1rem 0 0 0;
+        }
+        table {
+        border-collapse: collapse;
+        font-weight: inherit;
+        }
+        td,
+        th {
+        padding: 0.5rem;
+        }
+        th {
+        font-weight: normal;
+        text-align: left;
+        border-bottom: 0.1rem solid #454138;
+        }
+        pre {
+        background-color: #dcd8c0;
+        padding: 1rem;
+        }
+        fieldset {
+        padding: 1rem;
+        padding-top: 0.5rem;
+        border: 0.1rem solid #bab5a1;
+        }
+        legend {
+        padding: 0 0.5rem;
+        }
+        label {
+        display: inline-block;
+        margin: 0.5rem 0;
+        }
+        textarea,
+        input[type=text],
+        input[type=password],
+        input[type=url],
+        input[type=email],
+        input[type=tel],
+        input[type=search],
+        input[type=number],
+        input[type=color],
+        input[type=date],
+        input[type=month],
+        input[type=week],
+        input[type=datetime],
+        input[type=datetime-local] {
+        padding: 0.5rem;
+        font-size: 1em;
+        border: none;
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 0;
+        background-color: #dcd8c0;
+        color: inherit;
+        font-family: inherit;
+        letter-spacing: inherit;
+        font-weight: inherit;
+        }
+        select {
+        background: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIwLjAuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCA0LjkgMTAiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDQuOSAxMDsiIHhtbDpzcGFjZT0icHJlc2VydmUiPgo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPgoJLnN0MHtmaWxsOiM0NDQ0NDQ7fQo8L3N0eWxlPgo8dGl0bGU+YXJyb3dzPC90aXRsZT4KPHBvbHlnb24gY2xhc3M9InN0MCIgcG9pbnRzPSIxLjQsNC43IDIuNSwzLjIgMy41LDQuNyAiLz4KPHBvbHlnb24gY2xhc3M9InN0MCIgcG9pbnRzPSIzLjUsNS4zIDIuNSw2LjggMS40LDUuMyAiLz4KPC9zdmc+Cg==") no-repeat right;
+        padding: 0.5rem;
+        font-size: 1em;
+        border: none;
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 0;
+        background-color: #dcd8c0;
+        color: inherit;
+        font-family: inherit;
+        letter-spacing: inherit;
+        font-weight: inherit;
+        }
+        input[type=submit]:not(:disabled),
+        input[type=button]:not(:disabled),
+        input[type=reset]:not(:disabled) {
+        padding: 0.5rem;
+        font-size: 1em;
+        border: none;
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 0;
+        background-color: #bab5a1;
+        color: inherit;
+        font-family: inherit;
+        letter-spacing: inherit;
+        font-weight: inherit;
+        cursor: pointer;
+        -webkit-transition-duration: 0.2s;
+        -moz-transition-duration: 0.2s;
+        -o-transition-duration: 0.2s;
+        -ms-transition-duration: 0.2s;
+        transition-duration: 0.2s;
+        -webkit-transition-property: color, background-color, box-shadow;
+        -moz-transition-property: color, background-color, box-shadow;
+        -o-transition-property: color, background-color, box-shadow;
+        -ms-transition-property: color, background-color, box-shadow;
+        transition-property: color, background-color, box-shadow;
+        }
+        input[type=submit]:not(:disabled):hover,
+        input[type=button]:not(:disabled):hover,
+        input[type=reset]:not(:disabled):hover {
+        -webkit-box-shadow: 0.2em 0.2em 0.1em 0 #bab5a1;
+        box-shadow: 0.2em 0.2em 0.1em 0 #bab5a1;
+        }
+        input[type=submit]:not(:disabled):hover,
+        input[type=button]:not(:disabled):hover,
+        input[type=reset]:not(:disabled):hover {
+        background-color: #454138;
+        color: #dcd8c0;
+        }
+        input[type=submit]:not(:disabled):active,
+        input[type=button]:not(:disabled):active,
+        input[type=reset]:not(:disabled):active {
+        background-color: #dcd8c0;
+        color: #454138;
+        }
+        input:disabled,
+        button:disabled,
+        .button-disabled {
+        padding: 0.5rem;
+        font-size: 1em;
+        border: none;
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 0;
+        background-color: #dcd8c0;
+        color: inherit;
+        font-family: inherit;
+        letter-spacing: inherit;
+        font-weight: inherit;
+        color: #bab5a1;
+        cursor: not-allowed;
+        }
+        button:not(:disabled),
+        .button {
+        padding: 0.5rem;
+        font-size: 1em;
+        border: none;
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 0;
+        background-color: #bab5a1;
+        color: inherit;
+        font-family: inherit;
+        letter-spacing: inherit;
+        font-weight: inherit;
+        cursor: pointer;
+        -webkit-transition-duration: 0.2s;
+        -moz-transition-duration: 0.2s;
+        -o-transition-duration: 0.2s;
+        -ms-transition-duration: 0.2s;
+        transition-duration: 0.2s;
+        -webkit-transition-property: color, background-color, box-shadow;
+        -moz-transition-property: color, background-color, box-shadow;
+        -o-transition-property: color, background-color, box-shadow;
+        -ms-transition-property: color, background-color, box-shadow;
+        transition-property: color, background-color, box-shadow;
+        position: relative;
+        z-index: 1;
+        }
+        button:not(:disabled):hover,
+        .button:hover {
+        -webkit-box-shadow: 0.2em 0.2em 0.1em 0 #bab5a1;
+        box-shadow: 0.2em 0.2em 0.1em 0 #bab5a1;
+        }
+        button:not(:disabled):before,
+        .button:before {
+        content: '';
+        -webkit-transition: all 0.2s;
+        -moz-transition: all 0.2s;
+        -o-transition: all 0.2s;
+        -ms-transition: all 0.2s;
+        transition: all 0.2s;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        }
+        button:not(:disabled):after,
+        .button:after {
+        content: '';
+        -webkit-transition: all 0.2s;
+        -moz-transition: all 0.2s;
+        -o-transition: all 0.2s;
+        -ms-transition: all 0.2s;
+        transition: all 0.2s;
+        -webkit-transition-timing-function: ease-out;
+        -moz-transition-timing-function: ease-out;
+        -o-transition-timing-function: ease-out;
+        -ms-transition-timing-function: ease-out;
+        transition-timing-function: ease-out;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        background-color: #454138;
+        z-index: -1;
+        }
+        button:not(:disabled):hover,
+        .button:hover {
+        background-color: transparent;
+        color: #dcd8c0;
+        }
+        button:not(:disabled):hover:before,
+        .button:hover:before {
+        top: -0.2rem;
+        bottom: -0.2rem;
+        border: solid #454138;
+        border-width: 0.1rem 0;
+        }
+        button:not(:disabled):hover:after,
+        .button:hover:after {
+        width: 100%;
+        }
+        button:not(:disabled):active,
+        .button:active {
+        color: #454138;
+        }
+        button:not(:disabled):active:after,
+        .button:active:after {
+        background-color: #dcd8c0;
+        }
+        ::-webkit-input-placeholder,
+        ::-moz-placeholder,
+        ::-ms-input-placeholder {
+        opacity: 1;
+        -ms-filter: none;
+        filter: none;
+        color: #bab5a1;
+        font-weight: lighter;
+        }
+        figure {
+        display: -webkit-box;
+        display: -moz-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: box;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -moz-box-orient: vertical;
+        -o-box-orient: vertical;
+        -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        margin: 0;
+        margin-bottom: 1rem;
+        background-color: #dcd8c0;
+        padding: 0.5rem;
+        }
+        figure > :not(figcaption) {
+        margin: 0.5rem;
+        }
+        figure > figcaption {
+        -webkit-box-ordinal-group: -1;
+        -moz-box-ordinal-group: -1;
+        -o-box-ordinal-group: -1;
+        -ms-flex-order: -1;
+        -webkit-order: -1;
+        order: -1;
+        margin: -0.5rem;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 1.2rem;
+        background-color: #454138;
+        color: #bab5a1;
+        }
+        iframe {
+        border: 0.1rem solid #bab5a1;
+        }
+
+    </style>
+</head>
+<body onload="document.getElementById('room-id').value = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;">
+
+    <!-- 3D Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Setup Modal -->
+    <div id="setup-ui" class="layout-fullscreen setup-modal interactive">
+        <div class="setup-content">
+            <h2 class="setup-title">3D Checkers Arena</h2>
+
+            <div class="form-group">
+                <label>WSS+MQTT Broker</label>
+                <input type="text" id="broker-url" value="wss://test.mosquitto.org:8081">
+                <small>Other great options: wss://broker.emqx.io:8084/mqtt, wss://broker.hivemq.com:8884/mqtt</small>
+            </div>
+
+            <div class="form-group">
+                <label>Room ID</label>
+                <input type="text" id="room-id" value="error">
+            </div>
+
+            <div class="form-group">
+                <label>Role</label>
+                <select id="player-role">
+                    <option value="1">Player 1 (Red)</option>
+                    <option value="2">Player 2 (Black)</option>
+                    <option value="0">Spectator</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Custom Image</label>
+                <input type="text" id="custom-image" placeholder="https://example.com/image.jpg">
+            </div>
+
+            <button id="connect-btn" class="connect-btn">Connect & Play</button>
+        </div>
+    </div>
+
+    <!-- In-Game UI -->
+    <div id="game-ui" class="game-ui-layer hidden">
+
+        <!-- Status Bar -->
+        <div class="top-bar interactive">
+            <div id="turn-indicator" class="turn-text">Waiting for sync...</div>
+            <div class="divider">|</div>
+            <div id="role-display" class="role-text">Spectator</div>
+        </div>
+
+        <!-- Win/Sweep Overlay -->
+        <div id="win-overlay" class="win-overlay hidden">
+            <h2 id="win-text" class="win-title">Player 1 Wins!</h2>
+            <p class="win-subtitle">Initiating sweep protocol...</p>
+        </div>
+
+        <!-- Chat Box -->
+        <div class="chat-panel interactive">
+            <div class="chat-header">
+                <span>Lobby Chat</span>
+                <span id="connection-status" class="status-text">Connecting...</span>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages go here -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a message...">
+                <button id="chat-send">Send</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GAME STATE & GLOBALS ---
+        let mqttClient;
+        let roomTopic = "";
+        let presenceTopic = "";
+        let myRole = 0; // 1 = P1, 2 = P2, 0 = Spec
+        let myCustomImage = "";
+        let gameStarted = false; // Flag to prevent restart on connection drop
+
+        let playerImages = { 1: "", 2: "" }; // Ephemeral, tied to active presence
+
+        let gameState = {
+            board: null,
+            turn: 1,
+            winner: 0
+        };
+
+        // --- THREE.JS GLOBALS ---
+        let scene, camera, renderer;
+        let boardGroup = new THREE.Group();
+        let pieceMeshes = {};
+        let particleSystem = [];
+        let sweeper = { active: false, mesh: null, z: 0, speed: 0.15 };
+
+        const squareSize = 2;
+        const boardOffset = (8 * squareSize) / 2 - (squareSize / 2);
+
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let selectedPieceId = null;
+        let validMoves = [];
+        let moveHighlightMeshes = [];
+
+        // --- INITIALIZATION & PRESENCE LOCKING ---
+        function initInitialState() {
+            let board = Array(8).fill(null).map(() => Array(8).fill(null));
+            // P1 pieces at z=-7 side (rows 0,1,2)
+            for(let r=0; r<3; r++) {
+                for(let c=0; c<8; c++) {
+                    if((r+c)%2 !== 0) board[r][c] = { p: 1, k: false, id: `p1_${r}_${c}` };
+                }
+            }
+            // P2 pieces at z=+7 side (rows 5,6,7)
+            for(let r=5; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    if((r+c)%2 !== 0) board[r][c] = { p: 2, k: false, id: `p2_${r}_${c}` };
+                }
+            }
+            gameState.board = board;
+        }
+
+        document.getElementById('connect-btn').addEventListener('click', () => {
+            const btn = document.getElementById('connect-btn');
+            btn.disabled = true;
+            btn.innerText = "Checking lobby...";
+
+            const broker = document.getElementById('broker-url').value;
+            roomTopic = "checkers3d_arena/" + document.getElementById('room-id').value;
+            myRole = parseInt(document.getElementById('player-role').value);
+            myCustomImage = document.getElementById('custom-image').value.trim();
+            presenceTopic = roomTopic + '/presence/p' + myRole;
+
+            connectAndCheckRole(broker);
+        });
+
+        function connectAndCheckRole(brokerUrl) {
+            let options = {};
+
+            // If joining as a player, set a Last Will and Testament to clear our slot and image if we disconnect
+            if (myRole !== 0) {
+                options.will = {
+                    topic: presenceTopic,
+                    payload: JSON.stringify({ status: 'offline' }),
+                    retain: true
+                };
+            }
+
+            mqttClient = mqtt.connect(brokerUrl, options);
+
+            mqttClient.on('connect', () => {
+                document.getElementById('connection-status').innerText = "Connected";
+
+                // If this is a reconnect after a drop, just resubscribe, skip setup
+                if (gameStarted) {
+                    mqttClient.subscribe(roomTopic + '/state');
+                    mqttClient.subscribe(roomTopic + '/chat');
+                    mqttClient.subscribe(roomTopic + '/presence/+');
+
+                    // Re-broadcast our active presence
+                    if (myRole !== 0) {
+                        mqttClient.publish(presenceTopic, JSON.stringify({ status: 'online', image: myCustomImage }), { retain: true });
+                    }
+                    return;
+                }
+
+                if (myRole === 0) {
+                    // Spectator bypasses presence check
+                    finalizeConnection();
+                } else {
+                    // Check if role is taken
+                    mqttClient.subscribe(presenceTopic);
+
+                    let roleTaken = false;
+
+                    const presenceHandler = (topic, message) => {
+                        if (topic === presenceTopic) {
+                            try {
+                                let data = JSON.parse(message.toString());
+                                if (data.status === 'online') roleTaken = true;
+                            } catch(e) {}
+                        }
+                    };
+
+                    mqttClient.on('message', presenceHandler);
+
+                    // Wait 500ms to see if anyone is broadcasting 'online'
+                    setTimeout(() => {
+                        mqttClient.removeListener('message', presenceHandler);
+
+                        if (roleTaken) {
+                            alert(`Player ${myRole} is already active in this room!`);
+                            mqttClient.end();
+                            const btn = document.getElementById('connect-btn');
+                            btn.disabled = false;
+                            btn.innerText = "Connect & Play";
+                        } else {
+                            // Role is free, claim it and broadcast our image instantly
+                            finalizeConnection();
+                        }
+                    }, 500);
+                }
+            });
+
+            mqttClient.on('offline', () => {
+                document.getElementById('connection-status').innerText = "Disconnected...";
+            });
+        }
+
+        function finalizeConnection() {
+            gameStarted = true;
+            document.getElementById('setup-ui').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+
+            let roleName = myRole === 1 ? 'Player 1 (Red)' : myRole === 2 ? 'Player 2 (Black)' : 'Spectator';
+            document.getElementById('role-display').innerText = roleName;
+
+            mqttClient.subscribe(roomTopic + '/state');
+            mqttClient.subscribe(roomTopic + '/chat');
+            mqttClient.subscribe(roomTopic + '/presence/+'); // Listen to all presence updates for images
+
+            // Publish our presence to bind our image to our connection
+            if (myRole !== 0) {
+                mqttClient.publish(presenceTopic, JSON.stringify({ status: 'online', image: myCustomImage }), { retain: true });
+            }
+
+            // Handle incoming messages
+            mqttClient.on('message', (topic, message) => {
+                try {
+                    if (topic.endsWith('/state')) {
+                        handleStateUpdate(JSON.parse(message.toString()));
+                    } else if (topic.endsWith('/chat')) {
+                        let payload = JSON.parse(message.toString());
+                        addChatMessage(payload.sender, payload.text);
+                    } else if (topic.includes('/presence/p')) {
+                        handlePresenceUpdate(topic, JSON.parse(message.toString()));
+                    }
+                } catch(e) {}
+            });
+
+            // If joining as a player, init board if needed
+            if (myRole !== 0) {
+                initInitialState();
+                publishState(); // Broadcast the initial board layout
+            }
+
+            initThreeJS();
+            addChatMessage("System", `Connected to room.`);
+        }
+
+        // --- MQTT CHAT & STATE SYNC ---
+        function publishState() {
+            if(!mqttClient || !mqttClient.connected) return;
+            mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState), { retain: true });
+        }
+
+        function publishChat(text) {
+            if(!mqttClient || !mqttClient.connected || !text.trim()) return;
+            let sender = myRole === 1 ? "Player 1" : myRole === 2 ? "Player 2" : "Spectator";
+            mqttClient.publish(roomTopic + '/chat', JSON.stringify({ sender, text }));
+        }
+
+        function handlePresenceUpdate(topic, data) {
+            // Extract player number from topic (e.g. .../presence/p1 -> 1)
+            let p = topic.endsWith('p1') ? 1 : 2;
+
+            if (data.status === 'online') {
+                playerImages[p] = data.image || "";
+            } else {
+                playerImages[p] = ""; // Clear image when they disconnect
+            }
+
+            updatePieceImages();
+        }
+
+        document.getElementById('chat-send').addEventListener('click', () => {
+            let input = document.getElementById('chat-input');
+            publishChat(input.value);
+            input.value = '';
+        });
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') document.getElementById('chat-send').click();
+        });
+
+        function addChatMessage(sender, text) {
+            let chatBox = document.getElementById('chat-messages');
+            let msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-message';
+            msgDiv.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- THREE.JS SETUP & RENDERING ---
+        function initThreeJS() {
+            const canvas = document.getElementById('game-canvas');
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            // Player Pieces at Bottom Camera setup:
+            // P1 pieces are at z=-7. To see them at bottom, camera goes to z=-22 looking at 0.
+            // P2 pieces are at z=+7. To see them at bottom, camera goes to z=+22 looking at 0.
+            if (myRole === 1) {
+                camera.position.set(0, 18, -22);
+            } else if (myRole === 2) {
+                camera.position.set(0, 18, 22);
+            } else {
+                camera.position.set(25, 20, 0);
+            }
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            createBoard();
+
+            window.addEventListener('resize', onWindowResize, false);
+            canvas.addEventListener('mousedown', onPointerDown, false);
+
+            animate();
+        }
+
+        function createBoard() {
+            scene.add(boardGroup);
+            const borderGeo = new THREE.BoxGeometry(squareSize * 8 + 1, 1, squareSize * 8 + 1);
+            const borderMat = new THREE.MeshPhongMaterial({ color: 0x3d2314 });
+            const border = new THREE.Mesh(borderGeo, borderMat);
+            border.position.y = -0.5;
+            boardGroup.add(border);
+
+            const darkMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+            const lightMat = new THREE.MeshPhongMaterial({ color: 0xdddddd });
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const isDark = (r + c) % 2 !== 0;
+                    const geo = new THREE.BoxGeometry(squareSize, 0.2, squareSize);
+                    const mesh = new THREE.Mesh(geo, isDark ? darkMat : lightMat);
+
+                    let pos = getBoardWorldPos(r, c);
+                    mesh.position.set(pos.x, 0, pos.z);
+                    mesh.userData = { isSquare: true, r: r, c: c, isDark: isDark };
+                    boardGroup.add(mesh);
+                }
+            }
+        }
+
+        function getBoardWorldPos(r, c) {
+            return {
+                x: c * squareSize - boardOffset,
+                z: r * squareSize - boardOffset
+            };
+        }
+
+        function loadCustomTexture(url, fallbackColor) {
+            const material = new THREE.MeshPhongMaterial({ color: fallbackColor });
+            if (url && url.startsWith('http')) {
+                const loader = new THREE.TextureLoader();
+                loader.setCrossOrigin('Anonymous');
+                loader.load(url,
+                    (texture) => {
+                        material.map = texture;
+                        material.color.setHex(0xffffff);
+                        material.needsUpdate = true;
+                    }
+                );
+            }
+            return material;
+        }
+
+        function createPieceMesh(pieceData) {
+            const radius = squareSize * 0.4;
+            const height = 0.4;
+            const geo = new THREE.CylinderGeometry(radius, radius, height, 32);
+
+            let p = pieceData.p;
+            let baseColor = p === 1 ? 0xcc0000 : 0x444444;
+            let imgUrl = playerImages[p];
+
+            // Apply custom image ONLY to the top face
+            const sideMat = new THREE.MeshPhongMaterial({ color: baseColor });
+            const topMat = loadCustomTexture(imgUrl, baseColor);
+            const bottomMat = new THREE.MeshPhongMaterial({ color: baseColor });
+
+            // Materials array: 0=side, 1=top, 2=bottom
+            const mesh = new THREE.Mesh(geo, [sideMat, topMat, bottomMat]);
+            mesh.castShadow = true;
+            mesh.userData = { id: pieceData.id, p: p, isKing: pieceData.k, imageUrl: imgUrl };
+
+            // Rotate the mesh so the image faces the owning player upright.
+            // P1 camera is at z=-22 looking +z. P2 camera is at z=22 looking -z.
+            mesh.rotation.y = p === 1 ? -Math.PI / 2 : Math.PI / 2 ;
+
+            // Decorative Ridge
+            const torusGeo = new THREE.TorusGeometry(radius, 0.05, 16, 32);
+            const torusMat = new THREE.MeshPhongMaterial({ color: p === 1 ? 0xaa0000 : 0x111111 });
+            const ridge1 = new THREE.Mesh(torusGeo, torusMat);
+            ridge1.rotation.x = Math.PI / 2;
+            ridge1.position.y = height / 2;
+            mesh.add(ridge1);
+
+            if(pieceData.k) makeKingVisual(mesh);
+
+            return mesh;
+        }
+
+        function updatePieceImages() {
+            // Hot-swap images without recreating meshes if presence updates
+            for (let id in pieceMeshes) {
+                let mesh = pieceMeshes[id];
+                let p = mesh.userData.p;
+                let newUrl = playerImages[p];
+
+                if (mesh.userData.imageUrl !== newUrl) {
+                    mesh.userData.imageUrl = newUrl;
+                    let baseColor = p === 1 ? 0xcc0000 : 0x444444;
+                    mesh.material[1] = loadCustomTexture(newUrl, baseColor);
+                }
+            }
+        }
+
+        function makeKingVisual(mesh) {
+            if(mesh.userData.hasCrown) return;
+            const crownGeo = new THREE.CylinderGeometry(0.5, 0.7, 0.4, 16);
+            const crownMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+            const crown = new THREE.Mesh(crownGeo, crownMat);
+            crown.position.y = 0.4;
+            mesh.add(crown);
+            mesh.userData.hasCrown = true;
+            mesh.userData.isKing = true;
+        }
+
+        // --- GAME LOGIC & STATE SYNC ---
+        function handleStateUpdate(newState) {
+            // Ignore corrupted state
+            if(!newState || !newState.board) return;
+
+            gameState = newState;
+            document.getElementById('turn-indicator').innerText = gameState.turn === 1 ? "Player 1's Turn" : "Player 2's Turn";
+
+            sync3DPieces();
+
+            if (gameState.winner !== 0 && !sweeper.active) {
+                triggerSweep(gameState.winner);
+            }
+            clearSelection();
+        }
+
+        function sync3DPieces() {
+            let activeIds = new Set();
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    let piece = gameState.board[r][c];
+                    if (piece) {
+                        activeIds.add(piece.id);
+                        let mesh = pieceMeshes[piece.id];
+
+                        if (!mesh) {
+                            mesh = createPieceMesh(piece);
+                            scene.add(mesh);
+                            pieceMeshes[piece.id] = mesh;
+
+                            let pos = getBoardWorldPos(r, c);
+                            mesh.position.set(pos.x, 0.4, pos.z);
+                        } else {
+                            let pos = getBoardWorldPos(r, c);
+                            mesh.userData.targetPos = new THREE.Vector3(pos.x, 0.4, pos.z);
+                            if (piece.k && !mesh.userData.isKing) makeKingVisual(mesh);
+                        }
+                    }
+                }
+            }
+
+            for (let id in pieceMeshes) {
+                if (!activeIds.has(id)) {
+                    triggerExplosion(pieceMeshes[id]);
+                    scene.remove(pieceMeshes[id]);
+                    delete pieceMeshes[id];
+                }
+            }
+        }
+
+        // --- INTERACTION ---
+        function onPointerDown(event) {
+            if (gameState.winner !== 0) return;
+            if (myRole !== gameState.turn) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const highlightIntersects = raycaster.intersectObjects(moveHighlightMeshes);
+            if (highlightIntersects.length > 0) {
+                const targetSquare = highlightIntersects[0].object.userData;
+                executeMove(selectedPieceId, targetSquare.r, targetSquare.c, targetSquare.jumpData);
+                return;
+            }
+
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            for (let i = 0; i < intersects.length; i++) {
+                let obj = intersects[i].object;
+                if (obj.userData.id) {
+                    while(obj.parent && obj.parent !== scene) obj = obj.parent;
+                    if (obj.userData.p === myRole) {
+                        selectPiece(obj.userData.id);
+                        return;
+                    }
+                }
+            }
+            clearSelection();
+        }
+
+        function selectPiece(id) {
+            clearSelection();
+            selectedPieceId = id;
+
+            let mesh = pieceMeshes[id];
+            if(mesh) mesh.position.y = 0.8;
+
+            let r, c;
+            for(let i=0; i<8; i++) for(let j=0; j<8; j++) {
+                if(gameState.board[i][j] && gameState.board[i][j].id === id) {
+                    r = i; c = j; break;
+                }
+            }
+            if(r !== undefined) showValidMoves(r, c, mesh.userData.p, mesh.userData.isKing);
+        }
+
+        function clearSelection() {
+            if (selectedPieceId && pieceMeshes[selectedPieceId]) pieceMeshes[selectedPieceId].position.y = 0.4;
+            selectedPieceId = null;
+            moveHighlightMeshes.forEach(m => scene.remove(m));
+            moveHighlightMeshes = [];
+        }
+
+        function showValidMoves(r, c, player, isKing) {
+            const dir = player === 1 ? 1 : -1;
+
+            const checkAndAdd = (endR, endC, jumpData = null) => {
+                if(endR >= 0 && endR < 8 && endC >= 0 && endC < 8 && !gameState.board[endR][endC]) {
+                    addHighlight(endR, endC, jumpData);
+                }
+            };
+
+            const directions = [{ dr: dir, dc: -1 }, { dr: dir, dc: 1 }];
+            if (isKing) directions.push({ dr: -dir, dc: -1 }, { dr: -dir, dc: 1 });
+
+            directions.forEach(d => {
+                let step1R = r + d.dr, step1C = c + d.dc;
+                if(step1R >= 0 && step1R < 8 && step1C >= 0 && step1C < 8) {
+                    if(!gameState.board[step1R][step1C]) {
+                        checkAndAdd(step1R, step1C);
+                    } else if (gameState.board[step1R][step1C].p !== player) {
+                        let step2R = step1R + d.dr, step2C = step1C + d.dc;
+                        if(step2R >= 0 && step2R < 8 && step2C >= 0 && step2C < 8 && !gameState.board[step2R][step2C]) {
+                            checkAndAdd(step2R, step2C, { midR: step1R, midC: step1C });
+                        }
+                    }
+                }
+            });
+        }
+
+        function addHighlight(r, c, jumpData) {
+            const geo = new THREE.CylinderGeometry(squareSize*0.4, squareSize*0.4, 0.1, 32);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.5 });
+            const mesh = new THREE.Mesh(geo, mat);
+
+            let pos = getBoardWorldPos(r, c);
+            mesh.position.set(pos.x, 0.2, pos.z);
+            mesh.userData = { r, c, jumpData };
+            scene.add(mesh);
+            moveHighlightMeshes.push(mesh);
+        }
+
+        function executeMove(id, endR, endC, jumpData) {
+            let startR, startC, pieceData;
+            for(let r=0; r<8; r++) for(let c=0; c<8; c++) {
+                if(gameState.board[r][c] && gameState.board[r][c].id === id) {
+                    startR = r; startC = c; pieceData = gameState.board[r][c];
+                }
+            }
+
+            gameState.board[startR][startC] = null;
+            gameState.board[endR][endC] = pieceData;
+
+            if (jumpData) gameState.board[jumpData.midR][jumpData.midC] = null;
+
+            if (pieceData.p === 1 && endR === 7) pieceData.k = true;
+            if (pieceData.p === 2 && endR === 0) pieceData.k = true;
+
+            let p1Count = 0, p2Count = 0;
+            for(let r=0; r<8; r++) for(let c=0; c<8; c++) {
+                if(gameState.board[r][c]) {
+                    if(gameState.board[r][c].p === 1) p1Count++;
+                    if(gameState.board[r][c].p === 2) p2Count++;
+                }
+            }
+            if (p1Count === 0) gameState.winner = 2;
+            else if (p2Count === 0) gameState.winner = 1;
+
+            if (gameState.winner === 0) gameState.turn = gameState.turn === 1 ? 2 : 1;
+
+            publishState();
+            clearSelection();
+        }
+
+        // --- SPECIAL EFFECTS ---
+        function triggerExplosion(mesh) {
+            const particleCount = 20;
+            const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            const mat = mesh.material[0].clone(); // Use side material
+
+            for(let i=0; i<particleCount; i++) {
+                const particle = new THREE.Mesh(geo, mat);
+                particle.position.copy(mesh.position);
+
+                particle.userData.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.4,
+                    Math.random() * 0.5 + 0.2,
+                    (Math.random() - 0.5) * 0.4
+                );
+                particle.userData.rotSpeed = new THREE.Vector3(
+                    Math.random() * 0.2, Math.random() * 0.2, Math.random() * 0.2
+                );
+
+                scene.add(particle);
+                particleSystem.push(particle);
+            }
+        }
+
+        function triggerSweep(winner) {
+            sweeper.active = true;
+
+            const overlay = document.getElementById('win-overlay');
+            overlay.classList.remove('hidden');
+            document.getElementById('win-text').innerText = `Player ${winner} Wins!`;
+
+            const barGeo = new THREE.CylinderGeometry(1, 1, 20, 32);
+            const barMat = new THREE.MeshStandardMaterial({ color: 0x88aaee });
+            sweeper.mesh = new THREE.Mesh(barGeo, barMat);
+            sweeper.mesh.rotation.z = Math.PI / 2;
+
+            sweeper.z = -15;
+            sweeper.mesh.position.set(0, 1, sweeper.z);
+            scene.add(sweeper.mesh);
+        }
+
+        // --- RENDER LOOP ---
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            for(let id in pieceMeshes) {
+                let mesh = pieceMeshes[id];
+                if (mesh.userData.targetPos && id !== selectedPieceId) {
+                    mesh.position.lerp(mesh.userData.targetPos, 0.1);
+                }
+            }
+
+            for(let i = particleSystem.length - 1; i >= 0; i--) {
+                let p = particleSystem[i];
+                p.position.add(p.userData.velocity);
+                p.rotation.x += p.userData.rotSpeed.x;
+                p.rotation.y += p.userData.rotSpeed.y;
+                p.userData.velocity.y -= 0.02;
+
+                if (p.position.y < -5) {
+                    scene.remove(p);
+                    particleSystem.splice(i, 1);
+                }
+            }
+
+            if (sweeper.active && sweeper.mesh) {
+                sweeper.z += sweeper.speed;
+                sweeper.mesh.position.z = sweeper.z;
+                sweeper.mesh.rotation.x += 0.1;
+
+                for(let id in pieceMeshes) {
+                    let mesh = pieceMeshes[id];
+                    if (Math.abs(mesh.position.z - sweeper.z) < 1.5 && mesh.position.y > -5) {
+                        mesh.userData.targetPos = null;
+                        mesh.position.z = sweeper.z + 1.2;
+                        mesh.position.y += Math.random() * 0.1;
+                        mesh.rotation.x += Math.random() * 0.2;
+                        mesh.rotation.z += Math.random() * 0.2;
+                    }
+                    if (Math.abs(mesh.position.x) > 9 || mesh.position.z > 9) {
+                        mesh.position.y -= 0.2;
+                    }
+                }
+
+                if (sweeper.z > 20) {
+                    scene.remove(sweeper.mesh);
+                    sweeper.active = false;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
