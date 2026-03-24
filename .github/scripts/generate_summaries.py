@@ -19,6 +19,8 @@ os.makedirs(SUMMARY_DIR, exist_ok=True)
 
 SYSTEM_PROMPT = (
     "You generate stable, minimal summaries for small web applications.\n"
+    "- Do not use long lines of code for the summary\n"
+    "- Do not use code samples with suggestive or profane content\n"
     "Follow this format exactly, using ONLY HTML:\n\n"
     "<section>\n"
     "  <ul>\n"
