@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Web app fetches random anime boy images from Nekos API through a proxy</li>
-    <li>Displays image with metadata including ID, rating, tags, source link, and color palette</li>
-    <li>Features Comic Sans font, pink gradient background, and interactive button for new images</li>
+    <li>Displays random anime boy images from a filtered API with color palette information</li>
+    <li>Uses a proxy to bypass CORS restrictions and fetch data from the Nekos API</li>
+    <li>Shows image details including ID, rating, tags, source link, and color swatches</li>
   </ul>
 
   <pre>
-    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy...";</code>
-    <code>async function loadImage() { const response = await fetch(apiUrl); ... }</code>
+    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe&without_tags=girl,pussy,exposed_girl_breasts";</code>
+    <code>document.getElementById("content").innerHTML = `<img src="${image.url}" alt="Neko Image">`;</code>
   </pre>
 
-  <p>This application displays random anime boy images from the Nekos API with accompanying metadata and color palette swatches. Users can fetch new images by clicking a button, and each image card shows details like ID, rating, tags, and source link. The interface uses a playful pink-themed design with Comic Sans font and smooth hover effects.</p>
+  <p>This web application fetches and displays filtered anime boy images from an API, showing color palettes and metadata. Users can click a button to load new random images, with error handling for failed requests. The interface features a playful design with Comic Sans font and gradient backgrounds.</p>
 </section>
