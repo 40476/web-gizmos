@@ -1,0 +1,14 @@
+<section>
+  <ul>
+    <li>Fetch random "boy" tagged images from Nekos API through a proxy</li>
+    <li>Display image with metadata including ID, rating, tags, and source link</li>
+    <li>Show color palette swatches extracted from the image</li>
+  </ul>
+
+  <pre>
+    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe..."</code>
+    <code>const paletteHTML = image.color_palette.map(rgb => `<div class="swatch" style="background: rgb(${rgb.join(",")});"></div>`).join("");</code>
+  </pre>
+
+  <p>A web app that fetches and displays random "boy" tagged images from Nekos API, showing the image alongside its metadata and color palette. The app uses a proxy to bypass CORS restrictions and includes a button to fetch new images on demand.</p>
+</section>

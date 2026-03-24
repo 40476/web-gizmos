@@ -238,17 +238,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Displays random anime boy images from a filtered API with color palette information</li>
-    <li>Uses a proxy to bypass CORS restrictions and fetch data from the Nekos API</li>
-    <li>Shows image details including ID, rating, tags, source link, and color swatches</li>
+    <li>Fetch random "boy" tagged images from Nekos API through a proxy</li>
+    <li>Display image with metadata including ID, rating, tags, and source link</li>
+    <li>Show color palette swatches extracted from the image</li>
   </ul>
 
   <pre>
-    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe&without_tags=girl,pussy,exposed_girl_breasts";</code>
-    <code>document.getElementById("content").innerHTML = `<img src="${image.url}" alt="Neko Image">`;</code>
+    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe..."</code>
+    <code>const paletteHTML = image.color_palette.map(rgb => `<div class="swatch" style="background: rgb(${rgb.join(",")});"></div>`).join("");</code>
   </pre>
 
-  <p>This web application fetches and displays filtered anime boy images from an API, showing color palettes and metadata. Users can click a button to load new random images, with error handling for failed requests. The interface features a playful design with Comic Sans font and gradient backgrounds.</p>
+  <p>A web app that fetches and displays random "boy" tagged images from Nekos API, showing the image alongside its metadata and color palette. The app uses a proxy to bypass CORS restrictions and includes a button to fetch new images on demand.</p>
 </section>
           </div>
         </section>
@@ -683,7 +683,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 24, 2026 - 18:26</p>
+      <p>Registry Sync: Mar 24, 2026 - 18:27</p>
     </footer>
   </main>
 
