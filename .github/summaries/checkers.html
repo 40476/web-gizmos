@@ -1,0 +1,16 @@
+<section>
+  <ul>
+    <li>A 3D multiplayer checkers game using Three.js for graphics and MQTT for real-time synchronization</li>
+    <li>Players can join rooms, upload custom images for their pieces, and chat with opponents</li>
+    <li>Features include piece movement validation, king promotion, win detection, and a victory sweep animation</li>
+    <li>Supports spectator mode and handles connection drops with automatic reconnection</li>
+  </ul>
+
+  <pre>
+    <code>mqttClient = mqtt.connect(brokerUrl, options);</code>
+    <code>mqttClient.subscribe(roomTopic + '/state');</code>
+    <code>mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState));</code>
+  </pre>
+
+  <p>This web application combines 3D graphics rendering with MQTT messaging to create a synchronized multiplayer checkers game. The game uses Three.js for rendering 3D chess pieces with customizable textures, while MQTT handles real-time state synchronization and chat between players. Players can join rooms, take on different roles (Player 1, Player 2, or Spectator), and see each other's moves instantly. The game includes special effects like particle explosions when pieces are captured and a victory sweep animation when someone wins.</p>
+</section>

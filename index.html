@@ -181,6 +181,8 @@
         
           <a class="nav-item" href="BST/index.html" data-name="BST">> BST</a>
         
+          <a class="nav-item" href="checkers/index.html" data-name="checkers">> checkers</a>
+        
           <a class="nav-item" href="cpp/index.html" data-name="cpp">> cpp</a>
         
           <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">> doofusdot</a>
@@ -287,6 +289,29 @@
   </pre>
 
   <p>A WebGL-based spinning text visualizer that lets users customize text, font, size, thickness, rotation speed, and color. The application fetches fonts from Google Fonts, caches them locally, and provides a shareable URL with all current settings. Users can search through available fonts and toggle the control panel with any key press.</p>
+</section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-checkers" data-name="checkers">
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="checkers/index.html">[ RUN GIZMO ]</a>
+          <h2 class="app-title">checkers</h2>
+          <div class="summary-content">
+            <section>
+  <ul>
+    <li>A 3D multiplayer checkers game using Three.js for graphics and MQTT for real-time synchronization</li>
+    <li>Players can join rooms, upload custom images for their pieces, and chat with opponents</li>
+    <li>Features include piece movement validation, king promotion, win detection, and a victory sweep animation</li>
+    <li>Supports spectator mode and handles connection drops with automatic reconnection</li>
+  </ul>
+
+  <pre>
+    <code>mqttClient = mqtt.connect(brokerUrl, options);</code>
+    <code>mqttClient.subscribe(roomTopic + '/state');</code>
+    <code>mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState));</code>
+  </pre>
+
+  <p>This web application combines 3D graphics rendering with MQTT messaging to create a synchronized multiplayer checkers game. The game uses Three.js for rendering 3D chess pieces with customizable textures, while MQTT handles real-time state synchronization and chat between players. Players can join rooms, take on different roles (Player 1, Player 2, or Spectator), and see each other's moves instantly. The game includes special effects like particle explosions when pieces are captured and a victory sweep animation when someone wins.</p>
 </section>
           </div>
         </section>
@@ -656,7 +681,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 23, 2026 - 17:37</p>
+      <p>Registry Sync: Mar 24, 2026 - 18:14</p>
     </footer>
   </main>
 
