@@ -400,7 +400,7 @@
 
     </style>
 </head>
-<body onload="document.getElementById('room-id').value = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000; document.getElementById('room-id-display').value=document.getElementById('room-id').value">
+<body onload="document.getElementById('room-id').value = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000; document.getElementById('room-id-display').textContent=document.getElementById('room-id').value">
 
     <!-- 3D Canvas -->
     <canvas id="game-canvas"></canvas>
@@ -418,7 +418,7 @@
 
             <div class="form-group">
                 <label>Room ID</label>
-                <input type="text" id="room-id" value="error" onchange="document.getElementById('room-id-display').value=this.value">
+                <input type="text" id="room-id" value="error" onchange="document.getElementById('room-id-display').textContent=this.value">
             </div>
 
             <div class="form-group">
