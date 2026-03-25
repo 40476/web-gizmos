@@ -301,19 +301,18 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>A 3D multiplayer checkers game using Three.js for graphics and MQTT for real-time synchronization</li>
-    <li>Players can join rooms, upload custom images for their pieces, and chat with opponents</li>
-    <li>Features include piece movement validation, king promotion, win detection, and a victory sweep animation</li>
-    <li>Supports spectator mode and handles connection drops with automatic reconnection</li>
+    <li>3D multiplayer checkers game using Three.js and MQTT for real-time sync</li>
+    <li>Custom player images, chat system, and win animations with "sweep" effect</li>
+    <li>Presence locking to prevent multiple players in same role, spectator mode</li>
+    <li>Client-side move validation and board state prediction for smooth gameplay</li>
   </ul>
 
   <pre>
-    <code>mqttClient = mqtt.connect(brokerUrl, options);</code>
-    <code>mqttClient.subscribe(roomTopic + '/state');</code>
-    <code>mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState));</code>
+    <code>mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState), { retain: true });</code>
+    <code>mqttClient.subscribe(roomTopic + '/presence/+');</code>
   </pre>
 
-  <p>This web application combines 3D graphics rendering with MQTT messaging to create a synchronized multiplayer checkers game. The game uses Three.js for rendering 3D chess pieces with customizable textures, while MQTT handles real-time state synchronization and chat between players. Players can join rooms, take on different roles (Player 1, Player 2, or Spectator), and see each other's moves instantly. The game includes special effects like particle explosions when pieces are captured and a victory sweep animation when someone wins.</p>
+  <p>This 3D multiplayer checkers game features real-time synchronization using MQTT, custom player images, and an interactive chat system. Players can join as Player 1, Player 2, or spectator, with presence locking to prevent conflicts. The game includes smooth 3D animations, win celebrations with sweep effects, and client-side move validation for responsive gameplay.</p>
 </section>
           </div>
         </section>
@@ -683,7 +682,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 24, 2026 - 18:27</p>
+      <p>Registry Sync: Mar 25, 2026 - 11:15</p>
     </footer>
   </main>
 
