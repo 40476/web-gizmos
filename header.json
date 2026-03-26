@@ -1,0 +1,18 @@
+{
+  "links": {
+    "dev": "https://gizmos.usr40k.dev/",
+    "github": "https://40476.github.io/web-gizmos/"
+  },
+  "rules": {
+    "theme": "auto",
+    "autohideregex": [
+      "megaminer",
+      "racing",
+      "voxelcrash",
+      "turtle",
+      "megaminer",
+      "matrix",
+      "BST"
+    ]
+  }
+}
