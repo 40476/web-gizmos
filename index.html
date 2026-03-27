@@ -581,19 +581,19 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Real-time multiplayer racing game using MQTT for networking</li>
-    <li>Pixelated 2D graphics with neon cyberpunk aesthetic</li>
-    <li>Map editor for creating custom race tracks</li>
-    <li>Chat system with moderation commands</li>
-    <li>Mobile controls support</li>
+    <li>Browser-based 2D multiplayer racing game using HTML5 Canvas and MQTT</li>
+    <li>Real-time physics with drift mechanics and customizable maps</li>
+    <li>Cross-platform support with mobile touch controls</li>
+    <li>Persistent rooms and map sharing system</li>
+    <li>Audio engine with realistic car sounds and effects</li>
   </ul>
 
   <pre>
-    <code>mqttClient = mqtt.connect(currentBroker, { clientId: CLIENT_ID, clean: true });</code>
-    <code>publish('pos', { id: myCar.id, x: myCar.x, y: myCar.y, angle: myCar.angle });</code>
+    <code>const audio = new SoundManager();</code>
+    <code>audio.update(myCar.speed, myCar.drifting, surfaceType);</code>
   </pre>
 
-  <p>DRiFT.js is a browser-based multiplayer racing game featuring real-time physics, custom map creation, and chat functionality. Players connect via MQTT to race together, with the host controlling physics settings and the ability to share maps. The game includes a map editor, particle effects, and supports both desktop and mobile controls.</p>
+  <p>DRiFT.js is a lightweight, real-time multiplayer racing game built entirely in the browser. It features realistic physics, drift mechanics, and a powerful map editor that lets players create and share custom tracks. The game uses MQTT for networking, providing low-latency multiplayer experiences across devices. With mobile touch controls, audio feedback, and persistent rooms, DRiFT.js delivers an engaging racing experience that runs smoothly on any modern browser without plugins.</p>
 </section>
           </div>
         </section>
@@ -694,7 +694,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 27, 2026 - 18:05</p>
+      <p>Registry Sync: Mar 27, 2026 - 18:06</p>
     </footer>
   </main>
 
