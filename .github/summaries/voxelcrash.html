@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>A 3D match-3 puzzle game with voxel blocks where players swap adjacent blocks to create matches of 3 or more same-colored pieces</li>
-    <li>Features auto-play mode, hint system, and visual effects including particle explosions and fluid background animations</li>
-    <li>Includes level selection with pre-made pixel art targets, custom image importer, and win screen with sharing/export options</li>
-    <li>Responsive design with mobile support, smooth animations using Three.js, and modern glass-morphism UI</li>
+    <li>3D match-3 puzzle game built with Three.js</li>
+    <li>Custom art importer using image processing to generate game levels</li>
+    <li>Auto-play mode and hint system for accessibility</li>
+    <li>Responsive design with fluid background effects</li>
+    <li>Export and share functionality for completed artwork</li>
   </ul>
 
   <pre>
-    <code>class Block { constructor(x, y, charKey, powerupType = 'none') { /*...*/ } }</code>
-    <code>function findMatches() { /* returns matched blocks and sequences */ } </code>
+    <code>const CONFIG = { gridSize: 8, blockSize: 1, spacing: 1.1, swapSpeed: 10.0 };</code>
+    <code>function findMatches() { /* returns matched blocks in rows/columns */ }</code>
   </pre>
 
-  <p>This is a 3D match-3 puzzle game built with Three.js featuring voxel blocks that players swap to create matches. The game includes auto-play mode, hint system, and visual effects like particle explosions. Players can choose from pre-made levels with pixel art targets or import custom images. The responsive design supports both desktop and mobile, with smooth animations and a modern glass-morphism UI including a sidebar for controls and art display.</p>
+  <p>VOXEL CRASH is a 3D match-3 puzzle game featuring a unique art importer that converts images into playable levels. The game includes auto-play functionality, hint system, and responsive design with dynamic fluid backgrounds. Players can import custom artwork, match colored voxels, and export/share their completed creations.</p>
 </section>
