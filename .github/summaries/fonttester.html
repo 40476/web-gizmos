@@ -1,17 +1,21 @@
 <section>
   <ul>
-    <li>Custom font tester application with responsive design</li>
-    <li>Features font file upload (.ttf, .otf, .woff, .woff2) with @font-face implementation</li>
-    <li>Interactive font size slider (8px to 72px) with smooth transitions</li>
-    <li>Real-time custom text input display with placeholder management</li>
-    <li>Comprehensive typography testing including headings, paragraphs, lists, forms, and glyphs</li>
+    <li>Upload custom font files to test typography</li>
+    <li>Adjust font size with a slider control</li>
+    <li>Preview text in custom font across all HTML elements</li>
+    <li>Interactive controls for font size and custom text input</li>
+    <li>Responsive design that works on desktop and mobile</li>
   </ul>
 
   <pre>
-    <code>const reader = new FileReader();</code>
-    <code>reader.onload = (e) =&gt; { /* Apply @font-face rule */ };</code>
-    <code>fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', system-ui, sans-serif`;</code>
+    <code>const fontFileInput = document.getElementById('font-file-input');</code>
+    <code>fontFileInput.addEventListener('change', (event) =&gt; {</code>
+    <code>  const reader = new FileReader();</code>
+    <code>  reader.onload = (e) =&gt; {</code>
+    <code>    fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', sans-serif`;</code>
+    <code>  };</code>
+    <code>});</code>
   </pre>
 
-  <p>This web application provides a comprehensive environment for testing custom fonts across various typographic elements. Users can upload font files, adjust font sizes with a slider, and input custom text to see real-time rendering results. The application includes a wide range of test cases including headings, paragraphs, lists, forms, and special characters, all styled with a modern, responsive design using CSS variables and grid layouts.</p>
+  <p>This custom font tester application allows you to upload font files and preview how they render across various HTML elements. The interface includes controls for adjusting font size and entering custom text, providing a comprehensive preview of your font's appearance in different contexts.</p>
 </section>
