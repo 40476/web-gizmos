@@ -11,8 +11,10 @@
       "voxelcrash",
       "turtle",
       "megaminer",
-      "matrix",
-      "BST"
     ]
-  }
+  },
+  "extendedConfigs": [
+    "voxelcrash",
+    "racing"
+  ]
 }
