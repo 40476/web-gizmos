@@ -532,17 +532,23 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Converts images to HTML text art with customizable settings</li>
-    <li>Features grayscale conversion, contrast adjustment, and multiple export options</li>
-    <li>Responsive design with controls and output display</li>
+    <li>Converts images into HTML text art using customizable settings</li>
+    <li>Features character sequence/random generation, grayscale, and contrast options</li>
+    <li>Exports to HTML, SVG, and PNG formats</li>
+    <li>Uses canvas API for image processing and html2canvas for PNG export</li>
+    <li>Responsive design with a split-screen layout for controls and output</li>
   </ul>
 
   <pre>
-    <code>const contrastCurve = [...]; // Sine contrast curve</code>
-    <code>function generateTextImage(ctx, width, height) { // Text generation logic }</code>
+    <code>function convertImage() {</code>
+    <code>  const canvas = document.createElement('canvas');</code>
+    <code>  const ctx = canvas.getContext('2d');</code>
+    <code>  ctx.drawImage(img, 0, 0, newWidth, newHeight);</code>
+    <code>  const textImage = generateTextImage(ctx, newWidth, newHeight);</code>
+    <code>}</code>
   </pre>
 
-  <p>This JavaScript application converts uploaded images into HTML text art using configurable settings like character set, width, background color, and font size. It includes grayscale conversion, contrast adjustment, and can export the results as HTML, SVG, or PNG formats.</p>
+  <p>This image-to-HTML converter transforms uploaded images into text-based representations using configurable settings like character sets, colors, and dimensions. The tool processes images through canvas manipulation, applies grayscale and contrast effects, and generates HTML output that can be exported in multiple formats including PNG using html2canvas.</p>
 </section>
           </div>
         </section>
@@ -688,7 +694,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 27, 2026 - 17:51</p>
+      <p>Registry Sync: Mar 27, 2026 - 17:52</p>
     </footer>
   </main>
 
