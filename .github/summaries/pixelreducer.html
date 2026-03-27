@@ -1,15 +1,15 @@
 <section>
   <ul>
-    <li>Web app that degrades image/video quality over time by scaling down resolution and crushing audio.</li>
-    <li>Supports uploading images or videos, then applying pixelation and audio degradation to create a GIF or degraded video file.</li>
-    <li>Features real-time preview, customizable degradation parameters, and download options.</li>
+    <li>Interactive web app for degrading image and video quality with pixelation and audio distortion.</li>
+    <li>Supports both image-to-GIF conversion and video degradation with optional recording.</li>
+    <li>Configurable degradation parameters like final scale, pixelation step, audio crush, and hold time.</li>
   </ul>
 
   <pre>
-    <code>const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { alpha: false });</code>
-    <code>const gif = new GIF({ workers: 2, quality: 10, width: canvas.width, height: canvas.height });</code>
+    <code>const canvas = document.getElementById('canvas');</code>
+    <code>const ctx = canvas.getContext('2d', { alpha: false });</code>
+    <code>const reduceBtn = document.getElementById('reduceBtn');</code>
   </pre>
 
-  <p>This web application lets users upload images or videos and apply progressive degradation effects including pixelation and audio bitcrushing. It provides real-time preview, customizable parameters for final scale, pixelation step, audio crush strength, and output options like GIF or degraded video. The app uses canvas manipulation for visual degradation and Web Audio API for audio processing, with optional recording capabilities for video output.</p>
+  <p>This is a web application that degrades image and video quality through pixelation and audio distortion. It allows users to upload media files, adjust degradation parameters, and generate either a GIF from images or a degraded video from video files. The app features a comic-style interface and includes audio processing with low-pass filtering and bitcrushing effects.</p>
 </section>
