@@ -464,19 +464,19 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>HTML5-based MIDI sequencer with audio visualization</li>
-    <li>Loads audio samples and MIDI files from local library or uploads</li>
-    <li>Real-time waveform visualization using Tone.js</li>
-    <li>Speed and pitch controls with shareable configuration links</li>
-    <li>Offline WAV export functionality</li>
+    <li>Web-based MIDI player with real-time audio synthesis using Tone.js</li>
+    <li>Supports loading sound libraries and MIDI sequences from remote Atlas JSON files</li>
+    <li>Provides custom file upload for audio and MIDI files</li>
+    <li>Features real-time audio visualization, pitch/speed controls, and WAV export</li>
+    <li>Implements safe resource management with automatic cleanup of previous instances</li>
   </ul>
 
   <pre>
-    <code>const sampler = new Tone.Sampler({ urls: { C4: url } });</code>
-    <code>const player = new MidiPlayer.Player((event) => { /* trigger notes */ });</code>
+    <code>async function initSampler(url) { ... }</code>
+    <code>async function initMIDI(data) { ... }</code>
   </pre>
 
-  <p>This MIDI sequencer combines Tone.js audio engine with MidiPlayer.js for playback. Users can select from pre-loaded libraries or upload custom audio/MIDI files, adjust playback speed and pitch in real-time, and export compositions as WAV files. The interface features a live waveform visualizer and generates shareable links with current settings.</p>
+  <p>This application is a browser-based MIDI sequencer that plays MIDI files using a selected audio sample. It loads audio and MIDI libraries from JSON atlases, allows custom file uploads, and provides real-time audio visualization with pitch and speed controls. The application safely manages Tone.js resources by automatically disposing of previous instances when loading new content, preventing memory leaks and ensuring smooth playback. It also includes offline rendering capabilities to export the final audio as a WAV file.</p>
 </section>
           </div>
         </section>
@@ -688,7 +688,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 27, 2026 - 17:50</p>
+      <p>Registry Sync: Mar 27, 2026 - 17:51</p>
     </footer>
   </main>
 
