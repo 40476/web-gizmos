@@ -653,19 +653,19 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>3D match-3 puzzle game built with Three.js</li>
-    <li>Custom art importer using image processing to generate game levels</li>
-    <li>Auto-play mode and hint system for accessibility</li>
-    <li>Responsive design with fluid background effects</li>
-    <li>Export and share functionality for completed artwork</li>
+    <li>3D match-3 puzzle game where players swap colored blocks to create matches and fill target art</li>
+    <li>Features include auto-play, hint system, and custom art importer with color palette generation</li>
+    <li>Responsive design with sidebar for controls and game status, plus win screen with sharing options</li>
+    <li>Dynamic background fluid effects that change colors based on active game elements</li>
+    <li>Three.js powered 3D graphics with particle effects and smooth animations</li>
   </ul>
 
   <pre>
-    <code>const CONFIG = { gridSize: 8, blockSize: 1, spacing: 1.1, swapSpeed: 10.0 };</code>
-    <code>function findMatches() { /* returns matched blocks in rows/columns */ }</code>
+    <code>function findMatches() { let matchedBlocks = new Set(), sequences = []; ... }</code>
+    <code>function attemptSwap(b1, b2) { gameState = STATE.SWAPPING; ... }</code>
   </pre>
 
-  <p>VOXEL CRASH is a 3D match-3 puzzle game featuring a unique art importer that converts images into playable levels. The game includes auto-play functionality, hint system, and responsive design with dynamic fluid backgrounds. Players can import custom artwork, match colored voxels, and export/share their completed creations.</p>
+  <p>This is a 3D match-3 puzzle game built with Three.js that combines color-matching gameplay with pixel art creation. Players swap blocks to create matches of three or more, which fills in corresponding pixels of target artwork. The game features an auto-play mode, hint system, and allows custom art import through image processing. With responsive design, fluid background effects, and 3D particle animations, it provides an engaging puzzle experience across desktop and mobile devices.</p>
 </section>
           </div>
         </section>
@@ -695,7 +695,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 27, 2026 - 18:11</p>
+      <p>Registry Sync: Mar 27, 2026 - 18:18</p>
     </footer>
   </main>
 
