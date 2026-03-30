@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuclear Energy</title>
+    <title>Nuclear Energy: Interactive Explainer</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -16,7 +16,7 @@
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow-x: hidden;
         }
-
+        
         ::selection {
             background-color: #10b981; /* emerald-500 */
             color: white;
@@ -25,7 +25,7 @@
         .text-glow { text-shadow: 0 0 20px rgba(52, 211, 153, 0.5); }
         .text-glow-blue { text-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
         .box-glow { box-shadow: 0 0 30px rgba(52, 211, 153, 0.2); }
-
+        
         /* Reveal Animations */
         .reveal {
             transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
@@ -35,7 +35,7 @@
         .reveal.left { transform: translateX(4rem); }
         .reveal.right { transform: translateX(-4rem); }
         .reveal.zoom { transform: scale(0.9); }
-
+        
         .reveal.is-visible {
             opacity: 1;
             transform: translate(0) scale(1);
@@ -48,10 +48,10 @@
             100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
         }
         .anim-pulse-ring { animation: pulse-ring 3s infinite cubic-bezier(0.215, 0.61, 0.355, 1); }
-
+        
         @keyframes spin-slow { 100% { transform: rotate(360deg); } }
         .anim-spin-slow { animation: spin-slow 15s linear infinite; }
-
+        
         @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
@@ -62,7 +62,7 @@
         @keyframes splitLeft { 0%, 50% { transform: translateX(0) scale(1); } 60% { transform: translateX(-40px) scale(0.8); background: #34d399; } 100% { transform: translateX(-40px) scale(0.8); background: #34d399; } }
         @keyframes splitRight { 0%, 50% { transform: translateX(0) scale(1); } 60% { transform: translateX(40px) scale(0.8); background: #34d399; } 100% { transform: translateX(40px) scale(0.8); background: #34d399; } }
         @keyframes flash { 0%, 45% { opacity: 0; transform: scale(0.5); } 50% { opacity: 1; transform: scale(2); } 60%, 100% { opacity: 0; transform: scale(3); } }
-
+        
         @keyframes fallIn {
             0% { transform: rotate(0deg) translateX(150px) scale(1); opacity: 0; }
             20% { opacity: 1; }
@@ -83,7 +83,7 @@
         .timeline-container::-webkit-scrollbar { height: 8px; }
         .timeline-container::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
         .timeline-container::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
-
+        
         /* Nav Blur */
         .nav-glass {
             background: rgba(2, 6, 23, 0.7);
@@ -91,8 +91,7 @@
             border-bottom: 1px solid rgba(51, 65, 85, 0.5);
         }
     </style>
-    <script>!function(e){let t=0,r=()=>{let s=document.createElement("script");s.src=e[t++],s.onerror=()=>e[t]&&r(),document.head.append(s)};r()}(location.hostname.includes("usr40k.dev")?["https://header.usr40k.dev/injector.js","https://40476.github.io/header/injector.js"]:["https://40476.github.io/header/injector.js","https://header.usr40k.dev/injector.js"]);</script>
-
+      <script>!function(e){let t=0,r=()=>{let s=document.createElement("script");s.src=e[t++],s.onerror=()=>e[t]&&r(),document.head.append(s)};r()}(location.hostname.includes("usr40k.dev")?["https://header.usr40k.dev/injector.js","https://40476.github.io/header/injector.js"]:["https://40476.github.io/header/injector.js","https://header.usr40k.dev/injector.js"]);</script>
 </head>
 <body class="selection:bg-emerald-500 selection:text-white">
 
@@ -104,9 +103,11 @@
                 <span class="hidden sm:inline">NucTech</span>
             </div>
             <div class="flex gap-4 sm:gap-6 text-sm sm:text-base font-medium text-slate-300">
-                <a href="#fission" class="hover:text-emerald-400 transition-colors">Fission</a>
-                <a href="#fusion" class="hover:text-pink-400 transition-colors">Fusion</a>
-                <a href="#cold-war" class="hover:text-amber-400 transition-colors hidden md:inline">US vs Soviet</a>
+                <a href="#fission" class="hover:text-emerald-400 transition-colors hidden sm:inline">Fission</a>
+                <a href="#enrichment" class="hover:text-amber-400 transition-colors hidden md:inline">Enrichment</a>
+                <a href="#fusion" class="hover:text-pink-400 transition-colors hidden sm:inline">Fusion</a>
+                <a href="#cold-war" class="hover:text-blue-400 transition-colors hidden lg:inline">US vs Soviet</a>
+                <a href="#geopolitics" class="hover:text-red-400 transition-colors hidden md:inline">Geopolitics</a>
                 <a href="#timeline" class="hover:text-cyan-400 transition-colors">Timeline</a>
             </div>
         </div>
@@ -119,7 +120,8 @@
     <section id="hero" class="relative min-h-screen flex flex-col justify-center items-center overflow-hidden z-10 px-6">
         <div id="hero-content" class="text-center z-10 w-full max-w-4xl transition-all duration-75">
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 mb-8 backdrop-blur-md">
-                <span class="text-sm font-medium uppercase tracking-wider">By usr40k</span>
+                <i data-lucide="activity" class="w-4 h-4"></i>
+                <span class="text-sm font-medium uppercase tracking-wider" onclick="document.location='https://40476.github.io/web-gizmos/shared/audio/metalpipe.mp3'">Click me!</span>
             </div>
             <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight mb-6 text-white text-glow">
                 Nuclear <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Energy</span>
@@ -128,7 +130,7 @@
                 Discover the science of the cosmos harnessed on Earth. From the splitting of the atom to the burning of the stars.
             </p>
         </div>
-
+        
         <div class="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce flex flex-col items-center gap-2 opacity-50">
             <span class="text-xs uppercase tracking-widest text-emerald-400">Scroll to Ignite</span>
             <i data-lucide="arrow-down" class="text-emerald-400 w-5 h-5"></i>
@@ -138,7 +140,7 @@
     <!-- SECTION 1: FISSION -->
     <section id="fission" class="relative min-h-screen flex items-center justify-center py-24 z-10 px-6">
         <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-
+            
             <div class="reveal left">
                 <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
                     The Power of <span class="text-emerald-400 text-glow">Fission</span>
@@ -168,7 +170,7 @@
                 <div class="relative flex justify-center items-center z-10 w-48 h-48">
                     <!-- Energy Flash -->
                     <div class="absolute inset-0 bg-yellow-300 rounded-full mix-blend-screen blur-xl z-0" style="animation: flash 3s infinite"></div>
-
+                    
                     <!-- Nucleus Halves -->
                     <div class="absolute w-24 h-24 rounded-full bg-emerald-600 border-4 border-emerald-400 flex items-center justify-center z-10" style="animation: splitLeft 3s infinite">
                         <span class="text-white font-bold opacity-50">Kr</span>
@@ -176,7 +178,7 @@
                     <div class="absolute w-24 h-24 rounded-full bg-emerald-600 border-4 border-emerald-400 flex items-center justify-center z-10" style="animation: splitRight 3s infinite">
                         <span class="text-white font-bold opacity-50">Ba</span>
                     </div>
-
+                    
                     <!-- Initial Nucleus -->
                     <div class="absolute w-32 h-32 rounded-full bg-slate-700 border-4 border-slate-500 flex items-center justify-center z-20 box-glow" style="animation: flash 3s infinite reverse">
                         <span class="text-white font-bold">U-235</span>
@@ -186,10 +188,80 @@
         </div>
     </section>
 
+    <!-- SECTION 1.5: ENRICHMENT (NEW) -->
+    <section id="enrichment" class="relative min-h-screen flex items-center justify-center py-24 z-10 px-6 bg-slate-900 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            <div class="reveal left">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 mb-6 backdrop-blur-md">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span class="text-sm font-medium uppercase tracking-wider">The Science of Separation</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
+                    Uranium <span class="text-amber-400 text-glow">Enrichment</span>
+                </h2>
+                <p class="text-lg text-slate-400 mb-6 leading-relaxed">
+                    Natural mined uranium contains two main isotopes: <strong>~99.3% U-238</strong> and only <strong>~0.7% U-235</strong>. However, U-235 is the critical isotope needed to sustain a nuclear chain reaction.
+                </p>
+                
+                <div class="space-y-6 mb-8">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-slate-300 font-medium">Natural Uranium</span>
+                            <span class="text-amber-400">0.7% U-235</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-amber-400 h-2 rounded-full shadow-[0_0_10px_#fbbf24]" style="width: 2%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-slate-300 font-medium">Reactor Grade (Low-Enriched)</span>
+                            <span class="text-emerald-400">~5% U-235</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-emerald-400 h-2 rounded-full shadow-[0_0_10px_#34d399]" style="width: 10%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-slate-300 font-medium">Weapons Grade</span>
+                            <span class="text-red-400">~90% U-235</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-red-500 h-2 rounded-full shadow-[0_0_10px_#ef4444]" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="reveal right bg-slate-950 p-8 rounded-3xl border border-slate-800 relative overflow-hidden group">
+                <div class="absolute -right-10 -top-10 opacity-10 group-hover:opacity-20 transition-opacity anim-spin-slow">
+                    <i data-lucide="hurricane" class="w-64 h-64 text-amber-500"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_#fbbf24]"></span>
+                    The Centrifuge Process
+                </h3>
+                <p class="text-slate-300 mb-4 leading-relaxed relative z-10">
+                    Most enrichment processes exploit the slight mass difference between U-235 and U-238. The uranium is converted into a gas <strong>(uranium hexafluoride)</strong> and fed into cylindrical centrifuges.
+                </p>
+                <p class="text-slate-300 mb-6 leading-relaxed relative z-10">
+                    By spinning the gas at incredibly high speeds, the slightly heavier U-238 is pushed to the outer walls, while the lighter U-235 gathers near the center to be extracted.
+                </p>
+                <div class="bg-amber-950/30 p-4 rounded-xl border border-amber-900/50 relative z-10">
+                    <strong class="text-amber-400 block mb-1">The Work Curve</strong>
+                    <span class="text-slate-400 text-sm">The hardest part of enrichment is getting from 0.7% to 5%. Because so much of the unwanted U-238 is removed in this first step, once you reach 60% enrichment, achieving 90% weapons-grade requires very little additional effort.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- SECTION 2: THE REACTOR (Parallax) -->
     <section id="reactor" class="relative min-h-[150vh] z-10 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pt-24 pb-24">
         <div class="sticky top-24 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16">
-
+            
             <div class="h-full flex flex-col justify-center">
                 <div class="reveal up">
                     <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
@@ -219,7 +291,7 @@
             <div id="reactor-visual" class="relative h-[600px] rounded-3xl border border-slate-800 bg-slate-950 overflow-hidden shadow-[0_0_50px_rgba(8,145,178,0.1)] flex justify-center items-end pb-12 reveal right">
                 <!-- Water/Glow effect -->
                 <div id="reactor-water" class="absolute bottom-0 w-full bg-gradient-to-t from-cyan-600/40 to-transparent transition-all duration-100 ease-linear mix-blend-screen h-0"></div>
-
+                
                 <!-- Reactor Grid Lines -->
                 <div class="absolute inset-0 opacity-10" style="background-image: linear-gradient(#38bdf8 1px, transparent 1px), linear-gradient(90deg, #38bdf8 1px, transparent 1px); background-size: 40px 40px;"></div>
 
@@ -230,7 +302,7 @@
                     <!-- Control Rods (Generated by JS) -->
                     <div id="control-rods-container" class="absolute inset-0 w-full h-full pointer-events-none"></div>
                 </div>
-
+                
                 <!-- Cherenkov Radiation Glow -->
                 <div class="absolute bottom-0 w-full h-1/2 bg-blue-500/20 blur-3xl rounded-full"></div>
             </div>
@@ -262,9 +334,9 @@
                         Western Design (PWR/BWR)
                     </h3>
                     <p class="text-blue-400 text-sm font-medium mb-6 uppercase tracking-wider">Water Moderated & Cooled</p>
-
+                    
                     <p class="text-slate-300 mb-4 leading-relaxed">
-                        The US focused on Light Water Reactors. Water acts as both the coolant and the <strong>moderator</strong> (the substance that slows down neutrons).
+                        The US focused on Light Water Reactors. Water acts as both the coolant and the <strong>moderator</strong> (the substance that slows down neutrons). 
                     </p>
                     <div class="bg-blue-950/30 p-4 rounded-xl border border-blue-900/50 mb-4">
                         <strong class="text-white block mb-1">Inherent Safety Feature:</strong>
@@ -286,7 +358,7 @@
                         Soviet Design (RBMK)
                     </h3>
                     <p class="text-red-400 text-sm font-medium mb-6 uppercase tracking-wider">Graphite Moderated</p>
-
+                    
                     <p class="text-slate-300 mb-4 leading-relaxed">
                         The USSR developed the RBMK reactor. It used water as a coolant, but solid <strong>graphite blocks</strong> as the moderator to slow neutrons.
                     </p>
@@ -303,9 +375,51 @@
         </div>
     </section>
 
+    <!-- SECTION 3.5: MODERN GEOPOLITICS (NEW) -->
+    <section id="geopolitics" class="relative min-h-screen flex flex-col justify-center py-24 z-10 px-6 bg-slate-950 border-b border-slate-800">
+        <div class="max-w-4xl mx-auto w-full">
+            <div class="text-center mb-16 reveal up">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 mb-4 backdrop-blur-md">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    <span class="text-sm font-medium uppercase tracking-wider">Global Security</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                    Modern Geopolitics & <span class="text-red-500 text-glow">Iran</span>
+                </h2>
+                <p class="text-lg text-slate-400">The intersection of nuclear enrichment capabilities and global security remains a highly volatile issue.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="reveal left bg-slate-900 border border-slate-800 p-8 rounded-3xl">
+                    <h3 class="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                        <i data-lucide="file-text" class="text-blue-400"></i> The JCPOA & IAEA
+                    </h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        The International Atomic Energy Agency (IAEA) monitors global nuclear activity. The 2015 Joint Comprehensive Plan of Action (JCPOA) set strict limits on Iran's nuclear enrichment to prevent the creation of nuclear weapons.
+                    </p>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Currently, Iran claims its program is for peaceful purposes. However, they possess a sufficient amount of enriched uranium for those needs, leading the IAEA to express grave concerns over why Iran continues to enrich more uranium past the JCPOA limits.
+                    </p>
+                </div>
+
+                <div class="reveal right bg-slate-900 border border-slate-800 p-8 rounded-3xl">
+                    <h3 class="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                        <i data-lucide="activity" class="text-red-400"></i> Current Stockpile Concerns
+                    </h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Iran has accumulated <strong>440 kg of uranium enriched to 60%</strong>. Because of the non-linear "work curve" of centrifuges, this is dangerously close to the 90% required to manufacture a nuclear weapon.
+                    </p>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Prior to recent efforts by the US to neutralize their supply, Iran relocated much of its stockpile to Isfahan. Iran has since halted all cooperation with the IAEA. While recent strikes have damaged certain facilities, Iran's deep underground enrichment sites remain a major global concern.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- SECTION 4: FUSION (The Future) -->
     <section id="fusion" class="relative min-h-screen z-10 flex flex-col items-center justify-center py-32 px-6 overflow-hidden bg-slate-950">
-
+        
         <!-- Background Fusion Glow -->
         <div id="fusion-glow" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-screen pointer-events-none transition-all duration-100 ease-out w-[200px] h-[200px]"
              style="background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(139,92,246,0.05) 50%, rgba(0,0,0,0) 70%); filter: blur(40px);"></div>
@@ -325,10 +439,10 @@
 
         <!-- Fusion Interactive Visual (Tokamak concept) -->
         <div class="reveal zoom relative w-full max-w-lg aspect-square flex items-center justify-center z-20">
-
+            
             <!-- Outer containment ring -->
             <div class="absolute inset-0 rounded-full border border-slate-800 bg-slate-900/40 backdrop-blur-sm box-glow" style="box-shadow: inset 0 0 50px rgba(0,0,0,0.8);"></div>
-
+            
             <!-- Magnetic field lines (SVG) -->
             <svg class="absolute inset-0 w-full h-full anim-spin-slow opacity-30" viewBox="0 0 200 200">
                 <defs>
@@ -346,11 +460,11 @@
                 <div class="absolute inset-4 rounded-full bg-white blur-md opacity-90"></div>
                 <div class="relative text-slate-900 font-extrabold text-2xl z-10 tracking-widest mix-blend-overlay">100M °C</div>
             </div>
-
+            
             <!-- Particles getting sucked in -->
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none" id="fusion-particles"></div>
         </div>
-
+        
         <div class="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl z-20">
             <div class="reveal up bg-slate-900/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-md hover:bg-slate-800 transition-colors duration-300">
                 <h3 class="text-xl font-bold text-white mb-2">Clean Energy</h3>
@@ -422,6 +536,27 @@
                 <h4 class="text-white font-bold text-lg mb-2">Fusion Ignition</h4>
                 <p class="text-slate-400 text-sm">The National Ignition Facility (NIF) achieves a historic milestone: a fusion reaction that produced more energy than was absorbed by the fuel to initiate it.</p>
             </div>
+            
+            <!-- Event 7 (NEW) -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-red-400 font-bold text-2xl mb-2">Early 2025</div>
+                <h4 class="text-white font-bold text-lg mb-2">Diplomatic Tensions</h4>
+                <p class="text-slate-400 text-sm">A letter outlines a goal to dismantle Iranian enrichment facilities. During April's under-the-radar "Muscat and Rome talks" in Italy, Iran offers to slow enrichment, but the US demands a complete halt.</p>
+            </div>
+
+            <!-- Event 8 (NEW) -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-red-500 font-bold text-2xl mb-2">June 2025</div>
+                <h4 class="text-white font-bold text-lg mb-2">Targeted Strikes</h4>
+                <p class="text-slate-400 text-sm">Israel conducts "Operation Rising Lion," a 12-day air raid campaign targeting nuclear sites. Shortly after, the US intervenes, striking Iranian nuclear sites directly for the first time. Iran officially suspends IAEA cooperation.</p>
+            </div>
+
+            <!-- Event 9 (NEW) -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-red-600 font-bold text-2xl mb-2">Late 2025</div>
+                <h4 class="text-white font-bold text-lg mb-2">Sanctions & Epic Fury</h4>
+                <p class="text-slate-400 text-sm">The UN reapplies 2015 sanctions, contributing to an economic collapse in Iran by December. The US and Israel coordinate "Operation Epic Fury," a large-scale strike, though deep underground facilities remain a concern.</p>
+            </div>
 
             <!-- Spacer for end of scroll -->
             <div class="flex-shrink-0 w-6"></div>
@@ -451,6 +586,10 @@
                     <strong class="text-white block">ITER Organization</strong>
                     <span class="text-slate-500">Magnetic Confinement Fusion (Tokamak) Research</span>
                 </a>
+            </div>
+            
+            <div class="text-center text-slate-600 text-sm pt-8 border-t border-slate-900">
+                <p>Interactive Educational Experience • Exploring the Quantum Realm</p>
             </div>
         </div>
     </footer>
@@ -482,7 +621,7 @@
         });
 
         // 2. DOM Elements Generation (React equivalents)
-
+        
         // Generate Magnetic Lines for Fusion SVG
         const magneticLinesContainer = document.getElementById('magnetic-lines');
         for (let i = 1; i <= 8; i++) {
@@ -568,9 +707,9 @@
                     if(reactorSection) {
                         const rect = reactorSection.getBoundingClientRect();
                         const windowHeight = window.innerHeight;
-
-                        let visibleRatio = 1 - (rect.top / windowHeight);
-
+                        
+                        let visibleRatio = 1 - (rect.top / windowHeight); 
+                        
                         // Fuel Rods Pulse
                         fuelRods.forEach(rod => {
                             rod.element.style.height = `${40 + (Math.sin((scrollY * 0.01) + rod.index) * 20)}%`;
@@ -583,7 +722,7 @@
                             controlRods.forEach(rod => {
                                 rod.style.transform = `translateY(${plungeDepth}%)`;
                             });
-
+                            
                             reactorWater.style.height = `${Math.min(100, Math.max(0, (visibleRatio - 0.5) * 100))}%`;
                         }
                     }
@@ -592,7 +731,7 @@
                     const fusionSize = Math.min(800, 200 + scrollY * 0.1);
                     fusionGlow.style.width = `${fusionSize}px`;
                     fusionGlow.style.height = `${fusionSize}px`;
-
+                    
                     isScrolling = false;
                 });
                 isScrolling = true;
@@ -602,7 +741,7 @@
         // 4. Background Particle System (Optimized)
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
-
+        
         let width, height;
         const resize = () => {
             width = canvas.width = window.innerWidth;
@@ -613,7 +752,7 @@
 
         const particles = [];
         const particleCount = 80; // Slightly reduced count for better rendering
-
+        
         class Particle {
             constructor() {
                 this.x = Math.random() * width;
@@ -646,17 +785,17 @@
 
         function animateParticles() {
             ctx.clearRect(0, 0, width, height);
-
+            
             for (let i = 0; i < particles.length; i++) {
                 particles[i].update();
                 particles[i].draw();
-
+                
                 // Connect particles (optimized loop & math)
                 for (let j = i + 1; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
                     const distSq = dx * dx + dy * dy; // Avoid expensive Math.sqrt when just checking range
-
+                    
                     if (distSq < 10000) { // equivalent to distance < 100
                         const distance = Math.sqrt(distSq);
                         ctx.beginPath();
@@ -670,7 +809,7 @@
             }
             requestAnimationFrame(animateParticles);
         }
-
+        
         // Start animation loop
         animateParticles();
     </script>
