@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuclear Energy: Interactive Explainer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Styles & Utilities */
+        body {
+            background-color: #020617; /* slate-950 */
+            color: #e2e8f0; /* slate-200 */
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        ::selection {
+            background-color: #10b981; /* emerald-500 */
+            color: white;
+        }
+
+        .text-glow { text-shadow: 0 0 20px rgba(52, 211, 153, 0.5); }
+        .text-glow-blue { text-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
+        .box-glow { box-shadow: 0 0 30px rgba(52, 211, 153, 0.2); }
+
+        /* Reveal Animations */
+        .reveal {
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0;
+        }
+        .reveal.up { transform: translateY(4rem); }
+        .reveal.left { transform: translateX(4rem); }
+        .reveal.right { transform: translateX(-4rem); }
+        .reveal.zoom { transform: scale(0.9); }
+
+        .reveal.is-visible {
+            opacity: 1;
+            transform: translate(0) scale(1);
+        }
+
+        /* Custom Keyframes */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+        .anim-pulse-ring { animation: pulse-ring 3s infinite cubic-bezier(0.215, 0.61, 0.355, 1); }
+
+        @keyframes spin-slow { 100% { transform: rotate(360deg); } }
+        .anim-spin-slow { animation: spin-slow 15s linear infinite; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .anim-float { animation: float 6s ease-in-out infinite; }
+
+        @keyframes moveRight { 0% { left: 0; opacity: 0; } 50% { opacity: 1; } 100% { left: 50%; opacity: 0; } }
+        @keyframes splitLeft { 0%, 50% { transform: translateX(0) scale(1); } 60% { transform: translateX(-40px) scale(0.8); background: #34d399; } 100% { transform: translateX(-40px) scale(0.8); background: #34d399; } }
+        @keyframes splitRight { 0%, 50% { transform: translateX(0) scale(1); } 60% { transform: translateX(40px) scale(0.8); background: #34d399; } 100% { transform: translateX(40px) scale(0.8); background: #34d399; } }
+        @keyframes flash { 0%, 45% { opacity: 0; transform: scale(0.5); } 50% { opacity: 1; transform: scale(2); } 60%, 100% { opacity: 0; transform: scale(3); } }
+
+        @keyframes fallIn {
+            0% { transform: rotate(0deg) translateX(150px) scale(1); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: rotate(360deg) translateX(0px) scale(0.1); opacity: 0; }
+        }
+
+        /* Timeline Scroll Snapping */
+        .timeline-container {
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #10b981 #0f172a;
+        }
+        .timeline-item {
+            scroll-snap-align: center;
+        }
+        .timeline-container::-webkit-scrollbar { height: 8px; }
+        .timeline-container::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+        .timeline-container::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+
+        /* Nav Blur */
+        .nav-glass {
+            background: rgba(2, 6, 23, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        }
+    </style>
+</head>
+<body class="selection:bg-emerald-500 selection:text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 nav-glass transition-all duration-300" hidden>
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="font-bold text-xl tracking-tight text-white flex items-center gap-2">
+                <i data-lucide="atom" class="text-emerald-400"></i>
+                <span class="hidden sm:inline">NucTech</span>
+            </div>
+            <div class="flex gap-4 sm:gap-6 text-sm sm:text-base font-medium text-slate-300">
+                <a href="#fission" class="hover:text-emerald-400 transition-colors">Fission</a>
+                <a href="#fusion" class="hover:text-pink-400 transition-colors">Fusion</a>
+                <a href="#cold-war" class="hover:text-amber-400 transition-colors hidden md:inline">US vs Soviet</a>
+                <a href="#timeline" class="hover:text-cyan-400 transition-colors">Timeline</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Particle Background -->
+    <canvas id="particle-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 mix-blend-screen"></canvas>
+
+    <!-- HERO SECTION -->
+    <section id="hero" class="relative min-h-screen flex flex-col justify-center items-center overflow-hidden z-10 px-6">
+        <div id="hero-content" class="text-center z-10 w-full max-w-4xl transition-all duration-75">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 mb-8 backdrop-blur-md">
+                <span class="text-sm font-medium uppercase tracking-wider">By Declan Seeley</span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight mb-6 text-white text-glow">
+                Nuclear <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Energy</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
+                Discover the science of the cosmos harnessed on Earth. From the splitting of the atom to the burning of the stars.
+            </p>
+        </div>
+
+        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce flex flex-col items-center gap-2 opacity-50">
+            <span class="text-xs uppercase tracking-widest text-emerald-400">Scroll to Ignite</span>
+            <i data-lucide="arrow-down" class="text-emerald-400 w-5 h-5"></i>
+        </div>
+    </section>
+
+    <!-- SECTION 1: FISSION -->
+    <section id="fission" class="relative min-h-screen flex items-center justify-center py-24 z-10 px-6">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+            <div class="reveal left">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
+                    The Power of <span class="text-emerald-400 text-glow">Fission</span>
+                </h2>
+                <p class="text-lg text-slate-400 mb-6 leading-relaxed">
+                    Nuclear fission occurs when a heavy atomic nucleus, such as Uranium-235, absorbs a neutron. This makes the nucleus highly unstable, causing it to split into two smaller, lighter nuclei.
+                </p>
+                <p class="text-lg text-slate-400 mb-8 leading-relaxed">
+                    This split releases a massive amount of energy in the form of heat and radiation, along with more neutrons. These new neutrons can go on to split other nuclei, creating a controlled <strong class="text-slate-200">chain reaction</strong>.
+                </p>
+                <div class="flex gap-4">
+                    <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 backdrop-blur-sm">
+                        <i data-lucide="shield-alert" class="text-emerald-400 mb-2"></i>
+                        <h4 class="font-bold text-white mb-1">High Energy Density</h4>
+                        <p class="text-sm text-slate-400">1 pellet of Uranium = 1 ton of coal.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fission Interactive Visual -->
+            <div class="reveal zoom relative h-96 flex justify-center items-center overflow-hidden lg:overflow-visible">
+                <!-- Incoming Neutron -->
+                <div id="neutron" class="absolute left-0 w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_15px_#22d3ee] z-20 transition-transform duration-300"
+                     style="animation: moveRight 3s infinite ease-in;"></div>
+
+                <!-- Target Nucleus container -->
+                <div class="relative flex justify-center items-center z-10 w-48 h-48">
+                    <!-- Energy Flash -->
+                    <div class="absolute inset-0 bg-yellow-300 rounded-full mix-blend-screen blur-xl z-0" style="animation: flash 3s infinite"></div>
+
+                    <!-- Nucleus Halves -->
+                    <div class="absolute w-24 h-24 rounded-full bg-emerald-600 border-4 border-emerald-400 flex items-center justify-center z-10" style="animation: splitLeft 3s infinite">
+                        <span class="text-white font-bold opacity-50">Kr</span>
+                    </div>
+                    <div class="absolute w-24 h-24 rounded-full bg-emerald-600 border-4 border-emerald-400 flex items-center justify-center z-10" style="animation: splitRight 3s infinite">
+                        <span class="text-white font-bold opacity-50">Ba</span>
+                    </div>
+
+                    <!-- Initial Nucleus -->
+                    <div class="absolute w-32 h-32 rounded-full bg-slate-700 border-4 border-slate-500 flex items-center justify-center z-20 box-glow" style="animation: flash 3s infinite reverse">
+                        <span class="text-white font-bold">U-235</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: THE REACTOR (Parallax) -->
+    <section id="reactor" class="relative min-h-[150vh] z-10 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pt-24 pb-24">
+        <div class="sticky top-24 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+            <div class="h-full flex flex-col justify-center">
+                <div class="reveal up">
+                    <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
+                        Inside the <span class="text-cyan-400 text-glow-blue">Core</span>
+                    </h2>
+                    <p class="text-lg text-slate-400 mb-6 leading-relaxed">
+                        A nuclear reactor is essentially a highly sophisticated way to boil water. The fission process generates immense heat inside the reactor vessel.
+                    </p>
+                    <ul class="space-y-4 text-slate-300 mb-8">
+                        <li class="flex items-start gap-3">
+                            <div class="mt-1 p-1 rounded-full bg-cyan-900/50 text-cyan-400 border border-cyan-800"><i data-lucide="zap" class="w-4 h-4"></i></div>
+                            <span><strong>Fuel Rods:</strong> Contain the Uranium pellets where fission occurs.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="mt-1 p-1 rounded-full bg-emerald-900/50 text-emerald-400 border border-emerald-800"><i data-lucide="arrow-down-to-line" class="w-4 h-4"></i></div>
+                            <span><strong>Control Rods:</strong> Made of materials like boron, they absorb neutrons. Lowering them slows the reaction; raising them speeds it up.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="mt-1 p-1 rounded-full bg-blue-900/50 text-blue-400 border border-blue-800"><i data-lucide="droplets" class="w-4 h-4"></i></div>
+                            <span><strong>Coolant (Water):</strong> Absorbs the heat and transfers it to create steam, driving the turbine.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Parallax Reactor Visual -->
+            <div id="reactor-visual" class="relative h-[600px] rounded-3xl border border-slate-800 bg-slate-950 overflow-hidden shadow-[0_0_50px_rgba(8,145,178,0.1)] flex justify-center items-end pb-12 reveal right">
+                <!-- Water/Glow effect -->
+                <div id="reactor-water" class="absolute bottom-0 w-full bg-gradient-to-t from-cyan-600/40 to-transparent transition-all duration-100 ease-linear mix-blend-screen h-0"></div>
+
+                <!-- Reactor Grid Lines -->
+                <div class="absolute inset-0 opacity-10" style="background-image: linear-gradient(#38bdf8 1px, transparent 1px), linear-gradient(90deg, #38bdf8 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+                <div class="relative w-64 h-96 flex justify-between px-4 z-10">
+                    <!-- Fuel Rods (Generated by JS) -->
+                    <div id="fuel-rods-container" class="absolute inset-0 flex justify-between px-4 w-full h-full pointer-events-none"></div>
+
+                    <!-- Control Rods (Generated by JS) -->
+                    <div id="control-rods-container" class="absolute inset-0 w-full h-full pointer-events-none"></div>
+                </div>
+
+                <!-- Cherenkov Radiation Glow -->
+                <div class="absolute bottom-0 w-full h-1/2 bg-blue-500/20 blur-3xl rounded-full"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: COLD WAR TECH (US vs Soviet) -->
+    <section id="cold-war" class="relative min-h-screen flex items-center justify-center py-24 z-10 px-6 bg-slate-900 border-y border-slate-800">
+        <div class="max-w-7xl mx-auto w-full">
+            <div class="text-center mb-16 reveal up">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 mb-4 backdrop-blur-md">
+                    <i data-lucide="globe" class="w-4 h-4"></i>
+                    <span class="text-sm font-medium uppercase tracking-wider">Historical Engineering</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                    The <span class="text-amber-400" style="text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);">Reactor Race</span>
+                </h2>
+                <p class="text-lg text-slate-400 max-w-2xl mx-auto">During the Cold War, the United States and the Soviet Union developed vastly different philosophies for commercial nuclear power.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- US Approach -->
+                <div class="reveal left bg-slate-950 border border-blue-900/50 p-8 rounded-3xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i data-lucide="droplet" class="w-24 h-24 text-blue-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_#3b82f6]"></span>
+                        Western Design (PWR/BWR)
+                    </h3>
+                    <p class="text-blue-400 text-sm font-medium mb-6 uppercase tracking-wider">Water Moderated & Cooled</p>
+
+                    <p class="text-slate-300 mb-4 leading-relaxed">
+                        The US focused on Light Water Reactors. Water acts as both the coolant and the <strong>moderator</strong> (the substance that slows down neutrons).
+                    </p>
+                    <div class="bg-blue-950/30 p-4 rounded-xl border border-blue-900/50 mb-4">
+                        <strong class="text-white block mb-1">Inherent Safety Feature:</strong>
+                        <span class="text-slate-400 text-sm">If the reactor overheats and water boils away, there is no moderator left to slow neutrons. The chain reaction naturally stops. This is called a "negative void coefficient."</span>
+                    </div>
+                    <ul class="text-slate-400 text-sm space-y-2">
+                        <li>• Requires enriched Uranium.</li>
+                        <li>• Housed in massive, reinforced concrete containment domes.</li>
+                    </ul>
+                </div>
+
+                <!-- Soviet Approach -->
+                <div class="reveal right bg-slate-950 border border-red-900/50 p-8 rounded-3xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i data-lucide="layers" class="w-24 h-24 text-red-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444]"></span>
+                        Soviet Design (RBMK)
+                    </h3>
+                    <p class="text-red-400 text-sm font-medium mb-6 uppercase tracking-wider">Graphite Moderated</p>
+
+                    <p class="text-slate-300 mb-4 leading-relaxed">
+                        The USSR developed the RBMK reactor. It used water as a coolant, but solid <strong>graphite blocks</strong> as the moderator to slow neutrons.
+                    </p>
+                    <div class="bg-red-950/30 p-4 rounded-xl border border-red-900/50 mb-4">
+                        <strong class="text-white block mb-1">The Engineering Trade-off:</strong>
+                        <span class="text-slate-400 text-sm">Because water wasn't needed to moderate neutrons, if water boiled away, the graphite kept the reaction going while cooling decreased. This dangerous "positive void coefficient" was a key factor in the Chernobyl accident.</span>
+                    </div>
+                    <ul class="text-slate-400 text-sm space-y-2">
+                        <li>• Could use cheaper, unenriched Uranium.</li>
+                        <li>• Allowed refueling while running (useful for producing weapons-grade Plutonium).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: FUSION (The Future) -->
+    <section id="fusion" class="relative min-h-screen z-10 flex flex-col items-center justify-center py-32 px-6 overflow-hidden bg-slate-950">
+
+        <!-- Background Fusion Glow -->
+        <div id="fusion-glow" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-screen pointer-events-none transition-all duration-100 ease-out w-[200px] h-[200px]"
+             style="background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(139,92,246,0.05) 50%, rgba(0,0,0,0) 70%); filter: blur(40px);"></div>
+
+        <div class="reveal up text-center z-20 max-w-3xl mb-16">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-pink-500/30 bg-pink-500/10 text-pink-400 mb-6 backdrop-blur-md">
+                <i data-lucide="sun" class="w-4 h-4"></i>
+                <span class="text-sm font-medium uppercase tracking-wider">The Holy Grail</span>
+            </div>
+            <h2 class="text-5xl md:text-7xl font-bold mb-6 text-white" style="text-shadow: 0 0 30px rgba(236,72,153,0.5);">
+                Nuclear <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-violet-400">Fusion</span>
+            </h2>
+            <p class="text-xl text-slate-400 leading-relaxed">
+                Unlike fission which splits atoms, fusion merges light nuclei (like hydrogen isotopes) together to form a heavier nucleus. This is the exact process that powers the Sun.
+            </p>
+        </div>
+
+        <!-- Fusion Interactive Visual (Tokamak concept) -->
+        <div class="reveal zoom relative w-full max-w-lg aspect-square flex items-center justify-center z-20">
+
+            <!-- Outer containment ring -->
+            <div class="absolute inset-0 rounded-full border border-slate-800 bg-slate-900/40 backdrop-blur-sm box-glow" style="box-shadow: inset 0 0 50px rgba(0,0,0,0.8);"></div>
+
+            <!-- Magnetic field lines (SVG) -->
+            <svg class="absolute inset-0 w-full h-full anim-spin-slow opacity-30" viewBox="0 0 200 200">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#ec4899" />
+                        <stop offset="100%" stopColor="#8b5cf6" />
+                    </linearGradient>
+                </defs>
+                <g id="magnetic-lines"></g>
+            </svg>
+
+            <!-- Plasma Core -->
+            <div class="relative w-48 h-48 rounded-full flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-pink-500 to-violet-500 blur-xl anim-pulse-ring opacity-80"></div>
+                <div class="absolute inset-4 rounded-full bg-white blur-md opacity-90"></div>
+                <div class="relative text-slate-900 font-extrabold text-2xl z-10 tracking-widest mix-blend-overlay">100M °C</div>
+            </div>
+
+            <!-- Particles getting sucked in -->
+            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none" id="fusion-particles"></div>
+        </div>
+
+        <div class="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl z-20">
+            <div class="reveal up bg-slate-900/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-md hover:bg-slate-800 transition-colors duration-300">
+                <h3 class="text-xl font-bold text-white mb-2">Clean Energy</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">No greenhouse gases. The only byproduct is inert helium.</p>
+            </div>
+            <div class="reveal up bg-slate-900/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-md hover:bg-slate-800 transition-colors duration-300" style="transition-delay: 100ms;">
+                <h3 class="text-xl font-bold text-white mb-2">Abundant Fuel</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Isotopes can be sourced from seawater, lasting millions of years.</p>
+            </div>
+            <div class="reveal up bg-slate-900/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-md hover:bg-slate-800 transition-colors duration-300" style="transition-delay: 200ms;">
+                <h3 class="text-xl font-bold text-white mb-2">Inherently Safe</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">No risk of meltdown. If containment fails, the plasma simply cools and halts.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: TIMELINE -->
+    <section id="timeline" class="relative py-24 z-10 bg-slate-950 overflow-hidden border-t border-slate-900">
+        <div class="max-w-7xl mx-auto px-6 mb-12 reveal up">
+            <h2 class="text-4xl font-bold text-white flex items-center gap-3">
+                <i data-lucide="clock" class="text-cyan-400"></i>
+                Atomic <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Timeline</span>
+            </h2>
+            <p class="text-slate-400 mt-2">Scroll horizontally to explore the evolution of nuclear technology.</p>
+        </div>
+
+        <div class="timeline-container w-full overflow-x-auto pb-8 pt-4 px-6 md:px-12 flex gap-6 reveal left">
+            <!-- Timeline Line Behind -->
+            <div class="absolute top-[180px] left-0 w-[200vw] h-1 bg-slate-800 z-0 hidden md:block"></div>
+
+            <!-- Event 1 -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-cyan-400 font-bold text-2xl mb-2">1938</div>
+                <h4 class="text-white font-bold text-lg mb-2">Discovery of Fission</h4>
+                <p class="text-slate-400 text-sm">German chemists Otto Hahn and Fritz Strassmann discover that bombarding uranium with neutrons splits the atom, verified theoretically by Lise Meitner.</p>
+            </div>
+
+            <!-- Event 2 -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-cyan-400 font-bold text-2xl mb-2">1942</div>
+                <h4 class="text-white font-bold text-lg mb-2">Chicago Pile-1</h4>
+                <p class="text-slate-400 text-sm">Enrico Fermi leads the team that creates the first artificial self-sustaining nuclear chain reaction under the stands of Stagg Field at the University of Chicago.</p>
+            </div>
+
+            <!-- Event 3 -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-emerald-400 font-bold text-2xl mb-2">1951</div>
+                <h4 class="text-white font-bold text-lg mb-2">First Nuclear Electricity</h4>
+                <p class="text-slate-400 text-sm">The Experimental Breeder Reactor I (EBR-I) in Idaho becomes the first nuclear reactor to generate electricity, lighting up four 200-watt lightbulbs.</p>
+            </div>
+
+            <!-- Event 4 -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-emerald-400 font-bold text-2xl mb-2">1954</div>
+                <h4 class="text-white font-bold text-lg mb-2">Obninsk Power Plant</h4>
+                <p class="text-slate-400 text-sm">The Soviet Union connects the AM-1 reactor to the electrical grid in Obninsk, becoming the world's first nuclear power plant to generate electricity for commercial use.</p>
+            </div>
+
+            <!-- Event 5 -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-emerald-400 font-bold text-2xl mb-2">1957</div>
+                <h4 class="text-white font-bold text-lg mb-2">Shippingport Opens</h4>
+                <p class="text-slate-400 text-sm">The first full-scale commercial pressurized water reactor (PWR) opens in Pennsylvania, heavily influencing global commercial reactor design.</p>
+            </div>
+
+            <!-- Event 6 -->
+            <div class="timeline-item relative z-10 flex-shrink-0 w-80 bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                <div class="text-pink-400 font-bold text-2xl mb-2">2022</div>
+                <h4 class="text-white font-bold text-lg mb-2">Fusion Ignition</h4>
+                <p class="text-slate-400 text-sm">The National Ignition Facility (NIF) achieves a historic milestone: a fusion reaction that produced more energy than was absorbed by the fuel to initiate it.</p>
+            </div>
+
+            <!-- Spacer for end of scroll -->
+            <div class="flex-shrink-0 w-6"></div>
+        </div>
+    </section>
+
+    <!-- SECTION 6: SOURCES & FOOTER -->
+    <footer id="sources" class="relative z-10 border-t border-slate-800 bg-slate-950 pt-16 pb-8 px-6 text-slate-400">
+        <div class="max-w-4xl mx-auto">
+            <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <i data-lucide="book-open" class="text-slate-400"></i> Educational Sources
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12 text-sm">
+                <a href="#" class="p-4 rounded-xl border border-slate-800 hover:bg-slate-900 transition-colors block">
+                    <strong class="text-white block">U.S. Department of Energy (DOE)</strong>
+                    <span class="text-slate-500">Office of Nuclear Energy Educational Resources</span>
+                </a>
+                <a href="#" class="p-4 rounded-xl border border-slate-800 hover:bg-slate-900 transition-colors block">
+                    <strong class="text-white block">World Nuclear Association</strong>
+                    <span class="text-slate-500">Reactor Designs and Historical Data</span>
+                </a>
+                <a href="#" class="p-4 rounded-xl border border-slate-800 hover:bg-slate-900 transition-colors block">
+                    <strong class="text-white block">International Atomic Energy Agency (IAEA)</strong>
+                    <span class="text-slate-500">Fusion vs Fission Physics Overview</span>
+                </a>
+                <a href="#" class="p-4 rounded-xl border border-slate-800 hover:bg-slate-900 transition-colors block">
+                    <strong class="text-white block">ITER Organization</strong>
+                    <span class="text-slate-500">Magnetic Confinement Fusion (Tokamak) Research</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Core Logic -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // 1. Intersection Observer for Reveal Animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.2
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.reveal').forEach(el => {
+                observer.observe(el);
+            });
+        });
+
+        // 2. DOM Elements Generation (React equivalents)
+
+        // Generate Magnetic Lines for Fusion SVG
+        const magneticLinesContainer = document.getElementById('magnetic-lines');
+        for (let i = 1; i <= 8; i++) {
+            const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            ellipse.setAttribute('cx', '100');
+            ellipse.setAttribute('cy', '100');
+            ellipse.setAttribute('rx', '40');
+            ellipse.setAttribute('ry', '90');
+            ellipse.setAttribute('fill', 'none');
+            ellipse.setAttribute('stroke', 'url(#grad1)');
+            ellipse.setAttribute('stroke-width', '1');
+            ellipse.setAttribute('transform', `rotate(${i * 45} 100 100)`);
+            magneticLinesContainer.appendChild(ellipse);
+        }
+
+        // Generate Fusion Falling Particles
+        const fusionParticles = document.getElementById('fusion-particles');
+        for (let i = 1; i <= 4; i++) {
+            const drop = document.createElement('div');
+            drop.className = 'absolute w-2 h-2 bg-pink-300 rounded-full blur-[1px]';
+            drop.style.left = '50%';
+            drop.style.top = '50%';
+            drop.style.animation = `fallIn ${2 + i}s infinite linear`;
+            drop.style.transformOrigin = `${(i * 50) - 100}px ${(i * 50) - 100}px`;
+            fusionParticles.appendChild(drop);
+        }
+
+        // Generate Reactor Fuel Rods
+        const fuelContainer = document.getElementById('fuel-rods-container');
+        const fuelRods = [];
+        for(let i=1; i<=5; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'w-6 h-full bg-slate-800 rounded-t-lg relative border border-slate-700 z-10 pointer-events-auto';
+            const core = document.createElement('div');
+            core.className = 'absolute bottom-0 w-full bg-emerald-500 rounded-t-lg shadow-[0_0_15px_#10b981] transition-all duration-300';
+            wrapper.appendChild(core);
+            fuelContainer.appendChild(wrapper);
+            fuelRods.push({ element: core, index: i });
+        }
+
+        // Generate Reactor Control Rods
+        const controlContainer = document.getElementById('control-rods-container');
+        const controlRods = [];
+        for(let i=1; i<=4; i++) {
+            const rod = document.createElement('div');
+            rod.className = 'absolute top-0 w-4 h-full bg-slate-400 border-2 border-slate-300 z-20 rounded-b-md transition-transform duration-75 ease-out pointer-events-auto';
+            rod.style.left = `${18 + ((i-1) * 22)}%`;
+            rod.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.8)';
+            const tip = document.createElement('div');
+            tip.className = 'absolute bottom-0 w-full h-4 bg-yellow-500 rounded-b-sm';
+            rod.appendChild(tip);
+            controlContainer.appendChild(rod);
+            controlRods.push(rod);
+        }
+
+        // 3. Scroll Effects & Parallax (Optimized)
+        const heroContent = document.getElementById('hero-content');
+        const neutron = document.getElementById('neutron');
+        const reactorSection = document.getElementById('reactor-visual');
+        const reactorWater = document.getElementById('reactor-water');
+        const fusionGlow = document.getElementById('fusion-glow');
+
+        let isScrolling = false;
+
+        window.addEventListener('scroll', () => {
+            if (!isScrolling) {
+                window.requestAnimationFrame(() => {
+                    const scrollY = window.scrollY;
+
+                    // Hero Parallax
+                    heroContent.style.transform = `translateY(${scrollY * 0.4}px) scale(${1 + scrollY * 0.0005})`;
+                    heroContent.style.opacity = Math.max(0, 1 - scrollY * 0.002);
+                    heroContent.style.filter = `blur(${scrollY * 0.01}px)`;
+
+                    // Neutron interact
+                    if(scrollY > 400) {
+                        neutron.style.transform = 'translateX(150px)';
+                    } else {
+                        neutron.style.transform = 'translateX(0px)';
+                    }
+
+                    // Reactor Logic
+                    if(reactorSection) {
+                        const rect = reactorSection.getBoundingClientRect();
+                        const windowHeight = window.innerHeight;
+
+                        let visibleRatio = 1 - (rect.top / windowHeight);
+
+                        // Fuel Rods Pulse
+                        fuelRods.forEach(rod => {
+                            rod.element.style.height = `${40 + (Math.sin((scrollY * 0.01) + rod.index) * 20)}%`;
+                            rod.element.style.opacity = 0.8 + (Math.sin((scrollY * 0.05) + rod.index) * 0.2);
+                        });
+
+                        // Control Rods Plunge
+                        if(visibleRatio > 0 && visibleRatio < 2) {
+                            const plungeDepth = Math.max(-100, Math.min(0, -100 + (visibleRatio * 100)));
+                            controlRods.forEach(rod => {
+                                rod.style.transform = `translateY(${plungeDepth}%)`;
+                            });
+
+                            reactorWater.style.height = `${Math.min(100, Math.max(0, (visibleRatio - 0.5) * 100))}%`;
+                        }
+                    }
+
+                    // Fusion Background Expansion
+                    const fusionSize = Math.min(800, 200 + scrollY * 0.1);
+                    fusionGlow.style.width = `${fusionSize}px`;
+                    fusionGlow.style.height = `${fusionSize}px`;
+
+                    isScrolling = false;
+                });
+                isScrolling = true;
+            }
+        }, { passive: true });
+
+        // 4. Background Particle System (Optimized)
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        const resize = () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        const particles = [];
+        const particleCount = 80; // Slightly reduced count for better rendering
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.color = Math.random() > 0.5 ? 'rgba(52, 211, 153, 0.6)' : 'rgba(56, 189, 248, 0.6)';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > width) this.x = 0;
+                else if (this.x < 0) this.x = width;
+                if (this.y > height) this.y = 0;
+                else if (this.y < 0) this.y = height;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                // shadowBlur was removed here: it causes severe browser hangs when looping lines!
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // Connect particles (optimized loop & math)
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distSq = dx * dx + dy * dy; // Avoid expensive Math.sqrt when just checking range
+
+                    if (distSq < 10000) { // equivalent to distance < 100
+                        const distance = Math.sqrt(distSq);
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(52, 211, 153, ${0.1 - distance/1000})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        // Start animation loop
+        animateParticles();
+    </script>
+</body>
+</html>
