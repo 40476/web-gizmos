@@ -1,28 +1,16 @@
 <section>
   <ul>
-    <li>Interactive educational web app explaining nuclear energy concepts including fission, enrichment, fusion, and historical geopolitical events.</li>
-    <li>Features smooth scroll animations, parallax effects, and particle backgrounds with optimized performance for better browser compatibility.</li>
-    <li>Includes a horizontal timeline with events up to June 2025 covering diplomatic tensions and military actions related to Iran's nuclear program.</li>
-    <li>Interactive visual elements include a fission animation, a reactor core with fuel and control rods, and a fusion tokamak with magnetic field lines.</li>
-    <li>Uses modern web technologies including Tailwind CSS, Lucide icons, and vanilla JavaScript for DOM manipulation and animations.</li>
+    <li>Interactive educational website explaining nuclear energy concepts</li>
+    <li>Covers nuclear fission, uranium enrichment, reactor types, and fusion</li>
+    <li>Features Cold War history comparing US and Soviet reactor designs</li>
+    <li>Includes modern geopolitical context about Iran's nuclear program</li>
+    <li>Implements smooth animations, particle backgrounds, and parallax effects</li>
   </ul>
 
   <pre>
-    <code>// Optimized particle animation loop</code>
-    <code>function animateParticles() {</code>
-    <code>  ctx.clearRect(0, 0, width, height);</code>
-    <code>  for (let i = 0; i < particles.length; i++) {</code>
-    <code>    particles[i].update();</code>
-    <code>    particles[i].draw();</code>
-    <code>    for (let j = i + 1; j < particles.length; j++) {</code>
-    <code>      const dx = particles[i].x - particles[j].x;</code>
-    <code>      const distSq = dx * dx + dy * dy;</code>
-    <code>      if (distSq < 10000) { /* connect particles */ }</code>
-    <code>    }</code>
-    <code>  }</code>
-    <code>  requestAnimationFrame(animateParticles);</code>
-    <code>}</code>
+    <code>const particles = [];</code>
+    <code>class Particle { update() { this.x += this.speedX; } }</code>
   </pre>
 
-  <p>This interactive explainer provides a comprehensive journey through nuclear energy concepts, from basic fission to advanced fusion, while also addressing modern geopolitical concerns around nuclear enrichment and international security. The app combines educational content with engaging visual animations and optimized performance for a smooth user experience.</p>
+  <p>This comprehensive nuclear energy explainer combines interactive visualizations with historical context and modern geopolitical issues. The site uses advanced web technologies including particle systems, scroll-triggered animations, and SVG graphics to create an engaging educational experience about both the science and global implications of nuclear technology.</p>
 </section>
