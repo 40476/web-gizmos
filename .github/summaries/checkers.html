@@ -1,14 +1,16 @@
 <section>
   <ul>
-    <li>3D Checkers game with real-time multiplayer via MQTT</li>
-    <li>Customizable player images and role-based camera perspectives</li>
-    <li>Interactive chat system and win celebration animations</li>
+    <li>3D multiplayer checkers game using Three.js for rendering and MQTT for real-time synchronization</li>
+    <li>Players can customize their pieces with custom images that sync across all clients</li>
+    <li>Presence locking system prevents multiple players from taking the same role in a room</li>
+    <li>Real-time chat system integrated with game state updates</li>
+    <li>Visual effects including piece explosions and victory sweep animations</li>
   </ul>
 
   <pre>
-    <code>const mqttClient = mqtt.connect(brokerUrl, options);</code>
-    <code>mqttClient.on('message', (topic, message) => { /* Handle game state */ });</code>
+    <code>mqttClient.publish(presenceTopic, JSON.stringify({ status: 'online', image: myCustomImage }), { retain: true });</code>
+    <code>mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState), { retain: true });</code>
   </pre>
 
-  <p>A visually immersive 3D checkers game featuring real-time multiplayer gameplay over MQTT, complete with customizable player avatars, interactive chat, and dynamic win animations. The game supports role-based camera perspectives and includes special effects like explosions and sweeping celebrations.</p>
+  <p>This is a 3D multiplayer checkers game that uses Three.js for 3D rendering and MQTT for real-time synchronization between players. The game features custom piece images that sync across all clients, a presence locking system to prevent role conflicts, and visual effects like explosions and victory animations. Players can join rooms, customize their pieces, chat with opponents, and play checkers in a fully synchronized 3D environment.</p>
 </section>
