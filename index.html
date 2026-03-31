@@ -331,18 +331,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>3D multiplayer checkers game using Three.js and MQTT for real-time sync</li>
-    <li>Custom player images, chat system, and win animations with "sweep" effect</li>
-    <li>Presence locking to prevent multiple players in same role, spectator mode</li>
-    <li>Client-side move validation and board state prediction for smooth gameplay</li>
+    <li>3D Checkers game with real-time multiplayer via MQTT</li>
+    <li>Customizable player images and role-based camera perspectives</li>
+    <li>Interactive chat system and win celebration animations</li>
   </ul>
 
   <pre>
-    <code>mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState), { retain: true });</code>
-    <code>mqttClient.subscribe(roomTopic + '/presence/+');</code>
+    <code>const mqttClient = mqtt.connect(brokerUrl, options);</code>
+    <code>mqttClient.on('message', (topic, message) => { /* Handle game state */ });</code>
   </pre>
 
-  <p>This 3D multiplayer checkers game features real-time synchronization using MQTT, custom player images, and an interactive chat system. Players can join as Player 1, Player 2, or spectator, with presence locking to prevent conflicts. The game includes smooth 3D animations, win celebrations with sweep effects, and client-side move validation for responsive gameplay.</p>
+  <p>A visually immersive 3D checkers game featuring real-time multiplayer gameplay over MQTT, complete with customizable player avatars, interactive chat, and dynamic win animations. The game supports role-based camera perspectives and includes special effects like explosions and sweeping celebrations.</p>
 </section>
           </div>
         </section>
@@ -744,7 +743,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 16:53</p>
+      <p>Registry Sync: Mar 31, 2026 - 16:55</p>
     </footer>
   </main>
 
