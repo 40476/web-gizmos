@@ -1,16 +1,18 @@
 <section>
   <ul>
-    <li>Converts images to HTML text art with customizable settings</li>
-    <li>Supports sequence and random text generation modes</li>
-    <li>Exports results as HTML, SVG, or PNG formats</li>
-    <li>Adjustable width, characters, colors, and font sizes</li>
-    <li>Implements grayscale and contrast filters</li>
+    <li>Converts images to HTML text art with configurable settings</li>
+    <li>Supports different text generation modes (random/sequence) and character sets</li>
+    <li>Includes export options for HTML, SVG, and PNG formats</li>
   </ul>
 
   <pre>
-    <code>const contrastCurve = [0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,6,6,6,7,8,8,9,9,10,10,11,12,12,13,14,14,15,16,17,17,18,19,20,21,22,23,23,24,25,26,27,28,29,30,31,32,33,34,35,37,38,39,40,41,42,43,45,46,47,48,49,51,52,53,54,56,57,58,60,61,62,64,65,66,68,69,71,72,73,75,76,78,79,81,82,84,85,87,88,90,91,93,94,96,97,99,100,102,103,105,106,108,109,111,113,114,116,117,119,120,122,124,125,127,128,130,131,133,135,136,138,139,141,142,144,146,147,149,150,152,153,155,156,158,159,161,162,164,165,167,168,170,171,17];</code>
-    <code>function generateTextImage(ctx, width, height) { /* image processing logic */ }</code>
+    <code>function convertImage() {</code>
+    <code>    const startTime = performance.now();</code>
+    <code>    const img = new Image();</code>
+    <code>    img.onload = function() { /* ... */ };</code>
+    <code>    img.src = e.target.result;</code>
+    <code>}</code>
   </pre>
 
-  <p>This web application transforms uploaded images into HTML text representations using configurable parameters like character sets, colors, and dimensions. It includes image processing features such as grayscale conversion and contrast adjustment, with multiple export options for the generated text art.</p>
+  <p>This web application transforms uploaded images into HTML text representations using configurable parameters like width, character sets, and color schemes. It includes features for grayscale conversion, contrast adjustment, and multiple export formats while maintaining browser compatibility through CSS adjustments.</p>
 </section>
