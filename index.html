@@ -353,17 +353,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>A web page displaying a C++ Linus Rant Meme with interactive text replacement.</li>
-    <li>Allows users to input custom text to replace instances of "C++" in the rant.</li>
-    <li>Supports URL parameter for initial text replacement.</li>
+    <li>A web page displaying a meme based on Linus Torvalds' rant about C++.</li>
+    <li>Allows users to replace the word "C++" in the text with their own input.</li>
+    <li>Supports URL parameter for pre-filling the replacement text.</li>
   </ul>
 
   <pre>
     <code>const inputField = document.getElementById('userInput');</code>
-    <code>inputField.addEventListener('input', (event) => {</code>
+    <code>const targets = document.querySelectorAll('.replace');</code>
   </pre>
 
-  <p>This HTML page creates an interactive version of a C++ Linus Rant Meme. It allows users to input custom text that replaces all instances of "C++" in the rant. The page also supports URL parameters for initial text replacement, providing a dynamic and customizable viewing experience of the meme.</p>
+  <p>This HTML page presents a meme based on Linus Torvalds' famous rant about C++. It allows users to replace the word "C++" in the text with their own input, either through a text field or a URL parameter. The page includes CSS styling for a clean, readable layout and uses JavaScript to dynamically update the text content based on user input.</p>
 </section>
           </div>
         </section>
@@ -746,7 +746,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 15:48</p>
+      <p>Registry Sync: Mar 31, 2026 - 15:50</p>
     </footer>
   </main>
 
