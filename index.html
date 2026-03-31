@@ -268,17 +268,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Fetch random "boy" tagged images from Nekos API through a proxy</li>
-    <li>Display image with metadata including ID, rating, tags, and source link</li>
-    <li>Show color palette swatches extracted from the image</li>
+    <li>Fetches random boy-themed images from the Nekos API</li>
+    <li>Displays image with metadata including ID, rating, tags, and source</li>
+    <li>Generates a color palette swatch based on the image's color scheme</li>
   </ul>
 
   <pre>
-    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe..."</code>
-    <code>const paletteHTML = image.color_palette.map(rgb => `<div class="swatch" style="background: rgb(${rgb.join(",")});"></div>`).join("");</code>
+    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe&without_tags=girl,pussy,exposed_girl_breasts";</code>
+    <code>const apiUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);</code>
   </pre>
 
-  <p>A web app that fetches and displays random "boy" tagged images from Nekos API, showing the image alongside its metadata and color palette. The app uses a proxy to bypass CORS restrictions and includes a button to fetch new images on demand.</p>
+  <p>This web application fetches and displays random boy-themed images from the Nekos API. It includes metadata display, a color palette generator, and error handling for failed requests. The interface features a Comic Sans MS font and a pink-blue gradient background.</p>
 </section>
           </div>
         </section>
@@ -744,7 +744,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 17:19</p>
+      <p>Registry Sync: Mar 31, 2026 - 17:21</p>
     </footer>
   </main>
 
