@@ -725,26 +725,26 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>3D racing game with voxel terrain generation using Three.js</li>
-    <li>Real-time multiplayer using MQTT protocol</li>
-    <li>Dynamic terrain with multiple biomes (grass, desert, snow, mars, caves)</li>
-    <li>Interactive UI overlay with minimap, speedometer, chat, and soundboard</li>
-    <li>Mobile controls and responsive design</li>
+    <li>Voxel-based terrain with dynamic generation using Simplex noise</li>
+    <li>Multiplayer functionality via MQTT broker for real-time racing</li>
+    <li>Interactive HUD with speedometer, nitro bar, minimap, and chat system</li>
+    <li>Mobile controls with touch support for on-the-go gameplay</li>
+    <li>Host settings for terrain customization (biome, seed, roughness, height scale)</li>
   </ul>
 
   <pre>
-    <code>const TerrainSystem = class { constructor(scene, game, renderDist) { this.scene = scene; this.game = game; this.settings = { seed: 12345, step: 0.05, unit: 50, water: 0, timex: 0, timez: 0, biome: 'grass' }; this.noise = new SimplexNoise(this.settings.seed); this.chunks = {}; this.chunkSize = 100; this.resolution = 32; this.activeRadius = renderDist || 3; } }</code>
-    <code>const Car = class { constructor(scene, color, isLocal = false) { this.scene = scene; this.isLocal = isLocal; this.mesh = this.createMesh(color); this.scene.add(this.mesh); this.pos = new THREE.Vector3(0, 100, 0); this.vel = new THREE.Vector3(0, 0, 0); this.vy = 0; this.speed = 0; this.nitro = 100; this.score = 0; this.onGround = false; } }</code>
+    <code>const Utils = { lerp: (a, b, t) => a + (b - a) * t, clamp: (val, min, max) => Math.min(Math.max(val, min), max) };</code>
+    <code>class TerrainSystem { constructor(scene, game, renderDist) { this.settings = { seed: 12345, step: 0.05, unit: 50, water: 0, timex: 0, timez: 0, biome: 'grass' }; } };</code>
   </pre>
 
-  <p>This voxel racing game features procedurally generated terrain with multiple biomes, real-time multiplayer networking via MQTT, and a comprehensive UI system. The game includes physics-based car movement, dynamic lighting cycles, particle effects, and supports both desktop and mobile controls. Players can customize their vehicles, chat with others, and experience different terrain types including caves with ceilings and various environmental challenges.</p>
+  <p>A voxel-based racing game featuring dynamic terrain generation, real-time multiplayer via MQTT, and interactive UI elements including a minimap and chat system. The game supports both desktop and mobile controls, with host settings for customizing the racing environment.</p>
 </section>
           </div>
         </section>
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 16:51</p>
+      <p>Registry Sync: Mar 31, 2026 - 16:53</p>
     </footer>
   </main>
 
