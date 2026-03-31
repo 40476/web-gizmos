@@ -681,19 +681,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive turtle simulation with multiple turtle personalities and behaviors</li>
-    <li>Pathfinding AI using A* algorithm with obstacle avoidance and 8-directional movement</li>
-    <li>Grid-based world with terrain types (walls, glass, water, grass, sand) affecting turtle movement</li>
-    <li>Food collection system with turtle vision cones and smell detection for finding food</li>
-    <li>Customizable settings panel with mobile-responsive design and keyboard shortcuts</li>
+    <li>Interactive simulation featuring turtles that move, eat food, and navigate a customizable grid environment.</li>
+    <li>Features include turtle personalities, lily pads, pathfinding, debug mode, and extensive settings for customization.</li>
+    <li>Mobile-optimized with touch controls, keyboard shortcuts, and save/load functionality for persistent state.</li>
   </ul>
 
   <pre>
-    <code>function findPath(sx, sy, ex, ey) { /* A* pathfinding with 8-directional movement */ }</code>
-    <code>class Turtle { /* AI behavior: IDLE, WAIT, SEEK states with smooth rotation */ }</code>
+    <code>class Turtle { update() { /* movement logic, pathfinding, food detection */ } }</code>
+    <code>class Lilypad { draw() { /* canvas rendering with flowers and texture */ } }</code>
   </pre>
 
-  <p>This web-based turtle simulation features intelligent AI turtles with distinct personalities, pathfinding capabilities, and interactive behaviors. Users can spawn turtles, place food and obstacles, edit terrain, and customize simulation settings through a responsive control panel. The simulation includes advanced features like A* pathfinding, turtle vision cones, food detection systems, and mobile touch controls.</p>
+  <p>A comprehensive turtle simulation game where users can spawn turtles with different personalities, place food and obstacles, and watch the turtles navigate and interact with their environment. The simulation includes advanced features like A* pathfinding, raycasting for obstacle detection, and a fully customizable grid system with various terrain types.</p>
 </section>
           </div>
         </section>
@@ -746,7 +744,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 15:50</p>
+      <p>Registry Sync: Mar 31, 2026 - 15:51</p>
     </footer>
   </main>
 
