@@ -179,6 +179,8 @@
       <span class="projects-label">PROJECTS</span>
       <div id="projectList">
         
+          <a class="nav-item" href="1984/index.html" data-name="1984">> 1984</a>
+        
           <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
         
           <a class="nav-item" href="asl/index.html" data-name="asl">> asl</a>
@@ -235,6 +237,31 @@
   <main>
     <h1 style="text-align: center; margin-bottom: 3rem;">web-gizmos</h1>
     <div id="appContainer">
+      
+        <section class="app-section" id="section-1984" data-name="1984">
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="1984/index.html">[ RUN GIZMO ]</a>
+          <h2 class="app-title">1984</h2>
+          <div class="summary-content">
+            <section>
+  <ul>
+    <li>Interactive website comparing modern surveillance to Orwell's 1984 with particle effects and eye-tracking</li>
+    <li>Features parallax scrolling, glitch text effects, and a device simulation that activates on scroll</li>
+    <li>Implements Intersection Observer API for scroll-triggered animations and parallax effects</li>
+    <li>Includes privacy-focused design with external script injection prevention</li>
+  </ul>
+
+  <pre>
+    <code>const observer = new IntersectionObserver((entries) =&gt; {</code>
+    <code>  entries.forEach(entry =&gt; {</code>
+    <code>    if (entry.isIntersecting) entry.target.classList.add('active');</code>
+    <code>  });</code>
+    <code>}, observerOptions);</code>
+  </pre>
+
+  <p>A dystopian-themed web experience that uses modern web technologies to illustrate surveillance capitalism parallels with 1984. The site features particle systems, eye-tracking animations, and scroll-triggered effects to create an immersive commentary on digital privacy in 2026.</p>
+</section>
+          </div>
+        </section>
       
         <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader">
           <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="animeboydownloader/index.html">[ RUN GIZMO ]</a>
@@ -720,7 +747,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 15:14</p>
+      <p>Registry Sync: Mar 31, 2026 - 15:19</p>
     </footer>
   </main>
 
