@@ -1,17 +1,16 @@
 <section>
   <ul>
-    <li>Audio visualizer with 2D canvas overlay and 3D background canvas</li>
-    <li>Multiple visualizer modes including bars, waveform, and circle visualizations</li>
-    <li>Real-time audio processing using Web Audio API with FFT analysis</li>
-    <li>Metadata display including album art, title, artist, and album information</li>
-    <li>Multiple audio input modes: local microphone, WebSocket stream, and local file</li>
+    <li>Interactive audio visualizer with WebGL and Canvas rendering</li>
+    <li>Supports local audio files, microphone input, and WebSocket streams</li>
+    <li>Customizable visual effects with real-time parameter controls</li>
+    <li>Persistent settings storage using localStorage</li>
+    <li>Responsive design with multiple visualizer presets</li>
   </ul>
 
   <pre>
-    <code>const canvas2D = document.getElementById('visualizer-2d');</code>
-    <code>const ctx = canvas2D.getContext('2d');</code>
-    <code>const canvas3D = document.getElementById('visualizer-3d');</code>
+    <code>const visualizers = { bars: { settings: [ { id: 'barCount', type: 'range', min: 16, max: 256 } ] } };</code>
+    <code>const masterSettings = [ { id: 'sensitivity', type: 'range', min: 0.1, max: 5 }, { id: 'playToggle', type: 'button' } ];</code>
   </pre>
 
-  <p>This web application provides an interactive audio visualizer with real-time audio processing capabilities. It features multiple visualization modes, metadata display, and supports various audio input sources including microphone, WebSocket streams, and local files. The application uses the Web Audio API for audio analysis and provides customizable settings for sensitivity, FFT size, and smoothing.</p>
+  <p>This audio visualizer application provides a rich, interactive experience with multiple input sources and customizable visual effects. The modular design allows for easy extension with new visualizer types and supports persistent user preferences through localStorage integration.</p>
 </section>
