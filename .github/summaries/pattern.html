@@ -1,15 +1,15 @@
 <section>
   <ul>
-    <li>SVG pattern generator with seeded randomness for reproducible designs</li>
-    <li>Six distinct style engines: Memphis, Bauhaus, Isometric, Voronoi, Waves, Op-Art</li>
-    <li>Deterministic output based on seed, dimensions, style, density, palette, and stroke width</li>
-    <li>Export to both SVG and PNG formats with texture overlay options</li>
+    <li>SVG pattern generator with seeded deterministic output</li>
+    <li>Six preset styles: Memphis, Bauhaus, Isometric, Voronoi, Waves, Op-art</li>
+    <li>Customizable dimensions, density, palette, stroke width, noise texture</li>
+    <li>Export to SVG and PNG formats</li>
   </ul>
 
   <pre>
-    <code>const rng = PRNG(`${seed}|${style}|${W}x${H}|${density}`);</code>
-    <code>switch (style) { case 'memphis': genMemphis(rootGroup, rng, W, H, palette, bg, strokeWidth); break; }</code>
+    <code>function PRNG(seedStr) { ... } // seeded random generator</code>
+    <code>function genMemphis(svg, rng, W, H, palette, bg, strokeWidth) { ... }</code>
   </pre>
 
-  <p>This web application generates deterministic SVG patterns using seeded pseudorandom number generation. Users can customize dimensions, select from six artistic styles, adjust complexity, choose color palettes, and export their creations as vector SVG or raster PNG files. The seed-based approach ensures identical patterns can be recreated by reusing the same settings.</p>
+  <p>This web application generates unique SVG patterns using seeded randomness for reproducible results. Users can customize pattern style, colors, size, and complexity, then export their creation as SVG or PNG. The deterministic nature means the same settings always produce identical patterns.</p>
 </section>
