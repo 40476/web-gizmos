@@ -244,21 +244,20 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive website comparing modern surveillance to Orwell's 1984 with particle effects and eye-tracking</li>
-    <li>Features parallax scrolling, glitch text effects, and a device simulation that activates on scroll</li>
-    <li>Implements Intersection Observer API for scroll-triggered animations and parallax effects</li>
-    <li>Includes privacy-focused design with external script injection prevention</li>
+    <li>A dystopian-themed web page comparing modern surveillance to George Orwell's 1984</li>
+    <li>Features an interactive eye that follows the mouse cursor and a particle system representing data tracking</li>
+    <li>Uses scroll-triggered animations and parallax effects to reveal content sections</li>
+    <li>Contains a mock terms-of-service agreement highlighting privacy concerns</li>
+    <li>Includes citations to relevant literature on surveillance capitalism</li>
   </ul>
 
   <pre>
-    <code>const observer = new IntersectionObserver((entries) =&gt; {</code>
-    <code>  entries.forEach(entry =&gt; {</code>
-    <code>    if (entry.isIntersecting) entry.target.classList.add('active');</code>
-    <code>  });</code>
-    <code>}, observerOptions);</code>
+    <code>document.addEventListener('mousemove', (e) =&gt; {</code>
+    <code>    const mouseX = e.clientX;</code>
+    <code>    const mouseY = e.clientY;</code>
   </pre>
 
-  <p>A dystopian-themed web experience that uses modern web technologies to illustrate surveillance capitalism parallels with 1984. The site features particle systems, eye-tracking animations, and scroll-triggered effects to create an immersive commentary on digital privacy in 2026.</p>
+  <p>This web page creates a visual metaphor for modern surveillance by combining interactive elements like a tracking eye, particle systems, and glitch effects with educational content about data privacy. The design uses CSS animations and JavaScript to create an immersive experience that illustrates how digital surveillance mirrors the dystopian vision of 1984, while providing sources for further reading on the topic.</p>
 </section>
           </div>
         </section>
@@ -747,7 +746,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 15:25</p>
+      <p>Registry Sync: Mar 31, 2026 - 15:30</p>
     </footer>
   </main>
 
