@@ -11,11 +11,16 @@
       "voxelcrash",
       "turtle",
       "megaminer",
-      "1984"
+      "1984",
+      "matrix",
+      "nuclear"
     ]
   },
   "extendedConfigs": [
     "voxelcrash",
-    "racing"
+    "racing",
+    "matrix",
+    "1984",
+    "nuclear"
   ]
 }
