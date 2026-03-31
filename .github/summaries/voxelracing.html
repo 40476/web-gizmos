@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>3D voxel racing game with terrain generation using Simplex noise</li>
-    <li>Multiplayer support via MQTT with real-time player synchronization</li>
-    <li>Interactive UI with minimap, speedometer, chat, and mobile controls</li>
-    <li>Day/night cycle, particle effects, and soundboard integration</li>
+    <li>3D racing game with voxel terrain generation using Three.js</li>
+    <li>Real-time multiplayer using MQTT protocol</li>
+    <li>Dynamic terrain with multiple biomes (grass, desert, snow, mars, caves)</li>
+    <li>Interactive UI overlay with minimap, speedometer, chat, and soundboard</li>
+    <li>Mobile controls and responsive design</li>
   </ul>
 
   <pre>
-    <code>class TerrainSystem { generateChunk(cx, cz) { const geometry = new THREE.PlaneGeometry(chunkSize, chunkSize, resolution, resolution); /* ... */ } }</code>
-    <code>class NetworkManager { connect(brokerUrl) { this.client = mqtt.connect(brokerUrl); /* ... */ } }</code>
+    <code>const TerrainSystem = class { constructor(scene, game, renderDist) { this.scene = scene; this.game = game; this.settings = { seed: 12345, step: 0.05, unit: 50, water: 0, timex: 0, timez: 0, biome: 'grass' }; this.noise = new SimplexNoise(this.settings.seed); this.chunks = {}; this.chunkSize = 100; this.resolution = 32; this.activeRadius = renderDist || 3; } }</code>
+    <code>const Car = class { constructor(scene, color, isLocal = false) { this.scene = scene; this.isLocal = isLocal; this.mesh = this.createMesh(color); this.scene.add(this.mesh); this.pos = new THREE.Vector3(0, 100, 0); this.vel = new THREE.Vector3(0, 0, 0); this.vy = 0; this.speed = 0; this.nitro = 100; this.score = 0; this.onGround = false; } }</code>
   </pre>
 
-  <p>Voxel Racer is a browser-based 3D racing game featuring procedurally generated terrain, multiplayer functionality through MQTT, and a comprehensive UI system. The game includes day/night cycles, particle effects, and supports both desktop and mobile controls for an immersive racing experience.</p>
+  <p>This voxel racing game features procedurally generated terrain with multiple biomes, real-time multiplayer networking via MQTT, and a comprehensive UI system. The game includes physics-based car movement, dynamic lighting cycles, particle effects, and supports both desktop and mobile controls. Players can customize their vehicles, chat with others, and experience different terrain types including caves with ceilings and various environmental challenges.</p>
 </section>
