@@ -1,16 +1,15 @@
 <section>
   <ul>
-    <li>Multiplayer racing game using Three.js for 3D graphics and MQTT for real-time networking</li>
-    <li>Procedurally generated terrain with five biomes (grasslands, desert, snow, mars, caves) using simplex noise</li>
-    <li>Host edition includes terrain customization tools and soundboard for in-game audio effects</li>
-    <li>Mobile-optimized controls with virtual joystick and nitro buttons</li>
-    <li>Persistent settings stored in IndexedDB and server status checking for MQTT brokers</li>
+    <li>3D voxel racing game with terrain generation using Simplex noise</li>
+    <li>Multiplayer support via MQTT with real-time player synchronization</li>
+    <li>Interactive UI with minimap, speedometer, chat, and mobile controls</li>
+    <li>Day/night cycle, particle effects, and soundboard integration</li>
   </ul>
 
   <pre>
-    <code>const Utils = { lerp: (a, b, t) => a + (b - a) * t, clamp: (val, min, max) => Math.min(Math.max(val, min), max), rand: (min, max) => Math.random() * (max - min) + min, strToColor: (str) => { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); const c = (hash & 0x00FFFFFF).toString(16).toUpperCase(); return '#' + "00000".substring(0, 6 - c.length) + c; }, getTimeString: (gameTime) => { const totalMinutes = Math.floor(gameTime * 24 * 60); const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`; } };</code>
-    <code>class DB { constructor(dbName, storeName) { this.dbName = dbName; this.storeName = storeName; this.db = null; } async init() { return new Promise((resolve, reject) => { const request = indexedDB.open(this.dbName, 2); request.onupgradeneeded = (e) => { const db = e.target.result; if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName); }; request.onsuccess = (e) => { this.db = e.target.result; resolve(); }; request.onerror = (e) => reject("DB Error"); }); } async get(key) { return new Promise((resolve) => { const tx = this.db.transaction([this.storeName], "readonly"); const req = tx.objectStore(this.storeName).get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => resolve(null); }); } async put(key, value) { return new Promise((resolve) => { const tx = this.db.transaction([this.storeName], "readwrite"); tx.objectStore(this.storeName).put(value, key); tx.oncomplete = () => resolve(); }); } }</code>
+    <code>class TerrainSystem { generateChunk(cx, cz) { const geometry = new THREE.PlaneGeometry(chunkSize, chunkSize, resolution, resolution); /* ... */ } }</code>
+    <code>class NetworkManager { connect(brokerUrl) { this.client = mqtt.connect(brokerUrl); /* ... */ } }</code>
   </pre>
 
-  <p>Infinity Racer is a browser-based multiplayer racing game featuring procedurally generated terrain and real-time networking. The game uses Three.js for 3D rendering and MQTT for multiplayer communication, supporting up to five different biomes with dynamic weather cycles. Players can customize terrain generation parameters, use a built-in soundboard for audio effects, and compete with others in real-time races. The host edition provides additional controls for world customization and server management, while maintaining mobile compatibility with touch controls.</p>
+  <p>Voxel Racer is a browser-based 3D racing game featuring procedurally generated terrain, multiplayer functionality through MQTT, and a comprehensive UI system. The game includes day/night cycles, particle effects, and supports both desktop and mobile controls for an immersive racing experience.</p>
 </section>
