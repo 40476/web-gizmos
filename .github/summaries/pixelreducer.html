@@ -1,15 +1,16 @@
 <section>
   <ul>
-    <li>Upload an image or video to degrade its resolution and audio quality over time.</li>
-    <li>Control degradation with parameters like final scale, pixelate step, and audio crush.</li>
-    <li>Generate a degraded video/WebM or animated GIF as output.</li>
-    <li>Real-time preview shows progressive degradation on a canvas.</li>
+    <li>Loads an image or video file and displays it on a canvas.</li>
+    <li>Gradually degrades video resolution and audio quality over time.</li>
+    <li>Converts images into pixelated GIFs with decreasing resolution.</li>
+    <li>Records the degraded video output as a WebM file if enabled.</li>
+    <li>Provides real-time preview and download links for processed media.</li>
   </ul>
 
   <pre>
-    <code>const canvas = document.getElementById('canvas');</code>
-    <code>const ctx = canvas.getContext('2d', { alpha: false });</code>
+    <code>canvas.getContext('2d', { alpha: false });</code>
+    <code>new MediaRecorder(mixedStream, mimeType ? { mimeType } : {});</code>
   </pre>
 
-  <p>This web app degrades media resolution and audio in real-time. Users upload a file, adjust degradation settings, and preview the effect live. It supports both video (with optional recording) and image (to GIF) processing, using canvas manipulation and Web Audio API for effects.</p>
+  <p>This web app lets you upload an image or video, then progressively degrades its resolution and audio quality over time. For videos, it applies a low-pass filter and bitcrusher to the audio while scaling down the video resolution. For images, it creates a pixelated GIF that becomes more blocky as it plays. You can adjust degradation parameters like final scale, pixelation step, and audio crush strength. The app provides real-time preview and allows downloading the degraded output as WebM video or GIF files.</p>
 </section>
