@@ -607,18 +607,18 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive web app for degrading image and video quality with pixelation and audio distortion.</li>
-    <li>Supports both image-to-GIF conversion and video degradation with optional recording.</li>
-    <li>Configurable degradation parameters like final scale, pixelation step, audio crush, and hold time.</li>
+    <li>Upload an image or video to degrade its resolution and audio quality over time.</li>
+    <li>Control degradation with parameters like final scale, pixelate step, and audio crush.</li>
+    <li>Generate a degraded video/WebM or animated GIF as output.</li>
+    <li>Real-time preview shows progressive degradation on a canvas.</li>
   </ul>
 
   <pre>
     <code>const canvas = document.getElementById('canvas');</code>
     <code>const ctx = canvas.getContext('2d', { alpha: false });</code>
-    <code>const reduceBtn = document.getElementById('reduceBtn');</code>
   </pre>
 
-  <p>This is a web application that degrades image and video quality through pixelation and audio distortion. It allows users to upload media files, adjust degradation parameters, and generate either a GIF from images or a degraded video from video files. The app features a comic-style interface and includes audio processing with low-pass filtering and bitcrushing effects.</p>
+  <p>This web app degrades media resolution and audio in real-time. Users upload a file, adjust degradation settings, and preview the effect live. It supports both video (with optional recording) and image (to GIF) processing, using canvas manipulation and Web Audio API for effects.</p>
 </section>
           </div>
         </section>
@@ -741,7 +741,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 17:33</p>
+      <p>Registry Sync: Mar 31, 2026 - 17:44</p>
     </footer>
   </main>
 
