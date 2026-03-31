@@ -469,19 +469,18 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive audio visualizer with WebGL and Canvas rendering</li>
-    <li>Supports local audio files, microphone input, and WebSocket streams</li>
-    <li>Customizable visual effects with real-time parameter controls</li>
-    <li>Persistent settings storage using localStorage</li>
-    <li>Responsive design with multiple visualizer presets</li>
+    <li>Audio visualizer with 2D and 3D canvases for real-time music visualization</li>
+    <li>Supports multiple audio input modes: local mic, WebSocket stream, and file upload</li>
+    <li>Configurable visualizer settings including bar count, color, sensitivity, and FFT size</li>
+    <li>Smooth audio data processing with configurable smoothing passes and time constants</li>
+    <li>Display metadata overlay showing track information and album art when available</li>
   </ul>
 
   <pre>
-    <code>const visualizers = { bars: { settings: [ { id: 'barCount', type: 'range', min: 16, max: 256 } ] } };</code>
-    <code>const masterSettings = [ { id: 'sensitivity', type: 'range', min: 0.1, max: 5 }, { id: 'playToggle', type: 'button' } ];</code>
+    <code>const visualizers = { bars: { displayName: "Bars", settings: [ { id: 'barCount', type: 'range', label: 'Bar Count', min: 16, max: 256, step: 1, default: 128 }, { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' } ], draw: () => { return () => { const thisConfig = CONFIG.settings.bars; const barWidth = canvas2D.width / thisConfig.barCount; ctx.fillStyle = thisConfig.color; for (let i = 0; i < thisConfig.barCount; i++) { const value = audioData[i]; const barHeight = (value / 255) * canvas2D.height * CONFIG.master.sensitivity; const x = i * barWidth; const y = canvas2D.height - barHeight; ctx.fillRect(x, y, barWidth - 2, barHeight); } } } }, ...presets };</code>
   </pre>
 
-  <p>This audio visualizer application provides a rich, interactive experience with multiple input sources and customizable visual effects. The modular design allows for easy extension with new visualizer types and supports persistent user preferences through localStorage integration.</p>
+  <p>This audio visualizer provides a customizable real-time music visualization experience with multiple input modes and visualizer types. The application features smooth audio processing, configurable settings, and displays track metadata with album art. Users can choose between local microphone input, WebSocket streams, or uploaded audio files, with adjustable parameters for sensitivity, FFT size, and visualizer appearance.</p>
 </section>
           </div>
         </section>
@@ -744,7 +743,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Mar 31, 2026 - 17:21</p>
+      <p>Registry Sync: Mar 31, 2026 - 17:23</p>
     </footer>
   </main>
 
