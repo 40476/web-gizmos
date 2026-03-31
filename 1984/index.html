@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1984/2026</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syncopate:wght@400;700&display=swap');
+
+        :root {
+            --bg: #050505;
+            --text: #e0e0e0;
+            --accent: #ff2a2a;
+            --dim: #333333;
+            --font-main: 'Share Tech Mono', monospace;
+            --font-head: 'Syncopate', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Particle Canvas */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* Ambient Noise Overlay */
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.05;
+            background: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+        }
+
+        /* Tracking Eye */
+        #watcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            z-index: 100;
+            transition: transform 0.1s ease-out;
+            pointer-events: none;
+            filter: drop-shadow(0 0 10px rgba(255, 42, 42, 0.5));
+        }
+
+        #watcher-pupil {
+            transition: transform 0.1s ease-out;
+        }
+
+        main {
+            position: relative;
+            z-index: 10;
+        }
+
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5vw;
+            position: relative;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-head);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: var(--accent);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 42, 42, 0.5);
+        }
+
+        /* --- Scroll Reveal Classes --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .blur-reveal {
+            filter: blur(20px);
+            opacity: 0;
+            transition: filter 1.5s ease, opacity 1.5s ease;
+        }
+
+        .blur-reveal.active {
+            filter: blur(0);
+            opacity: 1;
+        }
+
+        .zoom-reveal {
+            transform: scale(0.5);
+            opacity: 0;
+            transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 1s ease;
+        }
+
+        .zoom-reveal.active {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* --- Specific Section Styling --- */
+        #hero {
+            text-align: center;
+        }
+
+        .glitch {
+            font-size: 5vw;
+            position: relative;
+            color: white;
+            animation: glitch-skew 1s infinite linear alternate-reverse;
+        }
+
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 var(--accent);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 #00ffff;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 86px, 0); }
+            5% { clip: rect(32px, 9999px, 12px, 0); }
+            10% { clip: rect(54px, 9999px, 94px, 0); }
+            15% { clip: rect(12px, 9999px, 45px, 0); }
+            20% { clip: rect(89px, 9999px, 23px, 0); }
+            25% { clip: rect(45px, 9999px, 67px, 0); }
+            30% { clip: rect(21px, 9999px, 89px, 0); }
+            35% { clip: rect(76px, 9999px, 11px, 0); }
+            40% { clip: rect(34px, 9999px, 56px, 0); }
+            45% { clip: rect(98px, 9999px, 34px, 0); }
+            50% { clip: rect(11px, 9999px, 78px, 0); }
+            55% { clip: rect(67px, 9999px, 22px, 0); }
+            60% { clip: rect(43px, 9999px, 99px, 0); }
+            65% { clip: rect(88px, 9999px, 44px, 0); }
+            70% { clip: rect(23px, 9999px, 66px, 0); }
+            75% { clip: rect(55px, 9999px, 88px, 0); }
+            80% { clip: rect(99px, 9999px, 33px, 0); }
+            85% { clip: rect(14px, 9999px, 77px, 0); }
+            90% { clip: rect(66px, 9999px, 22px, 0); }
+            95% { clip: rect(33px, 9999px, 99px, 0); }
+            100% { clip: rect(77px, 9999px, 55px, 0); }
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            opacity: 0.7;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-15px) translateX(-50%); }
+            60% { transform: translateY(-7px) translateX(-50%); }
+        }
+
+        /* Interactive Device Element */
+        .device-container {
+            width: 300px;
+            height: 600px;
+            border: 4px solid var(--dim);
+            border-radius: 40px;
+            position: relative;
+            margin: 40px auto;
+            background: #000;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            transition: all 0.5s ease;
+        }
+
+        .device-screen {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #111, #222);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .device-eye {
+            width: 150px;
+            height: 150px;
+            opacity: 0;
+            transition: opacity 2s ease, transform 1s ease;
+            transform: scale(0.5);
+        }
+
+        .device-container.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 50px rgba(255, 42, 42, 0.3);
+        }
+
+        .device-container.active .device-eye {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Parallax text section */
+        .parallax-wrapper {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-top: 1px solid var(--dim);
+            border-bottom: 1px solid var(--dim);
+        }
+
+        .parallax-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 150%;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,42,42,0.03) 40px, rgba(255,42,42,0.03) 80px);
+            z-index: -1;
+            will-change: transform;
+        }
+
+        .parallax-text {
+            font-size: 8vw;
+            font-family: var(--font-head);
+            color: rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+            position: absolute;
+            font-weight: 700;
+            will-change: transform;
+        }
+
+        /* Contract/Terms of Service Section */
+        .tos-box {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid var(--dim);
+            padding: 2rem;
+            height: 300px;
+            overflow-y: scroll;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .tos-box::-webkit-scrollbar {
+            width: 5px;
+        }
+        .tos-box::-webkit-scrollbar-thumb {
+            background: var(--accent);
+        }
+
+        .accept-btn {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 15px 40px;
+            font-family: var(--font-head);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .accept-btn:hover {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 20px rgba(255, 42, 42, 0.6);
+        }
+
+        /* Footer / Sources */
+        footer {
+            padding: 4rem 2rem;
+            background: #020202;
+            border-top: 1px solid var(--dim);
+            text-align: center;
+        }
+
+        .sources {
+            text-align: left;
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .sources li {
+            margin-bottom: 10px;
+        }
+
+        .sources a {
+            color: var(--accent);
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .sources a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .glitch { font-size: 10vw; }
+            .device-container { width: 250px; height: 500px; }
+            p { font-size: 1rem; }
+        }
+    </style>
+
+    <script>!function(e){let t=0,r=()=>{let s=document.createElement("script");s.src=e[t++],s.onerror=()=>e[t]&&r(),document.head.append(s)};r()}(location.hostname.includes("usr40k.dev")?["https://header.usr40k.dev/injector.js","https://40476.github.io/header/injector.js"]:["https://40476.github.io/header/injector.js","https://header.usr40k.dev/injector.js"]);</script>
+</head>
+<body>
+
+    <div class="noise"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Interactive Eye that follows mouse -->
+    <svg id="watcher" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10,50 Q50,10 90,50 Q50,90 10,50 Z" fill="none" stroke="#ff2a2a" stroke-width="4"/>
+        <circle id="watcher-pupil" cx="50" cy="50" r="15" fill="#ff2a2a"/>
+        <circle cx="50" cy="50" r="5" fill="#050505"/>
+    </svg>
+
+    <main>
+        <!-- HERO SECTION -->
+        <section id="hero">
+            <h1 class="glitch" data-text="1984/2026">1984/2026</h1>
+            <h2 class="reveal">The Surveillance Economy</h2>
+            <p class="reveal blur-reveal" style="text-align: center; margin-top: 2rem;">
+                "There was of course no way of knowing whether you were being watched at any given moment... You had to live — did live, from habit that became instinct — in the assumption that every sound you made was overheard." <br><br>
+                <span class="highlight">— George Orwell, 1984</span>
+            </p>
+            <div class="scroll-down">SCROLL TO CONNECT</div>
+        </section>
+
+        <!-- SECTION 1: THE TELESCREEN -->
+        <section>
+            <div class="reveal">
+                <h2>The Telescreen in Your Pocket</h2>
+                <p>In Oceania, citizens were monitored constantly by two-way "telescreens." They could not be turned off. Today, the modern equivalent is willingly purchased, carried in our pockets, and placed in our bedrooms.</p>
+                <p>Smartphones, smart speakers, and wearables are equipped with high-definition cameras, microphones, and GPS trackers. While not actively monitored by a central "Thought Police," they continuously stream biometric and behavioral data back to corporate servers. <span class="highlight">The surveillance state wasn't imposed; it was sold as a convenience.</span></p>
+            </div>
+
+            <div class="device-container scroll-trigger zoom-reveal" id="smart-device">
+                <div class="device-screen">
+                    <svg class="device-eye" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#ff2a2a" stroke-width="2" stroke-dasharray="5,5" class="spin"/>
+                        <circle cx="50" cy="50" r="20" fill="#ff2a2a"/>
+                        <circle cx="50" cy="50" r="8" fill="#000"/>
+                        <style>
+                            .spin { transform-origin: center; animation: spin-anim 10s linear infinite; }
+                            @keyframes spin-anim { 100% { transform: rotate(360deg); } }
+                        </style>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: MINISTRY OF TRUTH (Data Brokers) -->
+        <section>
+            <div style="width: 100%; max-width: 800px;">
+                <h2 class="blur-reveal">The Ministry of Truth (Data Brokers)</h2>
+                <p class="blur-reveal delay-1">Orwell envisioned the Ministry of Truth altering records to control the narrative. Modern data brokers operate similarly, but their goal is <span class="highlight">predictive manipulation</span>. They construct an alternate, digital version of you.</p>
+                <p class="blur-reveal delay-2">Companies aggregate thousands of data points per individual: your location history, web searches, heartbeat (from smartwatches), menstrual cycles, political leanings, and private messages. This massive shadow-profile is bought and sold in milliseconds through real-time bidding algorithms to advertisers, political campaigns, and sometimes, indirectly, government agencies.</p>
+            </div>
+        </section>
+
+        <!-- PARALLAX TRANSITION -->
+        <div class="parallax-wrapper">
+            <div class="parallax-bg" id="p-bg"></div>
+            <div class="parallax-text" id="p-text-1" style="top: 20%;">IGNORANCE IS STRENGTH</div>
+            <div class="parallax-text" id="p-text-2" style="bottom: 20%; right: -20%;">DATA IS POWER</div>
+        </div>
+
+        <!-- SECTION 3: THOUGHTCRIME -->
+        <section>
+            <div class="reveal">
+                <h2>Thoughtcrime & Algorithms</h2>
+                <p>Orwell's "Thoughtcrime" was the criminal act of holding unspoken anti-party beliefs. Modern tech companies have created an infrastructure that functions as a <span class="highlight">pre-crime detection system for consumerism and ideology</span>.</p>
+                <p>Recommendation algorithms (like those on social media platforms) do not just predict what you want to see; they actively manipulate your psychological state to keep you engaged. By feeding you curated streams of outrage, validation, or fear, these systems subtly alter your worldview—effectively controlling "Newspeak" by controlling the parameters of your digital reality.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 4: ILLUSION OF CONSENT -->
+        <section>
+            <h2 class="zoom-reveal">The Illusion of Consent</h2>
+            <p class="reveal">Unlike 1984, modern surveillance relies on the illusion of choice. We trade our most intimate privacy for access to social networks, maps, and communication tools.</p>
+
+            <div class="tos-box reveal">
+                <h3>TERMS AND CONDITIONS</h3>
+                <p>By clicking "Accept", you grant us a perpetual, irrevocable, worldwide, royalty-free license to access, use, process, and analyze your personal data, including but not limited to:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Real-time geolocation tracking</li>
+                    <li>Biometric data (facial recognition, fingerprint)</li>
+                    <li>Browsing history and cross-site tracking</li>
+                    <li>Audio recordings captured ambiently</li>
+                    <li>Behavioral profiling and predictive modeling</li>
+                </ul>
+                <p style="margin-top: 20px;">We reserve the right to share this profile with third-party partners, affiliates, data brokers, and compliance authorities. You acknowledge that "privacy" is a legacy concept and hold us harmless for any psychological manipulation resulting from algorithmic targeting.</p>
+                <br>
+                <p>Scroll to bottom to read full 14,000 word agreement...</p>
+                <br><br><br><br><br><br>
+                <p>Still scrolling? We already collected your reading speed.</p>
+            </div>
+
+            <button class="accept-btn reveal" id="accept-btn">I AGREE</button>
+        </section>
+
+        <!-- FOOTER & SOURCES -->
+        <footer>
+            <h2>Sources & Further Reading</h2>
+            <div class="sources">
+                <ol>
+                    <li><strong>Zuboff, Shoshana. (2019).</strong> <em>The Age of Surveillance Capitalism: The Fight for a Human Future at the New Frontier of Power.</em> PublicAffairs. <a href="https://www.publicaffairsbooks.com/titles/shoshana-zuboff/the-age-of-surveillance-capitalism/9781610395694/" target="_blank">[Link]</a></li>
+                    <li><strong>Orwell, George. (1949).</strong> <em>1984.</em> Secker & Warburg.</li>
+                    <li><strong>Electronic Frontier Foundation (EFF).</strong> <em>The Data Broker Ecosystem.</em> Reports on how third-party companies harvest and sell user data. <a href="https://www.eff.org/" target="_blank">[Link]</a></li>
+                    <li><strong>Amnesty International. (2019).</strong> <em>Surveillance Giants: How the Business Model of Google and Facebook Threatens Human Rights.</em> <a href="https://www.amnesty.org/" target="_blank">[Link]</a></li>
+                    <li><strong>Shira Ovide. (2021).</strong> "You Are the Product." <em>The New York Times</em>. Analysis of the modern tech business model.</li>
+                </ol>
+            </div>
+            <p style="margin-top: 4rem; font-size: 0.8rem; text-align: center; max-width: 100%;">
+                Designed to illustrate the intersection of classic dystopian literature and modern data privacy issues.<br>
+                Look behind you.
+            </p>
+        </footer>
+    </main>
+
+    <script>
+        // --- 1. Canvas Particle Network (The Surveillance Web) ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+
+            // Adjust particle count based on screen size
+            const count = Math.floor((width * height) / 15000);
+
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.fillStyle = '#ff2a2a';
+            ctx.strokeStyle = 'rgba(255, 42, 42, 0.15)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Bounce off edges
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Connect particles
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        drawParticles();
+
+
+        // --- 2. Interactive Eye Tracking ---
+        const watcher = document.getElementById('watcher');
+        const pupil = document.getElementById('watcher-pupil');
+
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            // Get eye center
+            const rect = watcher.getBoundingClientRect();
+            const eyeX = rect.left + rect.width / 2;
+            const eyeY = rect.top + rect.height / 2;
+
+            // Calculate angle and distance
+            const angle = Math.atan2(mouseY - eyeY, mouseX - eyeX);
+            const dist = Math.min(10, Math.hypot(mouseX - eyeX, mouseY - eyeY) / 10);
+
+            // Move pupil
+            const pupilX = Math.cos(angle) * dist;
+            const pupilY = Math.sin(angle) * dist;
+
+            pupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;
+
+            // Slight rotation to the whole eye
+            watcher.style.transform = `rotate(${angle * (180/Math.PI) + 45}deg)`;
+        });
+
+
+        // --- 3. Scroll Effects & Observers ---
+
+        // Intersection Observer for revealing elements
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.2
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+
+                    // Specific trigger for the device eye
+                    if (entry.target.id === 'smart-device') {
+                        entry.target.classList.add('active');
+                    }
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal, .blur-reveal, .zoom-reveal, .device-container').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Parallax Effect Listener
+        const pBg = document.getElementById('p-bg');
+        const pText1 = document.getElementById('p-text-1');
+        const pText2 = document.getElementById('p-text-2');
+
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+
+            // Move background slowly
+            pBg.style.transform = `translateY(${scrollY * 0.3}px)`;
+
+            // Move text horizontally based on scroll
+            pText1.style.transform = `translateX(${scrollY * 0.2 - 300}px)`;
+            pText2.style.transform = `translateX(${-scrollY * 0.2 + 300}px)`;
+
+            // Add a slight blur to the whole page based on scroll velocity (optional subtle effect)
+            // (Omitted for performance, but the infrastructure is here)
+        });
+
+        // --- 4. Button Interaction ---
+        const btn = document.getElementById('accept-btn');
+        btn.addEventListener('click', () => {
+            btn.innerHTML = "DATA HARVESTED";
+            btn.style.backgroundColor = "var(--accent)";
+            btn.style.color = "#000";
+
+            // Glitch the whole screen momentarily
+            document.body.style.filter = "invert(1) hue-rotate(180deg)";
+            setTimeout(() => {
+                document.body.style.filter = "none";
+            }, 300);
+
+            // Increase particle speed
+            particles.forEach(p => {
+                p.vx *= 5;
+                p.vy *= 5;
+                p.radius *= 2;
+            });
+        });
+
+    </script>
+</body>
+</html>
