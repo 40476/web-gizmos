@@ -16,6 +16,7 @@
       "nuclear",
       "doofusdot",
       "checkers",
+      "BST",
       "pattern",
       "pcb"
       
@@ -26,6 +27,9 @@
     "racing",
     "matrix",
     "1984",
-    "nuclear"
+    "nuclear",
+    "doofusdot",
+    "checkers",
+    "BST"
   ]
 }
