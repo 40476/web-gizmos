@@ -1,14 +1,15 @@
 <section>
   <ul>
-    <li>Interactive 3D spinning text with customizable fonts, size, thickness, speed, and color</li>
-    <li>Loads Google Fonts dynamically from GitHub API and caches results locally</li>
-    <li>Searchable font picker with real-time preview and URL-based state sharing</li>
+    <li>Interactive 3D spinning text generator using Three.js with customizable font, size, thickness, speed, and color</li>
+    <li>Loads Google Fonts dynamically from GitHub via API, with search functionality for font selection</li>
+    <li>URL-based state management enables sharing configurations and keyboard shortcut to toggle UI</li>
   </ul>
 
   <pre>
-    <code>const geo = new TextGeometry(state.text, { font, size: state.size, height: state.thickness, curveSegments: 12, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.05 });</code>
+    <code>const geo = new TextGeometry(state.text, { font, size: state.size, height: state.thickness })</code>
     <code>textMesh.rotation.y += state.speed;</code>
+    <code>url.searchParams.set('text', state.text); url.searchParams.set('font', state.folder)</code>
   </pre>
 
-  <p>This web application creates a 3D spinning text effect using Three.js, allowing users to customize various text properties including font selection from Google Fonts, size, thickness, rotation speed, and color. The application features a searchable font picker that loads fonts dynamically from GitHub, caches results locally for performance, and generates shareable URLs with all settings encoded as query parameters.</p>
+  <p>A web-based 3D text spinner that fetches Google Fonts from GitHub, renders them in Three.js with real-time controls, and generates shareable URLs for each configuration. The application features a collapsible UI, font search, and smooth animation with customizable parameters.</p>
 </section>
