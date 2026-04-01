@@ -1,16 +1,16 @@
 <section>
   <ul>
-    <li>Browser-based 2D multiplayer racing game using HTML5 Canvas and MQTT</li>
-    <li>Real-time physics with drift mechanics and customizable maps</li>
-    <li>Cross-platform support with mobile touch controls</li>
-    <li>Persistent rooms and map sharing system</li>
-    <li>Audio engine with realistic car sounds and effects</li>
+    <li>HTML5 browser game with real-time multiplayer racing using MQTT</li>
+    <li>Tile-based map editor with terrain generation and custom physics</li>
+    <li>Chat system with moderation commands and user muting</li>
+    <li>Leaderboard, minimap, and mobile touch controls</li>
+    <li>Audio system with engine sounds and tire effects</li>
   </ul>
 
   <pre>
-    <code>const audio = new SoundManager();</code>
-    <code>audio.update(myCar.speed, myCar.drifting, surfaceType);</code>
+    <code>const CLIENT_ID = localStorage.getItem('drift_pid') || crypto.randomUUID();</code>
+    <code>mqttClient = mqtt.connect(currentBroker, { clientId: CLIENT_ID, clean: true });</code>
   </pre>
 
-  <p>DRiFT.js is a lightweight, real-time multiplayer racing game built entirely in the browser. It features realistic physics, drift mechanics, and a powerful map editor that lets players create and share custom tracks. The game uses MQTT for networking, providing low-latency multiplayer experiences across devices. With mobile touch controls, audio feedback, and persistent rooms, DRiFT.js delivers an engaging racing experience that runs smoothly on any modern browser without plugins.</p>
+  <p>DRiFT.js is a multiplayer racing game built with HTML5 Canvas and MQTT for real-time networking. Players can create custom tracks, adjust car physics, and race against others in shared rooms. The game features a tile-based map editor, particle effects for drifting, and a complete audio system with engine and tire sounds. Cross-platform support includes desktop keyboard controls and mobile touch controls.</p>
 </section>
