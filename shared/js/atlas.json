@@ -8,5 +8,10 @@
     "name": "mqtt.min.js",
     "size": 368606,
     "extension": "js"
+  },
+  {
+    "name": "atlas.json",
+    "size": 162,
+    "extension": "json"
   }
 ]
