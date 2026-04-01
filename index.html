@@ -491,19 +491,19 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Web-based MIDI player with real-time audio synthesis using Tone.js</li>
-    <li>Supports loading sound libraries and MIDI sequences from remote Atlas JSON files</li>
-    <li>Provides custom file upload for audio and MIDI files</li>
-    <li>Features real-time audio visualization, pitch/speed controls, and WAV export</li>
-    <li>Implements safe resource management with automatic cleanup of previous instances</li>
+    <li>Web-based MIDI player that synchronizes audio samples with MIDI sequences</li>
+    <li>Features customizable pitch shifting, playback speed control, and real-time waveform visualization</li>
+    <li>Supports both pre-loaded library files and user-uploaded audio/MIDI files</li>
+    <li>Includes offline WAV export functionality for rendered compositions</li>
+    <li>Implements URL parameter sharing for reproducible configurations</li>
   </ul>
 
   <pre>
-    <code>async function initSampler(url) { ... }</code>
-    <code>async function initMIDI(data) { ... }</code>
+    <code>const sampler = new Tone.Sampler({ urls: { C4: url } });</code>
+    <code>const player = new MidiPlayer.Player((event) => { sampler.triggerAttackRelease(shiftedNote, "8n"); });</code>
   </pre>
 
-  <p>This application is a browser-based MIDI sequencer that plays MIDI files using a selected audio sample. It loads audio and MIDI libraries from JSON atlases, allows custom file uploads, and provides real-time audio visualization with pitch and speed controls. The application safely manages Tone.js resources by automatically disposing of previous instances when loading new content, preventing memory leaks and ensuring smooth playback. It also includes offline rendering capabilities to export the final audio as a WAV file.</p>
+  <p>This MIDIbeat application provides a complete web-based music production environment where users can combine audio samples with MIDI sequences. The interface includes waveform visualization, pitch and speed controls, and supports both library and custom file imports. A key feature is the offline WAV export capability that renders the synchronized audio using Tone.js's Offline context, allowing users to save their compositions as audio files. The application also supports URL-based sharing of configurations for easy collaboration and reproducibility.</p>
 </section>
           </div>
         </section>
@@ -740,7 +740,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Apr 01, 2026 - 14:14</p>
+      <p>Registry Sync: Apr 01, 2026 - 14:46</p>
     </footer>
   </main>
 
