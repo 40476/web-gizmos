@@ -1,16 +1,15 @@
 <section>
   <ul>
-    <li>3D match-3 puzzle game where players swap colored blocks to create matches and fill target art</li>
-    <li>Features include auto-play, hint system, and custom art importer with color palette generation</li>
-    <li>Responsive design with sidebar for controls and game status, plus win screen with sharing options</li>
-    <li>Dynamic background fluid effects that change colors based on active game elements</li>
-    <li>Three.js powered 3D graphics with particle effects and smooth animations</li>
+    <li>3D match-3 puzzle game with voxel graphics and artistic pixel art completion</li>
+    <li>Custom level importer that converts images into playable game boards with color palettes</li>
+    <li>Auto-play mode with hint system and fluid background animations that respond to game colors</li>
+    <li>Export functionality for sharing completed art cards via SMS, web share API, or image download</li>
   </ul>
 
   <pre>
-    <code>function findMatches() { let matchedBlocks = new Set(), sequences = []; ... }</code>
-    <code>function attemptSwap(b1, b2) { gameState = STATE.SWAPPING; ... }</code>
+    <code>const LEVELS = { 'flower': { name: 'Fire Flower', grid: 10, resolution: 16, keepBg: false, imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg...') } };</code>
+    <code>function attemptSwap(b1, b2) { gameState = STATE.SWAPPING; lastInteraction = { x: b2.gridX, y: b2.gridY }; /* swap logic */ };</code>
   </pre>
 
-  <p>This is a 3D match-3 puzzle game built with Three.js that combines color-matching gameplay with pixel art creation. Players swap blocks to create matches of three or more, which fills in corresponding pixels of target artwork. The game features an auto-play mode, hint system, and allows custom art import through image processing. With responsive design, fluid background effects, and 3D particle animations, it provides an engaging puzzle experience across desktop and mobile devices.</p>
+  <p>This voxel-based match-3 game combines puzzle mechanics with pixel art completion. Players swap colored blocks to create matches while filling in target artwork. The game features custom level importing from images, auto-play functionality, and dynamic fluid backgrounds that adapt to active game colors. Completed levels can be exported as shareable art cards with statistics.</p>
 </section>
