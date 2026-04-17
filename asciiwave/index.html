@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+    <script>!function(e){let t=0,r=()=>{let s=document.createElement("script");s.src=e[t++],s.onerror=()=>e[t]&&r(),document.head.append(s)};r()}(location.hostname.includes("usr40k.dev")?["https://header.usr40k.dev/injector.js","https://40476.github.io/header/injector.js"]:["https://40476.github.io/header/injector.js","https://header.usr40k.dev/injector.js"]);</script>
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <title>ASCII Wave</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --primary: #00ff41;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg);
+            color: var(--primary);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #asciiCanvas {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            line-height: 1;
+            letter-spacing: 0;
+            white-space: pre;
+            cursor: default;
+            user-select: none;
+            /* High performance rendering hint */
+            will-change: content;
+        }
+    </style>
+</head>
+<body>
+
+    <pre id="asciiCanvas"></pre>
+
+    <script>
+        const container = document.getElementById('asciiCanvas');
+        const CHARS = '@#S%?*+;:,. ';
+        
+        // Configuration
+        const CHAR_WIDTH = 9.6; // Approximate width of a monospace char at 16px
+        const CHAR_HEIGHT = 16;
+        const WAVE_DURATION = 800;
+        const MAX_RADIUS = 30;
+
+        let rows, cols;
+        let waves = [];
+        let isAnim = false;
+
+        function buildGrid() {
+            cols = Math.floor(window.innerWidth / CHAR_WIDTH);
+            rows = Math.floor(window.innerHeight / CHAR_HEIGHT);
+            renderEmpty();
+        }
+
+        function renderEmpty() {
+            container.textContent = Array(rows).fill(' '.repeat(cols)).join('\n');
+        }
+
+        const startWave = (r, c) => {
+            waves.push({
+                originR: r,
+                originC: c,
+                startTime: performance.now()
+            });
+            if (!isAnim) {
+                isAnim = true;
+                requestAnimationFrame(animate);
+            }
+        };
+
+        const animate = (t) => {
+            waves = waves.filter(w => t - w.startTime < WAVE_DURATION);
+
+            if (waves.length === 0) {
+                renderEmpty();
+                isAnim = false;
+                return;
+            }
+
+            // Create a 1D representation of the 2D grid for speed
+            const screen = new Array(rows);
+            for (let r = 0; r < rows; r++) {
+                screen[r] = new Array(cols).fill(' ');
+            }
+
+            for (let i = 0; i < waves.length; i++) {
+                const w = waves[i];
+                const age = t - w.startTime;
+                const progress = age / WAVE_DURATION;
+                const currentRadius = progress * MAX_RADIUS;
+                
+                // Only iterate in the bounding box of the wave
+                const rStart = Math.max(0, Math.floor(w.originR - currentRadius - 2));
+                const rEnd = Math.min(rows - 1, Math.ceil(w.originR + currentRadius + 2));
+                const cStart = Math.max(0, Math.floor(w.originC - currentRadius - 2));
+                const cEnd = Math.min(cols - 1, Math.ceil(w.originC + currentRadius + 2));
+
+                for (let r = rStart; r <= rEnd; r++) {
+                    for (let c = cStart; c <= cEnd; c++) {
+                        const dr = r - w.originR;
+                        const dc = c - w.originC;
+                        const dist = Math.sqrt(dr * dr + dc * dc);
+                        
+                        if (dist <= currentRadius && dist > currentRadius - 4) {
+                            const charIdx = Math.floor((dist + age / 50)) % (CHARS.length - 1);
+                            // We replace the space if this wave is "active" here
+                            screen[r][c] = CHARS[charIdx];
+                        }
+                    }
+                }
+            }
+
+            // Single DOM update for the entire screen
+            let output = '';
+            for (let r = 0; r < rows; r++) {
+                output += screen[r].join('') + '\n';
+            }
+            container.textContent = output;
+
+            requestAnimationFrame(animate);
+        };
+
+        window.addEventListener('resize', buildGrid);
+
+        window.addEventListener('mousemove', (e) => {
+            const c = Math.floor(e.clientX / CHAR_WIDTH);
+            const r = Math.floor(e.clientY / CHAR_HEIGHT);
+            
+            // Only trigger a new wave if we move to a significantly different grid position
+            if (window.lastR !== r || window.lastC !== c) {
+                startWave(r, c);
+                window.lastR = r;
+                window.lastC = c;
+            }
+        });
+
+        buildGrid();
+    </script>
+</body>
+</html>
