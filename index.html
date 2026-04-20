@@ -493,18 +493,19 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Audio visualizer with 2D and 3D canvases for real-time music visualization</li>
-    <li>Supports multiple audio input modes: local mic, WebSocket stream, and file upload</li>
-    <li>Configurable visualizer settings including bar count, color, sensitivity, and FFT size</li>
-    <li>Smooth audio data processing with configurable smoothing passes and time constants</li>
-    <li>Display metadata overlay showing track information and album art when available</li>
+    <li>Web-based audio visualizer with 3D background and 2D overlay canvases</li>
+    <li>Multiple visualization modes including bars, waves, and custom presets</li>
+    <li>Configurable audio processing with FFT size, smoothing, and sensitivity controls</li>
+    <li>Support for local audio files, microphone input, and WebSocket audio streams</li>
+    <li>Metadata display for now playing information and album artwork</li>
   </ul>
 
   <pre>
-    <code>const visualizers = { bars: { displayName: "Bars", settings: [ { id: 'barCount', type: 'range', label: 'Bar Count', min: 16, max: 256, step: 1, default: 128 }, { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' } ], draw: () => { return () => { const thisConfig = CONFIG.settings.bars; const barWidth = canvas2D.width / thisConfig.barCount; ctx.fillStyle = thisConfig.color; for (let i = 0; i < thisConfig.barCount; i++) { const value = audioData[i]; const barHeight = (value / 255) * canvas2D.height * CONFIG.master.sensitivity; const x = i * barWidth; const y = canvas2D.height - barHeight; ctx.fillRect(x, y, barWidth - 2, barHeight); } } } }, ...presets };</code>
+    <code>const visualizers = { bars: { settings: [...], draw: () => { ... } } };</code>
+    <code>function draw() { analyser.getByteFrequencyData(audioData); visualizer.draw(store.modules, store)(); }</code>
   </pre>
 
-  <p>This audio visualizer provides a customizable real-time music visualization experience with multiple input modes and visualizer types. The application features smooth audio processing, configurable settings, and displays track metadata with album art. Users can choose between local microphone input, WebSocket streams, or uploaded audio files, with adjustable parameters for sensitivity, FFT size, and visualizer appearance.</p>
+  <p>A sophisticated audio visualization web application featuring multiple visualizer modes, real-time audio processing, and customizable settings. The application supports local audio files, microphone input, and WebSocket streams, with smooth animations and metadata display capabilities.</p>
 </section>
           </div>
         </section>
@@ -763,7 +764,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Apr 17, 2026 - 17:29</p>
+      <p>Registry Sync: Apr 20, 2026 - 15:38</p>
     </footer>
   </main>
 
