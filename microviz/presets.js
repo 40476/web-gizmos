@@ -1786,6 +1786,167 @@ dataPulse:{
         };
     }
 },
+
+nebulaShader: {
+    displayName: "Cosmic Nebula",
+    settings: [
+        { id: 'speed', label: 'Warp Speed', type: 'range', min: 0, max: 5.0, step: 0.1, default: 1.0 },
+        { id: 'twist', label: 'Twist Amount', type: 'range', min: 0, max: 10.0, step: 0.5, default: 2.0 },
+        { id: 'flashMult', label: 'Flash Intensity', type: 'range', min: 0, max: 5.0, step: 0.1, default: 1.5 },
+        { id: 'flashPower', label: 'Flash Sharpness', type: 'range', min: 1.0, max: 6.0, step: 0.1, default: 3.0 },
+        { id: 'flashDecay', label: 'Flash Decay', type: 'range', min: 0.8, max: 0.99, step: 0.01, default: 0.92 },
+        { id: 'density', label: 'Fog Density', type: 'range', min: 1.0, max: 10.0, step: 0.5, default: 5.0 },
+        { id: 'hue', label: 'Hue Shift', type: 'range', min: 0, max: 6.28, step: 0.1, default: 0 },
+        { id: 'complexity', label: 'Complexity', type: 'range', min: 10, max: 50, step: 1, default: 30 }
+    ],
+    draw: (modules, store) => {
+        if (!store.gl) {
+            const canvas = document.getElementById('visualizer-3d');
+            const gl = canvas.getContext('webgl2');
+            if (!gl) return () => {};
+            store.gl = gl;
+
+            // --- Robust Initialization ---
+            store.lastBass = 0;
+            store.flashEnergy = 0;
+            store.deltaMax = 1.0;
+            store.error = false;
+
+            const compileShader = (type, src) => {
+                const s = gl.createShader(type);
+                gl.shaderSource(s, src);
+                gl.compileShader(s);
+                if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+                    console.error("Shader Error:", gl.getShaderInfoLog(s));
+                    gl.deleteShader(s); return null;
+                }
+                return s;
+            };
+
+            const vsSource = `#version 300 es
+            in vec4 aPosition;
+            void main() { gl_Position = aPosition; }`;
+
+            const fsSource = `#version 300 es
+            precision highp float;
+            uniform vec3 iResolution;
+            uniform float iTime;
+            uniform float iAudio;
+            uniform float uTwist;
+            uniform float uFlash;
+            uniform float uDensity;
+            uniform float uHue;
+            uniform int uComplexity;
+            out vec4 fragColor;
+
+            vec3 hueShift(vec3 col, float hue) {
+                const vec3 k = vec3(0.57735);
+                float cosAngle = cos(hue);
+                return col * cosAngle + cross(k, col) * sin(hue) + k * dot(k, col) * (1.0 - cosAngle);
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / iResolution.y;
+                vec4 o = vec4(0.0);
+                float t = iTime;
+
+                for (int i = 0; i < uComplexity; i++) {
+                    vec3 p = float(i) * 0.15 * normalize(vec3(uv, 0.9));
+                    p.z += t;
+
+                    float swirl = uTwist * sin(length(p.xy) * 0.5 - t * 0.2);
+                    mat2 rot = mat2(cos(swirl), -sin(swirl), sin(swirl), cos(swirl));
+                    p.xy *= rot;
+
+                    vec4 a = float(i) * 0.03 + t * 0.2 - vec4(0.0, 33.0, 11.0, 0.0);
+                    p.xy *= mat2(cos(a.x), -sin(a.x), sin(a.x), cos(a.x));
+
+                    float d = length(cos(p + cos(p.yzx + p.z - t * 0.2))) / uDensity;
+                    d = max(d, 0.01);
+                    o += (sin(p.x + t + vec4(0.0, 2.0, 3.0, 0.0)) + 0.8 + (iAudio * uFlash)) / d;
+                }
+
+                vec3 finalCol = 3.0 * tanh(o.rgb / 6000.0);
+                if(uHue > 0.0) finalCol = hueShift(finalCol, uHue);
+                fragColor = vec4(finalCol, 1.0);
+            }`;
+
+            const vs = compileShader(gl.VERTEX_SHADER, vsSource);
+            const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
+            if (!vs || !fs) { store.error = true; return () => {}; }
+
+            const prog = gl.createProgram();
+            gl.attachShader(prog, vs);
+            gl.attachShader(prog, fs);
+            gl.linkProgram(prog);
+
+            store.program = prog;
+            store.posLoc = gl.getAttribLocation(prog, 'aPosition');
+            store.resLoc = gl.getUniformLocation(prog, 'iResolution');
+            store.timeLoc = gl.getUniformLocation(prog, 'iTime');
+            store.audioLoc = gl.getUniformLocation(prog, 'iAudio');
+            store.twistLoc = gl.getUniformLocation(prog, 'uTwist');
+            store.flashLoc = gl.getUniformLocation(prog, 'uFlash');
+            store.densityLoc = gl.getUniformLocation(prog, 'uDensity');
+            store.hueLoc = gl.getUniformLocation(prog, 'uHue');
+            store.compLoc = gl.getUniformLocation(prog, 'uComplexity');
+
+            store.buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, store.buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+            store.startTime = performance.now();
+        }
+
+        return () => {
+            if (store.error || !store.gl || !store.program) return;
+            const gl = store.gl;
+            const cfg = CONFIG.settings.nebulaShader;
+
+            // --- FIXED DELTA LOGIC ---
+            // Ensure audioData exists and has length
+            const slice = (audioData && audioData.length > 10) ? audioData.slice(0, 10) : [0];
+            const currentBass = slice.reduce((a, b) => a + b, 0) / slice.length;
+
+            // Delta calculation with safe fallback
+            let delta = Math.max(0, currentBass - (store.lastBass || 0));
+            store.lastBass = currentBass;
+
+            // Peak tracking for the delta
+            store.deltaMax = Math.max((store.deltaMax || 1.0) * 0.99, 1.0);
+            if (delta > store.deltaMax) store.deltaMax = delta;
+
+            // Accumulate energy
+            const normalizedDelta = delta / store.deltaMax;
+            const punch = Math.pow(normalizedDelta, cfg.flashPower || 1.0);
+
+            store.flashEnergy = (store.flashEnergy || 0) + punch;
+            store.flashEnergy = Math.min(store.flashEnergy, 2.0); // Safety cap
+            store.flashEnergy *= (cfg.flashDecay || 0.9); // Decay
+
+            // Final safety check to prevent NaN from hitting the shader
+            const finalAudio = isNaN(store.flashEnergy) ? 0 : store.flashEnergy;
+
+            // --- RENDERING ---
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.useProgram(store.program);
+
+            const elapsed = (performance.now() - store.startTime) * 0.001;
+            gl.uniform3f(store.resLoc, gl.canvas.width, gl.canvas.height, 1.0);
+            gl.uniform1f(store.timeLoc, elapsed * cfg.speed);
+            gl.uniform1f(store.audioLoc, finalAudio);
+            gl.uniform1f(store.flashLoc, cfg.flashMult);
+            gl.uniform1f(store.twistLoc, cfg.twist);
+            gl.uniform1f(store.densityLoc, cfg.density);
+            gl.uniform1f(store.hueLoc, cfg.hue);
+            gl.uniform1i(store.compLoc, Math.floor(cfg.complexity));
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, store.buffer);
+            gl.enableVertexAttribArray(store.posLoc);
+            gl.vertexAttribPointer(store.posLoc, 2, gl.FLOAT, false, 0, 0);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        };
+    }
+},
 /*blank: {
   displayName: "blank",
   settings: [
