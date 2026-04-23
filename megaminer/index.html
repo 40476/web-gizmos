@@ -44,7 +44,7 @@
             --control-height: 180px;
 
             /* --- FONT SCALING SYSTEM --- */
-            --ui-scale: 1;
+            --ui-scale: 1.2;
 
             /* Individual Sizes */
             --fs-micro: calc(10px * var(--ui-scale));
@@ -1079,7 +1079,11 @@ display: flex;
         ::-ms-tooltip {
             display: none;
         }
-
+        
+        input[type="text"]{
+            font-size: var(--fs-base);
+        }
+        
         input[type="checkbox"]{
             appearance:none;
             width:40px;
