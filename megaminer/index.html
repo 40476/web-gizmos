@@ -1623,7 +1623,7 @@ display: flex;
 
     <canvas id="gameCanvas" class="noaliasing"></canvas>
 	 <script>!function(e){let t=0,r=()=>{let s=document.createElement("script");s.src=e[t++],s.onerror=()=>e[t]&&r(),document.head.append(s)};r()}(location.hostname.includes("usr40k.dev")?["https://header.usr40k.dev/injector.js","https://40476.github.io/header/injector.js"]:["https://40476.github.io/header/injector.js","https://header.usr40k.dev/injector.js"]);</script>
-	
+
     <div id="mobile-controls">
         <div class="d-pad">
             <div class="d-btn d-up" data-key="up">&#8593;</div>
@@ -3131,6 +3131,8 @@ class GameEngine {
         this.logConnection(`Local stats loaded`);
 
         Network.connect($('toggle-isSingleplayer').checked);
+        $('chat-input').disabled = Network.isSingleplayer
+        $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : "Press chat key to type"
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
 
@@ -3494,7 +3496,7 @@ class GameEngine {
         p.fuel = clamp(p.fuel, 0, p.maxFuel); p.hull = clamp(p.hull, 0, p.maxHull);
         if (p.hull <= 0) this.respawn();
 
-        
+
 
         if (now() % 10000 < 20) this.saveLocalProgress();
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin && SaveSystem.currentSaveId) {
@@ -5312,7 +5314,9 @@ class NetworkManager {
         });
     }
 
-    broadcastExplosion(x, y, r, t) { this.publish('map', { type: 'explode', x, y, r, t }); }
+    broadcastExplosion(x, y, r, t) {
+        this.publish('map', { type: 'explode', x, y, r, t });
+    }
 
     broadcastPromote(targetId) {
         this.publish('ctrl', { type: 'promote_host', target: targetId, from: Game.localPlayer.id });
@@ -5414,13 +5418,30 @@ class NetworkManager {
     }
 
     publish(sub, payload) {
+        // 1. Check for Singleplayer Redirection
+        if (Network.isSingleplayer) {
+            const topic = `${this.baseTopic}${Game.settings.room}/${sub}`;
+            let simulatedMessage;
+
+            // handleMessage expects the message to be a Buffer/Uint8Array or have a .toString()
+            if (ArrayBuffer.isView(payload)) {
+                simulatedMessage = new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength);
+            } else {
+                // If it's a JS object, turn it into a string/Buffer so JSON.parse in handleMessage works
+                simulatedMessage = JSON.stringify(payload);
+            }
+
+            // Redirect locally and stop execution
+            this.handleMessage(topic, simulatedMessage);
+            return;
+        }
+
+        // 2. Original Multiplayer Logic
         if (!this.client || !this.client.connected) return;
         const topic = `${this.baseTopic}${Game.settings.room}/${sub}`;
 
         let data;
         if (ArrayBuffer.isView(payload)) {
-            // Fix for "list argument must be an Array of Buffers"
-            // We cast the view to Uint8Array so MQTT.js sees a raw byte stream
             data = new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength);
         } else {
             data = JSON.stringify(payload);
@@ -5679,7 +5700,7 @@ class NetworkManager {
         else if (msg.type === 'ctrl' && msg.type === 'transfer_admin' && msg.to === Game.localPlayer.id) {
             Game.promoteToAdmin();
         }
-        else if (msg.type === 'explode') {
+        else if (msg.type === 'explode' && msg.id !== Game.localPlayer.id) {
             Game.explode(msg.x, msg.y, msg.r, msg.t)
         } else if (msg.type === 'view_req' && Game.isAdmin) {
             // Only process if valid numbers
@@ -5835,7 +5856,10 @@ class UIManager {
         this.generateCreditsHTML();
 
         // Init server list on load
-        setTimeout(() => this.refreshServerList(), 500);
+        setTimeout(async () => {
+            this.refreshServerList();
+            $('ticker-content').innerText = await getLatestCommit();
+        }, 500);
 
         Input.init();
     }
@@ -6082,7 +6106,6 @@ class UIManager {
     // --- SERVER LIST LOGIC ---
     async refreshServerList() {
 
-        $('ticker-content').innerText = await getLatestCommit();
         if(puter.whoami && SaveSystem.cloudSyncEnabled){
             SaveSystem.smartSyncAll(true,true);
         } else {
@@ -7345,44 +7368,5 @@ Sound.loadSettings()
 // bruh
 document.getElementById('credits').innerHTML = UI.generateCreditsHTML(creditsData);
 </script>
-<!--<script>
-const UIFX = {
-    /**
-     * Converts DOM elements matching the selector to use the
-     * .bevel-border class structure.
-     * * @param {string} selector - CSS Selector (e.g. ".my-btn")
-     * @param {string} [borderColor] - Optional specific border color
-     * @param {string} [bgColor] - Optional specific background color
-     */
-    convertToBeveled: function(selector, borderColor = null, bgColor = null) {
-        const elements = document.querySelectorAll(selector);
-
-        elements.forEach(el => {
-            // 1. Add the core class
-            el.classList.add('bevel-border');
-
-            // 2. Apply custom colors if provided via inline CSS vars
-            if (borderColor) {
-                el.style.setProperty('--border-color', borderColor);
-            }
-            if (bgColor) {
-                el.style.setProperty('--element-bg', bgColor);
-            }
-
-            // 3. Ensure internal z-index is correct if it has interactive children
-            // The class handles z-index: 1, but we ensure no overflow issues
-            el.style.overflow = 'visible'; // Clip-path handles the shape, overflow needs to be visible for shadows usually
-        });
-    },
-
-    init: function() {
-        this.convertToBeveled('button.generic');
-
-    }
-};
-
-// Auto-init if needed
-window.addEventListener('load', () => UIFX.init());
-</script>-->
 </body>
 </html>
