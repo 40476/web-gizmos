@@ -3038,6 +3038,20 @@ class GameEngine {
         GameConfig.set('PlayerSettings.graphicsQuality',quality);
     }
 
+    hashSeed(str) {
+        let hash = 0;
+        if (str.length === 0) return hash;
+        for (let i = 0; i < str.length; i++) {
+            let char = str.charCodeAt(i);
+            // hash = (hash << 5) - hash + char;
+            // The above is equivalent to hash * 31 + char,
+            // with faster 32-bit integer manipulation
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0; // Convert to 32-bit integer
+        }
+        return hash;
+    }
+
     async init() {
         this.logConnection("Initializing System...");
 
@@ -3114,9 +3128,7 @@ class GameEngine {
         this.logConnection(`Minimap: ${this.minimapCanvas.width}x${this.minimapCanvas.height}`);
 
         // 7. Map & Seed Generation
-        let seed = 0;
-        for (let i = 0; i < this.settings.room.length; i++) seed += this.settings.room.charCodeAt(i);
-        this.roomSeed = seed * 12345;
+        this.roomSeed = Math.abs(this.hashSeed(this.settings.room));
         this.logConnection(`Seed: ${this.roomSeed}`);
 
         this.generateMap();
@@ -3131,8 +3143,8 @@ class GameEngine {
         this.logConnection(`Local stats loaded`);
 
         Network.connect($('toggle-isSingleplayer').checked);
-        $('chat-input').disabled = Network.isSingleplayer
-        $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : "Press chat key to type"
+        $('chat-input').disabled = Network.isSingleplayer;
+        $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : "Press chat key to type";
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
 
@@ -3163,6 +3175,7 @@ class GameEngine {
             $('connection-screen').style.display = 'none';
 
             this.running = true;
+
             this.toggleMobile($("mobile-toggle").checked)
             this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
             this.localPlayer.gridY = 4;
@@ -3176,7 +3189,7 @@ class GameEngine {
                 this.isAdmin = true;
                 this.hostId = this.localPlayer.id;
                 this.lastHostHeartbeat = Date.now();
-                UI.showToast("Room Created. You are Admin.", "success");
+                UI.showToast("Room Created. You are the Admin.", "success");
                 UI.updateAdminPanel();
             } else {
                 // If others exist, wait for heartbeat.
@@ -3191,7 +3204,7 @@ class GameEngine {
                 if (lastId) {
                     console.log("Host detected, loading save:", lastId);
                     await SaveSystem.loadGame(parseInt(lastId), true);
-                    UI.addMessage("System", "Auto-loaded previous save.", "#aaa");
+                    UI.showToast("Auto-loaded previous save.", "success");
                 }
             } else {
                 // If we are NOT admin (Client), ensure we rely on the procedural map + sync
@@ -3201,7 +3214,7 @@ class GameEngine {
             }
 
             this.loop();
-            UI.addMessage("System", "Welcome. E for Menu/Shop. B to Build. F to Transfer.", "#aaa");
+            UI.showToast("Welcome. E for Menu/Shop. B to Build. F to Transfer.", "info", 6000);
             Network.broadcastMove();
             // Removed updateAdminStatus call
         }, 1000);
