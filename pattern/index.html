@@ -175,6 +175,34 @@ function shuffle(rng, arr) {
   return a;
 }
 
+/* ---------- URL Persistence ---------- */
+function syncSettingsToURL() {
+  const params = new URLSearchParams();
+  const ids = ['seed', 'width', 'height', 'style', 'density', 'palette', 'bgColor', 'strokeWidth', 'noise'];
+  
+  ids.forEach(id => {
+    const val = document.getElementById(id).value;
+    params.set(id, val);
+  });
+
+  const newUrl = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState({}, '', newUrl);
+}
+
+function loadSettingsFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const ids = ['seed', 'width', 'height', 'style', 'density', 'palette', 'bgColor', 'strokeWidth', 'noise'];
+  
+  let hasParams = false;
+  ids.forEach(id => {
+    if (params.has(id)) {
+      document.getElementById(id).value = params.get(id);
+      hasParams = true;
+    }
+  });
+  return hasParams;
+}
+
 /* ---------- Palettes ---------- */
 const PALETTES = {
   solar: ["#ff6b6b","#feca57","#ff9f43","#48dbfb","#1dd1a1","#5f27cd"],
@@ -565,15 +593,39 @@ function downloadPNG() {
 }
 
 /* ---------- UI wiring ---------- */
-document.getElementById('generate').addEventListener('click', generate);
-document.getElementById('randomize').addEventListener('click', randomizeSeed);
+document.getElementById('generate').addEventListener('click', () => {
+  generate();
+  syncSettingsToURL();
+});
+
+document.getElementById('randomize').addEventListener('click', () => {
+  randomizeSeed();
+  syncSettingsToURL();
+});
+// Auto-sync on change for sliders/selects/inputs
+const autoSyncIds = ['width', 'height', 'style', 'density', 'palette', 'bgColor', 'strokeWidth', 'noise'];
+autoSyncIds.forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    updatePalettePreview();
+    generate();
+    syncSettingsToURL();
+  });
+});
+
 document.getElementById('palette').addEventListener('change', updatePalettePreview);
 document.getElementById('downloadSVG').addEventListener('click', downloadSVG);
 document.getElementById('downloadPNG').addEventListener('click', downloadPNG);
 
 // Initial
 updatePalettePreview();
-randomizeSeed();
+
+// If URL has settings, use them; otherwise, randomize a fresh start
+if (loadSettingsFromURL()) {
+  updatePalettePreview(); // Ensure preview matches loaded palette
+  generate();
+} else {
+  randomizeSeed();
+}
 </script>
 </body>
 </html>
