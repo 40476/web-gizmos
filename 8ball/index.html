@@ -298,7 +298,7 @@ Rule 3: Keep the ENTIRE response under 12 words so it fits perfectly inside a ti
 Rule 4: Do not say yes/no if the rest of your reply implies otherwise.`;
 
             try {
-                let aiResponse = await puter.ai.chat(systemPrompt);
+                let aiResponse = await puter.ai.chat(systemPrompt, {reasoning_effort: "none"});
                 const replyText = typeof aiResponse === 'string' ? aiResponse : 
                                  (aiResponse?.message?.content || aiResponse?.text || "The void is ignoring you.");
                 
