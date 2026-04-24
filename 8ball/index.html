@@ -3,196 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic 8 Roast</title>
+    <title>A Very Rude Magic 8 Ball</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <!-- Adding Three.js for WebGL effects -->
+    <!-- https://www.svgrepo.com/svg/407233/pool-8-ball?edit=true -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        @keyframes bounce-custom {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(-10px) rotate(-5deg); }
-            75% { transform: translateY(10px) rotate(5deg); }
+        body {
+            background-color: #0f172a; 
+            background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 70%);
+            color: #e2e8f0;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
         }
-        .shaking {
-            animation: bounce-custom 0.15s infinite;
-        }
-        .eight-ball-shadow {
-            box-shadow: inset -20px -20px 60px #000, inset 20px 20px 60px #222, 0 0 40px rgba(168, 85, 247, 0.2);
-        }
-    </style>
-</head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
 
-    <div class="max-w-md w-full text-center space-y-8">
-        <div>
-            <h1 class="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-                MAGIC 8 ROAST
+        /* 3D effect for the 8-ball */
+        .ball {
+            background: radial-gradient(circle at 30% 30%, #4b5563, #000000 60%);
+            box-shadow: inset -30px -30px 50px rgba(255, 255, 255, 0.05), 
+                        0 30px 50px rgba(0, 0, 0, 0.7);
+        }
+
+        /* The window into the liquid */
+        .inner-circle {
+            background: #000;
+            box-shadow: inset 0px 0px 20px rgba(0, 0, 0, 0.9),
+                        inset 0px 0px 5px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            border: 4px solid #111;
+        }
+
+        /* Glossy reflection over the window */
+        .inner-circle::after {
+            content: '';
+            position: absolute;
+            top: 5%;
+            left: 10%;
+            width: 80%;
+            height: 40%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Shaking animation */
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            10% { transform: translate(-2px, -3px) rotate(-2deg); }
+            20% { transform: translate(-4px, 0px) rotate(2deg); }
+            30% { transform: translate(4px, 3px) rotate(0deg); }
+            40% { transform: translate(2px, -2px) rotate(2deg); }
+            50% { transform: translate(-2px, 3px) rotate(-2deg); }
+            60% { transform: translate(-4px, 2px) rotate(0deg); }
+            70% { transform: translate(4px, 2px) rotate(-2deg); }
+            80% { transform: translate(-2px, -2px) rotate(2deg); }
+            90% { transform: translate(2px, 3px) rotate(0deg); }
+            100% { transform: translate(2px, -3px) rotate(-2deg); }
+        }
+
+        .is-shaking {
+            animation: shake 0.4s infinite;
+        }
+
+        /* Mystical text styling inside the ball */
+        .answer-text {
+            text-shadow: 0 0 8px rgba(139, 92, 246, 0.8), 0 0 15px rgba(139, 92, 246, 0.5);
+            font-family: 'Georgia', serif;
+            letter-spacing: 0.5px;
+        }
+
+        /* Smooth transitions for text swapping */
+        .fade-enter { opacity: 0; transform: scale(0.8); }
+        .fade-enter-active { opacity: 1; transform: scale(1); transition: all 0.8s ease-out; }
+        .fade-exit { opacity: 1; transform: scale(1); }
+        .fade-exit-active { opacity: 0; transform: scale(0.8); transition: all 0.3s ease-in; }
+    </style>
+    <script>!function(e){let t=0,r=()=>{let s=document.createElement("script");s.src=e[t++],s.onerror=()=>e[t]&&r(),document.head.append(s)};r()}(location.hostname.includes("usr40k.dev")?["https://header.usr40k.dev/injector.js","https://40476.github.io/header/injector.js"]:["https://40476.github.io/header/injector.js","https://header.usr40k.dev/injector.js"]);</script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-md w-full flex flex-col items-center space-y-8">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2">
+            <h1 class="text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500">
+                A Very Rude Magic 8 Ball
             </h1>
-            <p class="text-zinc-500 text-sm mt-2 uppercase tracking-widest">
-                Wllama Edition (GitHub LFS)
-            </p>
+            <p class="text-slate-400 text-sm">Ask a question. Prepare to be judged.</p>
         </div>
 
-        <div class="relative flex justify-center py-10">
-            <div id="eight-ball" class="w-64 h-64 rounded-full bg-black flex items-center justify-center border-4 border-zinc-900 transition-transform duration-100 eight-ball-shadow">
-                <div class="w-32 h-32 rounded-full bg-zinc-900 flex items-center justify-center p-4 shadow-inner relative overflow-hidden border-2 border-zinc-800">
-                    <div class="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none"></div>
-                    <div id="ball-content" class="text-center transition-all duration-300">
-                        <div class="text-4xl font-serif text-zinc-700 opacity-50">8</div>
-                    </div>
+        <!-- The 8-Ball -->
+        <div id="magicBall" class="ball w-80 h-80 sm:w-96 sm:h-96 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105" onclick="askQuestion()">
+            
+            <!-- The Window -->
+            <div id="innerCircle" class="inner-circle w-44 h-44 sm:w-52 sm:h-52 rounded-full flex items-center justify-center">
+                
+                <!-- WebGL Background Layer -->
+                <canvas id="webglCanvas" class="absolute inset-0 z-0 w-full h-full"></canvas>
+                
+                <!-- Blue Triangle Overlay (classic 8-ball style) -->
+                <div id="triangle" class="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-1000">
+                    <svg viewBox="0 0 100 100" class="w-[85%] h-[85%] drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                        <polygon points="50,15 95,85 5,85" fill="rgba(30, 58, 138, 0.7)" stroke="#3b82f6" stroke-width="1" />
+                    </svg>
+                </div>
+
+                <!-- Text Content Layer -->
+                <div class="absolute inset-0 z-20 flex items-center justify-center p-6 text-center">
+                    <!-- Default 8 -->
+                    <span id="eightText" class="text-8xl font-bold text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] select-none font-serif transition-opacity duration-300">
+                        8
+                    </span>
+                    
+                    <!-- Answer Text -->
+                    <p id="responseText" class="answer-text hidden text-purple-100 font-semibold text-xs sm:text-sm leading-snug break-words">
+                        <!-- Answer goes here -->
+                    </p>
                 </div>
             </div>
         </div>
 
-        <div class="space-y-4">
+        <!-- Input Area -->
+        <div class="w-full space-y-4">
             <div class="relative">
-                <input
-                    id="question-input"
-                    type="text"
-                    placeholder="Ask a question..."
-                    class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 transition-all"
-                />
-                <button
-                    id="shake-button"
-                    disabled
-                    class="mt-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 rounded-xl shadow-lg transform active:scale-95 transition-all disabled:grayscale disabled:opacity-50"
+                <input 
+                    type="text" 
+                    id="questionInput" 
+                    placeholder="Ask your silly question here..." 
+                    class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-inner"
+                    onkeydown="if(event.key === 'Enter') askQuestion()"
                 >
-                    INITIALIZING...
-                </button>
             </div>
-            <div id="status-bar" class="text-[10px] text-zinc-600 uppercase tracking-tighter">
-                ○ Waiting for Wllama...
-            </div>
+            <button 
+                id="askButton"
+                onclick="askQuestion()"
+                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Consult the Void
+            </button>
         </div>
+
     </div>
 
-    <script type="module">
-        import { Wllama } from 'https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/index.js';
+    <script>
+        // --- WebGL Setup (Three.js) ---
+        let scene, camera, renderer, particles;
+        let baseRotationSpeed = 0.001;
+        let targetRotationSpeed = 0.001;
 
-        const eightBall = document.getElementById('eight-ball');
-        const ballContent = document.getElementById('ball-content');
-        const questionInput = document.getElementById('question-input');
-        const shakeButton = document.getElementById('shake-button');
-        const statusBar = document.getElementById('status-bar');
+        function init3D() {
+            const canvas = document.getElementById('webglCanvas');
+            const container = document.getElementById('innerCircle');
+            
+            scene = new THREE.Scene();
+            // Deep purple/blue fog to simulate the dark liquid
+            scene.fog = new THREE.FogExp2(0x0f0c29, 0.15);
 
-        let wllama = null;
+            camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            camera.position.z = 5;
 
-        async function initWllama() {
-            try {
-                statusBar.innerText = "○ Initializing Wasm Engine...";
+            renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            
+            // Match canvas size to container
+            const size = container.offsetWidth;
+            renderer.setSize(size, size);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Create mystical particles
+            const particleCount = 800;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            
+            const color1 = new THREE.Color(0x8b5cf6); // Purple
+            const color2 = new THREE.Color(0x3b82f6); // Blue
+
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                // Sphere distribution
+                const r = 4 * Math.cbrt(Math.random());
+                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos(2 * Math.random() - 1);
                 
-                wllama = new Wllama({
-                    "wllama.wasm": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama.wasm",
-                    "wllama-threaded.wasm": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama-threaded.wasm",
-                    "wllama.js": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama.js",
-                    "wllama.worker.mjs": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/worker.js",
-                });
+                positions[i] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i+1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i+2] = r * Math.cos(phi);
 
-                // Changed raw.githubusercontent.com to media.githubusercontent.com
-                // This often helps GitHub resolve the LFS pointer to the actual binary
-                const modelUrl = 'https://media.githubusercontent.com/media/40476/large-web-assets/main/SmolLM2-135M-Instruct-Q8_0.gguf';
-
-                statusBar.innerText = "○ Loading Model (Git LFS)...";
-                
-                await wllama.loadModelFromUrl(modelUrl, {
-                    parallelDownloads: 1,
-                    allowOffline: true,
-                    fetchConfig: {
-                        mode: 'cors'
-                    },
-                    progressCallback: ({ loaded, total }) => {
-                        // Check if we are accidentally downloading the tiny LFS pointer (usually < 200 bytes)
-                        if (total > 0 && total < 1000) {
-                            throw new Error("LFS_POINTER_DETECTED");
-                        }
-                        
-                        if (total > 0) {
-                            const pct = Math.round((loaded / total) * 100);
-                            statusBar.innerText = `○ Downloading: ${pct}%`;
-                            shakeButton.innerText = `LOADING ${pct}%`;
-                        } else {
-                            statusBar.innerText = `○ Loaded: ${(loaded / 1024 / 1024).toFixed(1)} MB`;
-                        }
-                    }
-                });
-
-                statusBar.innerText = "● Wllama Ready";
-                shakeButton.innerText = "SHAKE THE BALL";
-                shakeButton.disabled = false;
-            } catch (err) {
-                console.error(err);
-                if (err.message === "LFS_POINTER_DETECTED") {
-                    statusBar.innerText = "× Error: Downloaded LFS Pointer";
-                    shakeButton.innerText = "LFS POINTER ERROR";
-                    ballContent.innerHTML = `
-                        <div class="text-[10px] text-yellow-400 p-2 leading-tight">
-                            LFS POINTER<br>
-                            <span class="text-[8px] opacity-70 italic text-white">GitHub sent the text pointer, not the model. Try the 'media' URL.</span>
-                        </div>
-                    `;
-                } else {
-                    statusBar.innerText = "× Failed to load model.";
-                    shakeButton.innerText = "CORS / LFS ERROR";
-                    ballContent.innerHTML = `
-                        <div class="text-[10px] text-red-400 p-2 leading-tight">
-                            LOAD FAILED<br>
-                            <span class="text-[8px] opacity-70 italic text-white">Check console for details.</span>
-                        </div>
-                    `;
-                }
+                // Mix colors
+                const mixedColor = color1.clone().lerp(color2, Math.random());
+                colors[i] = mixedColor.r;
+                colors[i+1] = mixedColor.g;
+                colors[i+2] = mixedColor.b;
             }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            // Handle Resize
+            new ResizeObserver(() => {
+                const newSize = container.offsetWidth;
+                renderer.setSize(newSize, newSize);
+                camera.aspect = 1;
+                camera.updateProjectionMatrix();
+            }).observe(container);
+
+            animate3D();
         }
 
-        async function handleShake() {
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            
+            // Smoothly interpolate rotation speed
+            baseRotationSpeed += (targetRotationSpeed - baseRotationSpeed) * 0.05;
+            
+            particles.rotation.y += baseRotationSpeed;
+            particles.rotation.x += baseRotationSpeed * 0.5;
+            particles.rotation.z += baseRotationSpeed * 0.2;
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize 3D on load
+        window.onload = init3D;
+
+        // --- App Logic ---
+        const magicBall = document.getElementById('magicBall');
+        const questionInput = document.getElementById('questionInput');
+        const askButton = document.getElementById('askButton');
+        const eightText = document.getElementById('eightText');
+        const responseText = document.getElementById('responseText');
+        const triangle = document.getElementById('triangle');
+
+        async function askQuestion() {
             const question = questionInput.value.trim();
-            if (!question || !wllama) return;
+            
+            if (!question) {
+                displayInsideBall("Ask a real question, genius.");
+                return;
+            }
 
-            eightBall.classList.add('shaking');
-            shakeButton.disabled = true;
-            ballContent.innerHTML = `<div class="animate-pulse text-purple-400 text-[10px] font-bold uppercase">THINKING...</div>`;
+            if (typeof puter === 'undefined') {
+                displayInsideBall("Connection to the cosmos lost.");
+                return;
+            }
 
-            const prompt = `<|im_start|>system
-You are a witty, slightly grumpy Magic 8 Ball.
-1. Start with YES, NO, or MAYBE.
-2. Add a quick, light-hearted roast.
-3. Keep it safe and under-18 friendly.
-4. Maximum 12 words.<|im_end|>
-<|im_start|>user
-${question}<|im_end|>
-<|im_start|>assistant\n`;
+            // Start animation and lock UI
+            setLoadingState(true);
+
+            // Updated prompt: Enforces short text and clean/PG jokes
+            const systemPrompt = `You are a witty, snarky, and sarcastic Magic 8 Ball. 
+The user asks: "${question}"
+Rule 1: Give a classic definitive Magic 8 Ball answer (e.g., 'Yes', 'No', 'Reply hazy', 'Very doubtful').
+Rule 2: Add a playful, PG-rated, clean roast about the silliness of their question. NO swearing, NO inappropriate themes.
+Rule 3: Keep the ENTIRE response under 12 words so it fits perfectly inside a tiny window. Be brief and punchy.`;
 
             try {
-                const result = await wllama.createCompletion(prompt, {
-                    nPredict: 30,
-                    sampling: { temp: 0.7, top_p: 0.9 },
-                    stop: ["<|im_end|>"]
-                });
-
-                const responseText = result.trim();
-
-                setTimeout(() => {
-                    eightBall.classList.remove('shaking');
-                    ballContent.innerHTML = `
-                        <div class="animate-in fade-in zoom-in duration-500">
-                            <p class="text-[10px] font-medium uppercase text-blue-300">
-                                ${responseText}
-                            </p>
-                        </div>
-                    `;
-                    shakeButton.disabled = false;
-                }, 800);
-
-            } catch (err) {
-                eightBall.classList.remove('shaking');
-                ballContent.innerHTML = `<div class="text-red-500 text-[10px]">ENGINE ERROR</div>`;
-                shakeButton.disabled = false;
+                let aiResponse = await puter.ai.chat(systemPrompt);
+                const replyText = typeof aiResponse === 'string' ? aiResponse : 
+                                 (aiResponse?.message?.content || aiResponse?.text || "The void is ignoring you.");
+                
+                displayInsideBall(replyText);
+            } catch (error) {
+                console.error("AI Error:", error);
+                displayInsideBall("My magic broke. Try again later.");
+            } finally {
+                setLoadingState(false);
+                questionInput.value = ''; 
             }
         }
 
-        shakeButton.addEventListener('click', handleShake);
-        questionInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleShake();
-        });
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                magicBall.classList.add('is-shaking');
+                askButton.disabled = true;
+                questionInput.disabled = true;
+                askButton.textContent = "Peering into the void...";
+                
+                // Speed up WebGL particles
+                targetRotationSpeed = 0.05;
+                particles.material.opacity = 0.9;
+                
+                // Hide current text
+                hideAllText();
+                triangle.classList.remove('opacity-100');
+                triangle.classList.add('opacity-0');
+            } else {
+                magicBall.classList.remove('is-shaking');
+                askButton.disabled = false;
+                questionInput.disabled = false;
+                askButton.textContent = "Consult the Void";
+                
+                // Slow down WebGL particles
+                targetRotationSpeed = 0.002;
+                particles.material.opacity = 0.4;
+            }
+        }
 
-        initWllama();
+        function hideAllText() {
+            eightText.classList.add('opacity-0');
+            responseText.classList.remove('fade-enter-active');
+            responseText.classList.add('fade-exit-active');
+            
+            setTimeout(() => {
+                eightText.classList.add('hidden');
+                responseText.classList.add('hidden');
+            }, 300);
+        }
+
+        function displayInsideBall(text) {
+            // Wait for shaking and fading to finish
+            setTimeout(() => {
+                responseText.textContent = text;
+                
+                // Reset states
+                responseText.classList.remove('hidden', 'fade-exit-active');
+                eightText.classList.add('hidden');
+                
+                // Show triangle and text with animation
+                triangle.classList.remove('opacity-0');
+                triangle.classList.add('opacity-100');
+                
+                responseText.classList.add('fade-enter');
+                
+                // Trigger reflow
+                void responseText.offsetWidth; 
+                
+                responseText.classList.remove('fade-enter');
+                responseText.classList.add('fade-enter-active');
+            }, 400); 
+        }
     </script>
 </body>
 </html>
