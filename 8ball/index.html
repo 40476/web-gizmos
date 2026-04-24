@@ -307,8 +307,12 @@ Rule 5: If the user asks a math question you may solve it but with a random chan
                 });
 
                 const data = await response.json();
-                const replyText = data.choices?.[0]?.message?.content || "The void is silent.";
-                displayInsideBall(replyText);
+                if (data.error.metadata['X-RateLimit-Reset']){
+                    displayInsideBall(`currently sleeping, come back at ${formatPrettyDate(data.error.metadata['X-RateLimit-Reset'])}`);
+                }else{
+                    const replyText = data.choices?.[0]?.message?.content || "The void is silent.";
+                    displayInsideBall(replyText);
+                }
             } catch (error) {
                 console.error("OpenRouter Error:", error);
                 displayInsideBall("The connection to the void failed.");
@@ -317,7 +321,40 @@ Rule 5: If the user asks a math question you may solve it but with a random chan
                 questionInput.value = ''; 
             }
         }
-
+        
+        function formatPrettyDate(timestamp) {
+          const date = new Date(timestamp);
+          const now = new Date();
+          
+          // Set times to midnight for accurate day comparison
+          const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+          const oneDayInMs = 24 * 60 * 60 * 1000;
+          
+          // Format the time part (e.g., "2:00 am")
+          const timeFormatter = new Intl.DateTimeFormat('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+          const timeStr = timeFormatter.format(date).toLowerCase();
+        
+          const diff = date.getTime() - startOfToday;
+        
+          let dayStr;
+          if (diff >= 0 && diff < oneDayInMs) {
+            dayStr = "today";
+          } else if (diff >= oneDayInMs && diff < 2 * oneDayInMs) {
+            dayStr = "tomorrow";
+          } else if (diff < 0 && diff >= -oneDayInMs) {
+            dayStr = "yesterday";
+          } else {
+            // Default to a standard date if outside the relative range
+            dayStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+        
+          return `${timeStr} ${dayStr}`;
+        }
+        
         function setLoadingState(isLoading) {
             if (isLoading) {
                 magicBall.classList.add('is-shaking');
