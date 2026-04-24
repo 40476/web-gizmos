@@ -269,17 +269,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive Magic 8 Ball with 3D WebGL particles and shaking animations</li>
-    <li>Supports 5 selectable answer personalities (friendly, mean, silly, dramatic, roast)</li>
-    <li>Fetches short AI responses via OpenRouter, auto-reverts to default after 45s</li>
+    <li>Renders a 3D animated Magic 8 Ball with particle effects and shake animations</li>
+    <li>Supports 5 selectable response personalities (friendly, mean, silly, dramatic, roast)</li>
+    <li>Integrates OpenRouter API for AI-generated answers with rate limit handling</li>
   </ul>
 
   <pre>
-    <code>magicBall.classList.add('is-shaking');</code>
-    <code>responseText.innerHTML = htmlContent;</code>
+    <code>onclick="askQuestion()"</code>
+    <code>particles.rotation.y += baseRotationSpeed;</code>
   </pre>
 
-  <p>This interactive Magic 8 Ball web app uses 3D particle effects and animations for immersive feedback. Users input questions, select answer personality styles, and receive AI-generated responses via the OpenRouter API. The interface auto-reverts to the default 8 display after 45 seconds, with smooth text transitions and shaking effects.</p>
+  <p>This interactive Magic 8 Ball web app features 3D particle animations and dynamic shake effects. Users can choose from multiple personality styles to get AI-generated, brief answers to their questions. The app handles API rate limits and automatically reverts to the default 8 display after 45 seconds.</p>
 </section>
           </div>
         </section>
@@ -770,7 +770,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Apr 24, 2026 - 18:21</p>
+      <p>Registry Sync: Apr 24, 2026 - 18:35</p>
     </footer>
   </main>
 
