@@ -269,17 +269,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive Magic 8 Ball with 3D particle backgrounds and shake animations.</li>
-    <li>Offers 5 answer styles (friendly, mean, silly, dramatic, roast) via OpenRouter AI.</li>
-    <li>Displays brief AI-generated responses inside the ball after user input.</li>
+    <li>Interactive Magic 8 Ball with 3D WebGL particle effects and shake animation</li>
+    <li>Supports 5 selectable response personalities: friendly, mean, silly, dramatic, roast</li>
+    <li>Uses OpenRouter API to generate short, style-matched answers for user questions</li>
   </ul>
 
   <pre>
-    <code>particles.rotation.y += baseRotationSpeed;</code>
-    <code>displayInsideBall(replyText);</code>
+    <code>magicBall.classList.add('is-shaking')</code>
+    <code>const replyText = data.choices?.[0]?.message?.content</code>
   </pre>
 
-  <p>This Magic 8 Ball web app provides AI-generated, personality-styled answers to user questions. It features 3D WebGL particle effects, Tailwind CSS styling, and a shaking animation during loading. Users select an answer style, input a query, and receive a short response displayed inside the animated ball.</p>
+  <p>This web application simulates an interactive Magic 8 Ball with animated 3D visual effects. Users can input questions, choose a response personality, and receive tailored AI-generated answers. It leverages Three.js for particle animations and the OpenRouter API to deliver brief, style-matched responses.</p>
 </section>
           </div>
         </section>
@@ -770,7 +770,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Apr 24, 2026 - 16:41</p>
+      <p>Registry Sync: Apr 24, 2026 - 16:49</p>
     </footer>
   </main>
 
