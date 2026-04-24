@@ -44,9 +44,27 @@ def clean_and_truncate_content(content):
         lines = lines[:5000]
     return "\n".join([line[:500] for line in lines])
 
-def dir_changed(path):
-    result = subprocess.run(["git", "diff", "--name-only", "HEAD~1", "HEAD", path], capture_output=True, text=True)
-    return bool(result.stdout.strip())
+def needs_update(entry, summary_file):
+    """
+    Checks if the entry directory was modified more recently than the summary file
+    by querying the git commit history timestamps.
+    """
+    if not os.path.exists(summary_file):
+        return True
+    
+    try:
+        # Get the timestamp of the last commit that touched the entry directory
+        res_entry = subprocess.run(["git", "log", "-1", "--format=%ct", entry], capture_output=True, text=True)
+        time_entry = int(res_entry.stdout.strip()) if res_entry.stdout.strip() else 0
+        
+        # Get the timestamp of the last commit that touched the summary file
+        res_summary = subprocess.run(["git", "log", "-1", "--format=%ct", summary_file], capture_output=True, text=True)
+        time_summary = int(res_summary.stdout.strip()) if res_summary.stdout.strip() else 0
+        
+        return time_entry > time_summary
+    except ValueError:
+        # Fallback to regenerating if there's a parsing issue
+        return True
 
 def generate_summary(content):
     content = content.encode("ascii", "ignore").decode("ascii")
@@ -76,17 +94,25 @@ def main():
     for entry in all_entries:
         summary_file = os.path.join(SUMMARY_DIR, f"{entry}.html")
         
-        if not os.path.exists(summary_file) or dir_changed(entry):
+        if needs_update(entry, summary_file):
             print(f"Updating: {entry}")
             with open(os.path.join(entry, "index.html"), "r", encoding="utf-8") as f:
                 content = clean_and_truncate_content(f.read())
             
             res = "<section><p>Dry run summary.</p></section>" if args.dry_run else generate_summary(content)
+            
+            # Prevent failures from breaking the dict/template by checking the API output
             if res:
                 with open(summary_file, "w", encoding="utf-8") as f:
                     f.write(res)
                 summaries[entry] = res
-                if not args.dry_run: time.sleep(5) # Basic rate limit
+                if not args.dry_run: 
+                    time.sleep(5) # Basic rate limit
+            else:
+                print(f"Failed to generate summary for {entry}.")
+                if os.path.exists(summary_file):
+                    with open(summary_file, "r", encoding="utf-8") as f:
+                        summaries[entry] = f.read()
         else:
             with open(summary_file, "r", encoding="utf-8") as f:
                 summaries[entry] = f.read()
