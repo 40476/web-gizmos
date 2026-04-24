@@ -199,6 +199,8 @@
         
           <a class="nav-item" href="matrix/index.html" data-name="matrix">> matrix</a>
         
+          <a class="nav-item" href="megaminer/index.html" data-name="megaminer">> megaminer</a>
+        
           <a class="nav-item" href="microviz/index.html" data-name="microviz">> microviz</a>
         
           <a class="nav-item" href="midibeat/index.html" data-name="midibeat">> midibeat</a>
@@ -457,6 +459,30 @@
   </pre>
 
   <p>This HTML file generates a Matrix-style rain animation using HTML5 canvas. It features customizable parameters like color, speed, and text display, with responsive design and real-time updates. The animation creates a dynamic visual effect with falling characters and includes a text display area that updates based on user input or predefined values.</p>
+</section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-megaminer" data-name="megaminer">
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="megaminer/index.html">[ RUN GIZMO ]</a>
+          <h2 class="app-title">megaminer</h2>
+          <div class="summary-content">
+            <section>
+  <ul>
+    <li>Implements a 2D mining game with multiplayer support using WebSockets/MQTT</li>
+    <li>Features procedurally generated terrain with various ore types and upgradeable mining equipment</li>
+    <li>Includes a comprehensive UI system with mobile controls, chat, inventory management, and settings</li>
+    <li>Provides cloud save functionality using Puter's file system and IndexedDB for local storage</li>
+    <li>Utilizes custom shaders and texture engine for enhanced visual effects and tile rendering</li>
+  </ul>
+
+  <pre>
+    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99 };</code>
+    <code>const GameEngine = new class { ... };</code>
+    <code>class NetworkManager { ... }</code>
+  </pre>
+
+  <p>This HTML file contains a complete 2D mining game implementation with multiplayer functionality, procedural world generation, upgrade systems, and cloud synchronization. The game features a tile-based mining system where players can extract resources, upgrade their equipment, and interact with other players in real-time. The codebase includes a sophisticated UI system with mobile controls, inventory management, and settings customization.</p>
 </section>
           </div>
         </section>
@@ -738,7 +764,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Apr 23, 2026 - 21:26</p>
+      <p>Registry Sync: Apr 24, 2026 - 11:50</p>
     </footer>
   </main>
 
