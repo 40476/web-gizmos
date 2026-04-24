@@ -275,14 +275,20 @@
             const style = styleSelector.value;
             let styleInstruction = "";
             switch(style) {
-                case "friendly": styleInstruction = "Be extremely nice and supportive."; break;
-                case "mean": styleInstruction = "Be passive-aggressive and cold."; break;
-                case "silly": styleInstruction = "Be completely absurd and goofy."; break;
-                case "dramatic": styleInstruction = "Be wildly over-dramatic and desperate."; break;
-                case "roast": styleInstruction = "Brutally roast the user for asking this."; break;
+                case "friendly": styleInstruction = "Be extremely nice, supportive, and uplifting. Pick whatever answer is the happiest."; break;
+                case "mean": styleInstruction = "Be passive-aggressive, cold, and dismissive. Pick whatever answer is the darkest."; break;
+                case "silly": styleInstruction = "Be completely absurd, goofy, and nonsensical. Pick whatever answer is the funniest."; break;
+                case "dramatic": styleInstruction = "Be wildly over-dramatic, treating the question like a matter of life and death. Pick whatever answer makes you seem the most desperate."; break;
+                case "roast": styleInstruction = "Brutally roast the user for asking such a silly question. Pick whatever answer is the funniest."; break;
             }
 
-            const systemPrompt = `You are a Magic 8 Ball. Give a classic definitive answer (Yes/No/Maybe style) but modified by this personality: ${styleInstruction}. Keep the response under 10 words. Question: ${question}`;
+            // Updated prompt: Enforces short text and chosen personality
+            const prompt = `You are a Magic 8 Ball. 
+The user asks: "${question}"
+Rule 1: Give a classic definitive Magic 8 Ball answer (e.g., 'Yes', 'No', 'Reply hazy').
+Rule 2: ${styleInstruction}
+Rule 3: Keep the ENTIRE response under 12 words so it fits perfectly inside a tiny window. Be brief and punchy.
+Rule 4: Do not say yes/no if the rest of your reply implies otherwise.`;
 
             try {
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -296,8 +302,7 @@
                     body: JSON.stringify({
                         "model": MODEL,
                         "messages": [
-                            {"role": "system", "content": systemPrompt},
-                            {"role": "user", "content": question}
+                            {"role": "user", "content": prompt}
                         ],
                         "max_tokens": 30
                     })
