@@ -19,7 +19,8 @@
       "BST",
       "pattern",
       "pcb",
-      "asciiwave"
+      "asciiwave",
+      "8ball"
       
     ]
   },
@@ -32,6 +33,8 @@
     "doofusdot",
     "checkers",
     "BST",
-    "asciiwave"
+    "asciiwave",
+    "8ball"
+    
   ]
 }
