@@ -27,7 +27,7 @@
                 MAGIC 8 ROAST
             </h1>
             <p class="text-zinc-500 text-sm mt-2 uppercase tracking-widest">
-                Wllama Edition (GGUF)
+                Wllama Edition (GitHub LFS)
             </p>
         </div>
 
@@ -86,36 +86,58 @@
                     "wllama.worker.mjs": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/worker.js",
                 });
 
-                // Using the redirect URL that often works better with browser fetch/CORS
-                const modelUrl = 'https://hf-mirror.com/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q8_0.gguf';
+                // Changed raw.githubusercontent.com to media.githubusercontent.com
+                // This often helps GitHub resolve the LFS pointer to the actual binary
+                const modelUrl = 'https://media.githubusercontent.com/media/40476/large-web-assets/main/SmolLM2-135M-Instruct-Q8_0.gguf';
 
-                statusBar.innerText = "○ Loading Model (Mirror Mode)...";
+                statusBar.innerText = "○ Loading Model (Git LFS)...";
                 
                 await wllama.loadModelFromUrl(modelUrl, {
-                    parallelDownloads: 1, // Avoid rate limiting/CORS issues with multiple simultaneous chunks
+                    parallelDownloads: 1,
+                    allowOffline: true,
                     fetchConfig: {
-                        mode: 'cors',
+                        mode: 'cors'
                     },
                     progressCallback: ({ loaded, total }) => {
-                        const pct = Math.round((loaded / total) * 100);
-                        statusBar.innerText = `○ Downloading: ${pct}%`;
-                        shakeButton.innerText = `LOADING ${pct}%`;
+                        // Check if we are accidentally downloading the tiny LFS pointer (usually < 200 bytes)
+                        if (total > 0 && total < 1000) {
+                            throw new Error("LFS_POINTER_DETECTED");
+                        }
+                        
+                        if (total > 0) {
+                            const pct = Math.round((loaded / total) * 100);
+                            statusBar.innerText = `○ Downloading: ${pct}%`;
+                            shakeButton.innerText = `LOADING ${pct}%`;
+                        } else {
+                            statusBar.innerText = `○ Loaded: ${(loaded / 1024 / 1024).toFixed(1)} MB`;
+                        }
                     }
                 });
 
-                statusBar.innerText = "● Wllama Ready (CPU Optimized)";
+                statusBar.innerText = "● Wllama Ready";
                 shakeButton.innerText = "SHAKE THE BALL";
                 shakeButton.disabled = false;
             } catch (err) {
                 console.error(err);
-                statusBar.innerText = "× Initialization Failed.";
-                shakeButton.innerText = "SYSTEM ERROR";
-                ballContent.innerHTML = `
-                    <div class="text-[10px] text-red-400 p-2 leading-tight">
-                        LOAD FAILED<br>
-                        <span class="text-[8px] opacity-70">Check network or storage.</span>
-                    </div>
-                `;
+                if (err.message === "LFS_POINTER_DETECTED") {
+                    statusBar.innerText = "× Error: Downloaded LFS Pointer";
+                    shakeButton.innerText = "LFS POINTER ERROR";
+                    ballContent.innerHTML = `
+                        <div class="text-[10px] text-yellow-400 p-2 leading-tight">
+                            LFS POINTER<br>
+                            <span class="text-[8px] opacity-70 italic text-white">GitHub sent the text pointer, not the model. Try the 'media' URL.</span>
+                        </div>
+                    `;
+                } else {
+                    statusBar.innerText = "× Failed to load model.";
+                    shakeButton.innerText = "CORS / LFS ERROR";
+                    ballContent.innerHTML = `
+                        <div class="text-[10px] text-red-400 p-2 leading-tight">
+                            LOAD FAILED<br>
+                            <span class="text-[8px] opacity-70 italic text-white">Check console for details.</span>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -131,7 +153,7 @@
 You are a witty, slightly grumpy Magic 8 Ball.
 1. Start with YES, NO, or MAYBE.
 2. Add a quick, light-hearted roast.
-3. Keep it safe and positive (under 18 friendly).
+3. Keep it safe and under-18 friendly.
 4. Maximum 12 words.<|im_end|>
 <|im_start|>user
 ${question}<|im_end|>
@@ -140,10 +162,7 @@ ${question}<|im_end|>
             try {
                 const result = await wllama.createCompletion(prompt, {
                     nPredict: 30,
-                    sampling: {
-                        temp: 0.7,
-                        top_p: 0.9,
-                    },
+                    sampling: { temp: 0.7, top_p: 0.9 },
                     stop: ["<|im_end|>"]
                 });
 
