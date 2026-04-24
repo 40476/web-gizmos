@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic 8 Roast</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes bounce-custom {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(-5deg); }
+            75% { transform: translateY(10px) rotate(5deg); }
+        }
+        .shaking {
+            animation: bounce-custom 0.15s infinite;
+        }
+        .eight-ball-shadow {
+            box-shadow: inset -20px -20px 60px #000, inset 20px 20px 60px #222, 0 0 40px rgba(168, 85, 247, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+
+    <div class="max-w-md w-full text-center space-y-8">
+        <div>
+            <h1 class="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+                MAGIC 8 ROAST
+            </h1>
+            <p class="text-zinc-500 text-sm mt-2 uppercase tracking-widest">
+                Wllama Edition (GGUF)
+            </p>
+        </div>
+
+        <div class="relative flex justify-center py-10">
+            <div id="eight-ball" class="w-64 h-64 rounded-full bg-black flex items-center justify-center border-4 border-zinc-900 transition-transform duration-100 eight-ball-shadow">
+                <div class="w-32 h-32 rounded-full bg-zinc-900 flex items-center justify-center p-4 shadow-inner relative overflow-hidden border-2 border-zinc-800">
+                    <div class="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none"></div>
+                    <div id="ball-content" class="text-center transition-all duration-300">
+                        <div class="text-4xl font-serif text-zinc-700 opacity-50">8</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="relative">
+                <input
+                    id="question-input"
+                    type="text"
+                    placeholder="Ask a question..."
+                    class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 transition-all"
+                />
+                <button
+                    id="shake-button"
+                    disabled
+                    class="mt-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 rounded-xl shadow-lg transform active:scale-95 transition-all disabled:grayscale disabled:opacity-50"
+                >
+                    INITIALIZING...
+                </button>
+            </div>
+            <div id="status-bar" class="text-[10px] text-zinc-600 uppercase tracking-tighter">
+                ○ Waiting for Wllama...
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Wllama from CDN
+        import { Wllama } from 'https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/index.js';
+
+        const eightBall = document.getElementById('eight-ball');
+        const ballContent = document.getElementById('ball-content');
+        const questionInput = document.getElementById('question-input');
+        const shakeButton = document.getElementById('shake-button');
+        const statusBar = document.getElementById('status-bar');
+
+        let wllama = null;
+
+        async function initWllama() {
+            try {
+                statusBar.innerText = "○ Initializing Wasm Engine...";
+                
+                // Config for Wasm paths
+                wllama = new Wllama({
+                    "wllama.wasm": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama.wasm",
+                    "wllama-threaded.wasm": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama-threaded.wasm",
+                });
+
+                // SmolLM2-135M-Instruct in GGUF format from a mirror
+                // This is a single file, much less likely to 404
+                const modelUrl = 'https://hf-mirror.com/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q8_0.gguf';
+
+                statusBar.innerText = "○ Downloading GGUF Model...";
+                
+                await wllama.loadModelFromUrl(modelUrl, {
+                    progressCallback: ({ loaded, total }) => {
+                        const pct = Math.round((loaded / total) * 100);
+                        statusBar.innerText = `○ Downloading: ${pct}%`;
+                        shakeButton.innerText = `LOADING ${pct}%`;
+                    }
+                });
+
+                statusBar.innerText = "● Wllama Ready (CPU Optimized)";
+                shakeButton.innerText = "SHAKE THE BALL";
+                shakeButton.disabled = false;
+            } catch (err) {
+                console.error(err);
+                statusBar.innerText = "× Wllama Error: Network or Browser Blocked.";
+                shakeButton.innerText = "ACCESS DENIED";
+            }
+        }
+
+        async function handleShake() {
+            const question = questionInput.value.trim();
+            if (!question || !wllama) return;
+
+            eightBall.classList.add('shaking');
+            shakeButton.disabled = true;
+            ballContent.innerHTML = `<div class="animate-pulse text-purple-400 text-[10px] font-bold uppercase">THINKING...</div>`;
+
+            // Prompt format for SmolLM2 (ChatML)
+            const prompt = `<|im_start|>system
+You are a witty, slightly grumpy Magic 8 Ball.
+1. Start with YES, NO, or MAYBE.
+2. Add a quick, light-hearted roast.
+3. Keep it safe and positive (under 18 friendly).
+4. Maximum 12 words.<|im_end|>
+<|im_start|>user
+${question}<|im_end|>
+<|im_start|>assistant\n`;
+
+            try {
+                const result = await wllama.createCompletion(prompt, {
+                    nPredict: 30,
+                    sampling: {
+                        temp: 0.7,
+                        top_p: 0.9,
+                    },
+                    stop: ["<|im_end|>"]
+                });
+
+                const responseText = result.trim();
+
+                setTimeout(() => {
+                    eightBall.classList.remove('shaking');
+                    ballContent.innerHTML = `
+                        <div class="animate-in fade-in zoom-in duration-500">
+                            <p class="text-[10px] font-medium uppercase text-blue-300">
+                                ${responseText}
+                            </p>
+                        </div>
+                    `;
+                    shakeButton.disabled = false;
+                }, 800);
+
+            } catch (err) {
+                eightBall.classList.remove('shaking');
+                ballContent.innerHTML = `<div class="text-red-500 text-[10px]">ENGINE ERROR</div>`;
+                shakeButton.disabled = false;
+            }
+        }
+
+        shakeButton.addEventListener('click', handleShake);
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleShake();
+        });
+
+        initWllama();
+    </script>
+</body>
+</html>
