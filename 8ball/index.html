@@ -12,8 +12,9 @@
     <script>!function(e){let t=0,r=()=>{let s=document.createElement("script");s.src=e[t++],s.onerror=()=>e[t]&&r(),document.head.append(s)};r()}(location.hostname.includes("usr40k.dev")?["https://header.usr40k.dev/injector.js","https://40476.github.io/header/injector.js"]:["https://40476.github.io/header/injector.js","https://header.usr40k.dev/injector.js"]);</script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
     <style>
         html{overflow:hidden}
         body {
@@ -345,18 +346,26 @@ Rule 4: Do not say yes/no if the rest of your reply implies otherwise.`;
             }, 300);
         }
 
-        function displayInsideBall(text) {
+        function displayInsideBall(markdownText) {
             setTimeout(() => {
-                responseText.textContent = text;
+                // 1. Convert Markdown to HTML string
+                const htmlContent = marked.parse(markdownText);
+        
+                // 2. Inject as HTML instead of textContent
+                responseText.innerHTML = htmlContent;
+        
+                // 3. Handle animations and visibility
                 responseText.classList.remove('hidden', 'fade-exit-active');
                 eightText.classList.add('hidden');
                 triangle.classList.remove('opacity-0');
                 triangle.classList.add('opacity-100');
+                
                 responseText.classList.add('fade-enter');
-                void responseText.offsetWidth; 
+                void responseText.offsetWidth; // Force reflow
+                
                 responseText.classList.remove('fade-enter');
                 responseText.classList.add('fade-enter-active');
-            }, 400); 
+            }, 400);
         }
     </script>
 </body>
