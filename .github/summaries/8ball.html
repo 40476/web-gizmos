@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Interactive Magic 8 Ball with 5 selectable response personality styles</li>
-    <li>Generates AI answers via OpenRouter API with a free Gemma model</li>
-    <li>Includes 3D particle effects, shake animations, and responsive design</li>
+    <li>Interactive Magic 8 Ball with 3D WebGL particle effects and shake animations</li>
+    <li>Offers 5 selectable response personalities (friendly, mean, silly, dramatic, roast) using OpenRouter AI</li>
+    <li>Includes input validation, loading states, and smooth text transitions for answers</li>
   </ul>
 
   <pre>
     <code>const MODEL = "google/gemma-3n-e2b-it:free";</code>
-    <code>magicBall.classList.add('is-shaking');</code>
+    <code>fetch("https://openrouter.ai/api/v1/chat/completions")</code>
   </pre>
 
-  <p>This web app simulates a Magic 8 Ball with AI-generated dynamic responses. Users choose from five personality tones and input questions to get answers. It features 3D particle visuals, interactive animations, and responsive styling.</p>
+  <p>This interactive Magic 8 Ball web app features a 3D particle background and dynamic shake animations when generating answers. Users can choose from multiple personality styles and input questions to receive AI-generated responses via the OpenRouter API. The app includes input validation, loading states, and smooth text transitions to ensure a seamless user experience.</p>
 </section>
