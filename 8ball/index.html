@@ -65,7 +65,6 @@
     </div>
 
     <script type="module">
-        // Import Wllama from CDN
         import { Wllama } from 'https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/index.js';
 
         const eightBall = document.getElementById('eight-ball');
@@ -80,19 +79,23 @@
             try {
                 statusBar.innerText = "○ Initializing Wasm Engine...";
                 
-                // Config for Wasm paths
                 wllama = new Wllama({
                     "wllama.wasm": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama.wasm",
                     "wllama-threaded.wasm": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama-threaded.wasm",
+                    "wllama.js": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/wllama.js",
+                    "wllama.worker.mjs": "https://cdn.jsdelivr.net/npm/@wllama/wllama@1.16.2/esm/worker.js",
                 });
 
-                // SmolLM2-135M-Instruct in GGUF format from a mirror
-                // This is a single file, much less likely to 404
+                // Using the redirect URL that often works better with browser fetch/CORS
                 const modelUrl = 'https://hf-mirror.com/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q8_0.gguf';
 
-                statusBar.innerText = "○ Downloading GGUF Model...";
+                statusBar.innerText = "○ Loading Model (Mirror Mode)...";
                 
                 await wllama.loadModelFromUrl(modelUrl, {
+                    parallelDownloads: 1, // Avoid rate limiting/CORS issues with multiple simultaneous chunks
+                    fetchConfig: {
+                        mode: 'cors',
+                    },
                     progressCallback: ({ loaded, total }) => {
                         const pct = Math.round((loaded / total) * 100);
                         statusBar.innerText = `○ Downloading: ${pct}%`;
@@ -105,8 +108,14 @@
                 shakeButton.disabled = false;
             } catch (err) {
                 console.error(err);
-                statusBar.innerText = "× Wllama Error: Network or Browser Blocked.";
-                shakeButton.innerText = "ACCESS DENIED";
+                statusBar.innerText = "× Initialization Failed.";
+                shakeButton.innerText = "SYSTEM ERROR";
+                ballContent.innerHTML = `
+                    <div class="text-[10px] text-red-400 p-2 leading-tight">
+                        LOAD FAILED<br>
+                        <span class="text-[8px] opacity-70">Check network or storage.</span>
+                    </div>
+                `;
             }
         }
 
@@ -118,7 +127,6 @@
             shakeButton.disabled = true;
             ballContent.innerHTML = `<div class="animate-pulse text-purple-400 text-[10px] font-bold uppercase">THINKING...</div>`;
 
-            // Prompt format for SmolLM2 (ChatML)
             const prompt = `<|im_start|>system
 You are a witty, slightly grumpy Magic 8 Ball.
 1. Start with YES, NO, or MAYBE.
