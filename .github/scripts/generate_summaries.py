@@ -10,7 +10,7 @@ from jinja2 import Template
 
 sys.stdout.reconfigure(line_buffering=True)
 
-MODEL = "arcee-ai/trinity-large-preview:free"
+MODEL = "tencent/hy3-preview:free"
 SUMMARY_DIR = ".github/summaries"
 TEMPLATE_FILE = "index.html.template"
 OUTPUT_FILE = "index.html"
