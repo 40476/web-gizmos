@@ -181,6 +181,8 @@
         
           <a class="nav-item" href="1984/index.html" data-name="1984">> 1984</a>
         
+          <a class="nav-item" href="8ball/index.html" data-name="8ball">> 8ball</a>
+        
           <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">> animeboydownloader</a>
         
           <a class="nav-item" href="asciiwave/index.html" data-name="asciiwave">> asciiwave</a>
@@ -246,20 +248,38 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>A dystopian-themed web page comparing modern surveillance to George Orwell's 1984</li>
-    <li>Features an interactive eye that follows the mouse cursor and a particle system representing data tracking</li>
-    <li>Uses scroll-triggered animations and parallax effects to reveal content sections</li>
-    <li>Contains a mock terms-of-service agreement highlighting privacy concerns</li>
-    <li>Includes citations to relevant literature on surveillance capitalism</li>
+    <li>Dystopian web experience contrasting Orwell's 1984 surveillance tropes with modern data privacy and surveillance capitalism issues</li>
+    <li>Features interactive elements including a mouse-tracking SVG eye, particle network canvas, and scroll-triggered reveal animations</li>
+    <li>Includes sections on modern surveillance tools, data brokers, algorithmic manipulation, and a satirical terms of service agreement</li>
   </ul>
 
   <pre>
-    <code>document.addEventListener('mousemove', (e) =&gt; {</code>
-    <code>    const mouseX = e.clientX;</code>
-    <code>    const mouseY = e.clientY;</code>
+    <code>const canvas = document.getElementById('particle-canvas');</code>
+    <code>pupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;</code>
   </pre>
 
-  <p>This web page creates a visual metaphor for modern surveillance by combining interactive elements like a tracking eye, particle systems, and glitch effects with educational content about data privacy. The design uses CSS animations and JavaScript to create an immersive experience that illustrates how digital surveillance mirrors the dystopian vision of 1984, while providing sources for further reading on the topic.</p>
+  <p>This web application creates a dystopian experience comparing surveillance in George Orwell's 1984 to modern data privacy and surveillance capitalism practices. It includes interactive visual elements like a mouse-tracking SVG eye, a particle network background, and scroll-triggered content animations. The app also features educational sections on modern surveillance tools, data brokers, algorithmic manipulation, and a satirical terms of service agreement.</p>
+</section>
+          </div>
+        </section>
+      
+        <section class="app-section" id="section-8ball" data-name="8ball">
+          <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="8ball/index.html">[ RUN GIZMO ]</a>
+          <h2 class="app-title">8ball</h2>
+          <div class="summary-content">
+            <section>
+  <ul>
+    <li>Interactive Magic 8 Ball generating AI-powered answers to user-submitted questions.</li>
+    <li>Supports selectable response styles: friendly, mean, silly, dramatic, and roast.</li>
+    <li>Includes 3D WebGL particle effects and shake animations for visual feedback.</li>
+  </ul>
+
+  <pre>
+    <code>await puter.ai.chat(systemPrompt)</code>
+    <code>magicBall.classList.add('is-shaking')</code>
+  </pre>
+
+  <p>This web application simulates a classic Magic 8 Ball with AI-generated answers to user questions. It offers multiple selectable response styles and triggers animated visual effects during use. The app features 3D WebGL particle displays and shake animations to enhance interactivity.</p>
 </section>
           </div>
         </section>
@@ -270,17 +290,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Fetches random boy-themed images from the Nekos API</li>
-    <li>Displays image with metadata including ID, rating, tags, and source</li>
-    <li>Generates a color palette swatch based on the image's color scheme</li>
+    <li>Fetches safe boy-tagged images from Nekos API via a CORS proxy.</li>
+    <li>Displays images with metadata and color palette swatches.</li>
+    <li>Includes button to load new images, auto-loads on page start.</li>
   </ul>
 
   <pre>
-    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe&without_tags=girl,pussy,exposed_girl_breasts";</code>
-    <code>const apiUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);</code>
+    <code>fetch(proxy + encodeURIComponent(target))</code>
+    <code>renderImage(imageData)</code>
   </pre>
 
-  <p>This web application fetches and displays random boy-themed images from the Nekos API. It includes metadata display, a color palette generator, and error handling for failed requests. The interface features a Comic Sans MS font and a pink-blue gradient background.</p>
+  <p>This web app fetches safe, boy-tagged images from the Nekos API using a CORS proxy. Each image is shown with details like ID, rating, tags, source link, and a color palette. A button loads new random images, and one image loads automatically on page startup.</p>
 </section>
           </div>
         </section>
@@ -333,18 +353,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive 3D spinning text generator using Three.js with customizable font, size, thickness, speed, and color</li>
-    <li>Loads Google Fonts dynamically from GitHub via API, with search functionality for font selection</li>
-    <li>URL-based state management enables sharing configurations and keyboard shortcut to toggle UI</li>
+    <li>Renders 3D spinning text using the Three.js library.</li>
+    <li>Fetches Google Fonts via GitHub API for custom typeface selection.</li>
+    <li>Generates shareable URLs preserving all current settings.</li>
   </ul>
 
   <pre>
-    <code>const geo = new TextGeometry(state.text, { font, size: state.size, height: state.thickness })</code>
+    <code>import * as THREE from 'three';</code>
     <code>textMesh.rotation.y += state.speed;</code>
-    <code>url.searchParams.set('text', state.text); url.searchParams.set('font', state.folder)</code>
   </pre>
 
-  <p>A web-based 3D text spinner that fetches Google Fonts from GitHub, renders them in Three.js with real-time controls, and generates shareable URLs for each configuration. The application features a collapsible UI, font search, and smooth animation with customizable parameters.</p>
+  <p>This web application generates 3D spinning text with real-time customization options. Users can adjust text content, font, size, thickness, spin speed, and color via a toggleable control panel. All settings are saved to the URL for easy sharing, with fonts fetched dynamically from the Google Fonts repository.</p>
 </section>
           </div>
         </section>
@@ -355,19 +374,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>3D multiplayer checkers game using Three.js for rendering and MQTT for real-time synchronization</li>
-    <li>Players can customize their pieces with custom images that sync across all clients</li>
-    <li>Presence locking system prevents multiple players from taking the same role in a room</li>
-    <li>Real-time chat system integrated with game state updates</li>
-    <li>Visual effects including piece explosions and victory sweep animations</li>
+    <li>3D checkers game with Three.js rendering and MQTT real-time multiplayer sync</li>
+    <li>Supports Player 1, Player 2, Spectator roles with presence locking via retained MQTT messages</li>
+    <li>Includes in-game chat, custom player images, and win sweep visual effects</li>
   </ul>
 
   <pre>
-    <code>mqttClient.publish(presenceTopic, JSON.stringify({ status: 'online', image: myCustomImage }), { retain: true });</code>
-    <code>mqttClient.publish(roomTopic + '/state', JSON.stringify(gameState), { retain: true });</code>
+    <code>scene = new THREE.Scene();</code>
+    <code>mqttClient = mqtt.connect(brokerUrl);</code>
   </pre>
 
-  <p>This is a 3D multiplayer checkers game that uses Three.js for 3D rendering and MQTT for real-time synchronization between players. The game features custom piece images that sync across all clients, a presence locking system to prevent role conflicts, and visual effects like explosions and victory animations. Players can join rooms, customize their pieces, chat with opponents, and play checkers in a fully synchronized 3D environment.</p>
+  <p>This 3D checkers web app uses Three.js for 3D rendering and MQTT for real-time multiplayer state synchronization. Users can join as Player 1, Player 2, or Spectator, with presence locking to prevent duplicate roles in shared rooms. It includes an in-game chat system, custom player images, and animated sweep effects for win conditions.</p>
 </section>
           </div>
         </section>
@@ -420,24 +437,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Upload custom font files to test typography</li>
-    <li>Adjust font size with a slider control</li>
-    <li>Preview text in custom font across all HTML elements</li>
-    <li>Interactive controls for font size and custom text input</li>
-    <li>Responsive design that works on desktop and mobile</li>
+    <li>Upload custom font files (TTF, OTF, WOFF, WOFF2) to preview</li>
+    <li>Adjust font size via slider with live rendering updates</li>
+    <li>Preview fonts across headings, text, forms, and UI elements</li>
   </ul>
 
   <pre>
-    <code>const fontFileInput = document.getElementById('font-file-input');</code>
-    <code>fontFileInput.addEventListener('change', (event) =&gt; {</code>
-    <code>  const reader = new FileReader();</code>
-    <code>  reader.onload = (e) =&gt; {</code>
-    <code>    fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', sans-serif`;</code>
-    <code>  };</code>
-    <code>});</code>
+    <code>@font-face { font-family: 'MyCustomFont'; src: url(fontDataUrl); }</code>
+    <code>fontTestArea.style.fontSize = `${newSize}px`;</code>
   </pre>
 
-  <p>This custom font tester application allows you to upload font files and preview how they render across various HTML elements. The interface includes controls for adjusting font size and entering custom text, providing a comprehensive preview of your font's appearance in different contexts.</p>
+  <p>This web application allows users to upload custom font files and preview their rendering in real time. Users can adjust the font size with a slider, input custom test text, and view the font applied to diverse elements. Previews include headings, paragraphs, inline text styles, forms, buttons, and character glyph sets for comprehensive testing.</p>
 </section>
           </div>
         </section>
@@ -469,20 +479,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Implements a 2D mining game with multiplayer support using WebSockets/MQTT</li>
-    <li>Features procedurally generated terrain with various ore types and upgradeable mining equipment</li>
-    <li>Includes a comprehensive UI system with mobile controls, chat, inventory management, and settings</li>
-    <li>Provides cloud save functionality using Puter's file system and IndexedDB for local storage</li>
-    <li>Utilizes custom shaders and texture engine for enhanced visual effects and tile rendering</li>
+    <li>Multiplayer mining game with procedural underground map generation, drilling, and ore collection.</li>
+    <li>Includes shop upgrades, inventory management, TNT/nuke explosives, teleporters, and mobile controls.</li>
+    <li>Features cloud save sync, MQTT networking, audio system, HUD gauges, minimap, and admin tools.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99 };</code>
-    <code>const GameEngine = new class { ... };</code>
-    <code>class NetworkManager { ... }</code>
+    <code>const TILE_SIZE = 32;</code>
+    <code>Sound.init();</code>
   </pre>
 
-  <p>This HTML file contains a complete 2D mining game implementation with multiplayer functionality, procedural world generation, upgrade systems, and cloud synchronization. The game features a tile-based mining system where players can extract resources, upgrade their equipment, and interact with other players in real-time. The codebase includes a sophisticated UI system with mobile controls, inventory management, and settings customization.</p>
+  <p>Mega Miner NG is a browser-based multiplayer mining game with procedural underground maps and resource mining mechanics. Players can upgrade equipment, manage inventory, use explosives, and fast-travel via teleporters across shared game worlds. The app includes cloud save support, mobile-optimized controls, a custom audio engine, HUD gauges, minimap, chat, and configurable settings for graphics, audio, and keybinds.</p>
 </section>
           </div>
         </section>
@@ -561,18 +568,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>SVG pattern generator with seeded deterministic output</li>
-    <li>Six preset styles: Memphis, Bauhaus, Isometric, Voronoi, Waves, Op-art</li>
-    <li>Customizable dimensions, density, palette, stroke width, noise texture</li>
-    <li>Export to SVG and PNG formats</li>
+    <li>Generates deterministic SVG patterns via seeded PRNG for reproducible results</li>
+    <li>Offers 6 pattern styles, adjustable density, 6 color palettes, and texture options</li>
+    <li>Supports SVG/PNG exports, URL state persistence, and one-click random seed generation</li>
   </ul>
 
   <pre>
-    <code>function PRNG(seedStr) { ... } // seeded random generator</code>
-    <code>function genMemphis(svg, rng, W, H, palette, bg, strokeWidth) { ... }</code>
+    <code>const rng = PRNG(seedValue);</code>
+    <code>generate();</code>
   </pre>
 
-  <p>This web application generates unique SVG patterns using seeded randomness for reproducible results. Users can customize pattern style, colors, size, and complexity, then export their creation as SVG or PNG. The deterministic nature means the same settings always produce identical patterns.</p>
+  <p>This web app generates customizable, deterministic SVG patterns using a seeded pseudo-random number generator for reproducible outputs. Users can adjust parameters including pattern style, dimensions, color palette, density, and background, with all settings synced to the browser URL for easy sharing. Patterns can be exported as SVG or PNG files, and a one-click random seed generator creates new unique patterns instantly.</p>
 </section>
           </div>
         </section>
@@ -764,7 +770,7 @@
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Apr 24, 2026 - 14:28</p>
+      <p>Registry Sync: Apr 24, 2026 - 14:40</p>
     </footer>
   </main>
 

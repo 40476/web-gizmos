@@ -1,17 +1,14 @@
 <section>
   <ul>
-    <li>Implements a 2D mining game with multiplayer support using WebSockets/MQTT</li>
-    <li>Features procedurally generated terrain with various ore types and upgradeable mining equipment</li>
-    <li>Includes a comprehensive UI system with mobile controls, chat, inventory management, and settings</li>
-    <li>Provides cloud save functionality using Puter's file system and IndexedDB for local storage</li>
-    <li>Utilizes custom shaders and texture engine for enhanced visual effects and tile rendering</li>
+    <li>Multiplayer mining game with procedural underground map generation, drilling, and ore collection.</li>
+    <li>Includes shop upgrades, inventory management, TNT/nuke explosives, teleporters, and mobile controls.</li>
+    <li>Features cloud save sync, MQTT networking, audio system, HUD gauges, minimap, and admin tools.</li>
   </ul>
 
   <pre>
-    <code>const TILE_TYPES = { EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11, CASING: 20, BEDROCK: 99 };</code>
-    <code>const GameEngine = new class { ... };</code>
-    <code>class NetworkManager { ... }</code>
+    <code>const TILE_SIZE = 32;</code>
+    <code>Sound.init();</code>
   </pre>
 
-  <p>This HTML file contains a complete 2D mining game implementation with multiplayer functionality, procedural world generation, upgrade systems, and cloud synchronization. The game features a tile-based mining system where players can extract resources, upgrade their equipment, and interact with other players in real-time. The codebase includes a sophisticated UI system with mobile controls, inventory management, and settings customization.</p>
+  <p>Mega Miner NG is a browser-based multiplayer mining game with procedural underground maps and resource mining mechanics. Players can upgrade equipment, manage inventory, use explosives, and fast-travel via teleporters across shared game worlds. The app includes cloud save support, mobile-optimized controls, a custom audio engine, HUD gauges, minimap, chat, and configurable settings for graphics, audio, and keybinds.</p>
 </section>

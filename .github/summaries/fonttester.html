@@ -1,21 +1,14 @@
 <section>
   <ul>
-    <li>Upload custom font files to test typography</li>
-    <li>Adjust font size with a slider control</li>
-    <li>Preview text in custom font across all HTML elements</li>
-    <li>Interactive controls for font size and custom text input</li>
-    <li>Responsive design that works on desktop and mobile</li>
+    <li>Upload custom font files (TTF, OTF, WOFF, WOFF2) to preview</li>
+    <li>Adjust font size via slider with live rendering updates</li>
+    <li>Preview fonts across headings, text, forms, and UI elements</li>
   </ul>
 
   <pre>
-    <code>const fontFileInput = document.getElementById('font-file-input');</code>
-    <code>fontFileInput.addEventListener('change', (event) =&gt; {</code>
-    <code>  const reader = new FileReader();</code>
-    <code>  reader.onload = (e) =&gt; {</code>
-    <code>    fontTestArea.style.fontFamily = `'${FONT_FAMILY_NAME}', sans-serif`;</code>
-    <code>  };</code>
-    <code>});</code>
+    <code>@font-face { font-family: 'MyCustomFont'; src: url(fontDataUrl); }</code>
+    <code>fontTestArea.style.fontSize = `${newSize}px`;</code>
   </pre>
 
-  <p>This custom font tester application allows you to upload font files and preview how they render across various HTML elements. The interface includes controls for adjusting font size and entering custom text, providing a comprehensive preview of your font's appearance in different contexts.</p>
+  <p>This web application allows users to upload custom font files and preview their rendering in real time. Users can adjust the font size with a slider, input custom test text, and view the font applied to diverse elements. Previews include headings, paragraphs, inline text styles, forms, buttons, and character glyph sets for comprehensive testing.</p>
 </section>

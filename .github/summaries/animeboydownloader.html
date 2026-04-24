@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Fetches random boy-themed images from the Nekos API</li>
-    <li>Displays image with metadata including ID, rating, tags, and source</li>
-    <li>Generates a color palette swatch based on the image's color scheme</li>
+    <li>Fetches safe boy-tagged images from Nekos API via a CORS proxy.</li>
+    <li>Displays images with metadata and color palette swatches.</li>
+    <li>Includes button to load new images, auto-loads on page start.</li>
   </ul>
 
   <pre>
-    <code>const targetUrl = "https://api.nekosapi.com/v4/images/random?limit=1&tags=boy&rating=safe&without_tags=girl,pussy,exposed_girl_breasts";</code>
-    <code>const apiUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);</code>
+    <code>fetch(proxy + encodeURIComponent(target))</code>
+    <code>renderImage(imageData)</code>
   </pre>
 
-  <p>This web application fetches and displays random boy-themed images from the Nekos API. It includes metadata display, a color palette generator, and error handling for failed requests. The interface features a Comic Sans MS font and a pink-blue gradient background.</p>
+  <p>This web app fetches safe, boy-tagged images from the Nekos API using a CORS proxy. Each image is shown with details like ID, rating, tags, source link, and a color palette. A button loads new random images, and one image loads automatically on page startup.</p>
 </section>
