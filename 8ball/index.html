@@ -166,7 +166,7 @@
 
     <script>
         // --- WebGL Setup (Three.js) ---
-        let scene, camera, renderer, particles;
+        let scene, camera, renderer, particles, revertTimer;
         let baseRotationSpeed = 0.001;
         let targetRotationSpeed = 0.001;
 
@@ -195,7 +195,6 @@
             const positions = new Float32Array(particleCount * 3);
             const colors = new Float32Array(particleCount * 3);
 
-            let revertTimer;
             
             const color1 = new THREE.Color(0x8b5cf6);
             const color2 = new THREE.Color(0x3b82f6);
