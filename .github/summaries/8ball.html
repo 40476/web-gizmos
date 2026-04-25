@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Renders a 3D animated Magic 8 Ball with particle effects and shake animations</li>
-    <li>Supports 5 selectable response personalities (friendly, mean, silly, dramatic, roast)</li>
-    <li>Integrates OpenRouter API for AI-generated answers with rate limit handling</li>
+    <li>Interactive Magic 8 Ball with shake animation and 3D WebGL particle background</li>
+    <li>Offers 5 selectable response tones including friendly, roast, and dramatic</li>
+    <li>Auto-reverts to default 8 display 45 seconds after showing answers</li>
   </ul>
 
   <pre>
     <code>onclick="askQuestion()"</code>
-    <code>particles.rotation.y += baseRotationSpeed;</code>
+    <code>setTimeout(revertToEight, 45000)</code>
   </pre>
 
-  <p>This interactive Magic 8 Ball web app features 3D particle animations and dynamic shake effects. Users can choose from multiple personality styles to get AI-generated, brief answers to their questions. The app handles API rate limits and automatically reverts to the default 8 display after 45 seconds.</p>
+  <p>This web application replicates a Magic 8 Ball with AI-generated dynamic responses. Users input questions, select answer tones, and receive results in an animated 3D interface. The app automatically returns to its default state 45 seconds after displaying an answer.</p>
 </section>

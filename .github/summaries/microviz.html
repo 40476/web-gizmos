@@ -1,16 +1,14 @@
 <section>
   <ul>
-    <li>Web-based audio visualizer with 3D background and 2D overlay canvases</li>
-    <li>Multiple visualization modes including bars, waves, and custom presets</li>
-    <li>Configurable audio processing with FFT size, smoothing, and sensitivity controls</li>
-    <li>Support for local audio files, microphone input, and WebSocket audio streams</li>
-    <li>Metadata display for now playing information and album artwork</li>
+    <li>Renders audio visualizations on layered 2D and 3D canvas elements.</li>
+    <li>Supports audio input from local files, microphones, or WebSocket streams.</li>
+    <li>Includes adjustable global settings and switchable visualizer presets with per-visualizer controls.</li>
   </ul>
 
   <pre>
-    <code>const visualizers = { bars: { settings: [...], draw: () => { ... } } };</code>
-    <code>function draw() { analyser.getByteFrequencyData(audioData); visualizer.draw(store.modules, store)(); }</code>
+    <code>const CONFIG = initializeConfig();</code>
+    <code>analyser.getByteFrequencyData(audioData);</code>
   </pre>
 
-  <p>A sophisticated audio visualization web application featuring multiple visualizer modes, real-time audio processing, and customizable settings. The application supports local audio files, microphone input, and WebSocket streams, with smooth animations and metadata display capabilities.</p>
+  <p>microViz is a browser-based audio visualization tool with separate 2D overlay and 3D background rendering layers. It supports multiple audio sources including local files, microphone input, and WebSocket streams with configurable analysis parameters. Users can switch between visualizer presets, adjust per-visualizer settings, and control playback via a dynamic settings panel.</p>
 </section>
