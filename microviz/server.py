@@ -10,11 +10,11 @@ from aiohttp import web
 
 # Default settings (mutable)
 settings = {
-    "SAMPLE_RATE": 44100,
+    "SAMPLE_RATE": 96000,
     "CHUNK_SIZE": 1024,
-    "FFT_SIZE": 1024,
+    "FFT_SIZE": 4096,
     "NUM_BARS": 300,
-    "SMOOTHING": 0.8,
+    "SMOOTHING": 0,
     "SEND_INTERVAL": 0.015
 }
 
@@ -57,7 +57,7 @@ def audio_callback(indata, frames, time, status):
 async def stream_audio(websocket):
     while True:
         title, artist = get_mpris_metadata()
-        fft_clean = np.nan_to_num(smoothed_fft * 100, nan=0.0).tolist()
+        fft_clean = np.nan_to_num(smoothed_fft * 600, nan=0.0).tolist()
         data = {
             "fft": fft_clean,
             "title": title,
