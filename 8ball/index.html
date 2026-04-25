@@ -330,6 +330,7 @@ Rule 5: If the user asks a math question you may solve it but with a random chan
                 displayInsideBall("The connection to the void failed.");
             } finally {
                 setLoadingState(false);
+                questionInput.placeholder = questionInput.value;
                 questionInput.value = ''; 
             }
         }
