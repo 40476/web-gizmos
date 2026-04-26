@@ -1947,6 +1947,182 @@ nebulaShader: {
         };
     }
 },
+
+cubeWave: {
+        displayName: "3D Cube Wave",
+        settings: [
+            { id: 'cubeCount', type: 'range', label: 'Cubes', min: 16, max: 256, step: 1, default: 64 },
+            { id: 'color', type: 'color', label: 'Color', default: '#00ff9d' },
+            { id: 'rotationSpeed', type: 'range', label: 'Rotation Speed', min: 0, max: 0.1, step: 0.005, default: 0.01 }
+        ],
+        modules: [
+            // Dynamically load Three.js as an ES module
+            { id: 'THREE', type: 'script', url: 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js' }
+        ],
+        draw: (modules, store) => {
+            const THREE = modules.THREE;
+
+            // 1. Initialize Scene (Only runs once)
+            if (!store.initialized && THREE) {
+                store.scene = new THREE.Scene();
+                store.camera = new THREE.PerspectiveCamera(75, canvas3D.width / canvas3D.height, 0.1, 1000);
+                store.camera.position.set(0, 15, 40);
+                store.camera.lookAt(0, 0, 0);
+
+                store.renderer = new THREE.WebGLRenderer({ canvas: canvas3D, alpha: true, antialias: true });
+                store.renderer.setSize(canvas3D.width, canvas3D.height, false);
+
+                // Lighting
+                const light = new THREE.PointLight(0xffffff, 1000);
+                light.position.set(0, 50, 0);
+                store.scene.add(light);
+                store.scene.add(new THREE.AmbientLight(0x404040));
+
+                store.group = new THREE.Group();
+                store.scene.add(store.group);
+                store.cubes = [];
+
+                store.initialized = true;
+            }
+
+            // 2. The Render Loop
+            return () => {
+                if (!store.initialized) return;
+
+                const config = CONFIG.settings.cubeWave;
+
+                // Handle canvas resizing gracefully
+                if (store.renderer.domElement.width !== canvas3D.width || store.renderer.domElement.height !== canvas3D.height) {
+                    store.renderer.setSize(canvas3D.width, canvas3D.height, false);
+                    store.camera.aspect = canvas3D.width / canvas3D.height;
+                    store.camera.updateProjectionMatrix();
+                }
+
+                // Rebuild cubes if the count slider changes
+                if (store.cubes.length !== config.cubeCount) {
+                    store.group.clear();
+                    store.cubes = [];
+                    const geometry = new THREE.BoxGeometry(1, 1, 1);
+                    const material = new THREE.MeshPhongMaterial({ color: config.color });
+                    
+                    const radius = 20;
+                    for (let i = 0; i < config.cubeCount; i++) {
+                        const mesh = new THREE.Mesh(geometry, material);
+                        const angle = (i / config.cubeCount) * Math.PI * 2;
+                        mesh.position.x = Math.cos(angle) * radius;
+                        mesh.position.z = Math.sin(angle) * radius;
+                        mesh.lookAt(0, 0, 0);
+                        store.group.add(mesh);
+                        store.cubes.push(mesh);
+                    }
+                }
+
+                // Update material color if slider changes
+                if (store.cubes.length > 0 && store.cubes[0].material.color.getHexString() !== config.color.replace('#', '')) {
+                    store.cubes[0].material.color.set(config.color);
+                }
+
+                // Animate to audio
+                for (let i = 0; i < store.cubes.length; i++) {
+                    const value = audioData[i] || 0;
+                    const scaleY = 1 + (value / 255) * 20 * CONFIG.master.sensitivity;
+                    store.cubes[i].scale.y = scaleY;
+                }
+
+                store.group.rotation.y += config.rotationSpeed;
+                store.renderer.render(store.scene, store.camera);
+            };
+        }
+    },
+
+    audioSphere: {
+        displayName: "Reactive Sphere",
+        settings: [
+            { id: 'color', type: 'color', label: 'Wireframe Color', default: '#ff0055' },
+            { id: 'wireframe', type: 'checkbox', label: 'Wireframe Mode', default: true },
+            { id: 'displacement', type: 'range', label: 'Displacement', min: 0.1, max: 5, step: 0.1, default: 1.5 }
+        ],
+        modules: [
+            { id: 'THREE', type: 'script', url: 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js' }
+        ],
+        draw: (modules, store) => {
+            const THREE = modules.THREE;
+
+            // 1. Initialize Scene
+            if (!store.initialized && THREE) {
+                store.scene = new THREE.Scene();
+                store.camera = new THREE.PerspectiveCamera(75, canvas3D.width / canvas3D.height, 0.1, 1000);
+                store.camera.position.z = 30;
+
+                store.renderer = new THREE.WebGLRenderer({ canvas: canvas3D, alpha: true, antialias: true });
+                
+                // Icosahedron with a high detail level for smooth vertex manipulation
+                store.geometry = new THREE.IcosahedronGeometry(10, 8); 
+                store.basePositions = Array.from(store.geometry.attributes.position.array);
+                
+                store.material = new THREE.MeshBasicMaterial({ 
+                    color: CONFIG.settings.audioSphere?.color || '#ff0055',
+                    wireframe: true
+                });
+                
+                store.sphere = new THREE.Mesh(store.geometry, store.material);
+                store.scene.add(store.sphere);
+
+                store.initialized = true;
+            }
+
+            // 2. The Render Loop
+            return () => {
+                if (!store.initialized) return;
+                
+                const config = CONFIG.settings.audioSphere;
+
+                // Handle resizes
+                if (store.renderer.domElement.width !== canvas3D.width || store.renderer.domElement.height !== canvas3D.height) {
+                    store.renderer.setSize(canvas3D.width, canvas3D.height, false);
+                    store.camera.aspect = canvas3D.width / canvas3D.height;
+                    store.camera.updateProjectionMatrix();
+                }
+
+                store.material.color.set(config.color);
+                store.material.wireframe = config.wireframe;
+
+                // Calculate a "bass" average from the first few frequency bins
+                let bassAvg = 0;
+                for(let i = 0; i < 15; i++) bassAvg += (audioData[i] || 0);
+                bassAvg = bassAvg / 15;
+
+                const positions = store.geometry.attributes.position.array;
+                const time = Date.now() * 0.001;
+                const force = (bassAvg / 255) * config.displacement * CONFIG.master.sensitivity;
+
+                // Displace vertices based on normal direction and audio force
+                for (let i = 0; i < positions.length; i += 3) {
+                    const x = store.basePositions[i];
+                    const y = store.basePositions[i+1];
+                    const z = store.basePositions[i+2];
+
+                    // Normalize to get direction
+                    const len = Math.sqrt(x*x + y*y + z*z);
+                    const nx = x/len, ny = y/len, nz = z/len;
+
+                    // Sine wave distortion mapped to sphere surface
+                    const noise = Math.sin(nx * 5 + time) * Math.cos(ny * 5 + time);
+                    const offset = 1 + (noise * 0.1) + (force * (0.5 + noise * 0.5));
+
+                    positions[i] = x * offset;
+                    positions[i+1] = y * offset;
+                    positions[i+2] = z * offset;
+                }
+
+                store.geometry.attributes.position.needsUpdate = true;
+                store.sphere.rotation.x += 0.002;
+                store.sphere.rotation.y += 0.005;
+
+                store.renderer.render(store.scene, store.camera);
+            };
+        }
+    },
 /*blank: {
   displayName: "blank",
   settings: [
