@@ -1,7 +1,27 @@
 [
   {
+    "name": "three.min.js",
+    "size": 603445,
+    "extension": "js"
+  },
+  {
+    "name": "marked.min.js",
+    "size": 39903,
+    "extension": "js"
+  },
+  {
     "name": "puter-v2.min.js",
     "size": 241590,
+    "extension": "js"
+  },
+  {
+    "name": "tone.min.js",
+    "size": 349169,
+    "extension": "js"
+  },
+  {
+    "name": "ua.min.js",
+    "size": 533,
     "extension": "js"
   },
   {
@@ -10,8 +30,28 @@
     "extension": "js"
   },
   {
+    "name": "simplex-noise.min.js",
+    "size": 4438,
+    "extension": "js"
+  },
+  {
+    "name": "midiplayer.min.js",
+    "size": 14924,
+    "extension": "js"
+  },
+  {
     "name": "atlas.json",
-    "size": 162,
+    "size": 238,
     "extension": "json"
+  },
+  {
+    "name": "header.js",
+    "size": 350,
+    "extension": "js"
+  },
+  {
+    "name": "forgotWhatThisIs.js",
+    "size": 52994,
+    "extension": "js"
   }
 ]
