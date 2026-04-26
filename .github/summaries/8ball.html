@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Interactive Magic 8 Ball with 3D WebGL particle effects and shake animations.</li>
-    <li>Supports 5 selectable response styles and AI-generated answers via OpenRouter.</li>
-    <li>Auto-reverts to default 8 display after 45 seconds, uses API key rotation.</li>
+    <li>Interactive Magic 8 Ball with 3D WebGL particle effects inside the ball window.</li>
+    <li>Offers 5 answer tone styles (Friendly, Mean, Silly, Dramatic, Roast Me) via dropdown.</li>
+    <li>Fetches AI-generated responses via OpenRouter API with automatic API key rotation.</li>
   </ul>
 
   <pre>
+    <code>const MODEL = "openai/gpt-oss-20b:free";</code>
     <code>magicBall.classList.add('is-shaking');</code>
-    <code>displayInsideBall(replyText);</code>
   </pre>
 
-  <p>This interactive Magic 8 Ball web app features a 3D particle background and shake animations when processing queries. Users can select from five response styles, input questions, and receive AI-generated answers via the OpenRouter API. The display automatically reverts to the default 8 icon after 45 seconds, with API key rotation to handle rate limits.</p>
+  <p>This interactive Magic 8 Ball web app features 3D particle animations and multiple answer tone options. Users input questions, select a response style, and receive AI-generated answers via the OpenRouter API. The app includes loading shake animations, API key rotation for error recovery, and auto-revert to the default 8 display after 45 seconds.</p>
 </section>

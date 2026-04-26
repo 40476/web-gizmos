@@ -1,19 +1,14 @@
 <section>
   <ul>
-    <li>A multiplayer survival game built with vanilla JavaScript, HTML5 Canvas, and MQTT for networking</li>
-    <li>Features procedurally generated terrain with trees, rocks, and iron nodes across infinite chunks</li>
-    <li>Includes crafting system, building mechanics, and day/night cycles with dynamic lighting</li>
-    <li>Implements real-time multiplayer where players can see each other's movements and constructions</li>
-    <li>Supports cloud synchronization through Puter for saving game state across sessions</li>
+    <li>Multiplayer survival game with resource gathering and crafting systems.</li>
+    <li>Dynamic day/night cycle with lighting and hostile mob spawning.</li>
+    <li>Supports local IndexedDB and Puter cloud save syncing.</li>
   </ul>
 
   <pre>
-    <code>function moveEntity(ent, dx, dy, dt, speed, isPlayer=false, isGhost=false) {</code>
-    <code>    let tx = ent.x + dx * speed * dt; let ty = ent.y + dy * speed * dt;</code>
-    <code>    // Resolve collisions with walls and objects</code>
-    <code>    return {x: tx, y: ty};</code>
-    <code>}</code>
+    <code>const CHUNK_SIZE = 800;</code>
+    <code>let mqttClient = null;</code>
   </pre>
 
-  <p>This is a modular survival game featuring multiplayer capabilities, procedural world generation, and real-time networking. Players can gather resources, craft items, build structures, and interact with others in a shared persistent world. The game uses MQTT for low-latency communication and includes cloud storage for cross-session progress.</p>
+  <p>Rustic Realms is a browser-based modular survival game with real-time multiplayer functionality. Players explore a procedural world, gather resources, craft tools, build structures, and combat mobs across a day/night cycle. The app uses IndexedDB for local saves and integrates with Puter for optional cloud save synchronization.</p>
 </section>

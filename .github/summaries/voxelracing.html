@@ -1,16 +1,14 @@
 <section>
   <ul>
-    <li>Voxel-based terrain with dynamic generation using Simplex noise</li>
-    <li>Multiplayer functionality via MQTT broker for real-time racing</li>
-    <li>Interactive HUD with speedometer, nitro bar, minimap, and chat system</li>
-    <li>Mobile controls with touch support for on-the-go gameplay</li>
-    <li>Host settings for terrain customization (biome, seed, roughness, height scale)</li>
+    <li>Procedural voxel terrain with selectable biomes, dynamic generation, and interactive elements like jump pads and collectible coins</li>
+    <li>Multiplayer functionality via MQTT with remote player synchronization, in-game chat, sound sharing, and host-controlled world settings</li>
+    <li>Arcade car physics with nitro boosts, 3D rendering via Three.js, HUD with speedometer/minimap, and mobile touch controls</li>
   </ul>
 
   <pre>
-    <code>const Utils = { lerp: (a, b, t) => a + (b - a) * t, clamp: (val, min, max) => Math.min(Math.max(val, min), max) };</code>
-    <code>class TerrainSystem { constructor(scene, game, renderDist) { this.settings = { seed: 12345, step: 0.05, unit: 50, water: 0, timex: 0, timez: 0, biome: 'grass' }; } };</code>
+    <code>const game = new Game();</code>
+    <code>this.scene = new THREE.Scene();</code>
   </pre>
 
-  <p>A voxel-based racing game featuring dynamic terrain generation, real-time multiplayer via MQTT, and interactive UI elements including a minimap and chat system. The game supports both desktop and mobile controls, with host settings for customizing the racing environment.</p>
+  <p>Voxel Racer thingy is a browser-based 3D racing game built with Three.js, featuring procedural voxel terrain and arcade vehicle physics. It supports multiplayer connectivity via MQTT, with real-time remote player tracking, in-game chat, and shared audio playback. The game includes dynamic day/night cycles, multiple biomes, mobile touch controls, and persistent user settings stored in IndexedDB.</p>
 </section>

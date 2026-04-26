@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Fetches safe boy-tagged images from Nekos API via a CORS proxy.</li>
-    <li>Displays images with metadata and color palette swatches.</li>
-    <li>Includes button to load new images, auto-loads on page start.</li>
+    <li>Fetches random safe boy images from Nekos API via proxy</li>
+    <li>Displays image metadata including ID, rating, tags, and source</li>
+    <li>Renders color palette swatches from image color data</li>
   </ul>
 
   <pre>
-    <code>fetch(proxy + encodeURIComponent(target))</code>
-    <code>renderImage(imageData)</code>
+    <code>async function loadImage() {</code>
+    <code>  const response = await fetch(apiUrl);</code>
   </pre>
 
-  <p>This web app fetches safe, boy-tagged images from the Nekos API using a CORS proxy. Each image is shown with details like ID, rating, tags, source link, and a color palette. A button loads new random images, and one image loads automatically on page startup.</p>
+  <p>This web app displays random safe boy images sourced from the Nekos API. Each image is shown with accompanying metadata like ID, content rating, and tags. A proxy service is used to resolve cross-origin request issues when fetching API data.</p>
 </section>

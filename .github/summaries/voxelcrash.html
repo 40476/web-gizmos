@@ -1,15 +1,14 @@
 <section>
   <ul>
-    <li>3D match-3 puzzle game with voxel graphics and artistic pixel art completion</li>
-    <li>Custom level importer that converts images into playable game boards with color palettes</li>
-    <li>Auto-play mode with hint system and fluid background animations that respond to game colors</li>
-    <li>Export functionality for sharing completed art cards via SMS, web share API, or image download</li>
+    <li>Match-3 voxel puzzle game with target art goals</li>
+    <li>Supports level selection and custom art import</li>
+    <li>Has auto-play, hints, and win share tools</li>
   </ul>
 
   <pre>
-    <code>const LEVELS = { 'flower': { name: 'Fire Flower', grid: 10, resolution: 16, keepBg: false, imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg...') } };</code>
-    <code>function attemptSwap(b1, b2) { gameState = STATE.SWAPPING; lastInteraction = { x: b2.gridX, y: b2.gridY }; /* swap logic */ };</code>
+    <code>let score = 0;</code>
+    <code>gameState = STATE.IDLE;</code>
   </pre>
 
-  <p>This voxel-based match-3 game combines puzzle mechanics with pixel art completion. Players swap colored blocks to create matches while filling in target artwork. The game features custom level importing from images, auto-play functionality, and dynamic fluid backgrounds that adapt to active game colors. Completed levels can be exported as shareable art cards with statistics.</p>
+  <p>Voxel Crash is a browser-based match-3 puzzle game using Three.js for 3D voxel rendering. Players swap adjacent voxels to match colors, gradually filling a target art piece in the sidebar. The app includes adjustable settings, level selection, custom art tools, and options to export or share completed artwork.</p>
 </section>

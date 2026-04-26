@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Creates an ASCII art wave effect that follows mouse movement</li>
-    <li>Uses monospace characters to render waves with varying intensities</li>
-    <li>Implements efficient rendering with bounding box calculations</li>
+    <li>Renders a full-screen ASCII grid with dark background and green monospace text.</li>
+    <li>Triggers expanding character waves at mouse grid positions on cursor movement.</li>
+    <li>Uses optimized animation with single DOM updates and wave bounding box calculations.</li>
   </ul>
 
   <pre>
     <code>const CHARS = '@#S%?*+;:,. ';</code>
-    <code>const WAVE_DURATION = 800;</code>
+    <code>requestAnimationFrame(animate);</code>
   </pre>
 
-  <p>This interactive web page creates dynamic ASCII wave patterns that follow mouse movement across the screen. The waves are rendered using a monospace font with varying character intensities to simulate depth, and the animation is optimized using bounding box calculations to only update affected areas of the grid.</p>
+  <p>This interactive web app displays ASCII wave effects on a full-screen monospace grid. Moving the mouse across the canvas generates expanding waves of characters at the cursor's position. Performance optimizations like single DOM updates keep the animation smooth and responsive.</p>
 </section>

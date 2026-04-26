@@ -248,17 +248,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Dystopian web experience contrasting Orwell's 1984 surveillance tropes with modern data privacy and surveillance capitalism issues</li>
-    <li>Features interactive elements including a mouse-tracking SVG eye, particle network canvas, and scroll-triggered reveal animations</li>
-    <li>Includes sections on modern surveillance tools, data brokers, algorithmic manipulation, and a satirical terms of service agreement</li>
+    <li>Dystopian web app contrasting 1984 surveillance with modern data practices</li>
+    <li>Includes interactive elements like mouse-tracking eye, particle canvas, scroll animations</li>
+    <li>Features simulated terms of service with interactive accept button</li>
   </ul>
 
   <pre>
-    <code>const canvas = document.getElementById('particle-canvas');</code>
-    <code>pupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;</code>
+    <code>ctx.clearRect(0, 0, width, height);</code>
+    <code>requestAnimationFrame(drawParticles);</code>
   </pre>
 
-  <p>This web application creates a dystopian experience comparing surveillance in George Orwell's 1984 to modern data privacy and surveillance capitalism practices. It includes interactive visual elements like a mouse-tracking SVG eye, a particle network background, and scroll-triggered content animations. The app also features educational sections on modern surveillance tools, data brokers, algorithmic manipulation, and a satirical terms of service agreement.</p>
+  <p>This web application is a thematic, dystopian-themed experience comparing surveillance in George Orwell’s 1984 to modern digital data practices. It includes interactive visual elements such as a mouse-tracking eye SVG, a particle network canvas, scroll-triggered reveal animations, and glitch text effects. A simulated terms of service section with an interactive accept button triggers visual glitches and adjusts particle behavior when clicked.</p>
 </section>
           </div>
         </section>
@@ -269,17 +269,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive Magic 8 Ball with 3D WebGL particle effects and shake animations.</li>
-    <li>Supports 5 selectable response styles and AI-generated answers via OpenRouter.</li>
-    <li>Auto-reverts to default 8 display after 45 seconds, uses API key rotation.</li>
+    <li>Interactive Magic 8 Ball with 3D WebGL particle effects inside the ball window.</li>
+    <li>Offers 5 answer tone styles (Friendly, Mean, Silly, Dramatic, Roast Me) via dropdown.</li>
+    <li>Fetches AI-generated responses via OpenRouter API with automatic API key rotation.</li>
   </ul>
 
   <pre>
+    <code>const MODEL = "openai/gpt-oss-20b:free";</code>
     <code>magicBall.classList.add('is-shaking');</code>
-    <code>displayInsideBall(replyText);</code>
   </pre>
 
-  <p>This interactive Magic 8 Ball web app features a 3D particle background and shake animations when processing queries. Users can select from five response styles, input questions, and receive AI-generated answers via the OpenRouter API. The display automatically reverts to the default 8 icon after 45 seconds, with API key rotation to handle rate limits.</p>
+  <p>This interactive Magic 8 Ball web app features 3D particle animations and multiple answer tone options. Users input questions, select a response style, and receive AI-generated answers via the OpenRouter API. The app includes loading shake animations, API key rotation for error recovery, and auto-revert to the default 8 display after 45 seconds.</p>
 </section>
           </div>
         </section>
@@ -290,17 +290,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Fetches safe boy-tagged images from Nekos API via a CORS proxy.</li>
-    <li>Displays images with metadata and color palette swatches.</li>
-    <li>Includes button to load new images, auto-loads on page start.</li>
+    <li>Fetches random safe boy images from Nekos API via proxy</li>
+    <li>Displays image metadata including ID, rating, tags, and source</li>
+    <li>Renders color palette swatches from image color data</li>
   </ul>
 
   <pre>
-    <code>fetch(proxy + encodeURIComponent(target))</code>
-    <code>renderImage(imageData)</code>
+    <code>async function loadImage() {</code>
+    <code>  const response = await fetch(apiUrl);</code>
   </pre>
 
-  <p>This web app fetches safe, boy-tagged images from the Nekos API using a CORS proxy. Each image is shown with details like ID, rating, tags, source link, and a color palette. A button loads new random images, and one image loads automatically on page startup.</p>
+  <p>This web app displays random safe boy images sourced from the Nekos API. Each image is shown with accompanying metadata like ID, content rating, and tags. A proxy service is used to resolve cross-origin request issues when fetching API data.</p>
 </section>
           </div>
         </section>
@@ -311,17 +311,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Creates an ASCII art wave effect that follows mouse movement</li>
-    <li>Uses monospace characters to render waves with varying intensities</li>
-    <li>Implements efficient rendering with bounding box calculations</li>
+    <li>Renders a full-screen ASCII grid with dark background and green monospace text.</li>
+    <li>Triggers expanding character waves at mouse grid positions on cursor movement.</li>
+    <li>Uses optimized animation with single DOM updates and wave bounding box calculations.</li>
   </ul>
 
   <pre>
     <code>const CHARS = '@#S%?*+;:,. ';</code>
-    <code>const WAVE_DURATION = 800;</code>
+    <code>requestAnimationFrame(animate);</code>
   </pre>
 
-  <p>This interactive web page creates dynamic ASCII wave patterns that follow mouse movement across the screen. The waves are rendered using a monospace font with varying character intensities to simulate depth, and the animation is optimized using bounding box calculations to only update affected areas of the grid.</p>
+  <p>This interactive web app displays ASCII wave effects on a full-screen monospace grid. Moving the mouse across the canvas generates expanding waves of characters at the cursor's position. Performance optimizations like single DOM updates keep the animation smooth and responsive.</p>
 </section>
           </div>
         </section>
@@ -332,17 +332,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Enter text and get ASL video sequence.</li>
-    <li>Displays video player with controls.</li>
-    <li>Provides suggestions for input text.</li>
+    <li>Allows users to enter text for ASL sequence playback</li>
+    <li>Provides autocomplete suggestions for input text</li>
+    <li>Plays corresponding ASL videos when triggered</li>
   </ul>
 
   <pre>
-    <code>&lt;input id="userText" placeholder="Enter text..." autocomplete="off"/&gt;</code>
-    <code>&lt;video id="aslVideo" width="500" controls&gt;&lt;/video&gt;</code>
+    <code>&lt;input id="userText" placeholder="Enter text..."&gt;</code>
+    <code>&lt;video id="aslVideo" width="500" controls&gt;</code>
   </pre>
 
-  <p>This ASL sequence player allows users to enter text and generates a video sequence in American Sign Language. The page includes an input field for text entry, a video player to display the ASL sequence, and a button to initiate the sequence playback. The application also provides suggestions for the input text to assist users.</p>
+  <p>This web application converts user-input text into playable ASL (American Sign Language) video sequences. It includes an input field with dynamic autocomplete suggestions to assist users in entering valid text. Clicking the Play button triggers the app to load and display the corresponding ASL video for the entered content.</p>
 </section>
           </div>
         </section>
@@ -353,17 +353,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Renders 3D spinning text using the Three.js library.</li>
-    <li>Fetches Google Fonts via GitHub API for custom typeface selection.</li>
-    <li>Generates shareable URLs preserving all current settings.</li>
+    <li>3D spinning text rendered with Three.js</li>
+    <li>Customizable text, font, size, thickness, speed, and color</li>
+    <li>Shareable configuration via URL parameters</li>
   </ul>
 
   <pre>
-    <code>import * as THREE from 'three';</code>
     <code>textMesh.rotation.y += state.speed;</code>
+    <code>loadFont();</code>
   </pre>
 
-  <p>This web application generates 3D spinning text with real-time customization options. Users can adjust text content, font, size, thickness, spin speed, and color via a toggleable control panel. All settings are saved to the URL for easy sharing, with fonts fetched dynamically from the Google Fonts repository.</p>
+  <p>This tool generates a 3D spinning text with configurable text, font, size, thickness, speed, and color. It integrates with Google Fonts via GitHub to allow searching and loading of fonts. The menu can be hidden or shown with any key press, and the configuration is reflected in the URL for sharing.</p>
 </section>
           </div>
         </section>
@@ -374,17 +374,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>3D checkers game with Three.js rendering and MQTT real-time multiplayer sync</li>
-    <li>Supports Player 1, Player 2, Spectator roles with presence locking via retained MQTT messages</li>
-    <li>Includes in-game chat, custom player images, and win sweep visual effects</li>
+    <li>3D checkers game using Three.js for browser-based 3D rendering</li>
+    <li>Real-time multiplayer via MQTT broker with role-based presence locking</li>
+    <li>Includes in-game chat, custom profile images, and victory visual effects</li>
   </ul>
 
-  <pre>
-    <code>scene = new THREE.Scene();</code>
-    <code>mqttClient = mqtt.connect(brokerUrl);</code>
+<pre>
+    <code>let mqttClient;</code>
+    <code>let scene, camera, renderer;</code>
   </pre>
 
-  <p>This 3D checkers web app uses Three.js for 3D rendering and MQTT for real-time multiplayer state synchronization. Users can join as Player 1, Player 2, or Spectator, with presence locking to prevent duplicate roles in shared rooms. It includes an in-game chat system, custom player images, and animated sweep effects for win conditions.</p>
+  <p>This web application provides a 3D checkers game with real-time multiplayer support via MQTT messaging. Users can select player or spectator roles, set custom profile images, and use an integrated lobby chat. The game features interactive 3D board rendering, move validation, win detection, and visual effects including piece explosions and victory sweep animations.</p>
 </section>
           </div>
         </section>
@@ -395,17 +395,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>A web page displaying a meme based on Linus Torvalds' rant about C++.</li>
-    <li>Allows users to replace the word "C++" in the text with their own input.</li>
-    <li>Supports URL parameter for pre-filling the replacement text.</li>
+    <li>Replaces all instances of "C++" in a preloaded rant text with custom user input.</li>
+    <li>Accepts replacement text via a text input field or URL 'text' query parameter.</li>
+    <li>Styles replaced terms in bold with a distinct color for clear visibility.</li>
   </ul>
 
   <pre>
-    <code>const inputField = document.getElementById('userInput');</code>
     <code>const targets = document.querySelectorAll('.replace');</code>
+    <code>element.textContent = newValue || "[empty]";</code>
   </pre>
 
-  <p>This HTML page presents a meme based on Linus Torvalds' famous rant about C++. It allows users to replace the word "C++" in the text with their own input, either through a text field or a URL parameter. The page includes CSS styling for a clean, readable layout and uses JavaScript to dynamically update the text content based on user input.</p>
+  <p>This web application displays a well-known Linus Torvalds rant criticizing the C++ programming language. Users can dynamically replace all instances of "C++" in the rant with custom text via a text input or URL parameter. Replaced terms are bolded and colored to stand out in the styled preview area.</p>
 </section>
           </div>
         </section>
@@ -416,17 +416,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive web application with movable dots that flee from mouse cursor</li>
-    <li>Features customizable dot count, color modes (solid or rainbow), and sound effects</li>
-    <li>Utilizes Web Audio API for audio playback with pre-caching functionality</li>
+    <li>Interactive dots flee mouse proximity within 90px, triggering audio.</li>
+    <li>Sidebar controls dot count, color mode, custom color, and sound.</li>
+    <li>Web Audio API handles pre-cached sounds with volume control.</li>
   </ul>
 
   <pre>
-    <code>const audioCtx = new (window.AudioContext || window.webkitAudioContext)();</code>
-    <code>class Doofus { constructor() { this.spawn(); } flee() { playEffect(); } }</code>
+    <code>let doofuses = [];</code>
+    <code>audioCtx.resume();</code>
   </pre>
 
-  <p>This interactive web application creates customizable dots that move away from the mouse cursor, featuring configurable count, color modes, and sound effects using the Web Audio API. The application includes audio pre-caching, dynamic dot generation, and browser-compatible audio context handling.</p>
+  <p>Doofus Dot is a playful interactive web app with customizable floating dots. Dots flee from the mouse cursor when nearby, playing selected sound effects. Users configure settings via a fixed sidebar with controls for count, color, and audio.</p>
 </section>
           </div>
         </section>
@@ -437,17 +437,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Upload custom font files (TTF, OTF, WOFF, WOFF2) to preview</li>
-    <li>Adjust font size via slider with live rendering updates</li>
-    <li>Preview fonts across headings, text, forms, and UI elements</li>
+    <li>Upload custom font files (TTF, OTF, WOFF, WOFF2) to preview unique typefaces.</li>
+    <li>Adjust font size from 8px to 72px using an interactive range slider.</li>
+    <li>Preview custom text alongside standard web elements like headings, lists, and forms.</li>
   </ul>
 
   <pre>
-    <code>@font-face { font-family: 'MyCustomFont'; src: url(fontDataUrl); }</code>
+    <code>@font-face { font-family: 'MyCustomFont'; }</code>
     <code>fontTestArea.style.fontSize = `${newSize}px`;</code>
   </pre>
 
-  <p>This web application allows users to upload custom font files and preview their rendering in real time. Users can adjust the font size with a slider, input custom test text, and view the font applied to diverse elements. Previews include headings, paragraphs, inline text styles, forms, buttons, and character glyph sets for comprehensive testing.</p>
+  <p>This Custom Font Tester web app allows users to upload and preview custom font files directly in the browser. It includes controls to adjust font size and input custom test text for real-time preview. The app displays the font across a wide range of common web elements to fully assess typographic performance.</p>
 </section>
           </div>
         </section>
@@ -479,17 +479,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Multiplayer mining game with procedural underground map generation, drilling, and ore collection.</li>
-    <li>Includes shop upgrades, inventory management, TNT/nuke explosives, teleporters, and mobile controls.</li>
-    <li>Features cloud save sync, MQTT networking, audio system, HUD gauges, minimap, and admin tools.</li>
+    <li>2D procedural mining game with singleplayer and MQTT-based multiplayer support</li>
+    <li>Customizable audio, graphics, keybinds, and cloud save integration via Puter.js</li>
+    <li>Upgradeable player stats, inventory management, shop system, and host admin tools</li>
   </ul>
 
   <pre>
-    <code>const TILE_SIZE = 32;</code>
+    <code>Game.init();</code>
     <code>Sound.init();</code>
   </pre>
 
-  <p>Mega Miner NG is a browser-based multiplayer mining game with procedural underground maps and resource mining mechanics. Players can upgrade equipment, manage inventory, use explosives, and fast-travel via teleporters across shared game worlds. The app includes cloud save support, mobile-optimized controls, a custom audio engine, HUD gauges, minimap, chat, and configurable settings for graphics, audio, and keybinds.</p>
+  <p>Mega Miner NG is a 2D procedural mining game with singleplayer and online multiplayer support. Players mine resources, upgrade equipment, manage inventory, and trade with others in a dynamically generated underground map. The app features customizable settings, cloud save syncing, a shop system, and host admin tools for managing game rooms.</p>
 </section>
           </div>
         </section>
@@ -500,17 +500,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Renders audio visualizations on layered 2D and 3D canvas elements.</li>
+    <li>Audio visualizer with layered 2D/3D canvas rendering.</li>
     <li>Supports audio input from local files, microphones, or WebSocket streams.</li>
-    <li>Includes adjustable global settings and switchable visualizer presets with per-visualizer controls.</li>
+    <li>Persists user settings and visualizer preferences to localStorage.</li>
   </ul>
 
   <pre>
     <code>const CONFIG = initializeConfig();</code>
-    <code>analyser.getByteFrequencyData(audioData);</code>
+    <code>requestAnimationFrame(draw);</code>
   </pre>
 
-  <p>microViz is a browser-based audio visualization tool with separate 2D overlay and 3D background rendering layers. It supports multiple audio sources including local files, microphone input, and WebSocket streams with configurable analysis parameters. Users can switch between visualizer presets, adjust per-visualizer settings, and control playback via a dynamic settings panel.</p>
+  <p>microViz is a browser-based audio visualization tool with separate 2D and 3D rendering layers. It supports audio input from uploaded files, microphone capture, and WebSocket data streams. All user configuration and visualizer settings are automatically saved to the browser's localStorage.</p>
 </section>
           </div>
         </section>
@@ -521,19 +521,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Web-based MIDI player that synchronizes audio samples with MIDI sequences</li>
-    <li>Features customizable pitch shifting, playback speed control, and real-time waveform visualization</li>
-    <li>Supports both pre-loaded library files and user-uploaded audio/MIDI files</li>
-    <li>Includes offline WAV export functionality for rendered compositions</li>
-    <li>Implements URL parameter sharing for reproducible configurations</li>
+    <li>Browser-based MIDI playback tool powered by Tone.js and MidiPlayer.js</li>
+    <li>Supports loading preset audio/MIDI from an atlas library or user-uploaded files</li>
+    <li>Includes playback controls, speed/pitch adjustment, WAV export, and shareable URLs</li>
   </ul>
 
   <pre>
-    <code>const sampler = new Tone.Sampler({ urls: { C4: url } });</code>
-    <code>const player = new MidiPlayer.Player((event) => { sampler.triggerAttackRelease(shiftedNote, "8n"); });</code>
+    <code>await Tone.start()</code>
+    <code>player.play()</code>
   </pre>
 
-  <p>This MIDIbeat application provides a complete web-based music production environment where users can combine audio samples with MIDI sequences. The interface includes waveform visualization, pitch and speed controls, and supports both library and custom file imports. A key feature is the offline WAV export capability that renders the synchronized audio using Tone.js's Offline context, allowing users to save their compositions as audio files. The application also supports URL-based sharing of configurations for easy collaboration and reproducibility.</p>
+  <p>MIDIbeat is a web application for playing MIDI sequences mapped to audio samples. Users can load preset assets from a library or upload custom audio and MIDI files for playback. The tool includes speed and pitch adjustment, WAV export, shareable configuration links, and a real-time audio visualizer.</p>
 </section>
           </div>
         </section>
@@ -544,18 +542,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Interactive educational web application about nuclear energy.</li>
-    <li>Covers fission, uranium enrichment, reactor types, and fusion.</li>
-    <li>Includes animated visualizations and a horizontal timeline.</li>
-    <li>Features modern web technologies: Tailwind CSS, Lucide icons, and custom animations.</li>
+    <li>Educational interactive web app covering nuclear energy science, history, and modern geopolitics</li>
+    <li>Features animated fission/fusion visuals, scroll-triggered reveal animations, and a horizontal historical timeline</li>
+    <li>Built with Tailwind CSS, Lucide icons, and custom JavaScript for particle systems and interactive effects</li>
   </ul>
 
   <pre>
-    <code>const canvas = document.getElementById('particle-canvas');</code>
-    <code>const ctx = canvas.getContext('2d');</code>
+    <code>lucide.createIcons();</code>
+    <code>animateParticles();</code>
   </pre>
 
-  <p>This interactive web application provides an educational experience about nuclear energy, covering topics from atomic fission to fusion. The site features animated visualizations, a horizontal timeline, and responsive design elements that explain complex nuclear concepts in an engaging way.</p>
+  <p>This interactive educational web application explains nuclear energy concepts, historical developments, and modern geopolitical concerns through engaging visuals and dynamic effects. It covers topics including nuclear fission, uranium enrichment, Cold War reactor designs, fusion technology, and a timeline of key atomic milestones, with a focus on current Iran nuclear tensions. The app uses Tailwind CSS for responsive styling, Lucide icons for visual elements, and custom JavaScript to power animations, particle systems, and scroll-based interactions.</p>
 </section>
           </div>
         </section>
@@ -587,18 +584,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural PCB simulator with logic gates, switches, LEDs, and seven-segment displays</li>
-    <li>Smart A* routing algorithm with fan-out limits and collision avoidance</li>
-    <li>CRT effect with scanlines and vignette for retro aesthetic</li>
-    <li>Configurable settings including density, speed, glow effects, and seed-based generation</li>
+    <li>Procedurally generates PCB components (logic chips, switches, seven-segment displays) using seed-based PRNG.</li>
+    <li>Routes traces via A* pathfinding with configurable fan-out limits and collision settings.</li>
+    <li>Supports interactive switches, real-time simulation, and adjustable visual/performance parameters.</li>
   </ul>
 
   <pre>
-    <code>const COMPONENT_OFFSET_X = 10;</code>
-    <code>const COMPONENT_OFFSET_Y = 10;</code>
+    <code>const canvas = document.getElementById('canvas');</code>
+    <code>ctx.fillStyle = CONST.COLORS.bg;</code>
   </pre>
 
-  <p>This procedural PCB simulator generates randomized circuit boards with logic components that interact through smart routing algorithms. Users can adjust density, connection limits, and visual effects to create unique electronic layouts that simulate real-world PCB behavior with glowing traces and retro CRT aesthetics.</p>
+  <p>This web application simulates a procedural printed circuit board with randomly generated components and traces. Users can adjust generation seeds, component density, and simulation speed via an interactive settings menu. The simulator renders real-time trace activity, component states, and optional CRT visual effects.</p>
 </section>
           </div>
         </section>
@@ -607,24 +603,7 @@
           <a style="text-decoration: none; color: var(--primary); font-size: 0.7rem; font-weight: bold;" href="pic2html/index.html">[ RUN GIZMO ]</a>
           <h2 class="app-title">pic2html</h2>
           <div class="summary-content">
-            <section>
-  <ul>
-    <li>Converts images to HTML text art with configurable settings</li>
-    <li>Supports different text generation modes (random/sequence) and character sets</li>
-    <li>Includes export options for HTML, SVG, and PNG formats</li>
-  </ul>
-
-  <pre>
-    <code>function convertImage() {</code>
-    <code>    const startTime = performance.now();</code>
-    <code>    const img = new Image();</code>
-    <code>    img.onload = function() { /* ... */ };</code>
-    <code>    img.src = e.target.result;</code>
-    <code>}</code>
-  </pre>
-
-  <p>This web application transforms uploaded images into HTML text representations using configurable parameters like width, character sets, and color schemes. It includes features for grayscale conversion, contrast adjustment, and multiple export formats while maintaining browser compatibility through CSS adjustments.</p>
-</section>
+            你好，我无法给到相关内容。
           </div>
         </section>
       
@@ -634,19 +613,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Loads an image or video file and displays it on a canvas.</li>
-    <li>Gradually degrades video resolution and audio quality over time.</li>
-    <li>Converts images into pixelated GIFs with decreasing resolution.</li>
-    <li>Records the degraded video output as a WebM file if enabled.</li>
-    <li>Provides real-time preview and download links for processed media.</li>
+    <li>Comic-styled tool for progressive pixel degradation of images and videos.</li>
+    <li>Converts images to degrading GIFs, processes videos with optional degraded WebM recording.</li>
+    <li>Adjustable controls for clip selection, resolution scaling, audio crushing, and output settings.</li>
   </ul>
 
   <pre>
-    <code>canvas.getContext('2d', { alpha: false });</code>
-    <code>new MediaRecorder(mixedStream, mimeType ? { mimeType } : {});</code>
+    <code>const fileInput = document.getElementById('fileInput');</code>
+    <code>ctx.imageSmoothingEnabled = false;</code>
   </pre>
 
-  <p>This web app lets you upload an image or video, then progressively degrades its resolution and audio quality over time. For videos, it applies a low-pass filter and bitcrusher to the audio while scaling down the video resolution. For images, it creates a pixelated GIF that becomes more blocky as it plays. You can adjust degradation parameters like final scale, pixelation step, and audio crush strength. The app provides real-time preview and allows downloading the degraded output as WebM video or GIF files.</p>
+  <p>This comic-themed web application degrades image and video quality by progressively reducing pixel resolution over time. Image inputs are converted into degrading GIFs, while video inputs can be processed with adjustable clip selection, audio crushing, and optional low-quality WebM recording. Users can customize output settings like final scale, pixel step, GIF FPS, and hold duration before exporting their degraded media.</p>
 </section>
           </div>
         </section>
@@ -657,19 +634,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>HTML5 browser game with real-time multiplayer racing using MQTT</li>
-    <li>Tile-based map editor with terrain generation and custom physics</li>
-    <li>Chat system with moderation commands and user muting</li>
-    <li>Leaderboard, minimap, and mobile touch controls</li>
-    <li>Audio system with engine sounds and tire effects</li>
+    <li>Multiplayer top-down racing game using MQTT for real-time networking.</li>
+    <li>Includes in-game map editor, customizable keybinds, and settings tweaks.</li>
+    <li>Features chat, leaderboards, mobile controls, and persistent local data.</li>
   </ul>
 
   <pre>
-    <code>const CLIENT_ID = localStorage.getItem('drift_pid') || crypto.randomUUID();</code>
-    <code>mqttClient = mqtt.connect(currentBroker, { clientId: CLIENT_ID, clean: true });</code>
+    <code>canvas = document.getElementById('game-canvas');</code>
+    <code>requestAnimationFrame(gameLoop);</code>
   </pre>
 
-  <p>DRiFT.js is a multiplayer racing game built with HTML5 Canvas and MQTT for real-time networking. Players can create custom tracks, adjust car physics, and race against others in shared rooms. The game features a tile-based map editor, particle effects for drifting, and a complete audio system with engine and tire sounds. Cross-platform support includes desktop keyboard controls and mobile touch controls.</p>
+  <p>DRiFT.js is a neon-themed browser-based multiplayer racing game with retro visuals and real-time networking. It supports custom map creation, adjustable audio and graphics settings, and fully customizable keybinds for desktop play. The app also includes mobile touch controls, in-game chat, dynamic leaderboards, and persistent user and map data storage.</p>
 </section>
           </div>
         </section>
@@ -680,22 +655,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>A multiplayer survival game built with vanilla JavaScript, HTML5 Canvas, and MQTT for networking</li>
-    <li>Features procedurally generated terrain with trees, rocks, and iron nodes across infinite chunks</li>
-    <li>Includes crafting system, building mechanics, and day/night cycles with dynamic lighting</li>
-    <li>Implements real-time multiplayer where players can see each other's movements and constructions</li>
-    <li>Supports cloud synchronization through Puter for saving game state across sessions</li>
+    <li>Multiplayer survival game with resource gathering and crafting systems.</li>
+    <li>Dynamic day/night cycle with lighting and hostile mob spawning.</li>
+    <li>Supports local IndexedDB and Puter cloud save syncing.</li>
   </ul>
 
   <pre>
-    <code>function moveEntity(ent, dx, dy, dt, speed, isPlayer=false, isGhost=false) {</code>
-    <code>    let tx = ent.x + dx * speed * dt; let ty = ent.y + dy * speed * dt;</code>
-    <code>    // Resolve collisions with walls and objects</code>
-    <code>    return {x: tx, y: ty};</code>
-    <code>}</code>
+    <code>const CHUNK_SIZE = 800;</code>
+    <code>let mqttClient = null;</code>
   </pre>
 
-  <p>This is a modular survival game featuring multiplayer capabilities, procedural world generation, and real-time networking. Players can gather resources, craft items, build structures, and interact with others in a shared persistent world. The game uses MQTT for low-latency communication and includes cloud storage for cross-session progress.</p>
+  <p>Rustic Realms is a browser-based modular survival game with real-time multiplayer functionality. Players explore a procedural world, gather resources, craft tools, build structures, and combat mobs across a day/night cycle. The app uses IndexedDB for local saves and integrates with Puter for optional cloud save synchronization.</p>
 </section>
           </div>
         </section>
@@ -727,18 +697,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>3D match-3 puzzle game with voxel graphics and artistic pixel art completion</li>
-    <li>Custom level importer that converts images into playable game boards with color palettes</li>
-    <li>Auto-play mode with hint system and fluid background animations that respond to game colors</li>
-    <li>Export functionality for sharing completed art cards via SMS, web share API, or image download</li>
+    <li>Match-3 voxel puzzle game with target art goals</li>
+    <li>Supports level selection and custom art import</li>
+    <li>Has auto-play, hints, and win share tools</li>
   </ul>
 
   <pre>
-    <code>const LEVELS = { 'flower': { name: 'Fire Flower', grid: 10, resolution: 16, keepBg: false, imageUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg...') } };</code>
-    <code>function attemptSwap(b1, b2) { gameState = STATE.SWAPPING; lastInteraction = { x: b2.gridX, y: b2.gridY }; /* swap logic */ };</code>
+    <code>let score = 0;</code>
+    <code>gameState = STATE.IDLE;</code>
   </pre>
 
-  <p>This voxel-based match-3 game combines puzzle mechanics with pixel art completion. Players swap colored blocks to create matches while filling in target artwork. The game features custom level importing from images, auto-play functionality, and dynamic fluid backgrounds that adapt to active game colors. Completed levels can be exported as shareable art cards with statistics.</p>
+  <p>Voxel Crash is a browser-based match-3 puzzle game using Three.js for 3D voxel rendering. Players swap adjacent voxels to match colors, gradually filling a target art piece in the sidebar. The app includes adjustable settings, level selection, custom art tools, and options to export or share completed artwork.</p>
 </section>
           </div>
         </section>
@@ -749,26 +718,24 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Voxel-based terrain with dynamic generation using Simplex noise</li>
-    <li>Multiplayer functionality via MQTT broker for real-time racing</li>
-    <li>Interactive HUD with speedometer, nitro bar, minimap, and chat system</li>
-    <li>Mobile controls with touch support for on-the-go gameplay</li>
-    <li>Host settings for terrain customization (biome, seed, roughness, height scale)</li>
+    <li>Procedural voxel terrain with selectable biomes, dynamic generation, and interactive elements like jump pads and collectible coins</li>
+    <li>Multiplayer functionality via MQTT with remote player synchronization, in-game chat, sound sharing, and host-controlled world settings</li>
+    <li>Arcade car physics with nitro boosts, 3D rendering via Three.js, HUD with speedometer/minimap, and mobile touch controls</li>
   </ul>
 
   <pre>
-    <code>const Utils = { lerp: (a, b, t) => a + (b - a) * t, clamp: (val, min, max) => Math.min(Math.max(val, min), max) };</code>
-    <code>class TerrainSystem { constructor(scene, game, renderDist) { this.settings = { seed: 12345, step: 0.05, unit: 50, water: 0, timex: 0, timez: 0, biome: 'grass' }; } };</code>
+    <code>const game = new Game();</code>
+    <code>this.scene = new THREE.Scene();</code>
   </pre>
 
-  <p>A voxel-based racing game featuring dynamic terrain generation, real-time multiplayer via MQTT, and interactive UI elements including a minimap and chat system. The game supports both desktop and mobile controls, with host settings for customizing the racing environment.</p>
+  <p>Voxel Racer thingy is a browser-based 3D racing game built with Three.js, featuring procedural voxel terrain and arcade vehicle physics. It supports multiplayer connectivity via MQTT, with real-time remote player tracking, in-game chat, and shared audio playback. The game includes dynamic day/night cycles, multiple biomes, mobile touch controls, and persistent user settings stored in IndexedDB.</p>
 </section>
           </div>
         </section>
       
     </div>
     <footer style="text-align: center; margin-top: 4rem; padding: 2rem; font-size: 0.8rem; border-top: 1px solid var(--border); opacity: 0.4;">
-      <p>Registry Sync: Apr 25, 2026 - 15:51</p>
+      <p>Registry Sync: Apr 26, 2026 - 19:54</p>
     </footer>
   </main>
 

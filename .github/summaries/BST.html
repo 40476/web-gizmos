@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Renders 3D spinning text using the Three.js library.</li>
-    <li>Fetches Google Fonts via GitHub API for custom typeface selection.</li>
-    <li>Generates shareable URLs preserving all current settings.</li>
+    <li>3D spinning text rendered with Three.js</li>
+    <li>Customizable text, font, size, thickness, speed, and color</li>
+    <li>Shareable configuration via URL parameters</li>
   </ul>
 
   <pre>
-    <code>import * as THREE from 'three';</code>
     <code>textMesh.rotation.y += state.speed;</code>
+    <code>loadFont();</code>
   </pre>
 
-  <p>This web application generates 3D spinning text with real-time customization options. Users can adjust text content, font, size, thickness, spin speed, and color via a toggleable control panel. All settings are saved to the URL for easy sharing, with fonts fetched dynamically from the Google Fonts repository.</p>
+  <p>This tool generates a 3D spinning text with configurable text, font, size, thickness, speed, and color. It integrates with Google Fonts via GitHub to allow searching and loading of fonts. The menu can be hidden or shown with any key press, and the configuration is reflected in the URL for sharing.</p>
 </section>

@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Renders audio visualizations on layered 2D and 3D canvas elements.</li>
+    <li>Audio visualizer with layered 2D/3D canvas rendering.</li>
     <li>Supports audio input from local files, microphones, or WebSocket streams.</li>
-    <li>Includes adjustable global settings and switchable visualizer presets with per-visualizer controls.</li>
+    <li>Persists user settings and visualizer preferences to localStorage.</li>
   </ul>
 
   <pre>
     <code>const CONFIG = initializeConfig();</code>
-    <code>analyser.getByteFrequencyData(audioData);</code>
+    <code>requestAnimationFrame(draw);</code>
   </pre>
 
-  <p>microViz is a browser-based audio visualization tool with separate 2D overlay and 3D background rendering layers. It supports multiple audio sources including local files, microphone input, and WebSocket streams with configurable analysis parameters. Users can switch between visualizer presets, adjust per-visualizer settings, and control playback via a dynamic settings panel.</p>
+  <p>microViz is a browser-based audio visualization tool with separate 2D and 3D rendering layers. It supports audio input from uploaded files, microphone capture, and WebSocket data streams. All user configuration and visualizer settings are automatically saved to the browser's localStorage.</p>
 </section>

@@ -1,16 +1,14 @@
 <section>
   <ul>
-    <li>Web-based MIDI player that synchronizes audio samples with MIDI sequences</li>
-    <li>Features customizable pitch shifting, playback speed control, and real-time waveform visualization</li>
-    <li>Supports both pre-loaded library files and user-uploaded audio/MIDI files</li>
-    <li>Includes offline WAV export functionality for rendered compositions</li>
-    <li>Implements URL parameter sharing for reproducible configurations</li>
+    <li>Browser-based MIDI playback tool powered by Tone.js and MidiPlayer.js</li>
+    <li>Supports loading preset audio/MIDI from an atlas library or user-uploaded files</li>
+    <li>Includes playback controls, speed/pitch adjustment, WAV export, and shareable URLs</li>
   </ul>
 
   <pre>
-    <code>const sampler = new Tone.Sampler({ urls: { C4: url } });</code>
-    <code>const player = new MidiPlayer.Player((event) => { sampler.triggerAttackRelease(shiftedNote, "8n"); });</code>
+    <code>await Tone.start()</code>
+    <code>player.play()</code>
   </pre>
 
-  <p>This MIDIbeat application provides a complete web-based music production environment where users can combine audio samples with MIDI sequences. The interface includes waveform visualization, pitch and speed controls, and supports both library and custom file imports. A key feature is the offline WAV export capability that renders the synchronized audio using Tone.js's Offline context, allowing users to save their compositions as audio files. The application also supports URL-based sharing of configurations for easy collaboration and reproducibility.</p>
+  <p>MIDIbeat is a web application for playing MIDI sequences mapped to audio samples. Users can load preset assets from a library or upload custom audio and MIDI files for playback. The tool includes speed and pitch adjustment, WAV export, shareable configuration links, and a real-time audio visualizer.</p>
 </section>

@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>3D checkers game with Three.js rendering and MQTT real-time multiplayer sync</li>
-    <li>Supports Player 1, Player 2, Spectator roles with presence locking via retained MQTT messages</li>
-    <li>Includes in-game chat, custom player images, and win sweep visual effects</li>
+    <li>3D checkers game using Three.js for browser-based 3D rendering</li>
+    <li>Real-time multiplayer via MQTT broker with role-based presence locking</li>
+    <li>Includes in-game chat, custom profile images, and victory visual effects</li>
   </ul>
 
-  <pre>
-    <code>scene = new THREE.Scene();</code>
-    <code>mqttClient = mqtt.connect(brokerUrl);</code>
+<pre>
+    <code>let mqttClient;</code>
+    <code>let scene, camera, renderer;</code>
   </pre>
 
-  <p>This 3D checkers web app uses Three.js for 3D rendering and MQTT for real-time multiplayer state synchronization. Users can join as Player 1, Player 2, or Spectator, with presence locking to prevent duplicate roles in shared rooms. It includes an in-game chat system, custom player images, and animated sweep effects for win conditions.</p>
+  <p>This web application provides a 3D checkers game with real-time multiplayer support via MQTT messaging. Users can select player or spectator roles, set custom profile images, and use an integrated lobby chat. The game features interactive 3D board rendering, move validation, win detection, and visual effects including piece explosions and victory sweep animations.</p>
 </section>

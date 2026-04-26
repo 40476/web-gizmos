@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>A web page displaying a meme based on Linus Torvalds' rant about C++.</li>
-    <li>Allows users to replace the word "C++" in the text with their own input.</li>
-    <li>Supports URL parameter for pre-filling the replacement text.</li>
+    <li>Replaces all instances of "C++" in a preloaded rant text with custom user input.</li>
+    <li>Accepts replacement text via a text input field or URL 'text' query parameter.</li>
+    <li>Styles replaced terms in bold with a distinct color for clear visibility.</li>
   </ul>
 
   <pre>
-    <code>const inputField = document.getElementById('userInput');</code>
     <code>const targets = document.querySelectorAll('.replace');</code>
+    <code>element.textContent = newValue || "[empty]";</code>
   </pre>
 
-  <p>This HTML page presents a meme based on Linus Torvalds' famous rant about C++. It allows users to replace the word "C++" in the text with their own input, either through a text field or a URL parameter. The page includes CSS styling for a clean, readable layout and uses JavaScript to dynamically update the text content based on user input.</p>
+  <p>This web application displays a well-known Linus Torvalds rant criticizing the C++ programming language. Users can dynamically replace all instances of "C++" in the rant with custom text via a text input or URL parameter. Replaced terms are bolded and colored to stand out in the styled preview area.</p>
 </section>

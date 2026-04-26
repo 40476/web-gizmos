@@ -1,16 +1,14 @@
 <section>
   <ul>
-    <li>HTML5 browser game with real-time multiplayer racing using MQTT</li>
-    <li>Tile-based map editor with terrain generation and custom physics</li>
-    <li>Chat system with moderation commands and user muting</li>
-    <li>Leaderboard, minimap, and mobile touch controls</li>
-    <li>Audio system with engine sounds and tire effects</li>
+    <li>Multiplayer top-down racing game using MQTT for real-time networking.</li>
+    <li>Includes in-game map editor, customizable keybinds, and settings tweaks.</li>
+    <li>Features chat, leaderboards, mobile controls, and persistent local data.</li>
   </ul>
 
   <pre>
-    <code>const CLIENT_ID = localStorage.getItem('drift_pid') || crypto.randomUUID();</code>
-    <code>mqttClient = mqtt.connect(currentBroker, { clientId: CLIENT_ID, clean: true });</code>
+    <code>canvas = document.getElementById('game-canvas');</code>
+    <code>requestAnimationFrame(gameLoop);</code>
   </pre>
 
-  <p>DRiFT.js is a multiplayer racing game built with HTML5 Canvas and MQTT for real-time networking. Players can create custom tracks, adjust car physics, and race against others in shared rooms. The game features a tile-based map editor, particle effects for drifting, and a complete audio system with engine and tire sounds. Cross-platform support includes desktop keyboard controls and mobile touch controls.</p>
+  <p>DRiFT.js is a neon-themed browser-based multiplayer racing game with retro visuals and real-time networking. It supports custom map creation, adjustable audio and graphics settings, and fully customizable keybinds for desktop play. The app also includes mobile touch controls, in-game chat, dynamic leaderboards, and persistent user and map data storage.</p>
 </section>
