@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Creates a Matrix-style rain animation with customizable parameters</li>
-    <li>Uses HTML5 canvas and JavaScript for dynamic visual effects</li>
-    <li>Includes real-time text display and responsive design</li>
+    <li>Canvas‑based Matrix rain with customizable colors, speed, and character set via URL parameters.</li>
+    <li>Responsive resizing and optional horizontal/vertical travel adjustments.</li>
+    <li>Displays optional evaluated JavaScript text in the bottom‑left corner.</li>
   </ul>
 
   <pre>
-    <code>const canvas = document.getElementById('matrix');</code>
-    <code>const ctx = canvas.getContext('2d');</code>
+    <code>canvas.width = width * scale;</code>
+    <code>setInterval(drawFrame, 1000 / framerate);</code>
   </pre>
 
-  <p>This HTML file generates a Matrix-style rain animation using HTML5 canvas. It features customizable parameters like color, speed, and text display, with responsive design and real-time updates. The animation creates a dynamic visual effect with falling characters and includes a text display area that updates based on user input or predefined values.</p>
+  <p>This page renders a programmable Matrix effect that adapts to screen size and device pixel ratio. Parameters like <code>color</code>, <code>speed</code>, <code>letters</code>, and custom JavaScript <code>text</code> are read from the query string. Visibility changes pause the animation to conserve resources.</p>
 </section>
