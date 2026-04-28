@@ -3,198 +3,538 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gizmos | Lab Registry</title>
+  <title>Gizmos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --primary: #12a8ff; /* Matched to HUD Frame default */
-      --primary-glow: rgba(18, 168, 255, 0.3);
-      --bg: #040e16;
-      --nav-bg: rgba(4, 22, 34, 0.85);
-      --card-bg: transparent; /* Background now handled by SVG */
+      --primary: #12a8ff;
+      --primary-glow: rgba(18, 168, 255, 0.5);
+      --primary-dim: rgba(18, 168, 255, 0.15);
+      --bg: #020b12;
+      --card-bg: rgba(4, 22, 34, 0.85);
+      --nav-bg: rgba(4, 22, 34, 0.95);
       --text: #ececec;
-      --text-muted: #64748b;
-      --border: rgba(18, 168, 255, 0.2);
+      --text-muted: #5a7b8f;
       --font-main: 'Inter', sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
+      --sidebar-width: 300px;
+    }
+
+    /* Theme Logic Overrides */
+    [data-theme="light"] {
+      --bg: #f0f4f8;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --nav-bg: rgba(235, 240, 245, 0.95);
+      --text: #1a2a3a;
+      --text-muted: #5a7b8f;
+      --primary-dim: rgba(18, 168, 255, 0.1);
     }
 
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100vh; width: 100%; overflow: hidden; font-family: var(--font-main); background: var(--bg); color: var(--text); }
-    body { display: flex; background-image: radial-gradient(circle at 50% 50%, #0a1924 0%, #040e16 100%); }
-
-    /* --- SIDEBAR --- */
-    nav { width: 320px; min-width: 320px; background: var(--nav-bg); backdrop-filter: blur(20px); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; z-index: 100; }
-    .nav-header { padding: 2rem 1.5rem 1rem 1.5rem; }
-    .nav-header h2 { font-weight: 800; color: var(--text); margin: 0 0 1.5rem 0; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
-    .nav-header h2::before { content: ''; width: 8px; height: 24px; background: var(--primary); border-radius: 4px; box-shadow: 0 0 15px var(--primary); }
-
-    .search-wrapper { position: relative; margin-bottom: 0.5rem; }
-    #search { width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border); color: var(--text); border-radius: 4px; outline: none; font-family: var(--font-mono); font-size: 0.8rem; }
-    
-    .nav-scroll-area { flex: 1; overflow-y: auto; padding: 0 1rem; margin: 1rem 0; }
-    .nav-item { display: flex; align-items: center; color: var(--text-muted); text-decoration: none; padding: 10px 12px; font-size: 0.85rem; border-radius: 4px; font-family: var(--font-mono); transition: 0.2s; }
-    .nav-item:hover { background: rgba(18, 168, 255, 0.1); color: var(--primary); }
-
-    /* --- MAIN CONTENT --- */
-    main { flex: 1; padding: 3rem 2rem; overflow-y: auto; }
-    .header-area { max-width: 900px; margin: 0 auto 4rem auto; }
-    .header-area h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.04em; margin: 0; color: var(--primary); text-shadow: 0 0 20px var(--primary-glow); }
-
-    #appContainer { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 3rem; }
-
-    /* --- HUD CARD STYLING --- */
-    .app-section {
-      position: relative;
-      padding: 40px; /* Padding for the frame padding */
-      min-height: 150px;
-      transition: transform 0.3s ease;
+    html, body { 
+      margin: 0; padding: 0; 
+      height: 100vh; width: 100%; 
+      font-family: var(--font-main); 
+      background: var(--bg); 
+      color: var(--text); 
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
-    .app-section:hover { transform: translateX(10px); }
 
-    .card-background {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      z-index: -1;
-      pointer-events: none;
+    body { 
+      display: flex; 
+      background-image: 
+        radial-gradient(circle at 20% 20%, var(--primary-dim) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, var(--primary-dim) 0%, transparent 40%);
+      overflow: hidden;
     }
-    .card-background svg { width: 100%; height: 100%; display: block; }
 
-    .card-content { position: relative; z-index: 2; }
+    /* --- MOBILE HEADER --- */
+    .mobile-header {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--primary-dim);
+      z-index: 1000;
+      padding: 0 1.5rem;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-    .run-btn {
-      padding: 6px 14px;
-      background: rgba(18, 168, 255, 0.2);
+    .menu-toggle {
+      background: none;
       border: 1px solid var(--primary);
       color: var(--primary);
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 0.7rem;
+      padding: 5px 10px;
       font-family: var(--font-mono);
-      text-transform: uppercase;
-      transition: 0.2s;
+      font-size: 0.7rem;
+      cursor: pointer;
     }
-    .run-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
 
-    .app-title { font-size: 1.5rem; margin: 0.5rem 0 1rem 0; font-weight: 700; color: #fff; }
-    .summary-content { color: var(--text-muted); line-height: 1.6; font-size: 0.9rem; }
-    
-    @media (max-width: 950px) {
-      body { flex-direction: column; overflow: auto; }
-      nav { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-      .nav-scroll-area { max-height: 150px; }
+    /* --- SIDEBAR --- */
+    nav { 
+      width: var(--sidebar-width); 
+      background: var(--nav-bg); 
+      backdrop-filter: blur(15px); 
+      border-right: 1px solid var(--primary-dim); 
+      display: flex; 
+      flex-direction: column; 
+      z-index: 1100; 
+      transition: transform 0.3s ease;
     }
+
+    .nav-header { padding: 2rem 1.5rem; border-bottom: 1px solid var(--primary-dim); }
+    .nav-header h2 { 
+        font-family: var(--font-mono); 
+        font-weight: 800; 
+        font-size: 1.1rem; 
+        color: var(--primary); 
+        margin: 0;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .nav-header h2::before { content: ""; width: 4px; height: 18px; background: var(--primary); }
+
+    /* Theme Switcher Styles */
+    .theme-switcher {
+      margin-top: 1.5rem;
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--primary-dim);
+      padding: 2px;
+      border-radius: 4px;
+    }
+    .theme-switcher label {
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 2px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .theme-switcher input { display: none; }
+    .theme-switcher input:checked + span {
+      background: var(--primary-dim);
+      color: var(--primary);
+      box-shadow: inset 0 0 8px var(--primary-dim);
+    }
+    .theme-switcher span {
+      display: block;
+      width: 100%;
+      height: 100%;
+      padding: 10px 0;
+      border-radius: 2px;
+    }
+
+    #search { 
+        width: 100%; 
+        margin-top: 1rem;
+        background: rgba(0,0,0,0.1); 
+        border: 1px solid var(--primary-dim); 
+        padding: 12px; 
+        color: var(--primary); 
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        outline: none;
+    }
+
+    .nav-scroll-area { flex: 1; overflow-y: auto; padding: 1rem; }
+    .nav-item { 
+        display: block; 
+        color: var(--text-muted); 
+        text-decoration: none; 
+        padding: 10px 12px; 
+        font-family: var(--font-mono); 
+        font-size: 0.75rem; 
+        margin-bottom: 4px;
+        transition: 0.2s;
+    }
+    .nav-item:hover { color: var(--primary); background: var(--primary-dim); }
+
+    /* --- MAIN CONTENT --- */
+    main { flex: 1; padding: 4rem; overflow-y: auto; position: relative; }
+    
+    .header-area { max-width: 800px; margin-bottom: 4rem; }
+    .header-area h1 { 
+        font-family: var(--font-mono); 
+        font-size: 2.5rem; 
+        font-weight: 800; 
+        margin: 0; 
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: -1px;
+    }
+
+    #appContainer { 
+        display: grid; 
+        grid-template-columns: 1fr; 
+        gap: 2.5rem; 
+        max-width: 850px; 
+    }
+
+    /* --- THE HUD COMPONENT (CSS VERSION) --- */
+    .hud-card {
+      position: relative;
+      padding: 40px;
+      background: var(--card-bg);
+      clip-path: var(--outline, polygon(0 0, 100% 0, 100% 100%, 0 100%));
+      border: 1px solid var(--primary-dim);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .hud-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border: 1px solid var(--primary);
+      clip-path: var(--outline);
+      opacity: 0.3;
+      z-index: 10;
+    }
+
+    .hud-card .hud-texture {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(var(--primary-dim) 1px, transparent 1px);
+      background-size: 14px 14px;
+      opacity: 0.2;
+    }
+
+    .hud-accent {
+      position: absolute;
+      pointer-events: none;
+      background: var(--primary);
+      clip-path: var(--accent-path);
+      opacity: 0.6;
+    }
+
+    .hud-corner {
+      position: absolute;
+      pointer-events: none;
+      background: var(--primary);
+      clip-path: var(--corner-path);
+      width: 100%;
+      height: 100%;
+      top: 0; left: 0;
+      opacity: 0.8;
+    }
+
+    .hud-card:hover {
+      transform: translateX(10px);
+      border-color: var(--primary);
+    }
+
+    .card-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 1.5rem; 
+        position: relative;
+        z-index: 20;
+    }
+    .unit-tag { 
+        font-family: var(--font-mono); 
+        font-size: 0.65rem; 
+        color: var(--primary); 
+        letter-spacing: 2px;
+    }
+    .app-title { 
+        font-size: 1.5rem; 
+        font-weight: 800; 
+        margin: 0; 
+        color: var(--text); 
+        text-transform: uppercase;
+        position: relative;
+        z-index: 20;
+    }
+    .summary-content { 
+        color: var(--text-muted); 
+        font-size: 0.95rem; 
+        line-height: 1.6; 
+        position: relative;
+        z-index: 20;
+    }
+
+    .launch-btn {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--primary);
+        text-decoration: none;
+        padding: 8px 16px;
+        border: 1px solid var(--primary);
+        background: transparent;
+        transition: 0.2s;
+    }
+    .launch-btn:hover { background: var(--primary); color: #fff; box-shadow: 0 0 15px var(--primary-glow); }
+
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+        .mobile-header { display: flex; }
+        
+        nav { 
+          position: fixed;
+          top: 60px; bottom: 0; left: 0;
+          transform: translateX(-100%);
+          width: 85%;
+          max-width: 320px;
+          border-right: 1px solid var(--primary-dim);
+        }
+        
+        nav.open { transform: translateX(0); }
+
+        main { padding: 6rem 1.5rem 2rem 1.5rem; }
+        
+        .header-area h1 { font-size: 1.8rem; }
+        .hud-card { padding: 25px; }
+        .app-title { font-size: 1.2rem; }
+        
+        .hud-card:hover { transform: none; } /* Disable hover slide on mobile */
+    }
+
+    /* Screen Reader / Accessibility Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1050;
+    }
+    .overlay.visible { display: block; }
   </style>
 </head>
-<body class="theme-auto">
+<body>
 
-  <nav>
+  <header class="mobile-header">
+    <div style="font-family: var(--font-mono); font-weight: 800; color: var(--primary); font-size: 0.9rem;">GIZMOS</div>
+    <button class="menu-toggle" id="menuToggle">MENU</button>
+  </header>
+
+  <div class="overlay" id="overlay"></div>
+
+  <nav id="sidebar">
     <div class="nav-header">
-      <h2>GIZMOS</h2>
-      <div class="search-wrapper">
-        <input id="search" type="text" placeholder="ID_SEARCH_SYSTEM..." autocomplete="off" />
+      <h2>Gizmos :D</h2>
+      
+      <div class="theme-switcher">
+        <label>
+          <input type="radio" name="theme" value="light">
+          <span>Light</span>
+        </label>
+        <label>
+          <input type="radio" name="theme" value="auto">
+          <span>Auto</span>
+        </label>
+        <label>
+          <input type="radio" name="theme" value="dark">
+          <span>Dark</span>
+        </label>
       </div>
-    </div>
 
-    <div class="nav-scroll-area">
-      <div id="projectList">
-        {% for name, summary in applications.items() %}
-          <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">{{ name }}</a>
-        {% endfor %}
-      </div>
+      <input id="search" type="text" placeholder="QUERY_MODULE..." autocomplete="off" />
+    </div>
+    <div class="nav-scroll-area" id="projectList">
+      {% for name, summary in applications.items() %}
+        <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">{{ name }}</a>
+      {% endfor %}
     </div>
   </nav>
 
   <main>
     <div class="header-area">
-      <h1>LAB_REGISTRY</h1>
-      <p style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem;">>> INITIALIZING HUD_UI_OVERLAY... OK</p>
+      <h1>Gizmos :D</h1>
+      <p style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem;">STATUS: tweakin</p>
     </div>
 
     <div id="appContainer">
       {% for name, summary in applications.items() %}
-        <section class="app-section" id="section-{{ name }}" data-name="{{ name }}" data-index="{{ loop.index }}">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_0{{ loop.index }}
-              </div>
-              <a class="run-btn" href="{{ name }}/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">{{ name }}</h2>
-            <div class="summary-content">
-              {{ summary | safe }}
-            </div>
+        <section class="hud-card" id="card-{{ loop.index }}" data-name="{{ name }}">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // {{ 1000 + loop.index }}</span>
+            <a class="launch-btn" href="{{ name }}/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">{{ name }}</h2>
+          <div class="summary-content">
+            {{ summary | safe }}
           </div>
         </section>
       {% endfor %}
     </div>
   </main>
 
+  <script src="shared/js/header.js"></script>
+
   <script>
-    /* --- HUD GENERATOR LOGIC (MINIFIED FOR INTEGRATION) --- */
-    function mulberry32(a){return function(){a=a+1831565813|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^0;return((t^t>>>14)>>>0)/4294967296}}
-    function rInt(r,a,b){return Math.floor(a+r()*(b-a+1))}
-    function fmt(n){return Number(n.toFixed(2)).toString()}
+    /**
+     * THEME LOGIC
+     */
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'auto';
+      const radio = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
+      if (radio) radio.checked = true;
 
-    function generateHudFrameSVG({w, h, seed}) {
-        const rng = mulberry32(seed);
-        const pad = 20;
-        const strokeOuter = "rgba(18,168,255,0.95)";
-        const strokeInner = "rgba(18,168,255,0.2)";
-        const panelFill = "rgba(4,22,34,0.7)";
-        
-        // Simplified generation logic for the cards
-        const chamfer = rInt(rng, 10, 30);
-        const outlineD = `M ${chamfer} 0 L ${w-chamfer} 0 L ${w} ${chamfer} L ${w} ${h-chamfer} L ${w-chamfer} h L ${chamfer} ${h} L 0 ${h-chamfer} L 0 ${chamfer} Z`;
+      applyTheme(savedTheme);
 
-        const svgMarkup = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${w+pad*2} ${h+pad*2}" preserveAspectRatio="none">
-                <defs>
-                   <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                       <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#12a8ff" flood-opacity="0.5" />
-                   </filter>
-                </defs>
-                <path d="${outlineD}" fill="${panelFill}" stroke="${strokeInner}" stroke-width="2" />
-                <path d="${outlineD}" fill="none" stroke="${strokeOuter}" stroke-width="1" filter="url(#glow)" />
-                <path d="M 0 ${chamfer+10} L 0 ${chamfer}" fill="none" stroke="${strokeOuter}" stroke-width="3" />
-            </svg>`;
-        return svgMarkup;
-    }
-
-    /* --- INITIALIZE CARDS --- */
-    function renderFrames() {
-        document.querySelectorAll('.app-section').forEach(section => {
-            const container = section.querySelector('.card-background');
-            const w = section.offsetWidth;
-            const h = section.offsetHeight;
-            const seed = parseInt(section.dataset.index) * 12345;
-            
-            container.innerHTML = generateHudFrameSVG({
-                w: w,
-                h: h,
-                seed: seed
-            });
+      document.querySelectorAll('input[name="theme"]').forEach(input => {
+        input.addEventListener('change', (e) => {
+          applyTheme(e.target.value);
         });
+      });
+
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (localStorage.getItem('theme') === 'auto') applyTheme('auto');
+      });
     }
 
-    // Run on load and resize
-    window.addEventListener('load', renderFrames);
-    window.addEventListener('resize', renderFrames);
+    function applyTheme(theme) {
+      const root = document.documentElement;
+      let effectiveTheme = theme;
+      if (theme === 'auto') {
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      root.setAttribute('data-theme', effectiveTheme);
+      localStorage.setItem('theme', theme);
+    }
 
-    // Search Logic (Preserved)
+    /**
+     * MOBILE NAVIGATION
+     */
+    function initMobileNav() {
+      const menuToggle = document.getElementById('menuToggle');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('overlay');
+      const navItems = document.querySelectorAll('.nav-item');
+
+      const toggleMenu = () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('visible');
+        menuToggle.textContent = sidebar.classList.contains('open') ? 'CLOSE' : 'MENU';
+      };
+
+      menuToggle.addEventListener('click', toggleMenu);
+      overlay.addEventListener('click', toggleMenu);
+      
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          if (window.innerWidth <= 900) toggleMenu();
+        });
+      });
+    }
+
+    /**
+     * HUD GENERATOR ENGINE
+     */
+    function mulberry32(seed) {
+      let t = seed >>> 0;
+      return function() {
+        t += 0x6D2B79F5;
+        let t2 = Math.imul(t ^ t >>> 15, t | 1);
+        t2 ^= t2 + Math.imul(t2 ^ t2 >>> 7, t2 | 61);
+        return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function generateHudStylesForElement(el, seedValue) {
+      const rng = mulberry32(seedValue);
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      
+      const chamferSize = () => (rng() > 0.3 ? Math.floor(rng() * 20 + 12) : 0);
+      const corners = { tl: chamferSize(), tr: chamferSize(), br: chamferSize(), bl: chamferSize() };
+
+      const toPct = (x, y) => `${(x / w * 100).toFixed(2)}% ${(y / h * 100).toFixed(2)}%`;
+
+      let pts = [];
+      pts.push(toPct(corners.tl, 0));
+      pts.push(toPct(w - corners.tr, 0));
+      if (corners.tr > 0) pts.push(toPct(w, corners.tr));
+      pts.push(toPct(w, h - corners.br));
+      if (corners.br > 0) pts.push(toPct(w - corners.br, h));
+      pts.push(toPct(corners.bl, h));
+      if (corners.bl > 0) pts.push(toPct(0, h - corners.bl));
+      pts.push(toPct(0, corners.tl));
+
+      el.style.setProperty('--outline', `polygon(${pts.join(', ')})`);
+
+      const cornerKeys = ['tl', 'tr', 'br', 'bl'];
+      cornerKeys.forEach(k => {
+        if (rng() > 0.4) {
+          const size = 15;
+          const gap = 4;
+          let triPts = [];
+          if (k === 'tl') triPts = [toPct(gap, size+gap), toPct(gap, gap), toPct(size+gap, gap)];
+          if (k === 'tr') triPts = [toPct(w-gap, size+gap), toPct(w-gap, gap), toPct(w-(size+gap), gap)];
+          if (k === 'br') triPts = [toPct(w-gap, h-(size+gap)), toPct(w-gap, h-gap), toPct(w-(size+gap), h-gap)];
+          if (k === 'bl') triPts = [toPct(gap, h-(size+gap)), toPct(gap, h-gap), toPct(size+gap, h-gap)];
+
+          const tri = document.createElement('div');
+          tri.className = 'hud-corner';
+          tri.style.setProperty('--corner-path', `polygon(${triPts.join(', ')})`);
+          el.appendChild(tri);
+        }
+      });
+
+      const edge = rng() > 0.5 ? 'top' : 'bottom';
+      const accW = Math.floor(w * 0.25);
+      const accH = 5;
+      const startX = Math.floor(rng() * (w - accW - 60) + 30);
+      
+      let accPts = [];
+      if (edge === 'top') {
+        accPts = [toPct(startX, 0), toPct(startX + accW, 0), toPct(startX + accW - 6, accH), toPct(startX + 6, accH)];
+      } else {
+        accPts = [toPct(startX + 6, h - accH), toPct(startX + accW - 6, h - accH), toPct(startX + accW, h), toPct(startX, h)];
+      }
+
+      const acc = document.createElement('div');
+      acc.className = 'hud-accent';
+      acc.style.setProperty('--accent-path', `polygon(${accPts.join(', ')})`);
+      acc.style.width = '100%'; acc.style.height = '100%';
+      acc.style.top = '0'; acc.style.left = '0';
+      el.appendChild(acc);
+    }
+
+    function initRegistry() {
+      document.querySelectorAll('.hud-accent, .hud-corner').forEach(e => e.remove());
+      const cards = document.querySelectorAll('.hud-card');
+      cards.forEach((card, i) => {
+        generateHudStylesForElement(card, 898766 + (i * 543));
+      });
+    }
+
+    window.addEventListener('load', () => {
+      initTheme();
+      initMobileNav();
+      initRegistry();
+    });
+
+    window.addEventListener('resize', initRegistry);
+
     const search = document.getElementById("search");
     search.addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
-      document.querySelectorAll(".app-section").forEach(sec => {
-        const match = sec.dataset.name.toLowerCase().includes(term);
-        sec.style.display = match ? "block" : "none";
+      document.querySelectorAll(".hud-card").forEach(sec => {
+        const name = sec.dataset.name.toLowerCase();
+        sec.style.display = name.includes(term) ? "block" : "none";
       });
-      renderFrames(); // Re-render frames for filtered list
+      document.querySelectorAll(".nav-item").forEach(item => {
+        item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
+      });
     });
   </script>
 </body>
