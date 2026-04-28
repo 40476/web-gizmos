@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Provides a full‑screen canvas game with responsive UI, mobile controls, HUD gauges, minimap, chat, admin panel and multiple modals.</li>
-    <li>Implements procedural world generation, mining mechanics (including AOE), building, explosives, fuel/health management, and a shop system with upgrades.</li>
-    <li>Includes networking (MQTT), sound engine, custom texture support, cloud sync, save management, and a configurable settings UI.</li>
+    <li>Implements a 2‑D mining game with procedural world, player stats, inventory, and admin host‑election.</li>
+    <li>Provides UI layers for chat, settings, shop, dashboard, warp, and custom modals using a lightweight modal system.</li>
+    <li>Features a sound manager (engine, mining, explosions, UI tones) and a texture engine for custom tile skins.</li>
   </ul>
 
   <pre>
     <code>const Game = new GameEngine();</code>
-    <code>Shop = new ShopSystem();</code>
+    <code>const Sound = new SoundManager();</code>
   </pre>
 
-  <p>This HTML/CSS/JS project creates a mining‑simulation game called “Mega Miner NG,” handling map generation, player interaction, UI overlay, audio, networking, and persistent saves while offering extensive customization through settings and modals.</p>
+  <p>This HTML/JS code sets up a canvas‑based mining game with mobile controls, custom textures, a shop system, and networking for multiplayer rooms. It includes performance optimizations (tile batching, star field caching) and a modular UI for settings, inventory, and admin functions. The game tracks player upgrades, saves progress locally, and can sync via cloud storage.   </p>
 </section>
