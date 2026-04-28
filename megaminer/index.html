@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Mega Miner NG</title>
-    <!-- TODO: move this to a shared dir for the other programs -->
+    
     <script src="../shared/js/mqtt.min.js"></script>
     <script src="../shared/js/puter-v2.min.js"></script>
     <style>
@@ -81,30 +81,6 @@
                 --ui-scale: 1;
                 --hero-margin: 0px;
             }
-        }
-
-       .ticker-wrap {
-            width: 100%;
-            overflow: hidden;
-            position: relative;
-            /* This adds the space you want below the ticker */
-            padding-bottom: 20px;
-        }
-
-        .ticker-move {
-            display: inline-block;
-            white-space: nowrap;
-            will-change: transform;
-            animation: ticker-kb 15s linear infinite;
-            /* Ensure no margins are pushing the layout weirdly */
-            margin: 0;
-        }
-
-        @keyframes ticker-kb {
-            /* Instead of padding-left: 100%, we start at 100vw (viewport width)
-            This prevents the element from growing physically huge */
-            0% { transform: translateX(100vw); }
-            100% { transform: translateX(-100%); }
         }
 
         .bevel-border {
@@ -1397,6 +1373,30 @@ display: flex;
             text-transform: uppercase;
             letter-spacing: 4px;
             text-shadow: 0 0 10px var(--highlight);
+        }
+		
+       .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            /* This adds the space you want below the ticker */
+            padding-bottom: 15px;
+        }
+
+        .ticker-move {
+            display: inline-block;
+            white-space: nowrap;
+            will-change: transform;
+            animation: ticker-kb 15s linear infinite;
+            /* Ensure no margins are pushing the layout weirdly */
+            margin: 0;
+        }
+
+        @keyframes ticker-kb {
+            /* Instead of padding-left: 100%, we start at 100vw (viewport width)
+            This prevents the element from growing physically huge */
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
         }
 
         /* Toast */
