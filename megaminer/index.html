@@ -2954,9 +2954,7 @@ class GameEngine {
         }
 
         // Mobile Mode
-        const mobile = this.settings.mobileMode || false; // Added to config?
-        if ($('mobile-toggle')) $('mobile-toggle').checked = mobile;
-        if ($('mobile-setting-toggle')) $('mobile-setting-toggle').checked = mobile;
+        const mobile = this.settings.mobileMode || false;
         this.toggleMobile(mobile);
 
         // 4. Update internal state references
@@ -2969,7 +2967,8 @@ class GameEngine {
 
         this.isMobile = enabled;
         GameConfig.set('PlayerSettings.mobileMode', enabled);
-
+        $('mobile-setting-toggle').checked = this.isMobile;
+        $('mobile-toggle').checked = this.isMobile;
         if (enabled && this.running) {
             document.body.classList.add('mobile-mode');
             // Auto-minimize chat when entering mobile mode
@@ -3147,6 +3146,10 @@ class GameEngine {
         this.loadLocalProgress();
         this.logConnection(`Local stats loaded`);
 
+        const mobile = this.settings.mobileMode || false;
+        this.toggleMobile(mobile);
+        this.logConnection(`Mobile mode set to: ` + mobile);
+
         Network.connect($('toggle-isSingleplayer').checked);
         $('chat-input').disabled = Network.isSingleplayer;
         $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : "Press chat key to type";
@@ -3180,8 +3183,6 @@ class GameEngine {
             $('connection-screen').style.display = 'none';
 
             this.running = true;
-
-            this.toggleMobile($("mobile-toggle").checked)
             this.localPlayer.gridX = Math.floor(CONSTANTS.MAP_WIDTH / 2);
             this.localPlayer.gridY = 4;
             this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
