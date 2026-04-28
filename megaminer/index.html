@@ -59,7 +59,7 @@
             --fs-gear: calc(30px * var(--ui-scale));
             --fs-title: calc(32px * var(--ui-scale));
             --fs-hero: 5vw;
-            --hero-margin: -2dvh;
+            --hero-margin: calc(-15px * var(--ui-scale));
 
             /* --- ADVANCED STYLING --- */
             --bevel-size: calc(10px * var(--ui-scale));
@@ -683,7 +683,6 @@
             }
         }
 
-        /* FIX: Sticky Headers */
         .modal h2,
         .start-container h2 {
             margin-top: 0;
@@ -709,11 +708,13 @@
         .form-group {
             margin-bottom: 15px;
         }
+
         .form-group label.no-flex {
             display:block !important;
         }
+
         .form-group label {
-display: flex;
+            display: flex;
             margin-bottom: 5px;
             font-size: var(--fs-base);
             color: #aaa;
@@ -1372,10 +1373,9 @@ display: flex;
             margin-bottom: var(--hero-margin);
             text-transform: uppercase;
             letter-spacing: 4px;
-			padding-bottom: 15px;
             text-shadow: 0 0 10px var(--highlight);
         }
-		
+
        .ticker-wrap {
             width: 100%;
             overflow: hidden;
@@ -1753,7 +1753,7 @@ display: flex;
                         <label>Room ID</label>
                         <input type="text" id="start-room" value="public-mine-1">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" hidden>
                         <label>Vehicle Color</label>
                         <input type="color" id="start-color" value="#3498db" style="height:40px;">
                     </div>
