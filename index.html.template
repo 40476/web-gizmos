@@ -23,7 +23,6 @@
       --sidebar-width: 300px;
     }
 
-    /* Theme Logic Overrides */
     [data-theme="light"] {
       --bg: #f0f4f8;
       --card-bg: rgba(255, 255, 255, 0.9);
@@ -49,31 +48,7 @@
         radial-gradient(circle at 20% 20%, var(--primary-dim) 0%, transparent 40%),
         radial-gradient(circle at 80% 80%, var(--primary-dim) 0%, transparent 40%);
       overflow: hidden;
-    }
-
-    /* --- MOBILE HEADER --- */
-    .mobile-header {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 60px;
-      background: var(--nav-bg);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--primary-dim);
-      z-index: 1000;
-      padding: 0 1.5rem;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .menu-toggle {
-      background: none;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 5px 10px;
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      cursor: pointer;
+      padding-top: 50px; /* Space for the fixed API header */
     }
 
     /* --- SIDEBAR --- */
@@ -102,9 +77,13 @@
     }
     .nav-header h2::before { content: ""; width: 4px; height: 18px; background: var(--primary); }
 
-    /* Theme Switcher Styles */
+    /* Theme Switcher Moved to Bottom */
+    .nav-footer {
+      padding: 1.5rem;
+      border-top: 1px solid var(--primary-dim);
+    }
+
     .theme-switcher {
-      margin-top: 1.5rem;
       display: flex;
       background: rgba(0, 0, 0, 0.2);
       border: 1px solid var(--primary-dim);
@@ -137,18 +116,6 @@
       border-radius: 2px;
     }
 
-    #search { 
-        width: 100%; 
-        margin-top: 1rem;
-        background: rgba(0,0,0,0.1); 
-        border: 1px solid var(--primary-dim); 
-        padding: 12px; 
-        color: var(--primary); 
-        font-family: var(--font-mono);
-        font-size: 0.75rem;
-        outline: none;
-    }
-
     .nav-scroll-area { flex: 1; overflow-y: auto; padding: 1rem; }
     .nav-item { 
         display: block; 
@@ -164,7 +131,6 @@
 
     /* --- MAIN CONTENT --- */
     main { flex: 1; padding: 4rem; overflow-y: auto; position: relative; }
-    
     .header-area { max-width: 800px; margin-bottom: 4rem; }
     .header-area h1 { 
         font-family: var(--font-mono); 
@@ -176,58 +142,34 @@
         letter-spacing: -1px;
     }
 
-    #appContainer { 
-        display: grid; 
-        grid-template-columns: 1fr; 
-        gap: 2.5rem; 
-        max-width: 850px; 
-    }
+    #appContainer { display: grid; grid-template-columns: 1fr; gap: 2.5rem; max-width: 850px; }
 
     .hud-card {
       position: relative;
       padding: 40px;
       background: var(--card-bg);
-      /* The main clip that shapes the background */
       clip-path: var(--outline, polygon(0 0, 100% 0, 100% 100%, 0 100%));
-      /* Remove standard border as it won't follow the clip */
       border: none; 
       transition: transform 0.3s ease;
     }
     
-    /* The Border Pseudo-Element */
     .hud-card::before {
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
-      /* Use the same polygon as the parent */
       clip-path: var(--outline);
-      /* Create the border using a thick "outline" shadow or mask */
-      /* This method uses a mask-like approach: */
       background: var(--primary-dim);
-      padding: 1px; /* This defines the border thickness */
-      
-      /* The magic: we 'fill' the background but mask out the center */
-      -webkit-mask: 
-         linear-gradient(#fff 0 0) content-box, 
-         linear-gradient(#fff 0 0);
+      padding: 1px;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
-      
       z-index: 30;
       transition: background 0.3s ease, opacity 0.3s ease;
     }
     
-    /* Hover state for the pseudo-border */
-    .hud-card:hover::before {
-      background: var(--primary);
-      opacity: 1;
-    }
-    
-    .hud-card:hover {
-      transform: translateX(10px);
-    }
-
+    .hud-card:hover::before { background: var(--primary); opacity: 1; }
+    .hud-card:hover { transform: translateX(10px); }
     .hud-card .hud-texture {
       position: absolute;
       inset: 0;
@@ -237,151 +179,67 @@
       opacity: 0.2;
     }
 
-    .hud-accent {
+    .hud-accent, .hud-corner {
       position: absolute;
       pointer-events: none;
       background: var(--primary);
-      clip-path: var(--accent-path);
-      opacity: 0.6;
-    }
-
-    .hud-corner {
-      position: absolute;
-      pointer-events: none;
-      background: var(--primary);
-      clip-path: var(--corner-path);
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       top: 0; left: 0;
-      opacity: 0.8;
     }
-
-    .hud-card:hover {
-      transform: translateX(10px);
-      border-color: var(--primary);
-    }
+    .hud-accent { clip-path: var(--accent-path); opacity: 0.6; }
+    .hud-corner { clip-path: var(--corner-path); opacity: 0.8; }
 
     .card-header { 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        margin-bottom: 1.5rem; 
-        position: relative;
-        z-index: 20;
+        display: flex; justify-content: space-between; align-items: center; 
+        margin-bottom: 1.5rem; position: relative; z-index: 20;
     }
-    .unit-tag { 
-        font-family: var(--font-mono); 
-        font-size: 0.65rem; 
-        color: var(--primary); 
-        letter-spacing: 2px;
-    }
-    .app-title { 
-        font-size: 1.5rem; 
-        font-weight: 800; 
-        margin: 0; 
-        color: var(--text); 
-        text-transform: uppercase;
-        position: relative;
-        z-index: 20;
-    }
-    .summary-content { 
-        color: var(--text-muted); 
-        font-size: 0.95rem; 
-        line-height: 1.6; 
-        position: relative;
-        z-index: 20;
-    }
+    .unit-tag { font-family: var(--font-mono); font-size: 0.65rem; color: var(--primary); letter-spacing: 2px; }
+    .app-title { font-size: 1.5rem; font-weight: 800; margin: 0; color: var(--text); text-transform: uppercase; position: relative; z-index: 20; }
+    .summary-content { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; position: relative; z-index: 20; }
 
     .launch-btn {
-        font-family: var(--font-mono);
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--primary);
-        text-decoration: none;
-        padding: 8px 16px;
-        border: 1px solid var(--primary);
-        background: transparent;
-        transition: 0.2s;
+        font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; color: var(--primary); text-decoration: none;
+        padding: 8px 16px; border: 1px solid var(--primary); background: transparent; transition: 0.2s;
     }
     .launch-btn:hover { background: var(--primary); color: #fff; box-shadow: 0 0 15px var(--primary-glow); }
 
-    /* Responsive adjustments */
     @media (max-width: 900px) {
-        .mobile-header { display: flex; }
-        
         nav { 
-          position: fixed;
-          top: 60px; bottom: 0; left: 0;
-          transform: translateX(-100%);
-          width: 85%;
-          max-width: 320px;
-          border-right: 1px solid var(--primary-dim);
+          position: fixed; top: 50px; bottom: 0; left: 0;
+          transform: translateX(-100%); width: 85%; max-width: 320px;
         }
-        
         nav.open { transform: translateX(0); }
-
-        main { padding: 6rem 1.5rem 2rem 1.5rem; }
-        
-        .header-area h1 { font-size: 1.8rem; }
-        .hud-card { padding: 25px; }
-        .app-title { font-size: 1.2rem; }
-        
-        .hud-card:hover { transform: none; } /* Disable hover slide on mobile */
+        main { padding: 4rem 1.5rem 2rem 1.5rem; }
     }
-
-    /* Screen Reader / Accessibility Overlay */
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1050;
-    }
-    .overlay.visible { display: block; }
   </style>
 </head>
 <body>
 
-  <header class="mobile-header">
-    <div style="font-family: var(--font-mono); font-weight: 800; color: var(--primary); font-size: 0.9rem;">GIZMOS</div>
-    <button class="menu-toggle" id="menuToggle">MENU</button>
-  </header>
-
-  <div class="overlay" id="overlay"></div>
-
   <nav id="sidebar">
     <div class="nav-header">
       <h2>Gizmos :D</h2>
-      
-      <div class="theme-switcher">
-        <label>
-          <input type="radio" name="theme" value="light">
-          <span>Light</span>
-        </label>
-        <label>
-          <input type="radio" name="theme" value="auto">
-          <span>Auto</span>
-        </label>
-        <label>
-          <input type="radio" name="theme" value="dark">
-          <span>Dark</span>
-        </label>
-      </div>
-
-      <input id="search" type="text" placeholder="QUERY_MODULE..." autocomplete="off" />
     </div>
+    
     <div class="nav-scroll-area" id="projectList">
       {% for name, summary in applications.items() %}
         <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">{{ name }}</a>
       {% endfor %}
+    </div>
+
+    <div class="nav-footer">
+      <div class="theme-switcher">
+        <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+        <label><input type="radio" name="theme" value="auto"><span>Auto</span></label>
+        <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+      </div>
     </div>
   </nav>
 
   <main>
     <div class="header-area">
       <h1>Gizmos :D</h1>
-      <p style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem;">STATUS: tweakin</p>
+      <p style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem;">STATUS: connected</p>
     </div>
 
     <div id="appContainer">
@@ -401,7 +259,7 @@
     </div>
   </main>
 
-  <script src="shared/js/header.js"></script>
+  <script src="https://40476.github.io/header/injector.js"></script>
 
   <script>
     /**
@@ -436,31 +294,6 @@
     }
 
     /**
-     * MOBILE NAVIGATION
-     */
-    function initMobileNav() {
-      const menuToggle = document.getElementById('menuToggle');
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('overlay');
-      const navItems = document.querySelectorAll('.nav-item');
-
-      const toggleMenu = () => {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('visible');
-        menuToggle.textContent = sidebar.classList.contains('open') ? 'CLOSE' : 'MENU';
-      };
-
-      menuToggle.addEventListener('click', toggleMenu);
-      overlay.addEventListener('click', toggleMenu);
-      
-      navItems.forEach(item => {
-        item.addEventListener('click', () => {
-          if (window.innerWidth <= 900) toggleMenu();
-        });
-      });
-    }
-
-    /**
      * HUD GENERATOR ENGINE
      */
     function mulberry32(seed) {
@@ -477,10 +310,8 @@
       const rng = mulberry32(seedValue);
       const w = el.offsetWidth;
       const h = el.offsetHeight;
-      
       const chamferSize = () => (rng() > 0.3 ? Math.floor(rng() * 20 + 12) : 0);
       const corners = { tl: chamferSize(), tr: chamferSize(), br: chamferSize(), bl: chamferSize() };
-
       const toPct = (x, y) => `${(x / w * 100).toFixed(2)}% ${(y / h * 100).toFixed(2)}%`;
 
       let pts = [];
@@ -498,8 +329,7 @@
       const cornerKeys = ['tl', 'tr', 'br', 'bl'];
       cornerKeys.forEach(k => {
         if (rng() > 0.4) {
-          const size = 15;
-          const gap = 4;
+          const size = 15; const gap = 4;
           let triPts = [];
           if (k === 'tl') triPts = [toPct(gap, size+gap), toPct(gap, gap), toPct(size+gap, gap)];
           if (k === 'tr') triPts = [toPct(w-gap, size+gap), toPct(w-gap, gap), toPct(w-(size+gap), gap)];
@@ -512,25 +342,6 @@
           el.appendChild(tri);
         }
       });
-
-      const edge = rng() > 0.5 ? 'top' : 'bottom';
-      const accW = Math.floor(w * 0.25);
-      const accH = 5;
-      const startX = Math.floor(rng() * (w - accW - 60) + 30);
-      
-      let accPts = [];
-      if (edge === 'top') {
-        accPts = [toPct(startX, 0), toPct(startX + accW, 0), toPct(startX + accW - 6, accH), toPct(startX + 6, accH)];
-      } else {
-        accPts = [toPct(startX + 6, h - accH), toPct(startX + accW - 6, h - accH), toPct(startX + accW, h), toPct(startX, h)];
-      }
-
-      const acc = document.createElement('div');
-      acc.className = 'hud-accent';
-      acc.style.setProperty('--accent-path', `polygon(${accPts.join(', ')})`);
-      acc.style.width = '100%'; acc.style.height = '100%';
-      acc.style.top = '0'; acc.style.left = '0';
-      el.appendChild(acc);
     }
 
     function initRegistry() {
@@ -543,23 +354,37 @@
 
     window.addEventListener('load', () => {
       initTheme();
-      initMobileNav();
       initRegistry();
+      
+      // REGISTER NAVIGATION API EXTENSIONS
+      if(window.registerNavExtensions) {
+        window.registerNavExtensions({
+          search: {
+            placeholder: "QUERY_MODULE...",
+            onInput: (value) => {
+              const term = value.toLowerCase();
+              document.querySelectorAll(".hud-card").forEach(sec => {
+                const name = sec.dataset.name.toLowerCase();
+                sec.style.display = name.includes(term) ? "block" : "none";
+              });
+              document.querySelectorAll(".nav-item").forEach(item => {
+                item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
+              });
+            }
+          },
+          buttons: [
+            {
+              label: "SIDEBAR",
+              onClick: () => {
+                document.getElementById('sidebar').classList.toggle('open');
+              }
+            }
+          ]
+        });
+      }
     });
 
     window.addEventListener('resize', initRegistry);
-
-    const search = document.getElementById("search");
-    search.addEventListener("input", e => {
-      const term = e.target.value.toLowerCase();
-      document.querySelectorAll(".hud-card").forEach(sec => {
-        const name = sec.dataset.name.toLowerCase();
-        sec.style.display = name.includes(term) ? "block" : "none";
-      });
-      document.querySelectorAll(".nav-item").forEach(item => {
-        item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
-      });
-    });
-  </script>
+  </script> 
 </body>
 </html>
