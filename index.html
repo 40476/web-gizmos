@@ -717,18 +717,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Creates a procedurally generated mining world with tile‑based terrain, ore distribution, and a day/night cycle.</li>
-    <li>Implements player controls (movement, drilling, building, AOE mining, teleports, chat, admin panel) and a HUD with configurable gauge styles.</li>
-    <li>Provides a shop, inventory, save system, cloud sync, custom texture support, and a modular modal system for prompts, forms, and trading.</li>
+    <li>Provides a full‑screen canvas game with mobile controls, HUD gauges, minimap, chat, shop, and admin panel.</li>
+    <li>Implements procedural terrain, mining mechanics, upgrades, explosives, teleporter discovery, and host‑election logic for multiplayer.</li>
+    <li>Includes a configurable sound engine, custom texture system, save/auto‑save, cloud sync, and a modular UI/Modal framework.</li>
   </ul>
 
   <pre>
-    <code>Game.init();</code>
-    <code>Shop.buy('drill');</code>
+    <code>const Game = new GameEngine();</code>
+    <code>Shop = new ShopSystem();</code>
   </pre>
 
-  <p>This script builds a minimalist multiplayer mining game where players explore a seeded map, collect resources, and upgrade their vehicle. The engine handles rendering, physics, networking, sound, and UI, while the Shop and Save modules manage in‑game transactions and persistence. Custom textures and a flexible modal system let developers extend the experience without altering core logic.   </p>
-</section>
+  <p>This HTML page creates a mining game with responsive UI, procedural world generation, and multiplayer features. It handles player actions, upgrades, and persistent saves, while offering sound, texture, and cloud sync options. The code is organized into distinct classes for game logic, shop, networking, UI, and utilities.
           </div>
         </section>
       
