@@ -3,177 +3,420 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gizmos | Lab Registry</title>
+  <title>Gizmos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --primary: #12a8ff; /* Matched to HUD Frame default */
-      --primary-glow: rgba(18, 168, 255, 0.3);
-      --bg: #040e16;
-      --nav-bg: rgba(4, 22, 34, 0.85);
-      --card-bg: transparent; /* Background now handled by SVG */
+      --primary: #12a8ff;
+      --primary-glow: rgba(18, 168, 255, 0.5);
+      --primary-dim: rgba(18, 168, 255, 0.15);
+      --bg: #020b12;
+      --card-bg: rgba(4, 22, 34, 0.85);
+      --nav-bg: rgba(4, 22, 34, 0.95);
       --text: #ececec;
-      --text-muted: #64748b;
-      --border: rgba(18, 168, 255, 0.2);
+      --text-muted: #5a7b8f;
       --font-main: 'Inter', sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
+      --sidebar-width: 300px;
+    }
+
+    /* Theme Logic Overrides */
+    [data-theme="light"] {
+      --bg: #f0f4f8;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --nav-bg: rgba(235, 240, 245, 0.95);
+      --text: #1a2a3a;
+      --text-muted: #5a7b8f;
+      --primary-dim: rgba(18, 168, 255, 0.1);
     }
 
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100vh; width: 100%; overflow: hidden; font-family: var(--font-main); background: var(--bg); color: var(--text); }
-    body { display: flex; background-image: radial-gradient(circle at 50% 50%, #0a1924 0%, #040e16 100%); }
-
-    /* --- SIDEBAR --- */
-    nav { width: 320px; min-width: 320px; background: var(--nav-bg); backdrop-filter: blur(20px); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; z-index: 100; }
-    .nav-header { padding: 2rem 1.5rem 1rem 1.5rem; }
-    .nav-header h2 { font-weight: 800; color: var(--text); margin: 0 0 1.5rem 0; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
-    .nav-header h2::before { content: ''; width: 8px; height: 24px; background: var(--primary); border-radius: 4px; box-shadow: 0 0 15px var(--primary); }
-
-    .search-wrapper { position: relative; margin-bottom: 0.5rem; }
-    #search { width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border); color: var(--text); border-radius: 4px; outline: none; font-family: var(--font-mono); font-size: 0.8rem; }
-    
-    .nav-scroll-area { flex: 1; overflow-y: auto; padding: 0 1rem; margin: 1rem 0; }
-    .nav-item { display: flex; align-items: center; color: var(--text-muted); text-decoration: none; padding: 10px 12px; font-size: 0.85rem; border-radius: 4px; font-family: var(--font-mono); transition: 0.2s; }
-    .nav-item:hover { background: rgba(18, 168, 255, 0.1); color: var(--primary); }
-
-    /* --- MAIN CONTENT --- */
-    main { flex: 1; padding: 3rem 2rem; overflow-y: auto; }
-    .header-area { max-width: 900px; margin: 0 auto 4rem auto; }
-    .header-area h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.04em; margin: 0; color: var(--primary); text-shadow: 0 0 20px var(--primary-glow); }
-
-    #appContainer { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 3rem; }
-
-    /* --- HUD CARD STYLING --- */
-    .app-section {
-      position: relative;
-      padding: 40px; /* Padding for the frame padding */
-      min-height: 150px;
-      transition: transform 0.3s ease;
+    html, body { 
+      margin: 0; padding: 0; 
+      height: 100vh; width: 100%; 
+      font-family: var(--font-main); 
+      background: var(--bg); 
+      color: var(--text); 
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
-    .app-section:hover { transform: translateX(10px); }
 
-    .card-background {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      z-index: -1;
-      pointer-events: none;
+    body { 
+      display: flex; 
+      background-image: 
+        radial-gradient(circle at 20% 20%, var(--primary-dim) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, var(--primary-dim) 0%, transparent 40%);
+      overflow: hidden;
     }
-    .card-background svg { width: 100%; height: 100%; display: block; }
 
-    .card-content { position: relative; z-index: 2; }
+    /* --- MOBILE HEADER --- */
+    .mobile-header {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--primary-dim);
+      z-index: 1000;
+      padding: 0 1.5rem;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-    .run-btn {
-      padding: 6px 14px;
-      background: rgba(18, 168, 255, 0.2);
+    .menu-toggle {
+      background: none;
       border: 1px solid var(--primary);
       color: var(--primary);
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 0.7rem;
+      padding: 5px 10px;
       font-family: var(--font-mono);
-      text-transform: uppercase;
-      transition: 0.2s;
+      font-size: 0.7rem;
+      cursor: pointer;
     }
-    .run-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
 
-    .app-title { font-size: 1.5rem; margin: 0.5rem 0 1rem 0; font-weight: 700; color: #fff; }
-    .summary-content { color: var(--text-muted); line-height: 1.6; font-size: 0.9rem; }
-    
-    @media (max-width: 950px) {
-      body { flex-direction: column; overflow: auto; }
-      nav { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-      .nav-scroll-area { max-height: 150px; }
+    /* --- SIDEBAR --- */
+    nav { 
+      width: var(--sidebar-width); 
+      background: var(--nav-bg); 
+      backdrop-filter: blur(15px); 
+      border-right: 1px solid var(--primary-dim); 
+      display: flex; 
+      flex-direction: column; 
+      z-index: 1100; 
+      transition: transform 0.3s ease;
     }
+
+    .nav-header { padding: 2rem 1.5rem; border-bottom: 1px solid var(--primary-dim); }
+    .nav-header h2 { 
+        font-family: var(--font-mono); 
+        font-weight: 800; 
+        font-size: 1.1rem; 
+        color: var(--primary); 
+        margin: 0;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .nav-header h2::before { content: ""; width: 4px; height: 18px; background: var(--primary); }
+
+    /* Theme Switcher Styles */
+    .theme-switcher {
+      margin-top: 1.5rem;
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--primary-dim);
+      padding: 2px;
+      border-radius: 4px;
+    }
+    .theme-switcher label {
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 2px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .theme-switcher input { display: none; }
+    .theme-switcher input:checked + span {
+      background: var(--primary-dim);
+      color: var(--primary);
+      box-shadow: inset 0 0 8px var(--primary-dim);
+    }
+    .theme-switcher span {
+      display: block;
+      width: 100%;
+      height: 100%;
+      padding: 10px 0;
+      border-radius: 2px;
+    }
+
+    #search { 
+        width: 100%; 
+        margin-top: 1rem;
+        background: rgba(0,0,0,0.1); 
+        border: 1px solid var(--primary-dim); 
+        padding: 12px; 
+        color: var(--primary); 
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        outline: none;
+    }
+
+    .nav-scroll-area { flex: 1; overflow-y: auto; padding: 1rem; }
+    .nav-item { 
+        display: block; 
+        color: var(--text-muted); 
+        text-decoration: none; 
+        padding: 10px 12px; 
+        font-family: var(--font-mono); 
+        font-size: 0.75rem; 
+        margin-bottom: 4px;
+        transition: 0.2s;
+    }
+    .nav-item:hover { color: var(--primary); background: var(--primary-dim); }
+
+    /* --- MAIN CONTENT --- */
+    main { flex: 1; padding: 4rem; overflow-y: auto; position: relative; }
+    
+    .header-area { max-width: 800px; margin-bottom: 4rem; }
+    .header-area h1 { 
+        font-family: var(--font-mono); 
+        font-size: 2.5rem; 
+        font-weight: 800; 
+        margin: 0; 
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: -1px;
+    }
+
+    #appContainer { 
+        display: grid; 
+        grid-template-columns: 1fr; 
+        gap: 2.5rem; 
+        max-width: 850px; 
+    }
+
+    /* --- THE HUD COMPONENT (CSS VERSION) --- */
+    .hud-card {
+      position: relative;
+      padding: 40px;
+      background: var(--card-bg);
+      clip-path: var(--outline, polygon(0 0, 100% 0, 100% 100%, 0 100%));
+      border: 1px solid var(--primary-dim);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .hud-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border: 1px solid var(--primary);
+      clip-path: var(--outline);
+      opacity: 0.3;
+      z-index: 10;
+    }
+
+    .hud-card .hud-texture {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(var(--primary-dim) 1px, transparent 1px);
+      background-size: 14px 14px;
+      opacity: 0.2;
+    }
+
+    .hud-accent {
+      position: absolute;
+      pointer-events: none;
+      background: var(--primary);
+      clip-path: var(--accent-path);
+      opacity: 0.6;
+    }
+
+    .hud-corner {
+      position: absolute;
+      pointer-events: none;
+      background: var(--primary);
+      clip-path: var(--corner-path);
+      width: 100%;
+      height: 100%;
+      top: 0; left: 0;
+      opacity: 0.8;
+    }
+
+    .hud-card:hover {
+      transform: translateX(10px);
+      border-color: var(--primary);
+    }
+
+    .card-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 1.5rem; 
+        position: relative;
+        z-index: 20;
+    }
+    .unit-tag { 
+        font-family: var(--font-mono); 
+        font-size: 0.65rem; 
+        color: var(--primary); 
+        letter-spacing: 2px;
+    }
+    .app-title { 
+        font-size: 1.5rem; 
+        font-weight: 800; 
+        margin: 0; 
+        color: var(--text); 
+        text-transform: uppercase;
+        position: relative;
+        z-index: 20;
+    }
+    .summary-content { 
+        color: var(--text-muted); 
+        font-size: 0.95rem; 
+        line-height: 1.6; 
+        position: relative;
+        z-index: 20;
+    }
+
+    .launch-btn {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--primary);
+        text-decoration: none;
+        padding: 8px 16px;
+        border: 1px solid var(--primary);
+        background: transparent;
+        transition: 0.2s;
+    }
+    .launch-btn:hover { background: var(--primary); color: #fff; box-shadow: 0 0 15px var(--primary-glow); }
+
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+        .mobile-header { display: flex; }
+        
+        nav { 
+          position: fixed;
+          top: 60px; bottom: 0; left: 0;
+          transform: translateX(-100%);
+          width: 85%;
+          max-width: 320px;
+          border-right: 1px solid var(--primary-dim);
+        }
+        
+        nav.open { transform: translateX(0); }
+
+        main { padding: 6rem 1.5rem 2rem 1.5rem; }
+        
+        .header-area h1 { font-size: 1.8rem; }
+        .hud-card { padding: 25px; }
+        .app-title { font-size: 1.2rem; }
+        
+        .hud-card:hover { transform: none; } /* Disable hover slide on mobile */
+    }
+
+    /* Screen Reader / Accessibility Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1050;
+    }
+    .overlay.visible { display: block; }
   </style>
 </head>
-<body class="theme-auto">
+<body>
 
-  <nav>
+  <header class="mobile-header">
+    <div style="font-family: var(--font-mono); font-weight: 800; color: var(--primary); font-size: 0.9rem;">GIZMOS</div>
+    <button class="menu-toggle" id="menuToggle">MENU</button>
+  </header>
+
+  <div class="overlay" id="overlay"></div>
+
+  <nav id="sidebar">
     <div class="nav-header">
-      <h2>GIZMOS</h2>
-      <div class="search-wrapper">
-        <input id="search" type="text" placeholder="ID_SEARCH_SYSTEM..." autocomplete="off" />
+      <h2>Gizmos :D</h2>
+      
+      <div class="theme-switcher">
+        <label>
+          <input type="radio" name="theme" value="light">
+          <span>Light</span>
+        </label>
+        <label>
+          <input type="radio" name="theme" value="auto">
+          <span>Auto</span>
+        </label>
+        <label>
+          <input type="radio" name="theme" value="dark">
+          <span>Dark</span>
+        </label>
       </div>
-    </div>
 
-    <div class="nav-scroll-area">
-      <div id="projectList">
-        
-          <a class="nav-item" href="1984/index.html" data-name="1984">1984</a>
-        
-          <a class="nav-item" href="8ball/index.html" data-name="8ball">8ball</a>
-        
-          <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
-        
-          <a class="nav-item" href="asciiwave/index.html" data-name="asciiwave">asciiwave</a>
-        
-          <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
-        
-          <a class="nav-item" href="BST/index.html" data-name="BST">BST</a>
-        
-          <a class="nav-item" href="checkers/index.html" data-name="checkers">checkers</a>
-        
-          <a class="nav-item" href="cpp/index.html" data-name="cpp">cpp</a>
-        
-          <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">doofusdot</a>
-        
-          <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
-        
-          <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
-        
-          <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
-        
-          <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
-        
-          <a class="nav-item" href="midibeat/index.html" data-name="midibeat">midibeat</a>
-        
-          <a class="nav-item" href="nuclear/index.html" data-name="nuclear">nuclear</a>
-        
-          <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
-        
-          <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
-        
-          <a class="nav-item" href="pic2html/index.html" data-name="pic2html">pic2html</a>
-        
-          <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
-        
-          <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
-        
-          <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">rusticrealms</a>
-        
-          <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
-        
-          <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">voxelcrash</a>
-        
-          <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
-        
-      </div>
+      <input id="search" type="text" placeholder="QUERY_MODULE..." autocomplete="off" />
+    </div>
+    <div class="nav-scroll-area" id="projectList">
+      
+        <a class="nav-item" href="1984/index.html" data-name="1984">1984</a>
+      
+        <a class="nav-item" href="8ball/index.html" data-name="8ball">8ball</a>
+      
+        <a class="nav-item" href="animeboydownloader/index.html" data-name="animeboydownloader">animeboydownloader</a>
+      
+        <a class="nav-item" href="asciiwave/index.html" data-name="asciiwave">asciiwave</a>
+      
+        <a class="nav-item" href="asl/index.html" data-name="asl">asl</a>
+      
+        <a class="nav-item" href="BST/index.html" data-name="BST">BST</a>
+      
+        <a class="nav-item" href="checkers/index.html" data-name="checkers">checkers</a>
+      
+        <a class="nav-item" href="cpp/index.html" data-name="cpp">cpp</a>
+      
+        <a class="nav-item" href="doofusdot/index.html" data-name="doofusdot">doofusdot</a>
+      
+        <a class="nav-item" href="fonttester/index.html" data-name="fonttester">fonttester</a>
+      
+        <a class="nav-item" href="matrix/index.html" data-name="matrix">matrix</a>
+      
+        <a class="nav-item" href="megaminer/index.html" data-name="megaminer">megaminer</a>
+      
+        <a class="nav-item" href="microviz/index.html" data-name="microviz">microviz</a>
+      
+        <a class="nav-item" href="midibeat/index.html" data-name="midibeat">midibeat</a>
+      
+        <a class="nav-item" href="nuclear/index.html" data-name="nuclear">nuclear</a>
+      
+        <a class="nav-item" href="pattern/index.html" data-name="pattern">pattern</a>
+      
+        <a class="nav-item" href="pcb/index.html" data-name="pcb">pcb</a>
+      
+        <a class="nav-item" href="pic2html/index.html" data-name="pic2html">pic2html</a>
+      
+        <a class="nav-item" href="pixelreducer/index.html" data-name="pixelreducer">pixelreducer</a>
+      
+        <a class="nav-item" href="racing/index.html" data-name="racing">racing</a>
+      
+        <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">rusticrealms</a>
+      
+        <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
+      
+        <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">voxelcrash</a>
+      
+        <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
+      
     </div>
   </nav>
 
   <main>
     <div class="header-area">
-      <h1>LAB_REGISTRY</h1>
-      <p style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem;">>> INITIALIZING HUD_UI_OVERLAY... OK</p>
+      <h1>Gizmos :D</h1>
+      <p style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem;">STATUS: tweakin</p>
     </div>
 
     <div id="appContainer">
       
-        <section class="app-section" id="section-1984" data-name="1984" data-index="1">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_01
-              </div>
-              <a class="run-btn" href="1984/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">1984</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-1" data-name="1984">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1001</span>
+            <a class="launch-btn" href="1984/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">1984</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Dystopian web app contrasting 1984 surveillance with modern data practices</li>
     <li>Includes interactive elements like mouse-tracking eye, particle canvas, scroll animations</li>
@@ -187,22 +430,18 @@
 
   <p>This web application is a thematic, dystopian-themed experience comparing surveillance in George Orwell’s 1984 to modern digital data practices. It includes interactive visual elements such as a mouse-tracking eye SVG, a particle network canvas, scroll-triggered reveal animations, and glitch text effects. A simulated terms of service section with an interactive accept button triggers visual glitches and adjusts particle behavior when clicked.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-8ball" data-name="8ball" data-index="2">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_02
-              </div>
-              <a class="run-btn" href="8ball/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">8ball</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-2" data-name="8ball">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1002</span>
+            <a class="launch-btn" href="8ball/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">8ball</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Interactive Magic 8 Ball with 3D WebGL particle effects inside the ball window.</li>
     <li>Offers 5 answer tone styles (Friendly, Mean, Silly, Dramatic, Roast Me) via dropdown.</li>
@@ -216,22 +455,18 @@
 
   <p>This interactive Magic 8 Ball web app features 3D particle animations and multiple answer tone options. Users input questions, select a response style, and receive AI-generated answers via the OpenRouter API. The app includes loading shake animations, API key rotation for error recovery, and auto-revert to the default 8 display after 45 seconds.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-animeboydownloader" data-name="animeboydownloader" data-index="3">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_03
-              </div>
-              <a class="run-btn" href="animeboydownloader/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">animeboydownloader</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-3" data-name="animeboydownloader">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1003</span>
+            <a class="launch-btn" href="animeboydownloader/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">animeboydownloader</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Fetches random safe boy images from Nekos API via proxy</li>
     <li>Displays image metadata including ID, rating, tags, and source</li>
@@ -245,22 +480,18 @@
 
   <p>This web app displays random safe boy images sourced from the Nekos API. Each image is shown with accompanying metadata like ID, content rating, and tags. A proxy service is used to resolve cross-origin request issues when fetching API data.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-asciiwave" data-name="asciiwave" data-index="4">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_04
-              </div>
-              <a class="run-btn" href="asciiwave/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">asciiwave</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-4" data-name="asciiwave">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1004</span>
+            <a class="launch-btn" href="asciiwave/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">asciiwave</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Renders a full-screen ASCII grid with dark background and green monospace text.</li>
     <li>Triggers expanding character waves at mouse grid positions on cursor movement.</li>
@@ -274,22 +505,18 @@
 
   <p>This interactive web app displays ASCII wave effects on a full-screen monospace grid. Moving the mouse across the canvas generates expanding waves of characters at the cursor's position. Performance optimizations like single DOM updates keep the animation smooth and responsive.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-asl" data-name="asl" data-index="5">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_05
-              </div>
-              <a class="run-btn" href="asl/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">asl</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-5" data-name="asl">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1005</span>
+            <a class="launch-btn" href="asl/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">asl</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Allows users to enter text for ASL sequence playback</li>
     <li>Provides autocomplete suggestions for input text</li>
@@ -303,22 +530,18 @@
 
   <p>This web application converts user-input text into playable ASL (American Sign Language) video sequences. It includes an input field with dynamic autocomplete suggestions to assist users in entering valid text. Clicking the Play button triggers the app to load and display the corresponding ASL video for the entered content.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-BST" data-name="BST" data-index="6">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_06
-              </div>
-              <a class="run-btn" href="BST/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">BST</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-6" data-name="BST">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1006</span>
+            <a class="launch-btn" href="BST/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">BST</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>3D spinning text rendered with Three.js</li>
     <li>Customizable text, font, size, thickness, speed, and color</li>
@@ -332,22 +555,18 @@
 
   <p>This tool generates a 3D spinning text with configurable text, font, size, thickness, speed, and color. It integrates with Google Fonts via GitHub to allow searching and loading of fonts. The menu can be hidden or shown with any key press, and the configuration is reflected in the URL for sharing.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-checkers" data-name="checkers" data-index="7">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_07
-              </div>
-              <a class="run-btn" href="checkers/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">checkers</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-7" data-name="checkers">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1007</span>
+            <a class="launch-btn" href="checkers/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">checkers</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>3D checkers game using Three.js for browser-based 3D rendering</li>
     <li>Real-time multiplayer via MQTT broker with role-based presence locking</li>
@@ -361,22 +580,18 @@
 
   <p>This web application provides a 3D checkers game with real-time multiplayer support via MQTT messaging. Users can select player or spectator roles, set custom profile images, and use an integrated lobby chat. The game features interactive 3D board rendering, move validation, win detection, and visual effects including piece explosions and victory sweep animations.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-cpp" data-name="cpp" data-index="8">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_08
-              </div>
-              <a class="run-btn" href="cpp/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">cpp</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-8" data-name="cpp">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1008</span>
+            <a class="launch-btn" href="cpp/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">cpp</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Replaces all instances of "C++" in a preloaded rant text with custom user input.</li>
     <li>Accepts replacement text via a text input field or URL 'text' query parameter.</li>
@@ -390,22 +605,18 @@
 
   <p>This web application displays a well-known Linus Torvalds rant criticizing the C++ programming language. Users can dynamically replace all instances of "C++" in the rant with custom text via a text input or URL parameter. Replaced terms are bolded and colored to stand out in the styled preview area.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-doofusdot" data-name="doofusdot" data-index="9">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_09
-              </div>
-              <a class="run-btn" href="doofusdot/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">doofusdot</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-9" data-name="doofusdot">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1009</span>
+            <a class="launch-btn" href="doofusdot/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">doofusdot</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Interactive dots flee mouse proximity within 90px, triggering audio.</li>
     <li>Sidebar controls dot count, color mode, custom color, and sound.</li>
@@ -419,22 +630,18 @@
 
   <p>Doofus Dot is a playful interactive web app with customizable floating dots. Dots flee from the mouse cursor when nearby, playing selected sound effects. Users configure settings via a fixed sidebar with controls for count, color, and audio.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-fonttester" data-name="fonttester" data-index="10">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_010
-              </div>
-              <a class="run-btn" href="fonttester/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">fonttester</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-10" data-name="fonttester">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1010</span>
+            <a class="launch-btn" href="fonttester/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">fonttester</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Upload custom font files (TTF, OTF, WOFF, WOFF2) to preview unique typefaces.</li>
     <li>Adjust font size from 8px to 72px using an interactive range slider.</li>
@@ -448,22 +655,18 @@
 
   <p>This Custom Font Tester web app allows users to upload and preview custom font files directly in the browser. It includes controls to adjust font size and input custom test text for real-time preview. The app displays the font across a wide range of common web elements to fully assess typographic performance.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-matrix" data-name="matrix" data-index="11">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_011
-              </div>
-              <a class="run-btn" href="matrix/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">matrix</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-11" data-name="matrix">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1011</span>
+            <a class="launch-btn" href="matrix/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">matrix</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Canvas‑based Matrix rain with customizable colors, speed, and character set via URL parameters.</li>
     <li>Responsive resizing and optional horizontal/vertical travel adjustments.</li>
@@ -477,22 +680,18 @@
 
   <p>This page renders a programmable Matrix effect that adapts to screen size and device pixel ratio. Parameters like <code>color</code>, <code>speed</code>, <code>letters</code>, and custom JavaScript <code>text</code> are read from the query string. Visibility changes pause the animation to conserve resources.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-megaminer" data-name="megaminer" data-index="12">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_012
-              </div>
-              <a class="run-btn" href="megaminer/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">megaminer</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-12" data-name="megaminer">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1012</span>
+            <a class="launch-btn" href="megaminer/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">megaminer</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>2D procedural mining game with singleplayer and MQTT-based multiplayer support</li>
     <li>Customizable audio, graphics, keybinds, and cloud save integration via Puter.js</li>
@@ -506,22 +705,18 @@
 
   <p>Mega Miner NG is a 2D procedural mining game with singleplayer and online multiplayer support. Players mine resources, upgrade equipment, manage inventory, and trade with others in a dynamically generated underground map. The app features customizable settings, cloud save syncing, a shop system, and host admin tools for managing game rooms.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-microviz" data-name="microviz" data-index="13">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_013
-              </div>
-              <a class="run-btn" href="microviz/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">microviz</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-13" data-name="microviz">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1013</span>
+            <a class="launch-btn" href="microviz/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">microviz</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Audio visualizer with layered 2D/3D canvas rendering.</li>
     <li>Supports audio input from local files, microphones, or WebSocket streams.</li>
@@ -535,22 +730,18 @@
 
   <p>microViz is a browser-based audio visualization tool with separate 2D and 3D rendering layers. It supports audio input from uploaded files, microphone capture, and WebSocket data streams. All user configuration and visualizer settings are automatically saved to the browser's localStorage.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-midibeat" data-name="midibeat" data-index="14">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_014
-              </div>
-              <a class="run-btn" href="midibeat/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">midibeat</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-14" data-name="midibeat">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1014</span>
+            <a class="launch-btn" href="midibeat/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">midibeat</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Browser-based MIDI playback tool powered by Tone.js and MidiPlayer.js</li>
     <li>Supports loading preset audio/MIDI from an atlas library or user-uploaded files</li>
@@ -564,22 +755,18 @@
 
   <p>MIDIbeat is a web application for playing MIDI sequences mapped to audio samples. Users can load preset assets from a library or upload custom audio and MIDI files for playback. The tool includes speed and pitch adjustment, WAV export, shareable configuration links, and a real-time audio visualizer.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-nuclear" data-name="nuclear" data-index="15">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_015
-              </div>
-              <a class="run-btn" href="nuclear/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">nuclear</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-15" data-name="nuclear">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1015</span>
+            <a class="launch-btn" href="nuclear/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">nuclear</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Educational interactive web app covering nuclear energy science, history, and modern geopolitics</li>
     <li>Features animated fission/fusion visuals, scroll-triggered reveal animations, and a horizontal historical timeline</li>
@@ -593,22 +780,18 @@
 
   <p>This interactive educational web application explains nuclear energy concepts, historical developments, and modern geopolitical concerns through engaging visuals and dynamic effects. It covers topics including nuclear fission, uranium enrichment, Cold War reactor designs, fusion technology, and a timeline of key atomic milestones, with a focus on current Iran nuclear tensions. The app uses Tailwind CSS for responsive styling, Lucide icons for visual elements, and custom JavaScript to power animations, particle systems, and scroll-based interactions.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-pattern" data-name="pattern" data-index="16">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_016
-              </div>
-              <a class="run-btn" href="pattern/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">pattern</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-16" data-name="pattern">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1016</span>
+            <a class="launch-btn" href="pattern/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">pattern</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Generates deterministic SVG patterns via seeded PRNG for reproducible results</li>
     <li>Offers 6 pattern styles, adjustable density, 6 color palettes, and texture options</li>
@@ -622,22 +805,18 @@
 
   <p>This web app generates customizable, deterministic SVG patterns using a seeded pseudo-random number generator for reproducible outputs. Users can adjust parameters including pattern style, dimensions, color palette, density, and background, with all settings synced to the browser URL for easy sharing. Patterns can be exported as SVG or PNG files, and a one-click random seed generator creates new unique patterns instantly.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-pcb" data-name="pcb" data-index="17">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_017
-              </div>
-              <a class="run-btn" href="pcb/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">pcb</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-17" data-name="pcb">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1017</span>
+            <a class="launch-btn" href="pcb/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">pcb</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Procedurally generates PCB components (logic chips, switches, seven-segment displays) using seed-based PRNG.</li>
     <li>Routes traces via A* pathfinding with configurable fan-out limits and collision settings.</li>
@@ -651,38 +830,30 @@
 
   <p>This web application simulates a procedural printed circuit board with randomly generated components and traces. Users can adjust generation seeds, component density, and simulation speed via an interactive settings menu. The simulator renders real-time trace activity, component states, and optional CRT visual effects.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-pic2html" data-name="pic2html" data-index="18">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_018
-              </div>
-              <a class="run-btn" href="pic2html/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">pic2html</h2>
-            <div class="summary-content">
-              你好，我无法给到相关内容。
-            </div>
+        <section class="hud-card" id="card-18" data-name="pic2html">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1018</span>
+            <a class="launch-btn" href="pic2html/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">pic2html</h2>
+          <div class="summary-content">
+            你好，我无法给到相关内容。
           </div>
         </section>
       
-        <section class="app-section" id="section-pixelreducer" data-name="pixelreducer" data-index="19">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_019
-              </div>
-              <a class="run-btn" href="pixelreducer/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">pixelreducer</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-19" data-name="pixelreducer">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1019</span>
+            <a class="launch-btn" href="pixelreducer/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">pixelreducer</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Comic-styled tool for progressive pixel degradation of images and videos.</li>
     <li>Converts images to degrading GIFs, processes videos with optional degraded WebM recording.</li>
@@ -696,22 +867,18 @@
 
   <p>This comic-themed web application degrades image and video quality by progressively reducing pixel resolution over time. Image inputs are converted into degrading GIFs, while video inputs can be processed with adjustable clip selection, audio crushing, and optional low-quality WebM recording. Users can customize output settings like final scale, pixel step, GIF FPS, and hold duration before exporting their degraded media.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-racing" data-name="racing" data-index="20">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_020
-              </div>
-              <a class="run-btn" href="racing/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">racing</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-20" data-name="racing">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1020</span>
+            <a class="launch-btn" href="racing/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">racing</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Multiplayer top-down racing game using MQTT for real-time networking.</li>
     <li>Includes in-game map editor, customizable keybinds, and settings tweaks.</li>
@@ -725,22 +892,18 @@
 
   <p>DRiFT.js is a neon-themed browser-based multiplayer racing game with retro visuals and real-time networking. It supports custom map creation, adjustable audio and graphics settings, and fully customizable keybinds for desktop play. The app also includes mobile touch controls, in-game chat, dynamic leaderboards, and persistent user and map data storage.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-rusticrealms" data-name="rusticrealms" data-index="21">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_021
-              </div>
-              <a class="run-btn" href="rusticrealms/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">rusticrealms</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-21" data-name="rusticrealms">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1021</span>
+            <a class="launch-btn" href="rusticrealms/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">rusticrealms</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Multiplayer survival game with resource gathering and crafting systems.</li>
     <li>Dynamic day/night cycle with lighting and hostile mob spawning.</li>
@@ -754,22 +917,18 @@
 
   <p>Rustic Realms is a browser-based modular survival game with real-time multiplayer functionality. Players explore a procedural world, gather resources, craft tools, build structures, and combat mobs across a day/night cycle. The app uses IndexedDB for local saves and integrates with Puter for optional cloud save synchronization.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-turtle" data-name="turtle" data-index="22">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_022
-              </div>
-              <a class="run-btn" href="turtle/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">turtle</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-22" data-name="turtle">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1022</span>
+            <a class="launch-btn" href="turtle/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">turtle</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Interactive simulation featuring turtles that move, eat food, and navigate a customizable grid environment.</li>
     <li>Features include turtle personalities, lily pads, pathfinding, debug mode, and extensive settings for customization.</li>
@@ -783,22 +942,18 @@
 
   <p>A comprehensive turtle simulation game where users can spawn turtles with different personalities, place food and obstacles, and watch the turtles navigate and interact with their environment. The simulation includes advanced features like A* pathfinding, raycasting for obstacle detection, and a fully customizable grid system with various terrain types.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-voxelcrash" data-name="voxelcrash" data-index="23">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_023
-              </div>
-              <a class="run-btn" href="voxelcrash/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">voxelcrash</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-23" data-name="voxelcrash">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1023</span>
+            <a class="launch-btn" href="voxelcrash/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">voxelcrash</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Match-3 voxel puzzle game with target art goals</li>
     <li>Supports level selection and custom art import</li>
@@ -812,22 +967,18 @@
 
   <p>Voxel Crash is a browser-based match-3 puzzle game using Three.js for 3D voxel rendering. Players swap adjacent voxels to match colors, gradually filling a target art piece in the sidebar. The app includes adjustable settings, level selection, custom art tools, and options to export or share completed artwork.</p>
 </section>
-            </div>
           </div>
         </section>
       
-        <section class="app-section" id="section-voxelracing" data-name="voxelracing" data-index="24">
-          <div class="card-background"></div>
-          <div class="card-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.7;">
-                UNIT_024
-              </div>
-              <a class="run-btn" href="voxelracing/index.html">Initialize</a>
-            </div>
-            <h2 class="app-title">voxelracing</h2>
-            <div class="summary-content">
-              <section>
+        <section class="hud-card" id="card-24" data-name="voxelracing">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1024</span>
+            <a class="launch-btn" href="voxelracing/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">voxelracing</h2>
+          <div class="summary-content">
+            <section>
   <ul>
     <li>Procedural voxel terrain with selectable biomes, dynamic generation, and interactive elements like jump pads and collectible coins</li>
     <li>Multiplayer functionality via MQTT with remote player synchronization, in-game chat, sound sharing, and host-controlled world settings</li>
@@ -841,73 +992,170 @@
 
   <p>Voxel Racer thingy is a browser-based 3D racing game built with Three.js, featuring procedural voxel terrain and arcade vehicle physics. It supports multiplayer connectivity via MQTT, with real-time remote player tracking, in-game chat, and shared audio playback. The game includes dynamic day/night cycles, multiple biomes, mobile touch controls, and persistent user settings stored in IndexedDB.</p>
 </section>
-            </div>
           </div>
         </section>
       
     </div>
   </main>
 
+  <script src="shared/js/header.js"></script>
+
   <script>
-    /* --- HUD GENERATOR LOGIC (MINIFIED FOR INTEGRATION) --- */
-    function mulberry32(a){return function(){a=a+1831565813|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^0;return((t^t>>>14)>>>0)/4294967296}}
-    function rInt(r,a,b){return Math.floor(a+r()*(b-a+1))}
-    function fmt(n){return Number(n.toFixed(2)).toString()}
+    /**
+     * THEME LOGIC
+     */
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'auto';
+      const radio = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
+      if (radio) radio.checked = true;
 
-    function generateHudFrameSVG({w, h, seed}) {
-        const rng = mulberry32(seed);
-        const pad = 20;
-        const strokeOuter = "rgba(18,168,255,0.95)";
-        const strokeInner = "rgba(18,168,255,0.2)";
-        const panelFill = "rgba(4,22,34,0.7)";
-        
-        // Simplified generation logic for the cards
-        const chamfer = rInt(rng, 10, 30);
-        const outlineD = `M ${chamfer} 0 L ${w-chamfer} 0 L ${w} ${chamfer} L ${w} ${h-chamfer} L ${w-chamfer} h L ${chamfer} ${h} L 0 ${h-chamfer} L 0 ${chamfer} Z`;
+      applyTheme(savedTheme);
 
-        const svgMarkup = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${w+pad*2} ${h+pad*2}" preserveAspectRatio="none">
-                <defs>
-                   <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                       <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#12a8ff" flood-opacity="0.5" />
-                   </filter>
-                </defs>
-                <path d="${outlineD}" fill="${panelFill}" stroke="${strokeInner}" stroke-width="2" />
-                <path d="${outlineD}" fill="none" stroke="${strokeOuter}" stroke-width="1" filter="url(#glow)" />
-                <path d="M 0 ${chamfer+10} L 0 ${chamfer}" fill="none" stroke="${strokeOuter}" stroke-width="3" />
-            </svg>`;
-        return svgMarkup;
-    }
-
-    /* --- INITIALIZE CARDS --- */
-    function renderFrames() {
-        document.querySelectorAll('.app-section').forEach(section => {
-            const container = section.querySelector('.card-background');
-            const w = section.offsetWidth;
-            const h = section.offsetHeight;
-            const seed = parseInt(section.dataset.index) * 12345;
-            
-            container.innerHTML = generateHudFrameSVG({
-                w: w,
-                h: h,
-                seed: seed
-            });
+      document.querySelectorAll('input[name="theme"]').forEach(input => {
+        input.addEventListener('change', (e) => {
+          applyTheme(e.target.value);
         });
+      });
+
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (localStorage.getItem('theme') === 'auto') applyTheme('auto');
+      });
     }
 
-    // Run on load and resize
-    window.addEventListener('load', renderFrames);
-    window.addEventListener('resize', renderFrames);
+    function applyTheme(theme) {
+      const root = document.documentElement;
+      let effectiveTheme = theme;
+      if (theme === 'auto') {
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      root.setAttribute('data-theme', effectiveTheme);
+      localStorage.setItem('theme', theme);
+    }
 
-    // Search Logic (Preserved)
+    /**
+     * MOBILE NAVIGATION
+     */
+    function initMobileNav() {
+      const menuToggle = document.getElementById('menuToggle');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('overlay');
+      const navItems = document.querySelectorAll('.nav-item');
+
+      const toggleMenu = () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('visible');
+        menuToggle.textContent = sidebar.classList.contains('open') ? 'CLOSE' : 'MENU';
+      };
+
+      menuToggle.addEventListener('click', toggleMenu);
+      overlay.addEventListener('click', toggleMenu);
+      
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          if (window.innerWidth <= 900) toggleMenu();
+        });
+      });
+    }
+
+    /**
+     * HUD GENERATOR ENGINE
+     */
+    function mulberry32(seed) {
+      let t = seed >>> 0;
+      return function() {
+        t += 0x6D2B79F5;
+        let t2 = Math.imul(t ^ t >>> 15, t | 1);
+        t2 ^= t2 + Math.imul(t2 ^ t2 >>> 7, t2 | 61);
+        return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function generateHudStylesForElement(el, seedValue) {
+      const rng = mulberry32(seedValue);
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      
+      const chamferSize = () => (rng() > 0.3 ? Math.floor(rng() * 20 + 12) : 0);
+      const corners = { tl: chamferSize(), tr: chamferSize(), br: chamferSize(), bl: chamferSize() };
+
+      const toPct = (x, y) => `${(x / w * 100).toFixed(2)}% ${(y / h * 100).toFixed(2)}%`;
+
+      let pts = [];
+      pts.push(toPct(corners.tl, 0));
+      pts.push(toPct(w - corners.tr, 0));
+      if (corners.tr > 0) pts.push(toPct(w, corners.tr));
+      pts.push(toPct(w, h - corners.br));
+      if (corners.br > 0) pts.push(toPct(w - corners.br, h));
+      pts.push(toPct(corners.bl, h));
+      if (corners.bl > 0) pts.push(toPct(0, h - corners.bl));
+      pts.push(toPct(0, corners.tl));
+
+      el.style.setProperty('--outline', `polygon(${pts.join(', ')})`);
+
+      const cornerKeys = ['tl', 'tr', 'br', 'bl'];
+      cornerKeys.forEach(k => {
+        if (rng() > 0.4) {
+          const size = 15;
+          const gap = 4;
+          let triPts = [];
+          if (k === 'tl') triPts = [toPct(gap, size+gap), toPct(gap, gap), toPct(size+gap, gap)];
+          if (k === 'tr') triPts = [toPct(w-gap, size+gap), toPct(w-gap, gap), toPct(w-(size+gap), gap)];
+          if (k === 'br') triPts = [toPct(w-gap, h-(size+gap)), toPct(w-gap, h-gap), toPct(w-(size+gap), h-gap)];
+          if (k === 'bl') triPts = [toPct(gap, h-(size+gap)), toPct(gap, h-gap), toPct(size+gap, h-gap)];
+
+          const tri = document.createElement('div');
+          tri.className = 'hud-corner';
+          tri.style.setProperty('--corner-path', `polygon(${triPts.join(', ')})`);
+          el.appendChild(tri);
+        }
+      });
+
+      const edge = rng() > 0.5 ? 'top' : 'bottom';
+      const accW = Math.floor(w * 0.25);
+      const accH = 5;
+      const startX = Math.floor(rng() * (w - accW - 60) + 30);
+      
+      let accPts = [];
+      if (edge === 'top') {
+        accPts = [toPct(startX, 0), toPct(startX + accW, 0), toPct(startX + accW - 6, accH), toPct(startX + 6, accH)];
+      } else {
+        accPts = [toPct(startX + 6, h - accH), toPct(startX + accW - 6, h - accH), toPct(startX + accW, h), toPct(startX, h)];
+      }
+
+      const acc = document.createElement('div');
+      acc.className = 'hud-accent';
+      acc.style.setProperty('--accent-path', `polygon(${accPts.join(', ')})`);
+      acc.style.width = '100%'; acc.style.height = '100%';
+      acc.style.top = '0'; acc.style.left = '0';
+      el.appendChild(acc);
+    }
+
+    function initRegistry() {
+      document.querySelectorAll('.hud-accent, .hud-corner').forEach(e => e.remove());
+      const cards = document.querySelectorAll('.hud-card');
+      cards.forEach((card, i) => {
+        generateHudStylesForElement(card, 898766 + (i * 543));
+      });
+    }
+
+    window.addEventListener('load', () => {
+      initTheme();
+      initMobileNav();
+      initRegistry();
+    });
+
+    window.addEventListener('resize', initRegistry);
+
     const search = document.getElementById("search");
     search.addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
-      document.querySelectorAll(".app-section").forEach(sec => {
-        const match = sec.dataset.name.toLowerCase().includes(term);
-        sec.style.display = match ? "block" : "none";
+      document.querySelectorAll(".hud-card").forEach(sec => {
+        const name = sec.dataset.name.toLowerCase();
+        sec.style.display = name.includes(term) ? "block" : "none";
       });
-      renderFrames(); // Re-render frames for filtered list
+      document.querySelectorAll(".nav-item").forEach(item => {
+        item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
+      });
     });
   </script>
 </body>
