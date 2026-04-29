@@ -1183,7 +1183,7 @@
       });
     });
 if (!document.body) {
-        await new Promise(resolve => {
+        
             window.addEventListener('DOMContentLoaded', ()=>{window.MegaNavConfig.registerLink({
     label: 'GIZMO-SIDEBAR',
     onClick: () => {
@@ -1191,7 +1191,6 @@ if (!document.body) {
     }
 });
 });
-        });
     }
   </script>
 </body>
