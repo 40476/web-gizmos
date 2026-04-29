@@ -1056,13 +1056,6 @@
       localStorage.setItem('theme', theme);
     }
 
-//idk
-window.MegaNavConfig.registerLink({
-    label: 'GIZMO-SIDEBAR',
-    onClick: () => {
-        toggleMenu()
-    }
-});
 
     /**
      * MOBILE NAVIGATION
@@ -1189,6 +1182,17 @@ window.MegaNavConfig.registerLink({
         item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
       });
     });
+if (!document.body) {
+        await new Promise(resolve => {
+            window.addEventListener('DOMContentLoaded', ()=>{window.MegaNavConfig.registerLink({
+    label: 'GIZMO-SIDEBAR',
+    onClick: () => {
+        document.getElementById('menuToggle').click();
+    }
+});
+});
+        });
+    }
   </script>
 </body>
 </html>
