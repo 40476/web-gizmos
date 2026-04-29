@@ -561,16 +561,15 @@
         item.style.display = item.dataset.name.toLowerCase().includes(term) ? "block" : "none";
       });
     });
-if (!document.body) {
-        
-            window.addEventListener('DOMContentLoaded', ()=>{window.MegaNavConfig.registerLink({
-    label: 'GIZMO-SIDEBAR',
-    onClick: () => {
-        document.getElementById('menuToggle').click();
-    }
-});
-});
-    }
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      window.MegaNavConfig.registerLink({
+        label: 'GIZMO-SIDEBAR',
+        onClick: () => {
+          document.getElementById('menuToggle').click();
+        }
+      });
+    });
   </script>
 </body>
 </html>
