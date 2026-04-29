@@ -717,17 +717,18 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Provides a full‑screen canvas game with mobile controls, HUD gauges, minimap, chat, shop, and admin panel.</li>
-    <li>Implements procedural terrain, mining mechanics, upgrades, explosives, teleporter discovery, and host‑election logic for multiplayer.</li>
-    <li>Includes a configurable sound engine, custom texture system, save/auto‑save, cloud sync, and a modular UI/Modal framework.</li>
+    <li>Implements a mining game with procedural terrain, upgrades, chat, and multiplayer via MQTT.</li>
+    <li>Provides UI components: mobile controls, settings, shop, dashboard, warp, and custom modals.</li>
+    <li>Handles sound, cloud sync, host election, and custom texture loading.</li>
   </ul>
 
   <pre>
     <code>const Game = new GameEngine();</code>
-    <code>Shop = new ShopSystem();</code>
+    <code>const Shop = new ShopSystem();</code>
   </pre>
 
-  <p>This HTML page creates a mining game with responsive UI, procedural world generation, and multiplayer features. It handles player actions, upgrades, and persistent saves, while offering sound, texture, and cloud sync options. The code is organized into distinct classes for game logic, shop, networking, UI, and utilities.
+  <p>This HTML page defines a full‑screen canvas game with rich UI overlays styled using CSS variables and bezels. JavaScript manages player movement, mining logic, upgrades, chat, server sync, and persistent saves, while a modular sound manager and custom modal system handle audio and user prompts. The code also supports mobile controls, custom textures, and automatic host election for multiplayer sessions.</p>
+</section>
           </div>
         </section>
       
