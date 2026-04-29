@@ -1183,12 +1183,10 @@
       });
     });
 
-    window.addEventListener('DOMContentLoaded', ()=>{
+    window.addEventListener('MegaNavReady', () => {
       window.MegaNavConfig.registerLink({
         label: 'GIZMO-SIDEBAR',
-        onClick: () => {
-          document.getElementById('menuToggle').click();
-        }
+        onClick: () => document.getElementById('menuToggle').click()
       });
     });
   </script>
