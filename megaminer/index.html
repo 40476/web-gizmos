@@ -2953,9 +2953,6 @@ class GameEngine {
             this.toggleCoords(showCoords);
         }
 
-        // Mobile Mode
-        const mobile = this.settings.mobileMode || false;
-        this.toggleMobile(mobile);
 
         // 4. Update internal state references
         this.settings.keys = { ...this.settings.keys};
@@ -3221,8 +3218,12 @@ class GameEngine {
 
             this.loop();
             UI.showToast("Welcome. E for Menu/Shop. B to Build. F to Transfer.", "info", 6000);
-            Network.broadcastMove();
-            // Removed updateAdminStatus call
+		 
+			// Mobile Mode
+	        const mobile = this.settings.mobileMode || false;
+	        this.toggleMobile(mobile);
+            
+			Network.broadcastMove();
         }, 1000);
     }
 
