@@ -435,6 +435,14 @@
       localStorage.setItem('theme', theme);
     }
 
+//idk
+window.MegaNavConfig.registerLink({
+    label: 'GIZMO-SIDEBAR',
+    onClick: () => {
+        toggleMenu()
+    }
+});
+
     /**
      * MOBILE NAVIGATION
      */
