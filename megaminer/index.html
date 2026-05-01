@@ -6305,10 +6305,11 @@ class UIManager {
         if (enabled) {
             if (this.updateChecker) clearInterval(this.updateChecker);
             this.updateChecker = setInterval(() => this.checkForUpdates(), 60000);
+			this.checkForUpdates();
         } else {
             clearInterval(this.updateChecker);
         }
-		this.checkForUpdates();
+		
     }
 
     async checkForUpdates() {
