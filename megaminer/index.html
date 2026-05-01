@@ -160,8 +160,12 @@
             display: none;
         }
 
-		#mobile-controls .reversed {
-  			flex-direction: row-reverse;
+		#mobile-controls:nth-child(1) {
+  			order: 2;
+		}
+		
+		#mobile-controls:nth-child(2) {
+		  order: 1;
 		}
 
         /* --- MOBILE LAYOUTS --- */
