@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Procedural mining world with day/night cycle, heat, and customizable textures.</li>
-    <li>Multiplayer via MQTT with host election, chat, trading, and admin tools.</li>
-    <li>Extensive UI: mobile controls, HUD gauges, shop, inventory, warp portals, and settings.</li>
+    <li>Procedural mining world with depth‑based heat, ore tiers and AOE mining.</li>
+    <li>Full UI: mobile controls, HUD gauges, minimap, chat, shop, inventory and admin panel.</li>
+    <li>Multiplayer via MQTT, host election, sync of tile updates, explosions and trading.</li>
   </ul>
 
   <pre>
-    <code>Game.init()</code>
-    <code>Shop.buy(item)</code>
+    <code>const Game = new GameEngine();</code>
+    <code>Sound.init();</code>
   </pre>
 
-  <p>This HTML page implements a 2‑D mining game called “Mega Miner NG”. The engine generates terrain procedurally, handles player movement, drilling, AOE mining, and explosions, while providing a rich UI for inventory, shop upgrades, chat, and admin controls. Multiplayer is synchronized through MQTT, with host‑election logic and cloud‑save features.</p>
+  <p>This HTML page implements a 2‑D mining game where players dig, build, trade and manage resources. It features a procedural map, real‑time multiplayer synchronization, customizable textures, sound effects, and a comprehensive UI for settings, shop, inventory, and admin controls. All gameplay logic, rendering, and networking are handled client‑side.​</p>
 </section>
