@@ -3846,6 +3846,9 @@ class GameEngine {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const currentTime = performance.now();
+		
+		if (!this.lastTime) this.lastTime = currentTime;
+		
         const dt = (currentTime - this.lastTime) / 16.66;
         this.lastTime = currentTime;
         const cameraTightness = 0.06; 
