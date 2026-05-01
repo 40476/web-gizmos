@@ -160,12 +160,18 @@
             display: none;
         }
 
-		#mobile-controls:nth-child(1) .reversed{
-  			order: 2;
+		#mobile-controls .d-pad {
+		    order: 1;
+		}
+		#mobile-controls .action-pad {
+		    order: 2;
 		}
 		
-		#mobile-controls:nth-child(2) .reversed{
-		  order: 1;
+		#mobile-controls.reversed .d-pad {
+		    order: 2;
+		}
+		#mobile-controls.reversed .action-pad {
+		    order: 1;
 		}
 
         /* --- MOBILE LAYOUTS --- */
