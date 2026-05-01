@@ -744,17 +744,19 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural world generator with ore tiers, mining speed scaling, and AOE mining.</li>
-    <li>Multiplayer sync via MQTT, host election, admin panel, chat, and trade modal.</li>
-    <li>Custom UI: gauges (multiple styles), station, minimap, modals, and texture importer.</li>
+    <li>Procedurally generated mining world with custom textures, AOE drilling, and explosive items.</li>
+    <li>Multiplayer via MQTT, host‑election, admin controls, chat, inventory, shop, and save system.</li>
+    <li>Responsive UI with mobile controls, HUD gauges, minimap, modals, and sound engine.</li>
   </ul>
 
   <pre>
-    <code>new GameEngine().init()</code>
-    <code>Shop.buy('drill')</code>
+    <code>Game.init()</code>
+    <code>Shop.buy(item)</code>
   </pre>
 
-  <p>This game creates a large tile map using seeded randomness, lets players mine, build, and trade resources, and synchronizes state over MQTT with host fallback logic. It includes a modular UI system for HUD gauges, inventory, shop upgrades, chat, and custom texture loading.</p>
+  <p>The application creates a tile‑based mining game where players move, drill, and build using a deterministic seed.</p>
+  <p>Networking synchronizes player actions, host election, and chat while a shop lets users upgrade ships and purchase consumables.</p>
+  <p>UI components adapt to desktop and mobile, featuring custom gauges, a minimap, and modal dialogs for settings, inventory, and trading.</p>
 </section>
           </div>
         </section>
