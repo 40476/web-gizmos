@@ -744,17 +744,18 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural underground world with mining, AOE, and explosives.</li>
-    <li>Full UI: touch controls, dashboard, shop, chat, server list, and admin panel.</li>
-    <li>Audio engine, custom texture loader, host‑election, cloud sync, and save system.</li>
+    <li>Procedural map with ore tiers, AOE mining, and teleporter discovery.</li>
+    <li>Multiplayer sync, host election, admin panel, chat, and cloud save system.</li>
+    <li>Customizable UI, gauge styles, audio mixer, and in‑game shop for upgrades.</li>
   </ul>
 
   <pre>
     <code>Game.init()</code>
-    <code>Shop.buy(item)</code>
+    <code>Shop.buy('drill')</code>
   </pre>
 
-  <p>This HTML/JS game builds a 2‑D mining world using seeded terrain, lets players move, drill, and build items (including TNT/Nuke). It includes a responsive UI with touch controls, inventory, shop upgrades, chat, and admin features while handling multiplayer sync, host election, and cloud saves. The code also provides a sound manager, custom texture system, and configurable graphics settings.
+  <p>The game generates a large map using a seeded RNG, lets players move, drill, and build blocks while managing fuel, hull, cargo, and heat. Multiplayer features include host election, chat, and trade, while a shop offers upgrades, consumables, and explosives. UI options cover graphics quality, key binds, mobile controls, and cloud‑saved progress. </p>
+</section>
           </div>
         </section>
       
