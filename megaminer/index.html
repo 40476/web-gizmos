@@ -3288,6 +3288,12 @@ class GameEngine {
 
     update() {
         if (!this.running) return;
+
+		const currentTime = performance.now();
+	    if (!this.lastUpdateTime) this.lastUpdateTime = currentTime;
+	    const dt = Math.min(currentTime - this.lastUpdateTime, 100) / 16.66;
+	    this.lastUpdateTime = currentTime;
+		
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
 
@@ -3316,16 +3322,19 @@ class GameEngine {
         let drillSpeed = (CONSTANTS.SPEED_DRILL * tierMultiplier) / currentHardness;
 
         // Determine final movement speed
-        let speed = Math.min(p.fuel > 0 ? (p.isDrilling ? (this.map[destGridY]?.[destGridX] !== 0 ? drillSpeed : CONSTANTS.SPEED_NORMAL) : CONSTANTS.SPEED_NORMAL) : 0.3, CONSTANTS.SPEED_NORMAL);
-
+        let baseSpeed = Math.min(p.fuel > 0 ? (p.isDrilling ? (this.map[destGridY]?.[destGridX] !== 0 ? drillSpeed : CONSTANTS.SPEED_NORMAL) : CONSTANTS.SPEED_NORMAL) : 0.3, CONSTANTS.SPEED_NORMAL);
+		
+		// TIME-ADJUSTED SPEED
+		let moveStep = Math.min(baseSpeed, CONSTANTS.SPEED_NORMAL) * dt;
+		
         let isMoving = false;
 
         // --- 4. MOVEMENT LOOP ---
-        if (dist > speed) {
-            let angle = Math.atan2(dy, dx);
-            p.x += Math.cos(angle) * speed;
-            p.y += Math.sin(angle) * speed;
-            isMoving = true;
+        if (dist > moveStep) {
+	        let angle = Math.atan2(dy, dx);
+	        p.x += Math.cos(angle) * moveStep;
+	        p.y += Math.sin(angle) * moveStep;
+	        isMoving = true;
         } else {
             // --- 5. ARRIVAL & EXECUTION ---
             p.x = targetX;
@@ -3429,31 +3438,46 @@ class GameEngine {
             }
         }
 
-        Sound.updateEngine(isMoving ? speed : 0, p.isDrilling);
+        Sound.updateEngine(isMoving ? baseSpeed : 0, p.isDrilling);
 
         // Remote Interpolation
         Object.values(this.remotePlayers).forEach(rp => {
-            if (rp.targetX !== undefined) {
-                let rdx = rp.targetX - rp.x; let rdy = rp.targetY - rp.y;
-                let rDist = Math.sqrt(rdx * rdx + rdy * rdy);
-                let rSpeed = rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL;
-                if (rDist > rSpeed) {
-                    let rAngle = Math.atan2(rdy, rdx);
-                    rp.x += Math.cos(rAngle) * rSpeed; rp.y += Math.sin(rAngle) * rSpeed;
-                } else { rp.x = rp.targetX; rp.y = rp.targetY; }
-            }
-        });
+	        if (rp.targetX !== undefined) {
+	            let rdx = rp.targetX - rp.x; 
+	            let rdy = rp.targetY - rp.y;
+	            let rDist = Math.sqrt(rdx * rdx + rdy * rdy);
+	            
+	            // Apply dt to remote player movement speed
+	            let rSpeed = (rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL) * dt;
+	            
+	            if (rDist > rSpeed) {
+	                let rAngle = Math.atan2(rdy, rdx);
+	                rp.x += Math.cos(rAngle) * rSpeed; 
+	                rp.y += Math.sin(rAngle) * rSpeed;
+	            } else { 
+	                rp.x = rp.targetX; 
+	                rp.y = rp.targetY; 
+	            }
+	        }
+	    });
 
         // Heat & Prompt
         // Use destGridY for depth check so heat updates as we drill down, not after
         let depthY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
-        let depth = Math.max(0, depthY - 5);
-
-        let heatThreshold = 100 + (p.heatResist * 50);
-        if (depth > heatThreshold) {
-            p.temp += 0.05;
-            if (p.temp > 100) { p.temp = 100; p.hull -= 0.1; $('heat-overlay').style.opacity = (Math.sin(now() / 100) + 1) / 4 + 0.3; }
-        } else { p.temp = Math.max(0, p.temp - 0.2); $('heat-overlay').style.opacity = 0; }
+	    let depth = Math.max(0, depthY - 5);
+	    let heatThreshold = 100 + (p.heatResist * 50);
+	
+	    if (depth > heatThreshold) {
+	        p.temp += 0.05 * dt; // Scaled by dt
+	        if (p.temp > 100) { 
+	            p.temp = 100; 
+	            p.hull -= 0.1 * dt; // Scaled by dt
+	            $('heat-overlay').style.opacity = (Math.sin(Date.now() / 100) + 1) / 4 + 0.3; 
+	        }
+	    } else { 
+	        p.temp = Math.max(0, p.temp - 0.2 * dt); // Scaled by dt
+	        $('heat-overlay').style.opacity = 0; 
+	    }
 
         $('prompt-msg').style.display = 'none';
 
