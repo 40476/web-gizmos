@@ -744,17 +744,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Canvas‑based mining game with mobile D‑pad, action buttons, and UI overlays.</li>
-    <li>Procedurally generated world, custom texture system, sound engine, and admin/host logic.</li>
-    <li>Shop, inventory, chat, minimap, settings, save‑sync, and multi‑player via MQTT.</li>
+    <li>Procedural mining world with dynamic day/night cycle and fog‑of‑war.</li>
+    <li>Mobile‑friendly UI, custom textures, shop, inventory, trade, and admin host election.</li>
+    <li>Audio engine with separate volume controls, engine/drill sounds, and timer blips.</li>
   </ul>
 
   <pre>
     <code>const Game = new GameEngine();</code>
-    <code>Sound.init(); // starts audio context & music loop</code>
+    <code>Game.init();</code>
   </pre>
 
-  <p>The page creates a full‑screen canvas where the player mines tiles, builds structures, and interacts with remote players. UI components such as the HUD, shop modal, chat, and settings are rendered with CSS‑styled bevel borders and animated effects. The game handles map generation, player statistics, server sync, and audio through modular JavaScript classes.</p>
+  <p>This page creates a mining game where players navigate a procedurally generated map, mine ores, build structures, and trade items. The interface adapts to mobile controls, supports custom textures, and includes music, sound effects, and a host‑election system for multiplayer sessions.</p>
 </section>
           </div>
         </section>
