@@ -744,18 +744,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural world generation, mining, building, and multiplayer sync via MQTT.</li>
-    <li>Rich UI with customizable textures, HUD gauges, minimap, chat, admin controls and shop.</li>
-    <li>Audio engine, save system, cloud sync, and dynamic modals (prompt, confirm, form, trade).</li>
+    <li>Procedural underground world with mining, AOE, and explosives.</li>
+    <li>Full UI: touch controls, dashboard, shop, chat, server list, and admin panel.</li>
+    <li>Audio engine, custom texture loader, host‑election, cloud sync, and save system.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>Game.init();</code>
+    <code>Game.init()</code>
+    <code>Shop.buy(item)</code>
   </pre>
 
-  <p>This HTML implements a tile‑based mining game where players move, drill, place blocks and trade items over a network. It includes a full UI overlay, sound manager, texture handling, shop, admin panel and a modular modal system for prompts and forms. The game runs on a canvas with a configurable HUD, minimap and mobile controls. </p>
-</section>
+  <p>This HTML/JS game builds a 2‑D mining world using seeded terrain, lets players move, drill, and build items (including TNT/Nuke). It includes a responsive UI with touch controls, inventory, shop upgrades, chat, and admin features while handling multiplayer sync, host election, and cloud saves. The code also provides a sound manager, custom texture system, and configurable graphics settings.
           </div>
         </section>
       
