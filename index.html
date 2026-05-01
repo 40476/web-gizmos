@@ -744,17 +744,18 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural mining world with dynamic day/night cycle and fog‑of‑war.</li>
-    <li>Mobile‑friendly UI, custom textures, shop, inventory, trade, and admin host election.</li>
-    <li>Audio engine with separate volume controls, engine/drill sounds, and timer blips.</li>
+    <li>Implements a full‑screen mining game with procedural terrain, player stats, and admin host election.</li>
+    <li>Features custom UI elements: beveled buttons, modals, minimap, HUD gauges, mobile controls, and a settings panel.</li>
+    <li>Includes networking (MQTT), sound engine, save system, cloud sync, and a shop for upgrades and consumables.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>Game.init();</code>
+    <code>Game.init()</code>
+    <code>Shop.buy('drill')</code>
+    <code>Sound.playTimerBlip(urgency)</code>
   </pre>
 
-  <p>This page creates a mining game where players navigate a procedurally generated map, mine ores, build structures, and trade items. The interface adapts to mobile controls, supports custom textures, and includes music, sound effects, and a host‑election system for multiplayer sessions.</p>
+  <p>This HTML page creates a rich, canvas‑driven game where the player mines, builds, trades, and upgrades a vehicle while exploring a procedurally generated world. It handles single‑player and multiplayer modes, provides responsive mobile controls, and offers persistence through local and cloud saves.</p>
 </section>
           </div>
         </section>
