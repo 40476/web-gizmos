@@ -3846,15 +3846,14 @@ class GameEngine {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const currentTime = performance.now();
-        const dt = (currentTime - lastTime) / 16.66;
-        lastTime = currentTime;
-        const cameraTightness = 0.06; // 1 = instant, 0 = no movement
-        const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
-
-        this.camera.x += (this.localPlayer.x - this.camera.x) * cameraLerp;
-        this.camera.y += (this.localPlayer.y - this.camera.y) * cameraLerp;
-
-        let cx = this.canvas.width / 2;
+        const dt = (currentTime - this.lastTime) / 16.66;
+        this.lastTime = currentTime;
+        const cameraTightness = 0.06; 
+	    const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
+	    this.camera.x += (this.localPlayer.x - this.camera.x) * cameraLerp;
+	    this.camera.y += (this.localPlayer.y - this.camera.y) * cameraLerp;
+        
+		let cx = this.canvas.width / 2;
         let cy = this.canvas.height / 2;
 
         // Cache zoomed dimensions to avoid division in loops
@@ -4071,31 +4070,26 @@ class GameEngine {
         for(let i=0; i<remote.length; i++) this.drawPlayer(remote[i], false);
         this.drawPlayer(this.localPlayer, true);
 
-        // -------------------------------
-        // OPTIMIZATION: PARTICLE BATCHING
-        // -------------------------------
         if (this.particles.length > 0) {
-            // Since particles have different colors/alpha, we can't batch perfectly
-            // without grouping by color.
-            // However, we can use integer positions for sharper rendering.
-            for (let i = this.particles.length - 1; i >= 0; i--) {
-                let p = this.particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= 0.05;
-
-                if (p.life <= 0) {
-                    this.particles.splice(i, 1);
-                    continue;
-                }
-
-                this.ctx.globalAlpha = p.life;
-                this.ctx.fillStyle = p.color;
-                // Use bitwise OR for integer coordinates (faster/crisper)
-                this.ctx.fillRect(p.x | 0, p.y | 0, 4, 4);
-            }
-            this.ctx.globalAlpha = 1.0;
-        }
+	        for (let i = this.particles.length - 1; i >= 0; i--) {
+	            let p = this.particles[i];
+	            
+	            // Multiply movement and life decay by dt
+	            p.x += p.vx * dt;
+	            p.y += p.vy * dt;
+	            p.life -= 0.05 * dt; // Decay slower/faster based on frame speed
+	
+	            if (p.life <= 0) {
+	                this.particles.splice(i, 1);
+	                continue;
+	            }
+	
+	            this.ctx.globalAlpha = p.life;
+	            this.ctx.fillStyle = p.color;
+	            this.ctx.fillRect(p.x | 0, p.y | 0, 4, 4);
+	        }
+	        this.ctx.globalAlpha = 1.0;
+	    }
 
         this.drawLocalMinimap();
         this.ctx.resetTransform();
