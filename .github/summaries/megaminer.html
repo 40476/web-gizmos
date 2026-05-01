@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Procedural mining world with drill tiers, AOE, and explosions.</li>
-    <li>UI includes mobile controls, dashboard, shop, warp, and custom modal system.</li>
-    <li>Networking supports host election, sync, and trade via MQTT.</li>
+    <li>Creates a mining game with procedural terrain, inventory, and upgrades.</li>
+    <li>Supports mobile controls, custom textures, sound engine, and admin host election.</li>
+    <li>Provides UI modals for shop, settings, dashboard, warp, and notifications.</li>
   </ul>
 
   <pre>
-    <code>Game.init()</code>
-    <code>Shop.buy('drill')</code>
+    <code>GameEngine.init()</code>
+    <code>ShopSystem.buy(item)</code>
   </pre>
 
-  <p>This HTML page creates a 2‑D mining game called Mega Miner NG with a procedurally generated map, drilling mechanics, and a full UI for inventory, shop, and chat. It features multiplayer support through MQTT, host election, and a custom modal system for prompts, confirmations, and trade dialogs. The rendering pipeline uses canvas optimizations, weather effects, and adaptable gauge styles for both desktop and mobile layouts.</p>
+  <p>The page uses CSS variables for theming, a canvas for the world, and a set of HTML modals to handle gameplay actions. JavaScript defines the game loop, map generation, player physics, networking, and UI interactions while persisting player progress locally and via cloud sync. The system also includes a sound manager, custom texture loader, and host‑election logic for multiplayer sessions.</p>
 </section>
