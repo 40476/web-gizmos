@@ -6301,7 +6301,7 @@ class UIManager {
 
     toggleUpdateCheck(enabled) {
         GameConfig.set('SaveSystem.updateCheck', enabled);
-
+		
         if (enabled) {
             if (this.updateChecker) clearInterval(this.updateChecker);
             this.updateChecker = setInterval(() => this.checkForUpdates(), 60000);
@@ -7388,12 +7388,6 @@ const Admin = new AdminSystem();
 const Shop = new ShopSystem();
 const Cloud = new CloudManager();
 
-// Init Save System
-
-SaveSystem.init();
-
-
-
 // Expose
 window.Game = Game;
 window.UI = UI;
@@ -7404,10 +7398,12 @@ window.Cloud = Cloud;
 window.Input = Input;
 window.Sound = Sound;
 
-// JANK AUDIO FIX
+// Finish up
+SaveSystem.init();
 Sound.loadSettings()
-// bruh
 document.getElementById('credits').innerHTML = UI.generateCreditsHTML(creditsData);
+UI.toggleUpdateCheck(GameConfig.get('SaveSystem.updateCheck'));
+
 </script>
 </body>
 </html>
