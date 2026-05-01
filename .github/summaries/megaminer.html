@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Implements a mining game with procedural terrain, upgrades, chat, and multiplayer via MQTT.</li>
-    <li>Provides UI components: mobile controls, settings, shop, dashboard, warp, and custom modals.</li>
-    <li>Handles sound, cloud sync, host election, and custom texture loading.</li>
+    <li>Procedural world generator with ore tiers, mining speed scaling, and AOE mining.</li>
+    <li>Multiplayer sync via MQTT, host election, admin panel, chat, and trade modal.</li>
+    <li>Custom UI: gauges (multiple styles), station, minimap, modals, and texture importer.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>const Shop = new ShopSystem();</code>
+    <code>new GameEngine().init()</code>
+    <code>Shop.buy('drill')</code>
   </pre>
 
-  <p>This HTML page defines a full‑screen canvas game with rich UI overlays styled using CSS variables and bezels. JavaScript manages player movement, mining logic, upgrades, chat, server sync, and persistent saves, while a modular sound manager and custom modal system handle audio and user prompts. The code also supports mobile controls, custom textures, and automatic host election for multiplayer sessions.</p>
+  <p>This game creates a large tile map using seeded randomness, lets players mine, build, and trade resources, and synchronizes state over MQTT with host fallback logic. It includes a modular UI system for HUD gauges, inventory, shop upgrades, chat, and custom texture loading.</p>
 </section>
