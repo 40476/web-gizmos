@@ -744,17 +744,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Creates a mining game with procedural terrain, inventory, and upgrades.</li>
-    <li>Supports mobile controls, custom textures, sound engine, and admin host election.</li>
-    <li>Provides UI modals for shop, settings, dashboard, warp, and notifications.</li>
+    <li>Responsive UI with mobile controls, custom bevel borders, and a start/menu system.</li>
+    <li>Procedurally generated world, mining mechanics (including AOE), inventory, and a shop for upgrades.</li>
+    <li>Multiplayer support via MQTT, host‑election, sync, chat, and admin panel.</li>
   </ul>
 
   <pre>
-    <code>GameEngine.init()</code>
-    <code>ShopSystem.buy(item)</code>
+    <code>Game.init()</code>
+    <code>Shop.buy('drill')</code>
   </pre>
 
-  <p>The page uses CSS variables for theming, a canvas for the world, and a set of HTML modals to handle gameplay actions. JavaScript defines the game loop, map generation, player physics, networking, and UI interactions while persisting player progress locally and via cloud sync. The system also includes a sound manager, custom texture loader, and host‑election logic for multiplayer sessions.</p>
+  <p>This HTML/JS app creates a voxel‑style mining game with day/night cycles, heat management, and customizable textures. It includes a multiplayer layer with host‑migration, chat, and admin controls, while offering a rich UI for inventory, upgrades, and settings. All visuals use a CSS‑driven bevel style and adaptive layouts for desktop and mobile devices.</p>
 </section>
           </div>
         </section>
