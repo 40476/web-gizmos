@@ -1,15 +1,14 @@
 <section>
   <ul>
-    <li>Implements a full‑screen mining game with procedural terrain, player stats, and admin host election.</li>
-    <li>Features custom UI elements: beveled buttons, modals, minimap, HUD gauges, mobile controls, and a settings panel.</li>
-    <li>Includes networking (MQTT), sound engine, save system, cloud sync, and a shop for upgrades and consumables.</li>
+    <li>Procedural world generation, mining, building, and multiplayer sync via MQTT.</li>
+    <li>Rich UI with customizable textures, HUD gauges, minimap, chat, admin controls and shop.</li>
+    <li>Audio engine, save system, cloud sync, and dynamic modals (prompt, confirm, form, trade).</li>
   </ul>
 
   <pre>
-    <code>Game.init()</code>
-    <code>Shop.buy('drill')</code>
-    <code>Sound.playTimerBlip(urgency)</code>
+    <code>const Game = new GameEngine();</code>
+    <code>Game.init();</code>
   </pre>
 
-  <p>This HTML page creates a rich, canvas‑driven game where the player mines, builds, trades, and upgrades a vehicle while exploring a procedurally generated world. It handles single‑player and multiplayer modes, provides responsive mobile controls, and offers persistence through local and cloud saves.</p>
+  <p>This HTML implements a tile‑based mining game where players move, drill, place blocks and trade items over a network. It includes a full UI overlay, sound manager, texture handling, shop, admin panel and a modular modal system for prompts and forms. The game runs on a canvas with a configurable HUD, minimap and mobile controls. </p>
 </section>
