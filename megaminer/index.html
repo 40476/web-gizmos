@@ -1778,7 +1778,7 @@
                         <label style="font-size:var(--fs-base);" class="no-flex">
                             <input type="checkbox" id="mobile-toggle" onchange="Game.toggleMobile(this.checked, $('mobile-reversed').checked)">&nbsp;&nbsp;Enable Mobile Controls
                             <br><br>
-                            <input type="checkbox" id="toggle-isSingleplayer" onchange="setGamemode(this.checked)">&nbsp;&nbsp;Singleplayer
+                            <input type="checkbox" id="toggle-isSingleplayer" onchange="Game.setGamemode(this.checked)">&nbsp;&nbsp;Singleplayer
                         </label>
                     </div>
                     <button class="btn" onclick="Game.init()" id="startBtn">LAUNCH MISSION</button>
