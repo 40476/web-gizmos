@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue Grid Thing</title>
+    <script src="../shared/js/header.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1d2227;
+        }
+        
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <script>
+        /** * CONFIGURATION 
+         */
+        const CELL_SIZE = 10;
+        const BORDER_WIDTH = 2;
+        const MAX_ELECTRONS = 100;
+        const CELL_DISTANCE = CELL_SIZE + BORDER_WIDTH;
+        const BG_COLOR = '#1d2227';
+        const BORDER_COLOR = '#13191f';
+        const CELL_HIGHLIGHT = '#328bf6';
+        const ELECTRON_COLOR = '#00b07c'; // Default green, but we'll use blue for the effect
+        
+        const ACTIVE_ELECTRONS = [];
+        const PINNED_CELLS = [];
+        const MOVE_TRAILS = [[0, 1], [0, -1], [1, 0], [-1, 0]].map(([x, y]) => [x * CELL_DISTANCE, y * CELL_DISTANCE]);
+        const END_POINTS_OFFSET = [[0, 0], [0, 1], [1, 0], [1, 1]].map(([x, y]) => [
+            x * CELL_DISTANCE - BORDER_WIDTH / 2,
+            y * CELL_DISTANCE - BORDER_WIDTH / 2,
+        ]);
+        
+        /**
+         * UTILS
+         */
+        const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        /**
+         * CORE CLASSES
+         */
+        class FullscreenCanvas {
+            constructor() {
+                this.canvas = document.createElement('canvas');
+                this.context = this.canvas.getContext('2d');
+                this.adjust();
+                window.addEventListener('resize', () => this.adjust());
+            }
+        
+            adjust() {
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+                this.canvas.width = this.width * window.devicePixelRatio;
+                this.canvas.height = this.height * window.devicePixelRatio;
+                this.canvas.style.width = `${this.width}px`;
+                this.canvas.style.height = `${this.height}px`;
+                this.context.scale(window.devicePixelRatio, window.devicePixelRatio);
+            }
+        
+            blendBackground(sourceCanvas, opacity = 0.05) {
+                this.context.globalCompositeOperation = 'source-over';
+                this.context.globalAlpha = opacity;
+                this.context.drawImage(sourceCanvas, 0, 0, this.width, this.height);
+            }
+        
+            renderIntoView(target) {
+                this.canvas.style.position = 'absolute';
+                this.canvas.style.top = '0';
+                this.canvas.style.left = '0';
+                target.appendChild(this.canvas);
+            }
+        }
+        
+        class Electron {
+            constructor(x, y, options = {}) {
+                this.lifeTime = options.lifeTime || 1000;
+                this.expireAt = Date.now() + this.lifeTime;
+                this.speed = options.speed || 1;
+                this.color = options.color || ELECTRON_COLOR;
+                this.radius = BORDER_WIDTH / 2;
+                this.current = [x, y];
+                this.visited = {};
+                this.setDest(this.randomPath());
+            }
+        
+            randomPath() {
+                const [x, y] = this.current;
+                const [deltaX, deltaY] = MOVE_TRAILS[rand(0, MOVE_TRAILS.length - 1)];
+                return [x + deltaX, y + deltaY];
+            }
+        
+            setDest(dest) {
+                this.destination = dest;
+                this.visited[dest.join(',')] = true;
+            }
+        
+            next() {
+                let [curX, curY] = this.current;
+                let [destX, destY] = this.destination;
+        
+                if (Math.abs(curX - destX) <= this.speed / 2 && Math.abs(curY - destY) <= this.speed / 2) {
+                    this.setDest(this.randomPath());
+                }
+        
+                const dx = this.destination[0] - curX;
+                const dy = this.destination[1] - curY;
+                if (dx) this.current[0] += (dx / Math.abs(dx) * this.speed);
+                if (dy) this.current[1] += (dy / Math.abs(dy) * this.speed);
+        
+                return [...this.current];
+            }
+        
+            paintNextTo(ctx) {
+                const [x, y] = this.next();
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.expireAt - Date.now()) / this.lifeTime;
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = this.radius * 5;
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.beginPath();
+                ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        class Cell {
+            constructor(row, col, options = {}) {
+                this.background = options.background || CELL_HIGHLIGHT;
+                this.electronCount = options.electronCount || 2;
+                this.electronOptions = options.electronOptions || {};
+                this.startY = row * CELL_DISTANCE;
+                this.startX = col * CELL_DISTANCE;
+            }
+        
+            paintNextTo(ctx) {
+                this.createElectrons();
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.fillStyle = this.background;
+                ctx.fillRect(this.startX, this.startY, CELL_SIZE, CELL_SIZE);
+                ctx.restore();
+            }
+        
+            createElectrons() {
+                for (let i = 0; i < this.electronCount; i++) {
+                    if (ACTIVE_ELECTRONS.length >= MAX_ELECTRONS) return;
+                    const [ox, oy] = END_POINTS_OFFSET[rand(0, 3)];
+                    ACTIVE_ELECTRONS.push(new Electron(
+                        this.startX + ox,
+                        this.startY + oy,
+                        this.electronOptions
+                    ));
+                }
+            }
+        }
+        
+        /**
+         * INITIALIZATION & RENDER LOOP
+         */
+        const bgLayer = new FullscreenCanvas();
+        const mainLayer = new FullscreenCanvas();
+        mainLayer.renderIntoView(document.getElementById('canvas-container'));
+        
+        function drawGrid() {
+            const ctx = bgLayer.context;
+            ctx.fillStyle = BG_COLOR;
+            ctx.fillRect(0, 0, bgLayer.width, bgLayer.height);
+            ctx.fillStyle = BORDER_COLOR;
+        
+            for (let h = CELL_SIZE; h < bgLayer.height; h += CELL_DISTANCE) {
+                ctx.fillRect(0, h, bgLayer.width, BORDER_WIDTH);
+            }
+            for (let w = CELL_SIZE; w < bgLayer.width; w += CELL_DISTANCE) {
+                ctx.fillRect(w, 0, BORDER_WIDTH, bgLayer.height);
+            }
+        }
+        
+        function render() {
+            // This creates the "trailing" effect by slightly drawing the background over the last frame
+            mainLayer.blendBackground(bgLayer.canvas, 0.1);
+        
+            const now = Date.now();
+            for (let i = 0; i < ACTIVE_ELECTRONS.length; i++) {
+                const e = ACTIVE_ELECTRONS[i];
+                if (now >= e.expireAt) {
+                    ACTIVE_ELECTRONS.splice(i, 1);
+                    i--;
+                } else {
+                    e.paintNextTo(mainLayer.context);
+                }
+            }
+            requestAnimationFrame(render);
+        }
+        
+        // Interaction
+        window.addEventListener('mousemove', (e) => {
+            const i = Math.floor(e.clientY / CELL_DISTANCE);
+            const j = Math.floor(e.clientX / CELL_DISTANCE);
+            
+            const cell = new Cell(i, j, {
+                background: CELL_HIGHLIGHT,
+                electronCount: 1,
+                electronOptions: {
+                    speed: 3,
+                    lifeTime: 500,
+                    color: CELL_HIGHLIGHT
+                }
+            });
+            cell.paintNextTo(mainLayer.context);
+        });
+        
+        // Start
+        drawGrid();
+        render();
+    </script>
+</body>
+</html>
