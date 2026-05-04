@@ -744,17 +744,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural mining world with tiered ores, AOE mining, explosions, and custom textures.</li>
-    <li>Full UI: mobile controls, HUD gauges, inventory, shop, warp, admin panel, notifications.</li>
-    <li>Multiplayer via MQTT broker with host election, sync, trading, and autosave support.</li>
+    <li>Procedural mining world with tile‑based map, ores, and upgrades.</li>
+    <li>Multiplayer via MQTT with host election, chat, trading, and admin tools.</li>
+    <li>Custom UI: bevel borders, HUD gauges, minimap, modals, mobile‑control layout.</li>
   </ul>
 
   <pre>
-    <code>class GameEngine { … }</code>
-    <code>class ShopSystem { … }</code>
+    <code>Game.init()</code>
+    <code>Shop.buy('drill')</code>
   </pre>
 
-  <p>This HTML defines a mining game where players navigate a procedurally‑generated map, mine resources, build structures and trade with others via a broker. It includes configurable graphics, sound, mobile UI, custom texture support, and persistent save management.</p>
+  <p>This HTML creates a pixel‑styled mining game where players move, drill, build, and trade in a shared world. The script handles map generation, player physics, networking, UI rendering (HUD gauges, minimap, modals), and a shop system for upgrades and consumables. Mobile controls, custom textures, and a custom modal system are also provided.   </p>
 </section>
           </div>
         </section>
