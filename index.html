@@ -744,17 +744,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural mining world with tiles, ores, and custom textures.</li>
-    <li>Multiplayer sync, admin host election, chat, and trade system.</li>
-    <li>HUD gauges, shop, inventory, and explosion mechanics.</li>
+    <li>Procedural mining world with tiered ores, AOE mining, explosions, and custom textures.</li>
+    <li>Full UI: mobile controls, HUD gauges, inventory, shop, warp, admin panel, notifications.</li>
+    <li>Multiplayer via MQTT broker with host election, sync, trading, and autosave support.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>Sound.init();</code>
+    <code>class GameEngine { … }</code>
+    <code>class ShopSystem { … }</code>
   </pre>
 
-  <p>This web game creates a procedurally generated mining map where the player can move, drill, build, and manage resources. It supports multiplayer with host election, chat, and trading, while providing HUD gauges, a shop, inventory management, and visual effects like explosions and custom textures. The code also includes UI modals, settings, and autosave functionality.</p>
+  <p>This HTML defines a mining game where players navigate a procedurally‑generated map, mine resources, build structures and trade with others via a broker. It includes configurable graphics, sound, mobile UI, custom texture support, and persistent save management.</p>
 </section>
           </div>
         </section>
