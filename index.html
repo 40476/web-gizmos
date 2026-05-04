@@ -744,17 +744,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Manages game state, rendering, and UI for a mining game with mobile support.</li>
-    <li>Implements procedural map generation, custom texture loading, and upgrade/shop logic.</li>
-    <li>Handles player actions, networking, sound, and persistent save data.</li>
+    <li>Procedural world generation with depth‑based heat, ore rarity, and discoverable teleporters.</li>
+    <li>Rich UI: mobile controls, customizable HUD gauges, modals for shop, inventory, warp, settings, and custom texture loading.</li>
+    <li>Multiplayer sync via MQTT, host election, trade system, and admin panel for player management.</li>
   </ul>
 
   <pre>
-    <code>Game.init();</code>
-    <code>Shop.buy('drill');</code>
+    <code>Game.init()</code>
+    <code>Shop.buy(item)</code>
   </pre>
 
-  <p>This script initializes a multiplayer mining game, draws the world with procedural tiles, processes player input, and provides a UI for building, trading, and upgrades. It also includes sound management, cloud sync, and a custom modal system for prompts and forms. All features are controlled via configuration and runtime settings.</p>
+  <p>This web game creates an infinite mining world where players drill, build, and trade resources while managing fuel, hull, and heat. It supports both single‑player and synchronized multiplayer sessions, offers a shop for upgrades, and provides extensive UI controls and custom texture support. The system also handles host failover, auto‑saving, and cloud sync via Puter.</p>
 </section>
           </div>
         </section>
