@@ -6156,27 +6156,6 @@ class UIManager {
         }
     }
 
-    async randomizeName() {
-        try {
-            const btn = document.querySelector('button[title="Randomize"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '...';
-            btn.disabled = true;
-
-            const res = await fetch('https://randomuser.me/api?inc=login');
-            const data = await res.json();
-            const name = data.results[0].login.username;
-            $('start-username').value = name;
-
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        } catch(e) {
-            console.error(e);
-            UI.showToast("Failed to fetch name", "error");
-            document.querySelector('button[title="Randomize"]').disabled = false;
-        }
-    }
-
     // --- SERVER LIST LOGIC ---
     async refreshServerList() {
 
@@ -6305,6 +6284,7 @@ class UIManager {
     checkServerStatus(url) {
         const id = `status-${btoa(url).replace(/=/g,'')}`;
         const el = $(id);
+		let status = false;
         if(!el) return;
 
 
@@ -6318,12 +6298,23 @@ class UIManager {
                     ? `<span style="color:#2ecc71; font-weight:bold;">&#10003;</span>`
                     : `<span style="color:#e74c3c; font-weight:bold;">&#10007;</span>`;
             }
+			status = success;
             client.end();
         };
 
-        client.on('connect', () => {setStatus(true);clearTimeout(failedTimeout);});
-        client.on('error', () => setStatus(false));
-        client.on('close', () => {clearTimeout(failedTimeout);}); // silent
+        client.on('connect', () => {
+			setStatus(true);
+			clearTimeout(failedTimeout);
+		});
+        client.on('error', () => {
+			setStatus(false);
+		});
+        client.on('close', () => {
+			if (!status){
+				setStatus(false)
+			};
+			clearTimeout(failedTimeout);
+		}); // silent
 
     }
 
