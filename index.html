@@ -744,17 +744,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Implements a full‑screen miner game with procedural terrain, mining, building, and realtime multiplayer.</li>
-    <li>Features a modular UI: mobile controls, HUD gauges, minimap, chat, admin panel, shop, warp portal, settings and custom texture loading.</li>
-    <li>Includes sound engine, host election, autosave, cloud sync, and a custom modal system for prompts, confirmations, forms and trade dialogs.</li>
+    <li>Procedural mining world with tiles, ores, and custom textures.</li>
+    <li>Multiplayer sync, admin host election, chat, and trade system.</li>
+    <li>HUD gauges, shop, inventory, and explosion mechanics.</li>
   </ul>
 
   <pre>
     <code>const Game = new GameEngine();</code>
-    <code>const Sound = new SoundManager();</code>
+    <code>Sound.init();</code>
   </pre>
 
-  <p>This code creates a procedurally generated world where players mine resources with tiered drills, trade items, and purchase upgrades. The engine handles rendering, physics, networking, and UI interactions while allowing custom textures and persistent player progress.</p>
+  <p>This web game creates a procedurally generated mining map where the player can move, drill, build, and manage resources. It supports multiplayer with host election, chat, and trading, while providing HUD gauges, a shop, inventory management, and visual effects like explosions and custom textures. The code also includes UI modals, settings, and autosave functionality.</p>
 </section>
           </div>
         </section>
