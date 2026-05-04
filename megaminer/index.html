@@ -6165,52 +6165,60 @@ class UIManager {
 
     // --- SERVER LIST LOGIC ---
     async refreshServerList() {
-
-        if(puter.whoami && SaveSystem.cloudSyncEnabled){
-            SaveSystem.smartSyncAll(true,true);
-        } else {
-            console.warn("No puter user detected, skipping cloud sync.");
-        }
-
-        const list = $('server-list-sidebar');
-        list.innerHTML = '';
-
-        // Render helper
-        const renderItem = (url, isCustom) => {
-            const isActive = url === Game.settings.broker;
-            const item = document.createElement('div');
-            item.className = `server-list-item ${isActive ? 'active' : ''}`;
-
-            let buttonsHtml = '';
-            if(isCustom) {
-                buttonsHtml = `
-                    <div class="server-actions">
-                        <button class="btn btn-small" style="padding:2px 5px; background:#444; font-size: var(--fs-tiny); margin:0;" onclick="event.stopPropagation(); UI.editCustomServer('${url}')" title="Edit">&#9998;</button>
-                        <button class="btn btn-small" style="padding:2px 5px; background:#c0392b; font-size: var(--fs-tiny); margin:0;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')" title="Remove">&times;</button>
-                    </div>
-                `;
-            }
-
-            item.innerHTML = `
-                <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
-                    <div class="server-status-icon" id="status-${btoa(url).replace(/=/g,'')}"><div class="spin-loader"></div></div>
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
-                </div>
-                ${buttonsHtml}
-            `;
-            item.onclick = () => this.selectServer(url);
-            list.appendChild(item);
-            this.checkServerStatus(url);
-        };
-
-        // Render Defaults
-        this.defaultServers.forEach(url => renderItem(url, false));
-
-        // Render Custom
-        this.customServers.forEach(url => {
-            if(!this.defaultServers.includes(url)) renderItem(url, true);
-        });
-    }
+	    if (puter.whoami && SaveSystem.cloudSyncEnabled) {
+	        SaveSystem.smartSyncAll(true, true);
+	    }
+	
+	    const list = $('server-list-sidebar');
+	    // Optional: show a small loader in the sidebar while checking
+	    list.innerHTML = '<div class="loading-hint" style="padding:10px; font-size:10px; opacity:0.6;">Checking server availability...</div>';
+	
+	    const allPossibleServers = [...new Set([...this.defaultServers, ...this.customServers])];
+	
+	    // Check all statuses in parallel
+	    const statusResults = await Promise.all(
+	        allPossibleServers.map(async (url) => {
+	            const isOnline = await this.checkServerStatus(url);
+	            return { url, isOnline, isCustom: !this.defaultServers.includes(url) };
+	        })
+	    );
+	
+	    list.innerHTML = ''; // Clear loader
+	
+	    statusResults.forEach(({ url, isOnline, isCustom }) => {
+	        const isActive = url === Game.settings.broker;
+	        const item = document.createElement('div');
+	        
+	        // Add 'disabled' class if offline
+	        item.className = `server-list-item ${isActive ? 'active' : ''} ${!isOnline ? 'disabled' : ''}`;
+	
+	        let buttonsHtml = isCustom ? `
+	            <div class="server-actions">
+	                <button class="btn btn-small" onclick="event.stopPropagation(); UI.editCustomServer('${url}')" title="Edit">&#9998;</button>
+	                <button class="btn btn-small" style="background:#c0392b;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')" title="Remove">&times;</button>
+	            </div>` : '';
+	
+	        item.innerHTML = `
+	            <div style="display:flex; align-items:center; overflow:hidden; flex:1; ${!isOnline ? 'filter: grayscale(1); opacity: 0.5;' : ''}">
+	                <div class="server-status-icon">
+	                    ${isOnline ? '<span style="color:#2ecc71;">&#10003;</span>' : '<span style="color:#e74c3c;">&#10007;</span>'}
+	                </div>
+	                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
+	            </div>
+	            ${buttonsHtml}
+	        `;
+	
+	        // Only allow clicking if the server is online
+	        if (isOnline) {
+	            item.onclick = () => this.selectServer(url);
+	        } else {
+	            item.style.cursor = 'not-allowed';
+	            item.title = "Server is offline";
+	        }
+	
+	        list.appendChild(item);
+	    });
+	}
 
     async editCustomServer(oldUrl) {
         // --- MODAL REPLACEMENT ---
@@ -6288,48 +6296,33 @@ class UIManager {
         }
     }
 
-    checkServerStatus(url) {
-        const id = `status-${btoa(url).replace(/=/g,'')}`;
-        const el = $(id);
-		let status = false;
-        if(!el) return;
-
-
-        const client = mqtt.connect(url, { connectTimeout: 9500, reconnectPeriod: 0 });
-
-        let failedTimeout = setTimeout(() => { if(!client.connected) setStatus(false); }, 10000);
-
-        const setStatus = (success) => {
-            if(el) {
-                el.innerHTML = success
-                    ? `<span style="color:#2ecc71; font-weight:bold;">&#10003;</span>`
-                    : `<span style="color:#e74c3c; font-weight:bold;">&#10007;</span>`;
-            }
-			status = success;
-            client.end();
-        };
-
-        client.on('connect', () => {
-			setStatus(true);
-			clearTimeout(failedTimeout);
-		});
-        client.on('error', () => {
-			setStatus(false);
-		});
-        client.on('close', () => {
-			if (!status){
-				setStatus(false)
-			};
-			clearTimeout(failedTimeout);
-		}); // silent
-
-    }
-
-    checkServers() {
-        // idk
-        this.refreshServerList();
-    }
-
+    async checkServerStatus(url) {
+	    return new Promise((resolve) => {
+	        // Shorter timeout so the UI doesn't hang too long
+	        const client = mqtt.connect(url, { connectTimeout: 5000, reconnectPeriod: 0 });
+	        let finished = false;
+	
+	        const cleanup = (result) => {
+	            if (finished) return;
+	            finished = true;
+	            client.end(true); 
+	            resolve(result);
+	        };
+	
+	        const failTimeout = setTimeout(() => cleanup(false), 5500);
+	
+	        client.on('connect', () => {
+	            clearTimeout(failTimeout);
+	            cleanup(true);
+	        });
+	
+	        client.on('error', () => {
+	            clearTimeout(failTimeout);
+	            cleanup(false);
+	        });
+	    });
+	}
+	
     toggleUpdateCheck(enabled) {
         GameConfig.set('SaveSystem.updateCheck', enabled);
 		
