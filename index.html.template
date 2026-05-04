@@ -393,8 +393,15 @@
             <a class="launch-btn" href="{{ name }}/index.html">Initialize</a>
           </div>
           <h2 class="app-title">{{ name }}</h2>
+          
+          <div class="commit-log">
+            <small style="opacity: 0.6; font-family: monospace;">
+              LATEST_LOG: {{ data.commit }}
+            </small>
+          </div>
+        
           <div class="summary-content">
-            {{ summary | safe }}
+            {{ data.html | safe }}
           </div>
         </section>
       {% endfor %}
