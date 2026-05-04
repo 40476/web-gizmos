@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Creates a pixel‑art mining game with mobile D‑pad, action buttons, and a full UI overlay.</li>
-    <li>Implements procedural map generation, AOE mining, explosives, and a shop system for upgrades and consumables.</li>
-    <li>Handles multiplayer via MQTT, includes admin host election, cloud sync, and configurable settings.</li>
+    <li>Implements a full‑screen miner game with procedural terrain, mining, building, and realtime multiplayer.</li>
+    <li>Features a modular UI: mobile controls, HUD gauges, minimap, chat, admin panel, shop, warp portal, settings and custom texture loading.</li>
+    <li>Includes sound engine, host election, autosave, cloud sync, and a custom modal system for prompts, confirmations, forms and trade dialogs.</li>
   </ul>
 
   <pre>
-    <code>Game.init()</code>
-    <code>Shop.buy('drill')</code>
+    <code>const Game = new GameEngine();</code>
+    <code>const Sound = new SoundManager();</code>
   </pre>
 
-  <p>This HTML page defines a canvas‑based mining game with custom shaders, a beveled UI style, and responsive mobile controls. It includes sound synthesis, procedural terrain, player stats, a shop, and multiplayer synchronization. Settings, autosave, and cloud sync are configurable through the built‑in menu.</p>
+  <p>This code creates a procedurally generated world where players mine resources with tiered drills, trade items, and purchase upgrades. The engine handles rendering, physics, networking, and UI interactions while allowing custom textures and persistent player progress.</p>
 </section>
