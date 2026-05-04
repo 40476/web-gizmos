@@ -372,7 +372,7 @@
       <input id="search" type="text" placeholder="QUERY_MODULE..." autocomplete="off" />
     </div>
     <div class="nav-scroll-area" id="projectList">
-      {% for name, summary in applications.items() %}
+      {% for name, data in applications.items() %}
         <a class="nav-item" href="{{ name }}/index.html" data-name="{{ name }}">{{ name }}</a>
       {% endfor %}
     </div>
@@ -385,7 +385,7 @@
     </div>
 
     <div id="appContainer">
-      {% for name, summary in applications.items() %}
+      {% for name, data in applications.items() %}
         <section class="hud-card" id="card-{{ loop.index }}" data-name="{{ name }}">
           <div class="hud-texture"></div>
           <div class="card-header">
@@ -395,7 +395,7 @@
           <h2 class="app-title">{{ name }}</h2>
           
           <div class="commit-log">
-            <small style="opacity: 0.6; font-family: monospace;">
+            <small style="opacity: 0.6; font-family: var(--font-mono); display: block; margin: 10px 0;">
               LATEST_LOG: {{ data.commit }}
             </small>
           </div>
