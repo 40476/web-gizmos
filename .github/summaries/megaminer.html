@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Procedural mining world with depth‑based heat and ore tiers.</li>
-    <li>Responsive UI: mobile controls, HUD gauges, minimap, chat, shop, and admin panel.</li>
-    <li>Networking via MQTT for multiplayer, host election, and sync of map, players, and explosions.</li>
+    <li>Game canvas, UI overlay, mobile controls, and modals for dashboard, shop, warp, settings, and custom dialogs.</li>
+    <li>Procedural world generation, block mining, building, AOE mining, explosives, heat system, and player stats/upgrades.</li>
+    <li>Networking via MQTT, host election, inventory sync, chat, admin panel, save system, texture manager, and sound engine.</li>
   </ul>
 
   <pre>
-    <code>Game.init()</code>
-    <code>Shop.buy('drill')</code>
+    <code>const Game = new GameEngine();</code>
+    <code>Game.init();</code>
   </pre>
 
-  <p>A 2‑D mining game generates terrain using a seeded RNG, lets players move, drill, build, and trade items. The interface adapts to desktop or mobile, showing HUD gauges, a minimap, and various modals for inventory, shop, warp, and settings. Multiplayer syncs player state, map updates, and explosions through MQTT, with host failover and admin controls.</p>
+  <p>This is a browser‑based mining game with a tiled world, multiplayer sync, and extensive UI components. It supports desktop and mobile layouts, custom textures, and sound with configurable settings. Players can mine, build, trade, and manage upgrades through a shop and inventory system.</p>
 </section>
