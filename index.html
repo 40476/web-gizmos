@@ -862,16 +862,16 @@
           
           <div class="commit-log">
             <small style="opacity: 0.6; font-family: var(--font-mono); display: block; margin: 10px 0;">
-              LATEST_LOG: Refactor error sound handling in index.html
+              LATEST_LOG: add graphics quality condition for particle spawning (also new)
             </small>
           </div>
         
           <div class="summary-content">
             <section>
   <ul>
-    <li>Creates a high‑detail mining game with procedural terrain, custom textures, and multiplayer syncing.</li>
-    <li>Implements UI elements like gauges, modals, chat, and admin panel, plus mobile touch controls.</li>
-    <li>Provides a shop for upgrades, consumables, and explosives, plus save‑load and cloud sync.</li>
+    <li>Procedural mining world with tiles, ores, and customizable textures.</li>
+    <li>Multiplayer host election, chat, trading, and admin controls.</li>
+    <li>HUD gauges, shop, inventory, warp stations, and mobile touch UI.</li>
   </ul>
 
   <pre>
@@ -879,7 +879,7 @@
     <code>Shop.buy('drill')</code>
   </pre>
 
-  <p>This HTML page defines a browser‑based mining game called “Mega Miner NG”. It renders a large procedurally generated world on a canvas, supports movement, drilling, building, and explosives, and syncs player actions via MQTT. The UI includes touch‑friendly mobile controls, configurable settings, a shop, inventory dashboard, chat, and admin tools, while custom textures and sound are managed through modular systems. The code also handles saves, cloud sync, and a simple update checker. </p>
+  <p>This page builds a real‑time mining game where players move, drill, and build on a procedurally generated map. It handles networking, host election, UI overlays, sound, and customizable graphics while providing shop, inventory, and admin features. The code is organized into modular classes for the engine, sound, shop, and modal system.</p>
 </section>
           </div>
         </section>
