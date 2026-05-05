@@ -3604,7 +3604,6 @@ class GameEngine {
             Sound.playSuccess();
         } else {
             UI.showToast("Not enough of selected resource!", "error");
-            Sound.playError();
         }
     }
     async tryBuild(tx, ty) {
@@ -3641,7 +3640,6 @@ class GameEngine {
                 UI.updateDashboard();
             } else {
                 UI.showToast("Out of blocks!", "error");
-                Sound.playError();
             }
         }
     }
@@ -3785,13 +3783,11 @@ class GameEngine {
         let props = TILE_PROPS[tile];
         if (this.localPlayer.drillTier < props.tier) {
             UI.showToast(`Need Tier ${props.tier} Drill`, "error");
-            Sound.playError();
             return false;
         }
 
         if (this.localPlayer.cargo >= this.localPlayer.maxCargo) {
             UI.showToast("Cargo Full!", "error");
-            Sound.playError();
             return false;
         }
 
@@ -4882,7 +4878,6 @@ class ShopSystem {
             this.updateUI();
         } else {
             UI.showToast("Not enough money!", "error");
-            Sound.playError();
         }
     }
 
@@ -5048,7 +5043,6 @@ class ShopSystem {
             UI.updateDashboard(); // Ensure HUD updates immediately
         } else {
             UI.showToast("Not enough money!", "error");
-            Sound.playError();
         }
     }
 }
@@ -6118,6 +6112,7 @@ class UIManager {
         }
 
         // 3. Create New Toast
+		
         const el = document.createElement('div');
         el.className = `toast ${type}`;
         el.innerText = msg;
@@ -6125,7 +6120,11 @@ class UIManager {
 
         // Track this as the new "last toast"
         this.lastToast = { msg: msg, element: el, count: 1 };
-
+		
+		if (type==='error'){
+			Sound.playError();
+		}
+		
         // 4. Handle Removal & Queue
         setTimeout(() => {
             // Only trigger queue if this specific element is being removed
