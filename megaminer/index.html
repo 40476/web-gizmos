@@ -3353,7 +3353,7 @@ class GameEngine {
             // Look at the destination tile
             const tileType = this.map[destGridY]?.[destGridX];
             currentHardness = TILE_PROPS[tileType]?.hardness || 1;
-			if(this.settings.graphicsQuality=>3){
+			if(this.settings.graphicsQuality>==3){
 				this.spawnParticle(destGridX,destGridY, TILE_PROPS[tileType]?.color, 5);
 			}
         }
