@@ -869,17 +869,17 @@
           <div class="summary-content">
             <section>
   <ul>
-    <li>Pixel‑perfect UI with mobile controls, rounded “bevel” panels, and dynamic HUD gauges.</li>
-    <li>Procedural mining world, tiered drills, AOE mining, explosives, and a teleporter network.</li>
-    <li>Multiplayer sync via MQTT, admin host election, cloud save system, and in‑game shop.</li>
+    <li>Procedural mining world with depth‑based heat and ore tiers.</li>
+    <li>Responsive UI: mobile controls, HUD gauges, minimap, chat, shop, and admin panel.</li>
+    <li>Networking via MQTT for multiplayer, host election, and sync of map, players, and explosions.</li>
   </ul>
 
   <pre>
-    <code>Game.init();</code>
-    <code>Shop.buy('drill');</code>
+    <code>Game.init()</code>
+    <code>Shop.buy('drill')</code>
   </pre>
 
-  <p>This code creates a mining game where players move on a procedurally generated map, mine resources with tier‑based drills, and interact via a synchronized multiplayer layer. The UI includes mobile‑friendly controls, configurable gauges, and a shop for upgrades and consumables, while the networking layer manages host election, state sync, and cloud saves.</p>
+  <p>A 2‑D mining game generates terrain using a seeded RNG, lets players move, drill, build, and trade items. The interface adapts to desktop or mobile, showing HUD gauges, a minimap, and various modals for inventory, shop, warp, and settings. Multiplayer syncs player state, map updates, and explosions through MQTT, with host failover and admin controls.</p>
 </section>
           </div>
         </section>
