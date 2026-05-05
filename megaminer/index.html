@@ -8,11 +8,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Mega Miner NG</title>
-	
+
     <script src="../shared/js/header.js"></script>
     <script src="../shared/js/mqtt.min.js"></script>
     <script src="../shared/js/puter-v2.min.js"></script>
-    
+
     <style>
         @import url('font/fonts.css');
 
@@ -160,19 +160,19 @@
             display: none;
         }
 
-		#mobile-controls .d-pad {
-		    order: 1;
-		}
-		#mobile-controls .action-pad {
-		    order: 2;
-		}
-		
-		#mobile-controls.reversed .d-pad {
-		    order: 2;
-		}
-		#mobile-controls.reversed .action-pad {
-		    order: 1;
-		}
+        #mobile-controls .d-pad {
+            order: 1;
+        }
+        #mobile-controls .action-pad {
+            order: 2;
+        }
+
+        #mobile-controls.reversed .d-pad {
+            order: 2;
+        }
+        #mobile-controls.reversed .action-pad {
+            order: 1;
+        }
 
         /* --- MOBILE LAYOUTS --- */
         @media (orientation: portrait) {
@@ -200,7 +200,7 @@
                 bottom: calc(var(--control-height) + 20px);
             }
         }
-		
+
         @media (orientation: landscape) {
             body.mobile-mode #mobile-controls {
                 position: fixed;
@@ -1075,11 +1075,11 @@
         ::-ms-tooltip {
             display: none;
         }
-        
+
         input[type="text"]{
             font-size: var(--fs-base);
         }
-        
+
         input[type="checkbox"]{
             appearance:none;
             width:40px;
@@ -1646,7 +1646,7 @@
 <body>
 
     <canvas id="gameCanvas" class="noaliasing"></canvas>
-    
+
     <div id="mobile-controls">
         <div class="d-pad">
             <div class="d-btn d-up" data-key="up">&#8593;</div>
@@ -2964,11 +2964,11 @@ class GameEngine {
         if ($('start-room'))              $('start-room').value              = this.settings.room;
         if ($('start-color'))             $('start-color').value             = this.settings.color;
         if ($('setting-broker'))          $('setting-broker').value          = this.settings.broker;
-		if ($('toggle-isSingleplayer'))   $('toggle-isSingleplayer').checked = this.settings.gamemode;
-		if ($('mobile-reversed'))         $('mobile-reversed').checked       = this.settings.controlsReversed;
-		if ($('mobile-setting-toggle'))   $('mobile-setting-toggle').checked = this.settings.mobileMode;
+        if ($('toggle-isSingleplayer'))   $('toggle-isSingleplayer').checked = this.settings.gamemode;
+        if ($('mobile-reversed'))         $('mobile-reversed').checked       = this.settings.controlsReversed;
+        if ($('mobile-setting-toggle'))   $('mobile-setting-toggle').checked = this.settings.mobileMode;
         if ($('mobile-toggle'))           $('mobile-toggle').checked         = this.settings.mobileMode;
-		
+
         // 3. Handle Toggles & Logic-Driven UI
         // Coordinates
         const showCoords = this.settings.showCoords || false;
@@ -2983,33 +2983,33 @@ class GameEngine {
         console.log("UI Settings synchronized from Config.");
     }
 
-	setGamemode(mode) {
+    setGamemode(mode) {
         $('toggle-isSingleplayer').checked = mode
         GameConfig.set('PlayerSettings.gamemode', mode);
     }
-	
+
     toggleMobile(enabled, reversed) {
         this.isMobile = enabled;
         GameConfig.set('PlayerSettings.mobileMode', enabled);
-		GameConfig.set('PlayerSettings.controlsReversed', reversed);
+        GameConfig.set('PlayerSettings.controlsReversed', reversed);
         $('mobile-reversed').checked = reversed;
-		$('mobile-setting-toggle').checked = this.isMobile;
+        $('mobile-setting-toggle').checked = this.isMobile;
         $('mobile-toggle').checked = this.isMobile;
         if (enabled && this.running) {
             document.body.classList.add('mobile-mode');
 
-			// Reversed controls support
-			if (reversed){
-				$('mobile-controls').classList.add('reversed');
-			} else {
-				$('mobile-controls').classList.remove('reversed');
-			}
-			
+            // Reversed controls support
+            if (reversed){
+                $('mobile-controls').classList.add('reversed');
+            } else {
+                $('mobile-controls').classList.remove('reversed');
+            }
+
             // Auto-minimize chat when entering mobile mode
             $('chat-container').classList.add('minimized');
         } else {
             document.body.classList.remove('mobile-mode');
-			$('mobile-controls').classList.remove('reversed');
+            $('mobile-controls').classList.remove('reversed');
             $('chat-container').classList.remove('minimized');
         }
         this.resize();
@@ -3182,7 +3182,7 @@ class GameEngine {
         this.logConnection(`Local stats loaded`);
 
         const mobile = this.settings.mobileMode || false;
-		const controlsReversed = this.settings.controlsReversed || false
+        const controlsReversed = this.settings.controlsReversed || false
         this.toggleMobile(mobile, controlsReversed);
         this.logConnection(`Mobile mode set to: ` + mobile);
 
@@ -3257,13 +3257,13 @@ class GameEngine {
 
             this.loop();
             UI.showToast("Welcome. E for Menu/Shop. B to Build. F to Transfer.", "info", 6000);
-		 
-			// Mobile Mode
-	        const mobile = this.settings.mobileMode || false;
-			const controlsReversed = this.settings.controlsReversed || false
-	        this.toggleMobile(mobile, controlsReversed);
-            
-			Network.broadcastMove();
+
+            // Mobile Mode
+            const mobile = this.settings.mobileMode || false;
+            const controlsReversed = this.settings.controlsReversed || false
+            this.toggleMobile(mobile, controlsReversed);
+
+            Network.broadcastMove();
         }, 1000);
     }
 
@@ -3329,11 +3329,11 @@ class GameEngine {
     update() {
         if (!this.running) return;
 
-		const currentTime = performance.now();
-	    if (!this.lastUpdateTime) this.lastUpdateTime = currentTime;
-	    const dt = Math.min(currentTime - this.lastUpdateTime, 100) / 16.66;
-	    this.lastUpdateTime = currentTime;
-		
+        const currentTime = performance.now();
+        if (!this.lastUpdateTime) this.lastUpdateTime = currentTime;
+        const dt = Math.min(currentTime - this.lastUpdateTime, 100) / 16.66;
+        this.lastUpdateTime = currentTime;
+
         const p = this.localPlayer;
         const TS = CONSTANTS.TILE_SIZE;
 
@@ -3353,9 +3353,6 @@ class GameEngine {
             // Look at the destination tile
             const tileType = this.map[destGridY]?.[destGridX];
             currentHardness = TILE_PROPS[tileType]?.hardness || 1;
-			if(this.settings.graphicsQuality>=3){
-				this.spawnParticle(destGridX,destGridY, TILE_PROPS[tileType]?.color, 5);
-			}
         }
 
         // --- 3. CALCULATE SPEED (With Drill Tier) ---
@@ -3366,18 +3363,21 @@ class GameEngine {
 
         // Determine final movement speed
         let baseSpeed = Math.min(p.fuel > 0 ? (p.isDrilling ? (this.map[destGridY]?.[destGridX] !== 0 ? drillSpeed : CONSTANTS.SPEED_NORMAL) : CONSTANTS.SPEED_NORMAL) : 0.3, CONSTANTS.SPEED_NORMAL);
-		
-		// TIME-ADJUSTED SPEED
-		let moveStep = Math.min(baseSpeed, CONSTANTS.SPEED_NORMAL) * dt;
-		
+
+        // TIME-ADJUSTED SPEED
+        let moveStep = Math.min(baseSpeed, CONSTANTS.SPEED_NORMAL) * dt;
+
+        p.movementSpeed = 0
+
         let isMoving = false;
 
         // --- 4. MOVEMENT LOOP ---
         if (dist > moveStep) {
-	        let angle = Math.atan2(dy, dx);
-	        p.x += Math.cos(angle) * moveStep;
-	        p.y += Math.sin(angle) * moveStep;
-	        isMoving = true;
+            let angle = Math.atan2(dy, dx);
+            p.x += Math.cos(angle) * moveStep;
+            p.y += Math.sin(angle) * moveStep;
+            p.movementSpeed = baseSpeed
+            isMoving = true;
         } else {
             // --- 5. ARRIVAL & EXECUTION ---
             p.x = targetX;
@@ -3485,42 +3485,42 @@ class GameEngine {
 
         // Remote Interpolation
         Object.values(this.remotePlayers).forEach(rp => {
-	        if (rp.targetX !== undefined) {
-	            let rdx = rp.targetX - rp.x; 
-	            let rdy = rp.targetY - rp.y;
-	            let rDist = Math.sqrt(rdx * rdx + rdy * rdy);
-	            
-	            // Apply dt to remote player movement speed
-	            let rSpeed = (rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL) * dt;
-	            
-	            if (rDist > rSpeed) {
-	                let rAngle = Math.atan2(rdy, rdx);
-	                rp.x += Math.cos(rAngle) * rSpeed; 
-	                rp.y += Math.sin(rAngle) * rSpeed;
-	            } else { 
-	                rp.x = rp.targetX; 
-	                rp.y = rp.targetY; 
-	            }
-	        }
-	    });
+            if (rp.targetX !== undefined) {
+                let rdx = rp.targetX - rp.x;
+                let rdy = rp.targetY - rp.y;
+                let rDist = Math.sqrt(rdx * rdx + rdy * rdy);
+
+                // Apply dt to remote player movement speed
+                let rSpeed = (rp.isDrilling ? CONSTANTS.SPEED_DRILL : CONSTANTS.SPEED_NORMAL) * dt;
+
+                if (rDist > rSpeed) {
+                    let rAngle = Math.atan2(rdy, rdx);
+                    rp.x += Math.cos(rAngle) * rSpeed;
+                    rp.y += Math.sin(rAngle) * rSpeed;
+                } else {
+                    rp.x = rp.targetX;
+                    rp.y = rp.targetY;
+                }
+            }
+        });
 
         // Heat & Prompt
         // Use destGridY for depth check so heat updates as we drill down, not after
         let depthY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
-	    let depth = Math.max(0, depthY - 5);
-	    let heatThreshold = 100 + (p.heatResist * 50);
-	
-	    if (depth > heatThreshold) {
-	        p.temp += 0.05 * dt; // Scaled by dt
-	        if (p.temp > 100) { 
-	            p.temp = 100; 
-	            p.hull -= 0.1 * dt; // Scaled by dt
-	            $('heat-overlay').style.opacity = (Math.sin(Date.now() / 100) + 1) / 4 + 0.3; 
-	        }
-	    } else { 
-	        p.temp = Math.max(0, p.temp - 0.2 * dt); // Scaled by dt
-	        $('heat-overlay').style.opacity = 0; 
-	    }
+        let depth = Math.max(0, depthY - 5);
+        let heatThreshold = 100 + (p.heatResist * 50);
+
+        if (depth > heatThreshold) {
+            p.temp += 0.05 * dt; // Scaled by dt
+            if (p.temp > 100) {
+                p.temp = 100;
+                p.hull -= 0.1 * dt; // Scaled by dt
+                $('heat-overlay').style.opacity = (Math.sin(Date.now() / 100) + 1) / 4 + 0.3;
+            }
+        } else {
+            p.temp = Math.max(0, p.temp - 0.2 * dt); // Scaled by dt
+            $('heat-overlay').style.opacity = 0;
+        }
 
         $('prompt-msg').style.display = 'none';
 
@@ -3871,9 +3871,31 @@ class GameEngine {
         }
     }
 
-    spawnParticle(x, y, color, count) {
-        for(let i=0; i<count; i++) {
-            this.particles.push({x, y, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 1.0, color});
+    spawnParticle(x, y, color, options = 5) {
+        // If 'options' is a number, treat it as the count for a default burst
+        if (typeof options === 'number') {
+            for (let i = 0; i < options; i++) {
+                this.particles.push({
+                    x,
+                    y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    life: 1.0,
+                    color
+                });
+            }
+        }
+        // If 'options' is an object, spawn a single specific particle
+        else if (typeof options === 'object') {
+            this.particles.push({
+                x,
+                y,
+                vx: options.vx ?? (Math.random() - 0.5) * 6,
+                vy: options.vy ?? (Math.random() - 0.5) * 6,
+                life: options.life ?? 1.0,
+                size: options.size ?? 2, // Optional: support custom sizes
+                color
+            });
         }
     }
 
@@ -3885,7 +3907,7 @@ class GameEngine {
         // set, because otherwise you get stuck in death loop
         this.localPlayer.nextGridY = this.localPlayer.gridY;
         this.localPlayer.nextGridX = this.localPlayer.gridX;
-	    this.localPlayer.depth = 0;
+        this.localPlayer.depth = 0;
         this.localPlayer.x = this.localPlayer.gridX * CONSTANTS.TILE_SIZE;
         this.localPlayer.y = this.localPlayer.gridY * CONSTANTS.TILE_SIZE;
         this.localPlayer.hull = this.localPlayer.maxHull;
@@ -3909,17 +3931,17 @@ class GameEngine {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const currentTime = performance.now();
-		
-		if (!this.lastTime) this.lastTime = currentTime;
-		
+
+        if (!this.lastTime) this.lastTime = currentTime;
+
         const dt = (currentTime - this.lastTime) / 16.66;
         this.lastTime = currentTime;
-        const cameraTightness = 0.06; 
-	    const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
-	    this.camera.x += (this.localPlayer.x - this.camera.x) * cameraLerp;
-	    this.camera.y += (this.localPlayer.y - this.camera.y) * cameraLerp;
-        
-		let cx = this.canvas.width / 2;
+        const cameraTightness = 0.06;
+        const cameraLerp = 1 - Math.pow(1 - cameraTightness, dt);
+        this.camera.x += (this.localPlayer.x - this.camera.x) * cameraLerp;
+        this.camera.y += (this.localPlayer.y - this.camera.y) * cameraLerp;
+
+        let cx = this.canvas.width / 2;
         let cy = this.canvas.height / 2;
 
         // Cache zoomed dimensions to avoid division in loops
@@ -4137,25 +4159,25 @@ class GameEngine {
         this.drawPlayer(this.localPlayer, true);
 
         if (this.particles.length > 0) {
-	        for (let i = this.particles.length - 1; i >= 0; i--) {
-	            let p = this.particles[i];
-	            
-	            // Multiply movement and life decay by dt
-	            p.x += p.vx * dt;
-	            p.y += p.vy * dt;
-	            p.life -= 0.05 * dt; // Decay slower/faster based on frame speed
-	
-	            if (p.life <= 0) {
-	                this.particles.splice(i, 1);
-	                continue;
-	            }
-	
-	            this.ctx.globalAlpha = p.life;
-	            this.ctx.fillStyle = p.color;
-	            this.ctx.fillRect(p.x | 0, p.y | 0, 4, 4);
-	        }
-	        this.ctx.globalAlpha = 1.0;
-	    }
+            for (let i = this.particles.length - 1; i >= 0; i--) {
+                let p = this.particles[i];
+
+                // Multiply movement and life decay by dt
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= 0.05 * dt; // Decay slower/faster based on frame speed
+
+                if (p.life <= 0) {
+                    this.particles.splice(i, 1);
+                    continue;
+                }
+
+                this.ctx.globalAlpha = p.life;
+                this.ctx.fillStyle = p.color;
+                this.ctx.fillRect(p.x | 0, p.y | 0, 4, 4);
+            }
+            this.ctx.globalAlpha = 1.0;
+        }
 
         this.drawLocalMinimap();
         this.ctx.resetTransform();
@@ -4460,23 +4482,111 @@ class GameEngine {
 
     drawPlayer(p, isLocal) {
         let size = CONSTANTS.TILE_SIZE;
-        let cx = p.x + size/2; let cy = p.y + size/2;
-        this.ctx.save(); this.ctx.translate(cx, cy); this.ctx.rotate(p.rotation || 0);
+        let cx = p.x + size / 2;
+        let cy = p.y + size / 2;
+        let time = now();
+
+        this.ctx.save();
+        this.ctx.translate(cx, cy);
+        this.ctx.rotate(p.rotation || 0);
+
         let color = isLocal ? this.settings.color : (p.color || '#fff');
 
-        this.ctx.fillStyle = color; this.ctx.fillRect(-12, -12, 24, 24);
-        this.ctx.strokeStyle = '#111'; this.ctx.lineWidth = 2; this.ctx.strokeRect(-12, -12, 24, 24);
-        this.ctx.fillStyle = '#bdc3c7';
-        let drillOffset = (p.isDrilling && now() % 200 > 100) ? 2 : 0;
-        this.ctx.beginPath(); this.ctx.moveTo(-6, 12); this.ctx.lineTo(0, 20 + drillOffset); this.ctx.lineTo(6, 12); this.ctx.fill();
-        this.ctx.fillStyle = '#2c3e50'; this.ctx.fillRect(-16, -10, 4, 20); this.ctx.fillRect(12, -10, 4, 20);
-        this.ctx.fillStyle = '#3498db'; this.ctx.fillRect(-6, -6, 12, 8);
-        if (!isLocal) {
-            this.ctx.rotate(-p.rotation); this.ctx.fillStyle = '#fff'; this.ctx.font = UI.getFontSize('--fs-md') + ' Geo'; this.ctx.textAlign = 'center';
-            this.ctx.shadowColor="black"; this.ctx.shadowBlur=2;
-            this.ctx.fillText(p.username || "Unknown", 0, -20);
-            this.ctx.shadowBlur=0;
+        // 1. TREADS (Always Visible)
+        this.ctx.fillStyle = '#2c3e50';
+        this.ctx.fillRect(-16, -10, 4, 20);
+        this.ctx.fillRect(12, -10, 4, 20);
+
+        // Calculate movement for treads (only move if velocity exists)
+        let velocity = Math.sqrt((p.movementSpeed || 0)**2 + (p.movementSpeed || 0)**2);
+        // Use a persistent offset if your player object stores one,
+        // otherwise time-based works if they are currently moving:
+        let treadOffset = (velocity > 0.1) ? (time / 50) % 10 : 0;
+
+        this.ctx.strokeStyle = '#1a252f';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([4, 4]);
+        this.ctx.lineDashOffset = -treadOffset;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(-14, -10); this.ctx.lineTo(-14, 10);
+        this.ctx.moveTo(14, -10); this.ctx.lineTo(14, 10);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+
+        // 2. MAIN BODY
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(-12, -12, 24, 24);
+        this.ctx.strokeStyle = '#111';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(-12, -12, 24, 24);
+
+        // 3. DRILL
+        let tipDistance = 20;
+        let drillOffset = (p.isDrilling && time % 200 > 100) ? 2 : 0;
+        let totalTipDistance = tipDistance + drillOffset;
+
+        if (p.isDrilling && this.settings.graphicsQuality >= 3) {
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = '#e67e22';
         }
+
+        this.ctx.fillStyle = '#bdc3c7';
+        this.ctx.beginPath();
+        this.ctx.moveTo(-6, 12);
+        this.ctx.lineTo(0, totalTipDistance);
+        this.ctx.lineTo(6, 12);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        // Drill Screw Lines (Always visible, only animate if drilling)
+        if (this.settings.graphicsQuality >= 3) {
+            this.ctx.strokeStyle = '#7f8c8d';
+            this.ctx.lineWidth = 1;
+
+            // If not drilling, the shift stays at 0 (paused)
+            let screwShift = p.isDrilling ? (time / 30) % 8 : 0;
+
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.moveTo(-6, 12); this.ctx.lineTo(0, totalTipDistance); this.ctx.lineTo(6, 12);
+            this.ctx.clip();
+
+            for(let i = -1; i < 5; i++) {
+                let ly = 10 + (i * 4) + screwShift;
+                this.ctx.beginPath();
+                this.ctx.moveTo(-6, ly);
+                this.ctx.lineTo(6, ly - 4);
+                this.ctx.stroke();
+            }
+            this.ctx.restore();
+        }
+
+        // 4. COCKPIT & PARTICLES
+        this.ctx.fillStyle = '#3498db';
+        this.ctx.fillRect(-6, -6, 12, 8);
+
+        if (this.settings.graphicsQuality >= 3 && p.isDrilling && Math.random() > 0.8) {
+            let rot = p.rotation || 0;
+            let tipWorldX = cx - (totalTipDistance * Math.sin(rot));
+            let tipWorldY = cy + (totalTipDistance * Math.cos(rot));
+            let destGridX = (p.nextGridX !== undefined) ? p.nextGridX : p.gridX;
+            let destGridY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
+            const tileColor = TILE_PROPS[this.map[destGridY]?.[destGridX]]?.color || '#888';
+            this.spawnParticle(tipWorldX, tipWorldY, tileColor, 5);
+        }
+
+        if (!isLocal) {
+            this.ctx.rotate(-p.rotation);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = UI.getFontSize('--fs-md') + ' Geo';
+            this.ctx.textAlign = 'center';
+            this.ctx.shadowColor = "black";
+            this.ctx.shadowBlur = 2;
+            this.ctx.fillText(p.username || "Unknown", 0, -20);
+            this.ctx.shadowBlur = 0;
+        }
+
         this.ctx.restore();
     }
 
@@ -6115,7 +6225,7 @@ class UIManager {
         }
 
         // 3. Create New Toast
-		
+
         const el = document.createElement('div');
         el.className = `toast ${type}`;
         el.innerText = msg;
@@ -6123,11 +6233,11 @@ class UIManager {
 
         // Track this as the new "last toast"
         this.lastToast = { msg: msg, element: el, count: 1 };
-		
-		if (type==='error'){
-			Sound.playError();
-		}
-		
+
+        if (type==='error'){
+            Sound.playError();
+        }
+
         // 4. Handle Removal & Queue
         setTimeout(() => {
             // Only trigger queue if this specific element is being removed
@@ -6167,49 +6277,49 @@ class UIManager {
 
     // --- SERVER LIST LOGIC ---
     async refreshServerList() {
-	    if (puter.whoami && SaveSystem.cloudSyncEnabled) {
-	        SaveSystem.smartSyncAll(true, true);
-	    }
-	
-	    const list = $('server-list-sidebar');
-	    list.innerHTML = '';
-	
-	    const renderItem = (url, isCustom) => {
-	        const isActive = url === Game.settings.broker;
-	        const item = document.createElement('div');
-	        const safeId = btoa(url).replace(/=/g,'');
-	        
-	        item.className = `server-list-item ${isActive ? 'active' : ''}`;
-	        item.id = `item-${safeId}`; // ID for the whole row
-	
-	        let buttonsHtml = isCustom ? `
-	            <div class="server-actions">
-	                <button class="btn btn-small" onclick="event.stopPropagation(); UI.editCustomServer('${url}')">&#9998;</button>
-	                <button class="btn btn-small" style="background:#c0392b;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')">&times;</button>
-	            </div>` : '';
-	
-	        item.innerHTML = `
-	            <div style="display:flex; align-items:center; overflow:hidden; flex:1;" id="wrapper-${safeId}">
-	                <div class="server-status-icon" id="status-${safeId}">
-	                    <div class="spin-loader"></div>
-	                </div>
-	                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
-	            </div>
-	            ${buttonsHtml}
-	        `;
-	
-	        item.onclick = () => this.selectServer(url);
-	        list.appendChild(item);
-	
-	        // Fire and forget: check status in background
-	        this.checkServerStatus(url);
-	    };
-	
-	    this.defaultServers.forEach(url => renderItem(url, false));
-	    this.customServers.forEach(url => {
-	        if (!this.defaultServers.includes(url)) renderItem(url, true);
-	    });
-	}
+        if (puter.whoami && SaveSystem.cloudSyncEnabled) {
+            SaveSystem.smartSyncAll(true, true);
+        }
+
+        const list = $('server-list-sidebar');
+        list.innerHTML = '';
+
+        const renderItem = (url, isCustom) => {
+            const isActive = url === Game.settings.broker;
+            const item = document.createElement('div');
+            const safeId = btoa(url).replace(/=/g,'');
+
+            item.className = `server-list-item ${isActive ? 'active' : ''}`;
+            item.id = `item-${safeId}`; // ID for the whole row
+
+            let buttonsHtml = isCustom ? `
+                <div class="server-actions">
+                    <button class="btn btn-small" onclick="event.stopPropagation(); UI.editCustomServer('${url}')">&#9998;</button>
+                    <button class="btn btn-small" style="background:#c0392b;" onclick="event.stopPropagation(); UI.removeCustomServer('${url}')">&times;</button>
+                </div>` : '';
+
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; overflow:hidden; flex:1;" id="wrapper-${safeId}">
+                    <div class="server-status-icon" id="status-${safeId}">
+                        <div class="spin-loader"></div>
+                    </div>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:5px;" title="${url}">${url}</span>
+                </div>
+                ${buttonsHtml}
+            `;
+
+            item.onclick = () => this.selectServer(url);
+            list.appendChild(item);
+
+            // Fire and forget: check status in background
+            this.checkServerStatus(url);
+        };
+
+        this.defaultServers.forEach(url => renderItem(url, false));
+        this.customServers.forEach(url => {
+            if (!this.defaultServers.includes(url)) renderItem(url, true);
+        });
+    }
 
     async editCustomServer(oldUrl) {
         // --- MODAL REPLACEMENT ---
@@ -6236,21 +6346,21 @@ class UIManager {
     }
 
     selectServer(url) {
-	    const id = `status-${btoa(url).replace(/=/g,'')}`;
-	    const el = $(id);
-	    
-	    // Prevent selection if the element is marked as offline
-	    if (el && el.dataset.offline === "true") {
-	        this.showToast("Server is offline.", "error");
-	        return;
-	    }
-	
-	    Game.settings.broker = url;
-	    localStorage.setItem('mm_broker_url', url);
-	    $('setting-broker').value = url;
-	    this.refreshServerList();
-	    this.showToast("Server Selected. Launch to Connect.", "normal");
-	}
+        const id = `status-${btoa(url).replace(/=/g,'')}`;
+        const el = $(id);
+
+        // Prevent selection if the element is marked as offline
+        if (el && el.dataset.offline === "true") {
+            this.showToast("Server is offline.", "error");
+            return;
+        }
+
+        Game.settings.broker = url;
+        localStorage.setItem('mm_broker_url', url);
+        $('setting-broker').value = url;
+        this.refreshServerList();
+        this.showToast("Server Selected. Launch to Connect.", "normal");
+    }
 
     addCustomServer() {
         const input = $('custom-server-input');
@@ -6296,55 +6406,55 @@ class UIManager {
     }
 
     checkServerStatus(url) {
-	    const safeId = btoa(url).replace(/=/g,'');
-	    const statusEl = $(`status-${safeId}`);
-	    const rowEl = $(`item-${safeId}`);
-	    const wrapperEl = $(`wrapper-${safeId}`);
-	
-	    const client = mqtt.connect(url, { connectTimeout: 7000, reconnectPeriod: 0 });
-	    let finished = false;
-	
-	    const updateUI = (success) => {
-	        if (finished || !statusEl) return;
-	        finished = true;
-	        
-	        // 1. Update the Icon
-	        statusEl.innerHTML = success 
-	            ? `<span style="color:#2ecc71;">&#10003;</span>` 
-	            : `<span style="color:#e74c3c;">&#10007;</span>`;
-	        
-	        // 2. If it failed, grey out the row and mark it
-	        if (!success) {
-	            statusEl.dataset.offline = "true"; // Mark for selectServer check
-	            rowEl.style.cursor = "not-allowed";
-	            if (wrapperEl) {
-	                wrapperEl.style.opacity = "0.4";
-	                wrapperEl.style.filter = "grayscale(1)";
-	            }
-	        }
-	        
-	        client.end(true);
-	    };
-	
-	    client.on('connect', () => updateUI(true));
-	    client.on('error', () => updateUI(false));
-	    client.on('close', () => setTimeout(() => updateUI(false), 100));
-	    
-	    // Safety timeout
-	    setTimeout(() => updateUI(false), 7500);
-	}
-	
+        const safeId = btoa(url).replace(/=/g,'');
+        const statusEl = $(`status-${safeId}`);
+        const rowEl = $(`item-${safeId}`);
+        const wrapperEl = $(`wrapper-${safeId}`);
+
+        const client = mqtt.connect(url, { connectTimeout: 7000, reconnectPeriod: 0 });
+        let finished = false;
+
+        const updateUI = (success) => {
+            if (finished || !statusEl) return;
+            finished = true;
+
+            // 1. Update the Icon
+            statusEl.innerHTML = success
+                ? `<span style="color:#2ecc71;">&#10003;</span>`
+                : `<span style="color:#e74c3c;">&#10007;</span>`;
+
+            // 2. If it failed, grey out the row and mark it
+            if (!success) {
+                statusEl.dataset.offline = "true"; // Mark for selectServer check
+                rowEl.style.cursor = "not-allowed";
+                if (wrapperEl) {
+                    wrapperEl.style.opacity = "0.4";
+                    wrapperEl.style.filter = "grayscale(1)";
+                }
+            }
+
+            client.end(true);
+        };
+
+        client.on('connect', () => updateUI(true));
+        client.on('error', () => updateUI(false));
+        client.on('close', () => setTimeout(() => updateUI(false), 100));
+
+        // Safety timeout
+        setTimeout(() => updateUI(false), 7500);
+    }
+
     toggleUpdateCheck(enabled) {
         GameConfig.set('SaveSystem.updateCheck', enabled);
-		
+
         if (enabled) {
             if (this.updateChecker) clearInterval(this.updateChecker);
             this.updateChecker = setInterval(() => this.checkForUpdates(), 60000);
-			this.checkForUpdates();
+            this.checkForUpdates();
         } else {
             clearInterval(this.updateChecker);
         }
-		
+
     }
 
     async checkForUpdates() {
@@ -7310,8 +7420,8 @@ const GameConfig = {
             gaugeStyle : 'classic',
             showCoords: true,
             mobileMode : false,
-			gamemode : false,
-			controlsReversed : false,
+            gamemode : false,
+            controlsReversed : false,
             keys: {
                 up: 'ArrowUp',
                 left: 'ArrowLeft',
