@@ -862,24 +862,24 @@
           
           <div class="commit-log">
             <small style="opacity: 0.6; font-family: var(--font-mono); display: block; margin: 10px 0;">
-              LATEST_LOG: Implement locate command for tile searching
+              LATEST_LOG: Fix syntax error in locate command parsing
             </small>
           </div>
         
           <div class="summary-content">
             <section>
   <ul>
-    <li>Creates a procedurally‑generated 2‑D mining world with custom textures, day/night cycle, and HUD gauges.</li>
-    <li>Implements client‑server sync, host election, admin controls, chat, shop, inventory, explosives and teleporters.</li>
-    <li>Adds a modular modal system (prompt/alert/confirm/form/trade) and a compact UI for mobile/desktop.</li>
+    <li>Responsive 2‑D mining game with mobile controls, HUD gauges, and mod‑able textures.</li>
+    <li>Procedural world generation, ore tiers, AOE mining, explosives, and server/host election.</li>
+    <li>Custom UI system for inventory, shop, settings, and multiplayer chat.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>Sound.init();</code>
+    <code>Game.init()</code>
+    <code>Game.draw()</code>
   </pre>
 
-  <p>This code builds a lightweight multiplayer mining game where players navigate a tiled map, mine resources, build structures and trade items.  The engine handles rendering, physics, networking, and UI (including a flexible modal system) while supporting mobile controls, custom textures and persistent player stats.</p>
+  <p>This page creates a canvas‑based mining environment where players move, drill, build blocks, and trade items via MQTT. It includes a full UI overlay (chat, minimap, settings, shop), custom texture handling, sound synthesis, and logic for host arbitration and autosave. The code is split into configuration, rendering, game mechanics, networking, and UI modules.</p>
 </section>
           </div>
         </section>
