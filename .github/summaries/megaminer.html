@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Responsive 2‑D mining game with mobile controls, HUD gauges, and mod‑able textures.</li>
-    <li>Procedural world generation, ore tiers, AOE mining, explosives, and server/host election.</li>
-    <li>Custom UI system for inventory, shop, settings, and multiplayer chat.</li>
+    <li>Procedural mining world with dynamic lighting, day/night cycle, and heat mechanics.</li>
+    <li>Comprehensive UI: touch controls, inventory, shop, admin panel, chat, and customizable HUD gauges.</li>
+    <li>Multiplayer via MQTT with host election, sync, and trade system; optional single‑player mode.</li>
   </ul>
 
   <pre>
-    <code>Game.init()</code>
-    <code>Game.draw()</code>
+    <code>Game.init();</code>
+    <code>Network.connect(isSingleplayer);</code>
   </pre>
 
-  <p>This page creates a canvas‑based mining environment where players move, drill, build blocks, and trade items via MQTT. It includes a full UI overlay (chat, minimap, settings, shop), custom texture handling, sound synthesis, and logic for host arbitration and autosave. The code is split into configuration, rendering, game mechanics, networking, and UI modules.</p>
+  <p>This game creates an infinite‑depth mining map, lets players build, mine, trade, and use power‑ups while handling rendering, sound, and multiplayer state. The UI adapts to desktop and mobile, offering modifiable controls and persistent player upgrades.</p>
 </section>
