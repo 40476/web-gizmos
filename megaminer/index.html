@@ -48,7 +48,7 @@
             --control-height: 180px;
 
             /* --- FONT SCALING SYSTEM --- */
-            --ui-scale: 1.2;
+            --ui-scale: 1;
 
             /* Individual Sizes */
             --fs-micro: calc(10px * var(--ui-scale));
@@ -3251,7 +3251,7 @@ class GameEngine {
 
         Network.connect(this.settings.gamemode);
         $('chat-input').disabled = Network.isSingleplayer;
-        $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : "Press chat key to type";
+        $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : `Press ${Game.settings.mobileMode ? "CHAT" : GameConfig.get('PlayerSettings.keys').chat.toUpperCase() } to type`;
 
         function openInGameMenu() {
             // Your custom logic here
@@ -3594,19 +3594,19 @@ class GameEngine {
 
         $('prompt-msg').style.display = 'none';
 
-        if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
+        if (this.map[p.gridY]?.[p.gridX] === TILE_TYPES.TELEPORTER) {
             $('prompt-msg').style.display = 'block';
-            $('prompt-msg').innerText = "PRESS E TO WARP";
+            $('prompt-msg').innerText = `PRESS ${Game.settings.mobileMode ? "ACT" : GameConfig.get('PlayerSettings.keys').interact.toUpperCase() } TO WARP`;
         }
 
         if (p.gridY === this.stationGridY && Math.abs(p.gridX - this.stationGridX) < 3) {
             $('prompt-msg').style.display = 'block';
-            $('prompt-msg').innerText = "PRESS E TO OPEN DASHBOARD/SHOP";
+            $('prompt-msg').innerText = `PRESS ${Game.settings.mobileMode ? "ACT" : GameConfig.get('PlayerSettings.keys').interact.toUpperCase() } TO OPEN DASHBOARD/SHOP`;
         }
 
         const interactPressed = Input.keys[this.settings.keys.interact] || Input.virtual.interact;
         if (interactPressed && now() - this.lastActionTime > 500) {
-            if (this.map[p.gridY][p.gridX] === TILE_TYPES.TELEPORTER) {
+            if (this.map[p.gridY]?.[p.gridX] === TILE_TYPES.TELEPORTER) {
                 UI.openWarpMenu();
             } else {
                 UI.toggleDashboard();
@@ -4992,9 +4992,9 @@ class GameEngine {
                     // Text
                     ctx.shadowBlur = 0;
                     ctx.fillStyle = "#fff";
-                    ctx.font = `bold ${UI.getFontSize('--fs-sm')} Geo`;
-                    ctx.fillText(label, x, y - (r + 10)); // Label above
-                    ctx.font = `bold ${UI.getFontSize('--fs-md'), 4} Stalinist One`;
+                    ctx.font = "bold " + UI.getFontSize('--fs-base', 4) + " Geo";
+                    ctx.fillText(label, x, y - (r - 40)); // Label above
+                    ctx.font = "bold " + UI.getFontSize('--fs-xl', 4) + " Stalinist One";
                     ctx.fillText(Math.floor(val), x, y + (6 * dpr));
                     break;
                 case "classic":
@@ -5018,7 +5018,7 @@ class GameEngine {
                     ctx.stroke();
 
                     ctx.fillStyle = "#fff";
-                    ctx.font = "bold " + UI.getFontSize('--fs-md', 4) + " Stalinist One";
+                    ctx.font = "bold " + UI.getFontSize('--fs-base', 4) + " Stalinist One";
                     ctx.textAlign = "center";
                     ctx.fillText(label, x, y + (15 * dpr));
                     ctx.fillText(Math.floor(val), x, y - (5 * dpr));
@@ -7723,15 +7723,14 @@ async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath 
 
             const detailedCommit = await detailResponse.json();
 
-            // Your filtering logic here...
             const date = new Date(commitData.commit.author.date).toLocaleDateString();
             return `LATEST UPDATE [${date}]: ${msgLower.split('\n')[0]}`;
         }
 
         return "NO UPDATES FOUND.";
     } catch (error) {
+        // chat we are cooked.
         console.error(error);
-        // This catches network failures (like being offline)
         return "OFFLINE?";
     }
 }
