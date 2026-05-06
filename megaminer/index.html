@@ -1897,41 +1897,42 @@
                     <div class="cost" id="cost-AOE"></div>
                     <button class="btn" id="btn-AOE" onclick="Shop.buy('AOE')">Upgrade</button>
                 </div>
-                <!--<div class="shop-item">
+                <div class="shop-item">
                     <h4>Vehicle Paint</h4>
                     <p>Change your look.</p>
                     <input type="color" id="shop-color-picker" style="width:100%; height:30px; margin-bottom:5px;">
-                    <button class="btn" onclick="Shop.buy('paint')">Repaint ($100)</button>
-                </div>-->
+                    <div class="cost" id="cost-paint"></div>
+                    <button class="btn" id="btn-paint" onclick="Shop.buy('paint')">Repaint</button>
+                </div>
                 <!-- New Items -->
                 <div class="shop-item">
                     <h4>Repair Kit</h4>
                     <p>Restore 50 HP (Use in Inv).</p>
-                    <div class="cost" id="cost-repair_kit">$50</div>
+                    <div class="cost" id="cost-repair_kit"></div>
                     <button class="btn" id="btn-repair_kit" onclick="Shop.buy('repair_kit')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>Fuel Voucher</h4>
                     <p>Restore 50 Fuel (Use in Inv).</p>
-                    <div class="cost" id="cost-fuel_voucher">$50</div>
+                    <div class="cost" id="cost-fuel_voucher"></div>
                     <button class="btn" id="btn-fuel_voucher" onclick="Shop.buy('fuel_voucher')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>TNT</h4>
                     <p>Explosive charge. Range: 3.</p>
-                    <div class="cost" id="cost-tnt">$200</div>
+                    <div class="cost" id="cost-tnt"></div>
                     <button class="btn" id="btn-tnt" onclick="Shop.buy('tnt')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>Nuke</h4>
                     <p>Massive destruction. Range: 10.</p>
-                    <div class="cost" id="cost-nuke" style="color:#c0392b;">$5000</div>
+                    <div class="cost" id="cost-nuke" style="color:#c0392b;"></div>
                     <button class="btn" id="btn-nuke" onclick="Shop.buy('nuke')">Buy</button>
                 </div>
                 <div class="shop-item">
                     <h4>Teleporter</h4>
                     <p>Fast travel to surface.</p>
-                    <div class="cost" id="cost-teleporter">$1000</div>
+                    <div class="cost" id="cost-teleporter"></div>
                     <button class="btn" id="btn-teleporter" onclick="Shop.buy('teleporter')">Buy</button>
                 </div>
             </div>
@@ -1963,7 +1964,7 @@
             <div class="form-group">
                 <label>Graphics Settings</label>
                 <div style="font-size: var(--fs-sm);">
-                    <center><span>Graphics Quality</span>&nbsp;&nbsp;<span id="gfx-disp"></span></center> <input type="range" id="graphicsQuality" min="1" max="3" step="1"  oninput="Game.setGraphicsQuality(this.value);document.getElementById('gfx-disp').innerHTML=this.value">
+                    <center><span>Graphics Quality</span>&nbsp;&nbsp;<span id="gfx-disp"></span></center> <input type="range" id="graphicsQuality" min="1" max="4" step="1"  oninput="Game.setGraphicsQuality(this.value);document.getElementById('gfx-disp').innerHTML=this.value">
                 </div>
             </div>
 
@@ -2106,6 +2107,8 @@ const uuid = () => {
         return v.toString(16);
     });
 };
+
+const ARGUMENTS = new URLSearchParams(window.location.search);
 
 const paths = [/*`/Documents/MegaMinerSaves/`,*/ `./`];
 const dpr = window.devicePixelRatio || 1;
@@ -2966,8 +2969,8 @@ class GameEngine {
         if ($('setting-broker'))          $('setting-broker').value          = this.settings.broker;
         if ($('toggle-isSingleplayer'))   $('toggle-isSingleplayer').checked = this.settings.gamemode;
         if ($('mobile-reversed'))         $('mobile-reversed').checked       = this.settings.controlsReversed;
-        if ($('mobile-setting-toggle'))   $('mobile-setting-toggle').checked = this.settings.mobileMode;
-        if ($('mobile-toggle'))           $('mobile-toggle').checked         = this.settings.mobileMode;
+        if ($('mobile-setting-toggle'))   $('mobile-setting-toggle').checked = ARGUMENTS.has('forceMobile') || this.settings.mobileMode;
+        if ($('mobile-toggle'))           $('mobile-toggle').checked         = ARGUMENTS.has('forceMobile') || this.settings.mobileMode;
 
         // 3. Handle Toggles & Logic-Driven UI
         // Coordinates
@@ -3181,7 +3184,7 @@ class GameEngine {
         this.loadLocalProgress();
         this.logConnection(`Local stats loaded`);
 
-        const mobile = this.settings.mobileMode || false;
+        const mobile = ARGUMENTS.has('forceMobile') || this.settings.mobileMode || false;
         const controlsReversed = this.settings.controlsReversed || false
         this.toggleMobile(mobile, controlsReversed);
         this.logConnection(`Mobile mode set to: ` + mobile);
@@ -3259,7 +3262,7 @@ class GameEngine {
             UI.showToast("Welcome. E for Menu/Shop. B to Build. F to Transfer.", "info", 6000);
 
             // Mobile Mode
-            const mobile = this.settings.mobileMode || false;
+            const mobile = ARGUMENTS.has('forceMobile') || this.settings.mobileMode || false;
             const controlsReversed = this.settings.controlsReversed || false
             this.toggleMobile(mobile, controlsReversed);
 
@@ -4099,8 +4102,6 @@ class GameEngine {
         // -------------------------------
         // OPTIMIZATION: TILE BATCHING
         // -------------------------------
-        // Problem: Your old code switched globalAlpha inside the loop.
-        // Solution: Collect coordinates, then draw in two passes.
 
         const pcx = this.localPlayer.gridX;
         const pcy = this.localPlayer.gridY;
@@ -4312,172 +4313,243 @@ class GameEngine {
     }
 
 
+    /**
+    * Draws a tile with procedural details or cached textures.
+    * Enhanced for performance and readability.
+    */
     drawProceduralTile(x, y, type) {
+        const ts = CONSTANTS.TILE_SIZE;
+        const px = x * ts;
+        const py = y * ts;
+
+        // 1. Early Exit for Sky
         if (type === TILE_TYPES.EMPTY && y < 5) return;
 
-        let ts = CONSTANTS.TILE_SIZE;
-        let px = x * ts; let py = y * ts;
-        let custom = CustomTextures.tiles[type];
+        // 2. Handle Custom Texture Engine
+        if (CustomTextures.isLoaded) {
+            // Semantic replacement for the "type 999" surface logic
+            let drawType = (y === 5 && type === TILE_TYPES.EMPTY) ? 999 : type;
+            const custom = CustomTextures.tiles[drawType];
 
-        if (CustomTextures.isLoaded && custom) {
-            if (y===5 && type === 0) type = 999;
-            // Recompute tile key
-            custom = CustomTextures.tiles[type];
-            // If it's a complex object, check the cache
-            if (typeof custom === 'object') {
-                // Create a unique key based on the IDs and the Tints
-                const cacheKey = `${custom.base}-${custom.baseTint}-${custom.overlay}-${custom.overlayTint}`;
-
-                if (!TintCache.has(cacheKey)) {
-                    // First time seeing this combination? Create it!
-                    TintCache.set(cacheKey, TextureEngine.compositeTile(custom));
-                }
-
-                this.ctx.drawImage(TintCache.get(cacheKey), px, py, ts, ts);
-            } else {
-                // Simple string mapping
-                this.ctx.drawImage(custom, px, py, ts, ts);
-            }
-            return;
-        }
-
-
-        const n1 = (pseudoRandom(x, y) % 1);
-        const n2 = ((pseudoRandom(x, y) * 10) % 1);
-
-        let prop = TILE_PROPS[type];
-        let bevel = true;
-        let isOre = false;
-
-        // --- ORE RENDERING (Detailed) ---
-        if (type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY) {
-
-            isOre=true
-            // Stone background
-            this.ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
-            this.ctx.fillRect(px, py, ts, ts);
-
-
-            // Ore color
-            this.ctx.fillStyle = prop.color;
-
-            // Use your seeded RNG
-            const r0 = pseudoRandom(x, y);
-            const r1 = pseudoRandom(x + 17, y + 3);
-            const r2 = pseudoRandom(x - 9, y + 11);
-            const r3 = pseudoRandom(x + 4, y - 6);
-
-            // Cluster center
-            const cx = px + 8 + r0 * 16;
-            const cy = py + 8 + r1 * 16;
-
-            // Main chunk
-            this.ctx.fillRect(cx - 3, cy - 3, 6, 6);
-
-            // Satellite specks
-            const specks = [
-                { dx: (r1 - 0.5) * 12, dy: (r2 - 0.5) * 12, s: 3 },
-                { dx: (r2 - 0.5) * 14, dy: (r3 - 0.5) * 14, s: 4 },
-                { dx: (r3 - 0.5) * 16, dy: (r0 - 0.5) * 16, s: 3 }
-            ];
-
-            for (const sp of specks) {
-                this.ctx.fillRect(cx + sp.dx, cy + sp.dy, sp.s, sp.s);
-            }
-
-            if (this.settings.graphicsQuality > 2 && ((now() + Math.floor(pseudoRandom(x, y) * 2000)) % 2000 < 200)) {
-                this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                this.ctx.fillRect(cx - 1, cy - 1, 2, 2);
+            if (custom) {
+                this.renderCustomTexture(custom, px, py, ts);
+                return;
             }
         }
 
-        if(!isOre){
-            // --- STANDARD BLOCKS ---
-            this.ctx.fillStyle = prop.color;
-            this.ctx.fillRect(px, py, ts + 1, ts + 1);
+        // 3. Setup Procedural Context
+        const seed = pseudoRandom(x, y);
+        const prop = TILE_PROPS[type];
+        let shouldApplyBevel = true;
 
-            if (type === TILE_TYPES.EMPTY && y>=5) {
-                this.ctx.fillStyle = 'rgba(50, 25, 15, 1)';
-                this.ctx.fillRect(px, py, ts + 1, ts + 1);
+        // 4. Determine Logic Branch
+        const isOre = type >= TILE_TYPES.COAL && type <= TILE_TYPES.RUBY;
 
-                // Add some small pebbles/debris
-                if(this.settings.graphicsQuality > 2){
-                    this.ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
-                    if(n1 > 0.7) this.ctx.fillRect(px + 8, py + 8, 3, 3);
-                    if(n2 > 0.6) this.ctx.fillRect(px + 20, py + 12, 2, 2);
-                    if(n1 < 0.3) this.ctx.fillRect(px + 15, py + 20, 4, 2);
-                }
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-                bevel=false;
-            }
-            else if (type === TILE_TYPES.EMPTY && y<5) {
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-                return
-            }
-            else if (this.settings.graphicsQuality > 2 && type === TILE_TYPES.DIRT) {
-                this.ctx.fillStyle = 'rgba(0,0,0,0.15)';
-                if(n1 > 0.5) this.ctx.fillRect(px+4, py+4, 4, 4);
-                if(n2 < 0.5) this.ctx.fillRect(px+20, py+20, 5, 5);
-                if(n1 < 0.2) this.ctx.fillRect(px+12, py+10, 3, 3);
-            } else if (this.settings.graphicsQuality > 1 && type === TILE_TYPES.GRASS) {
-                this.ctx.fillStyle = '#2ecc71';
-                this.ctx.fillRect(px, py, ts, 6);
-                this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                this.ctx.fillRect(px, py+6, ts, ts-6);
-            } else if (this.settings.graphicsQuality > 2 && (type === TILE_TYPES.STONE || type === TILE_TYPES.HARD_STONE || type === TILE_TYPES.DEEP_SLATE)) {
-                const r0 = pseudoRandom(x, y);
-                const r1 = pseudoRandom(x + 17, y + 3);
-                const r2 = pseudoRandom(x - 9, y + 11);
-                const r3 = pseudoRandom(x + 4, y - 6);
-                this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                if(n1 > 0.3) {
-                    this.ctx.fillRect(px+(r0*5), py+(r2*5), 10, 6);
-                    this.ctx.fillRect(px+(r1*18), py+(r3*18), 10, 6);
-                }
-                this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                this.ctx.beginPath();
-                this.ctx.moveTo(px+(ts*r2), py+(ts*r1));
-                this.ctx.lineTo(px+(ts*r3), py+(ts*r0));
-                this.ctx.stroke();
-            } else if (type === TILE_TYPES.CASING) {
-                this.ctx.strokeStyle = '#555'; this.ctx.lineWidth = 4;
-                this.ctx.strokeRect(px+2, py+2, ts-4, ts-4);
-                this.ctx.beginPath();
-                this.ctx.moveTo(px, py);
-                this.ctx.lineTo(px+ts, py+ts);
-                this.ctx.moveTo(px+ts, py);
-                this.ctx.lineTo(px, py+ts);
-                this.ctx.stroke();
-            }else if(type === TILE_TYPES.TNT) {
-                this.ctx.fillStyle = "#c0392b"; this.ctx.fillRect(px,py,ts,ts);
-                this.ctx.fillStyle = "white";
-                this.ctx.font="10px Arial";
-                this.ctx.textAlign="center";
-                this.ctx.fillText("TNT", px+16, py+20);
-            }else if(type === TILE_TYPES.NUKE) {
-                this.ctx.fillStyle = "#2c3e50";
-                this.ctx.fillRect(px,py,ts,ts);
-                this.ctx.fillStyle = "#f1c40f";
-                this.ctx.beginPath();
-                this.ctx.arc(px+16,py+16,8,0,Math.PI*2);
-                this.ctx.fill();
-            }else if(type === TILE_TYPES.TELEPORTER) {
-                this.ctx.fillStyle = "#8e44ad";
-                this.ctx.fillRect(px,py,ts,ts);
-                this.ctx.strokeStyle = "#fff";
-                this.ctx.lineWidth=2;
-                this.ctx.beginPath();
-                this.ctx.arc(px+16,py+16,10,0,Math.PI*2);
-                this.ctx.stroke();
-            }
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+        if (isOre) {
+            this.drawOre(px, py, ts, type, prop, seed, x, y);
+        } else {
+            shouldApplyBevel = this.drawBlock(px, py, ts, type, prop, seed, x, y);
         }
 
-        // Bevel for all
-        if(this.settings.graphicsQuality > 1 && bevel){
-          this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(px, py+ts-2, ts, 2); this.ctx.fillRect(px+ts-2, py, 2, ts);
-          this.ctx.fillStyle = 'rgba(255,255,255,0.1)'; this.ctx.fillRect(px, py, ts, 2); this.ctx.fillRect(px, py, 2, ts);
+        // 5. Global Polish (Beveling)
+        if (shouldApplyBevel && this.settings.graphicsQuality > 1) {
+            this.applyBevel(px, py, ts);
         }
+    }
+
+    /**
+    * Handles complex composite or simple texture drawing from cache
+    */
+    renderCustomTexture(custom, px, py, ts) {
+        if (typeof custom === 'object') {
+            const cacheKey = `${custom.base}-${custom.baseTint}-${custom.overlay}-${custom.overlayTint}`;
+            if (!TintCache.has(cacheKey)) {
+                TintCache.set(cacheKey, TextureEngine.compositeTile(custom));
+            }
+            this.ctx.drawImage(TintCache.get(cacheKey), px, py, ts, ts);
+        } else {
+            this.ctx.drawImage(custom, px, py, ts, ts);
+        }
+    }
+
+    /**
+    * Renders detailed ore deposits with sparkling effects and depth.
+    */
+    drawOre(px, py, ts, type, prop, seed, x, y) {
+        const ctx = this.ctx;
+
+        // Background Stone
+        ctx.fillStyle = TILE_PROPS[TILE_TYPES.STONE].color;
+        ctx.fillRect(px, py, ts, ts);
+
+        // Seeded Randoms
+        const r0 = seed;
+        const r1 = pseudoRandom(x + 17, y + 3);
+        const r2 = pseudoRandom(x - 9, y + 11);
+        const r3 = pseudoRandom(x + 4, y - 6);
+
+        const cx = px + 8 + r0 * 16;
+        const cy = py + 8 + r1 * 16;
+
+        // Ore Shadows
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        const drawSpeck = (dx, dy, s, shadow = false) => {
+            const ox = shadow ? 1 : 0;
+            const oy = shadow ? 1 : 0;
+            ctx.fillRect(cx + dx + ox, cy + dy + oy, s, s);
+        };
+
+        const specks = [
+            { dx: -3, dy: -3, s: 6 },
+            { dx: (r1 - 0.5) * 12, dy: (r2 - 0.5) * 12, s: 3 },
+            { dx: (r2 - 0.5) * 14, dy: (r3 - 0.5) * 14, s: 4 },
+            { dx: (r3 - 0.5) * 16, dy: (r0 - 0.5) * 16, s: 3 }
+        ];
+
+        // Draw all shadows first
+        if (this.settings.graphicsQuality > 3) specks.forEach(s => drawSpeck(s.dx, s.dy, s.s, true));
+
+        // Draw Actual Ore Material
+        ctx.fillStyle = prop.color;
+        specks.forEach(s => drawSpeck(s.dx, s.dy, s.s, false));
+
+        // Sparkle/Shine effect
+        if (this.settings.graphicsQuality > 3) {
+            const cycle = (now() + Math.floor(seed * 2000)) % 2000;
+
+            if (cycle < 300) {
+                // "Shine" animation - scales up and down
+                const intensity = cycle < 150 ? cycle / 150 : (300 - cycle) / 150;
+                ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.8})`;
+                ctx.fillRect(cx - 1, cy - 1, 1, 1);
+
+                // Hot center
+                ctx.fillStyle = `rgba(255, 255, 255, ${intensity})`;
+                ctx.fillRect(cx - 1, cy - 1, 2, 2);
+            }
+        } else if (this.settings.graphicsQuality > 2 && ((now() + Math.floor(seed * 2000)) % 2000 < 200)) {
+            this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            this.ctx.fillRect(cx - 1, cy - 1, 2, 2);
+        }
+    }
+
+    /**
+    * Handles standard environment and interactive blocks.
+    * Returns boolean for whether a bevel should be drawn.
+    */
+    drawBlock(px, py, ts, type, prop, seed, x, y) {
+        const ctx = this.ctx;
+        const n1 = seed % 1;
+        const n2 = (seed * 10) % 1;
+
+        // Default base color
+        ctx.fillStyle = prop.color;
+        ctx.fillRect(px, py, ts + 1, ts + 1);
+
+        // Empty space/background dirt
+        if (type === TILE_TYPES.EMPTY) {
+            ctx.fillStyle = 'rgba(50, 25, 15, 1)';
+            ctx.fillRect(px, py, ts + 1, ts + 1);
+
+            if (this.settings.graphicsQuality > 2) {
+                ctx.fillStyle = 'rgba(120, 90, 70, 0.4)';
+                if (n1 > 0.7) ctx.fillRect(px + 8, py + 8, 3, 3);
+                if (n2 > 0.6) ctx.fillRect(px + 20, py + 12, 2, 2);
+                if (n1 < 0.3) ctx.fillRect(px + 15, py + 20, 4, 2);
+            }
+            return false; // No bevel for empty space
+        }
+
+        // Interactive/Special items lookup
+        const specialDrawers = {
+            [TILE_TYPES.TNT]: () => {
+                ctx.fillStyle = "#c0392b"; ctx.fillRect(px, py, ts, ts);
+                ctx.fillStyle = "white"; ctx.font = "10px Arial";
+                ctx.textAlign = "center"; ctx.fillText("TNT", px + 16, py + 20);
+            },
+            [TILE_TYPES.NUKE]: () => {
+                ctx.fillStyle = "#2c3e50"; ctx.fillRect(px, py, ts, ts);
+                ctx.fillStyle = "#f1c40f"; ctx.beginPath();
+                ctx.arc(px + 16, py + 16, 8, 0, Math.PI * 2); ctx.fill();
+            },
+            [TILE_TYPES.TELEPORTER]: () => {
+                ctx.fillStyle = "#8e44ad"; ctx.fillRect(px, py, ts, ts);
+                ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.beginPath();
+                ctx.arc(px + 16, py + 16, 10, 0, Math.PI * 2); ctx.stroke();
+            },
+            [TILE_TYPES.CASING]: () => {
+                ctx.strokeStyle = '#555'; ctx.lineWidth = 4;
+                ctx.strokeRect(px + 2, py + 2, ts - 4, ts - 4);
+                ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + ts, py + ts);
+                ctx.moveTo(px + ts, py); ctx.lineTo(px, py + ts); ctx.stroke();
+            }
+        };
+
+        if (specialDrawers[type]) {
+            specialDrawers[type]();
+            return true;
+        }
+
+        // Natural noise for Dirt/Stone
+        if (this.settings.graphicsQuality > 2) {
+            if (type === TILE_TYPES.DIRT) {
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                if (n1 > 0.5) ctx.fillRect(px + 4, py + 4, 4, 4);
+                if (n2 < 0.5) ctx.fillRect(px + 20, py + 20, 5, 5);
+            } else if (type === TILE_TYPES.GRASS) {
+                ctx.fillStyle = '#2ecc71'; ctx.fillRect(px, py, ts, 6);
+                ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fillRect(px, py + 6, ts, ts - 6);
+            } else if (this.isStone(type)) {
+                this.applyStoneNoise(ctx, px, py, ts, x, y, n1);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+    * Utility to check for stone variants
+    */
+    isStone(type) {
+        return type === TILE_TYPES.STONE ||
+            type === TILE_TYPES.HARD_STONE ||
+            type === TILE_TYPES.DEEP_SLATE;
+    }
+
+    /**
+    * Adds cracks and variations to stone blocks
+    */
+    applyStoneNoise(ctx, px, py, ts, x, y, n1) {
+        const r0 = pseudoRandom(x, y);
+        const r1 = pseudoRandom(x + 17, y + 3);
+        const r2 = pseudoRandom(x - 9, y + 11);
+        const r3 = pseudoRandom(x + 4, y - 6);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        if (n1 > 0.3) {
+            ctx.fillRect(px + (r0 * 5), py + (r2 * 5), 10, 6);
+            ctx.fillRect(px + (r1 * 18), py + (r3 * 18), 10, 6);
+        }
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        ctx.beginPath();
+        ctx.moveTo(px + (ts * r2), py + (ts * r1));
+        ctx.lineTo(px + (ts * r3), py + (ts * r0));
+        ctx.stroke();
+    }
+
+    /**
+    * Applies lighting edges to the block
+    */
+    applyBevel(px, py, ts) {
+        const ctx = this.ctx;
+        // Highlight (Top/Left)
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(px, py, ts, 2);
+        ctx.fillRect(px, py, 2, ts);
+        // Shadow (Bottom/Right)
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.fillRect(px, py + ts - 2, ts, 2);
+        ctx.fillRect(px + ts - 2, py, 2, ts);
     }
 
     drawPlayer(p, isLocal) {
@@ -4576,7 +4648,7 @@ class GameEngine {
             this.spawnParticle(tipWorldX, tipWorldY, tileColor, 5);
         }
 
-        if (!isLocal) {
+        if (!isLocal && this.settings.showSelfName) {
             this.ctx.rotate(-p.rotation);
             this.ctx.fillStyle = '#fff';
             this.ctx.font = UI.getFontSize('--fs-md') + ' Geo';
@@ -5039,6 +5111,7 @@ class ShopSystem {
                  $(`btn-${type}`).disabled = true;
             }
         };
+
         check('drill', p.drillTier);
         check('hull', (p.maxHull-100)/20);
         check('fuel', (p.maxFuel-100)/20);
@@ -5046,11 +5119,12 @@ class ShopSystem {
         check('cool', p.heatResist);
         check('xray', p.xrayRange);
         check('AOE', p.multiMine);
-        check('repair_kit',false);
-        check('fuel_voucher',false);
-        check('tnt',false);
-        check('nuke',false);
-        check('teleporter',false);
+        check('repair_kit', false);
+        check('paint', false);
+        check('fuel_voucher', false);
+        check('tnt', false);
+        check('nuke', false);
+        check('teleporter', false);
     }
 
     buy(item) {
@@ -5076,6 +5150,14 @@ class ShopSystem {
                 p.cargo++;
                 p.inventory[type] = (p.inventory[type] || 0) + 1;
                 UI.showToast(`Bought ${item.toUpperCase()}`, "success");
+                success = true;
+            }
+        } else if (item === 'paint') {
+            cost = this.prices[item];
+            if (p.money >= cost && p.cargo < p.maxCargo) {
+                p.money -= cost;
+                Game.settings.color = $('shop-color-picker').value;
+                UI.showToast(`Repainted!`, "success");
                 success = true;
             }
         } else {
@@ -7387,7 +7469,7 @@ const GameConfig = {
             keepalive: 30,
             heartbeatInterval: 2000,
             playerTimeout: 15000,
-            watchdogThreshold: 10000
+            watchdogThreshold: 6000
         },
         GameEconomy: {
             prices: {
@@ -7397,6 +7479,7 @@ const GameConfig = {
                 cargo: 100,
                 cool: 1000,
                 xray: 2000,
+                paint: 100,
                 AOE: [15000, 30000, 40000, 50000, 67, 60000, 70000, 100000],
                 repair_kit: 50,
                 fuel_voucher: 50,
@@ -7419,7 +7502,8 @@ const GameConfig = {
             graphicsQuality: 2,
             gaugeStyle : 'classic',
             showCoords: true,
-            mobileMode : false,
+            mobileMode : ARGUMENTS.has('forceMobile') || false,
+            showSelfName : false,
             gamemode : false,
             controlsReversed : false,
             keys: {
@@ -7499,7 +7583,8 @@ async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath 
         if (!commits || commits.length === 0) return "NO RECENT UPDATES.";
 
         for (const commitData of commits) {
-            const msg = commitData.commit.message.toUpperCase();
+            const msgLower = commitData.commit.message;
+            const msg = msgLower.toUpperCase();
             const login = (commitData.author?.login || "").toLowerCase();
             if (login.includes('bot') || msg.startsWith('[BOT]')) continue;
 
@@ -7513,7 +7598,7 @@ async function getLatestCommit(user = '40476', repo = 'web-gizmos', projectPath 
 
             // Your filtering logic here...
             const date = new Date(commitData.commit.author.date).toLocaleDateString();
-            return `LATEST UPDATE [${date}]: ${msg.split('\n')[0]}`;
+            return `LATEST UPDATE [${date}]: ${msgLower.split('\n')[0]}`;
         }
 
         return "NO UPDATES FOUND.";
