@@ -2893,7 +2893,7 @@ class GameEngine {
         const cmd = args[0].toLowerCase();
 
         if (cmd === 'locate') {
-            const targetType = parseInt(args[1]);=
+            const targetType = parseInt(args[1]);
             if (isNaN(targetType)) return "Usage: locate [TileID]";
 
             const startX = Game.localPlayer.gridX;
