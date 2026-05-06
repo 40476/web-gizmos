@@ -1,14 +1,14 @@
 <section>
   <ul>
-    <li>Procedural mining world with ores, custom textures, and AOE mining.</li>
-    <li>Audio engine with engine, drill, music, and timer‑blip sounds.</li>
-    <li>HUD gauges (classic, modern, pill, analog, horizontal‑bars, industrial‑step) and mobile controls.</li>
+    <li>Procedural world generation with mining, building, and explosives.</li>
+    <li>Multiplayer support via MQTT with host election, chat, and trade dialogs.</li>
+    <li>Customizable UI: mobile controls, gauges, textures, and settings modal.</li>
   </ul>
 
   <pre>
-    <code>const Game = new GameEngine();</code>
-    <code>Sound.init();</code>
+    <code>Game.init()</code>
+    <code>Sound.updateEngine()</code>
   </pre>
 
-  <p>This code creates a tile‑based mining game where players move, drill, build blocks, and trade items. It includes a modular sound manager, customizable UI gauges, and support for mobile touch controls.</p>
+  <p>This HTML page implements a full‑screen mining game that renders a procedurally generated map, lets players mine ores, place structures, and use items like TNT or teleporters. Multiplayer features are handled through a broker, with automatic host selection, chat, and trade dialogs, while a rich UI provides mobile controls, customizable gauges, and persistent settings.</p>
 </section>
