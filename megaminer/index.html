@@ -2341,6 +2341,9 @@ class ModalSystem {
                 this.btnCancel.style.display = 'block';
                 setTimeout(() => this.input.focus(), 50);
             }
+            else if (type === 'alert') {
+                this.btnOk.innerText = "Ok";
+            }
             else if (type === 'confirm') {
                 this.btnCancel.style.display = 'block';
                 this.btnOk.innerText = "Yes";
@@ -2884,6 +2887,49 @@ class GameEngine {
         this.loadStoredSettings();
     }
 
+    async runCommand(input) {
+        if (!input) return;
+        const args = input.trim().split(" ");
+        const cmd = args[0].toLowerCase();
+
+        if (cmd === 'locate') {
+            const targetType = parseInt(args[1]);=
+            if (isNaN(targetType)) return "Usage: locate [TileID]";
+
+            const startX = Game.localPlayer.gridX;
+            const startY = Game.localPlayer.gridY;
+            const maxRange = 200; // Search limit to prevent freezing
+
+            // Spiral/Radial search
+            for (let radius = 1; radius <= maxRange; radius++) {
+                // Check a square boundary at 'radius' distance
+                for (let i = -radius; i <= radius; i++) {
+                    // Check North and South edges of the square
+                    const points = [
+                        [startX + i, startY - radius], // Top edge
+                        [startX + i, startY + radius], // Bottom edge
+                        [startX - radius, startY + i], // Left edge
+                        [startX + radius, startY + i]  // Right edge
+                    ];
+
+                    for (const [x, y] of points) {
+                        // Check if within map bounds
+                        if (y < 0 || y >= CONSTANTS.MAP_HEIGHT || x < 0 || x >= CONSTANTS.MAP_WIDTH) continue;
+
+                        // Check both modified map AND procedural base
+                        const tile = Game.map[y][x] ?? Game.getProceduralTile(x, y);
+
+                        if (tile === targetType) {
+                            const dist = Math.floor(Math.sqrt((x - startX) ** 2 + (y - startY) ** 2));
+                            return `Located Block ${targetType} at [${x}, ${y}] (${dist}m away)`;
+                        }
+                    }
+                }
+            }
+            return "No blocks of that type found within range.";
+        }
+    }
+
     // --- Persistent Stats (Wallet, Upgrades) ---
     saveLocalProgress() {
         if (!this.running) return;
@@ -3052,7 +3098,7 @@ class GameEngine {
             else if (y > 150) return TILE_TYPES.DIAMOND;                // Fallback for the rest
         }
 
-        if (r > 0.995) {
+        if (r > 0.9999) {
             return TILE_TYPES.RICK;
         }
 
@@ -3206,6 +3252,13 @@ class GameEngine {
         Network.connect(this.settings.gamemode);
         $('chat-input').disabled = Network.isSingleplayer;
         $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : "Press chat key to type";
+
+        function openInGameMenu() {
+            // Your custom logic here
+            UI.showToast("Print blocked - Game Menu Opened", "info");
+        }
+
+
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
 
@@ -4499,6 +4552,41 @@ class GameEngine {
                 ctx.strokeRect(px + 2, py + 2, ts - 4, ts - 4);
                 ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + ts, py + ts);
                 ctx.moveTo(px + ts, py); ctx.lineTo(px, py + ts); ctx.stroke();
+            },
+            [TILE_TYPES.RICK]: () => {
+                // 1. Draw the background (Rick's iconic trench coat tan)
+                ctx.fillStyle = "#C6A664";
+                ctx.fillRect(px, py, ts, ts);
+
+                // 2. Animation Logic: 2 frames of "dancing"
+                const frame = Math.floor(Date.now() / 500) % 2;
+                const offset = frame === 0 ? 0 : 2; // Shimmies 2 pixels up/down
+
+                // 3. Simple 8x8 Pixel Art Representation
+                // Head (Pinkish skin tone)
+                ctx.fillStyle = "#FFDBAC";
+                ctx.fillRect(px + 12, py + 6 + offset, 8, 8);
+
+                // Hair (Reddish Brown)
+                ctx.fillStyle = "#704139";
+                ctx.fillRect(px + 12, py + 4 + offset, 8, 3);
+
+                // Eyes (Sunglasses/Face detail)
+                ctx.fillStyle = "#333";
+                ctx.fillRect(px + 14, py + 9 + offset, 1, 1);
+                ctx.fillRect(px + 18, py + 9 + offset, 1, 1);
+
+                // Shirt (Black/White striped vibe)
+                ctx.fillStyle = "#000";
+                ctx.fillRect(px + 10, py + 14 + offset, 12, 10);
+                ctx.fillStyle = "#FFF";
+                ctx.fillRect(px + 14, py + 14 + offset, 4, 10); // White undershirt
+
+                // 4. "Glint" Effect to make it look like a special block
+                const glint = Math.abs(Math.sin(Date.now() / 300)) * 0.5;
+                ctx.strokeStyle = `rgba(255, 255, 255, ${glint})`;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(px + 2, py + 2, ts - 4, ts - 4);
             }
         };
 
@@ -6017,12 +6105,24 @@ class InputManager {
     }
 
     init() {
-        window.addEventListener('keydown', e => {
+        window.addEventListener('keydown',async e => {
             // 1. Chat/Modal Overrides
             if (document.activeElement === $('chat-input')) {
                 if (e.key === 'Escape') $('chat-input').blur();
                 return;
             }
+
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
+                event.preventDefault();
+                const result = await CustomModal.show('prompt', 'Console', 'Enter Command (e.g. locate 67)');
+                if (result) {
+                    const response = await Game.runCommand(result);
+                    if (response) {
+                        CustomModal.show('alert', 'System', response);
+                    }
+                }
+            }
+
             if (document.activeElement === $('c-modal-input')) {
                 if (e.key === 'Enter') {
                     const confirmBtn = document.querySelector('.c-modal-box .btn-confirm');
