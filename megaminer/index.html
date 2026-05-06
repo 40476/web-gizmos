@@ -11,7 +11,6 @@
 
     <script src="../shared/js/header.js"></script>
     <script src="../shared/js/mqtt.min.js"></script>
-    <script src="../shared/js/puter-v2.min.js"></script>
 
     <style>
         @import url('font/fonts.css');
@@ -2132,9 +2131,16 @@ const TILE_TYPES = {
     EMPTY: 0, DIRT: 1, GRASS: 2, STONE: 3, HARD_STONE: 4, DEEP_SLATE: 5,
     COAL: 6, IRON: 7, GOLD: 8, DIAMOND: 9, EMERALD: 10, RUBY: 11,
     CASING: 20, BEDROCK: 99,
+
+    MAGMA: 12,
+    URANIUM: 13,
+    GEODE: 16,
+    RICK: 67,
+
     // New Items
     TNT: 50, NUKE: 51, TELEPORTER: 52,
     REPAIR_KIT: 60, FUEL_VOUCHER: 61
+
 };
 
 const TILE_PROPS = {
@@ -2152,12 +2158,16 @@ const TILE_PROPS = {
     [TILE_TYPES.RUBY]: { name: "Ruby", color: '#e74c3c', hardness: 3, value: 1200, tier: 4, trashExclude: true },
     [TILE_TYPES.CASING]: { name: "Structure", color: '#95a5a6', hardness: 0.1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
     [TILE_TYPES.BEDROCK]: { name: "Bedrock", color: '#000000', hardness: 999, value: 67, tier: 99, trashExclude: true, AOEExclude: true },
+    [TILE_TYPES.MAGMA]: { name: "Magma Rock", color: '#cf352e', hardness: 1.5, value: 1, hazard: "heat", tier: 2 },
+    [TILE_TYPES.URANIUM]: { name: "Uranium", color: '#2ecc71', hardness: 4, value: 2000, hazard: "radiation", tier: 4, trashExclude: true },
+    [TILE_TYPES.GEODE]: { name: "Geode", color: '#9b59b6', hardness: 5, value: 0, isRandom: true, tier: 3 },
+    [TILE_TYPES.RICK]: { name: "Rickroll block", color: '#4a6cbb', hardness: 5, value: 0, isRandom: true, tier: 0 },
     // Purchasables
     [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
     [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
     [TILE_TYPES.TELEPORTER]: { name: "Teleporter", color: '#9b59b6', hardness: 5, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
     [TILE_TYPES.REPAIR_KIT]: { name: "Repair Kit", color: '#2ecc71', value: 0, consumable: true, trashExclude: true, AOEExclude: true },
-    [TILE_TYPES.FUEL_VOUCHER]: { name: "Fuel Voucher", color: '#e67e22', value: 0, consumable: true, trashExclude: true , AOEExclude: true},
+    [TILE_TYPES.FUEL_VOUCHER]: { name: "Fuel Voucher", color: '#e67e22', value: 0, consumable: true, trashExclude: true , AOEExclude: true }
 };
 
 const MSGS = {
@@ -3042,6 +3052,10 @@ class GameEngine {
             else if (y > 150) return TILE_TYPES.DIAMOND;                // Fallback for the rest
         }
 
+        if (r > 0.995) {
+            return TILE_TYPES.RICK;
+        }
+
         // 4. Standard Ores
         if (r > 0.96 && y > 100) return TILE_TYPES.GOLD;
         if (r > 0.92 && y > 50) return TILE_TYPES.IRON;
@@ -3145,12 +3159,12 @@ class GameEngine {
 
 
         // 5. Cloud Sync Logic
-        if (puter.whoami && SaveSystem.cloudSyncEnabled) {
+        if (window.puter?.whoami && SaveSystem.cloudSyncEnabled) {
             await this.logConnection("Running sync task...");
             await SaveSystem.smartSyncAll(true, true);
             this.lastAutosave = now();
         } else {
-            this.logConnection(`Skipping sync task (${puter.whoami ? "auto-sync off" : "not signed in"})`);
+            this.logConnection(`Skipping sync task (${window.puter?.whoami ? "auto-sync off" : "not signed in"})`);
         }
 
         // 6. Window Listeners & Canvas Setup
@@ -3868,6 +3882,9 @@ class GameEngine {
             this.map[y][x] = TILE_TYPES.EMPTY;
             if (this.discovered[y]) this.discovered[y][x] = 1;
 
+            if (tile === TILE_TYPES.RICK) {
+                Network.sendAudioTag('rickroll.mp3')
+            }
             // Visuals & Networking
             this.spawnParticle(x * 32 + 16, y * 32 + 16, props.color, 8);
             Network.sendTileUpdate(x, y, TILE_TYPES.EMPTY);
@@ -5256,7 +5273,7 @@ class CloudManager {
     }
 
     static async upload(id, data) {
-        if(!puter.whoami) return;
+        if(!window.puter?.whoami) return;
         const conf = GameConfig.get('CloudConfig');
         const fileName = this.getFileName(id);
         const fullPath = `${conf.saveDirectory}${fileName}`;
@@ -5275,7 +5292,7 @@ class CloudManager {
     }
 
     static async download(id) {
-        if(!puter.whoami) return null;
+        if(!window.puter?.whoami) return null;
         try {
             const fileName = this.getFileName(id);
             const paths = this.getPaths(fileName);
@@ -5298,7 +5315,7 @@ class CloudManager {
     }
 
     static async syncWithConflictCheck(id, localData) {
-        if(!puter.whoami){
+        if(!window.puter?.whoami){
             console.warn("No puter user detected, skipping cloud sync.");
             return;
         }
@@ -5347,7 +5364,7 @@ class CloudManager {
     }
 
     static async delete(id) {
-        if(!puter.whoami){
+        if(!window.puter?.whoami){
             console.warn("No puter user detected, skipping cloud delete.");
             return;
         }
@@ -5364,7 +5381,7 @@ class CloudManager {
 
     // Fallback method to save into the 'app-xxx' folder if /Documents is blocked
     static async uploadToSandbox(id, data) {
-        if(!puter.whoami){
+        if(!window.puter?.whoami){
             console.warn("No puter user detected, skipping cloud upload.");
             return;
         }
@@ -5388,6 +5405,16 @@ class NetworkManager {
         this.lastHeartbeat = 0;
         this.isSingleplayer = false;
         this.connectionWatchdog = 0;
+    }
+
+
+    loadScript(url) {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = resolve;
+            document.head.appendChild(script);
+        });
     }
 
     connect(isSingleplayer) {
@@ -5679,6 +5706,14 @@ class NetworkManager {
             this.publish('map_bin', new Uint16Array(diffs));
         }
     }
+    sendAudioTag(tag) {
+        // Wrap the tag in an object with a type
+        this.publish('ctrl', {
+            type: 'soundbite',
+            tag: tag,
+            id: Game.localPlayer.id
+        });
+    }
     sendBinarySync(dataArray, toId) {
         // Using Uint16Array because 10MB maps likely exceed 255 in coordinates
         const buffer = new Uint16Array(dataArray);
@@ -5762,7 +5797,7 @@ class NetworkManager {
 
         let msg;
         try { msg = JSON.parse(message.toString()); } catch(e) { return; }
-        if (msg.id === Game.localPlayer.id && msg.type !== 'kick') return;
+        if (msg.id === Game.localPlayer.id && msg.type !== 'kick' & msg.type !== 'soundbite') return;
         if (msg.type === 'move' || msg.type === 'heartbeat') {
             if (!Game.remotePlayers[msg.id]) {
                 Game.remotePlayers[msg.id] = {
@@ -5803,17 +5838,15 @@ class NetworkManager {
                 if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) { rp.x = rp.targetX; rp.y = rp.targetY; }
         }
         // Removed updateAdminStatus
-    }
-    else if (msg.type === 'map_query') {
-        if (msg.from !== Game.localPlayer.id && !this.isSingleplayer) {
-            const jitter = Math.random() * 800 + 200;
-            this.pendingSync = setTimeout(() => {
-                this.sendAreaDiff(0, 0, CONSTANTS.MAP_WIDTH, CONSTANTS.MAP_HEIGHT, msg.from);
-                this.publish('ctrl', { type: 'map_ack', for: msg.from });
-            }, jitter);
-        }
-    }
-    else if (msg.type === 'fuel' && msg.to === Game.localPlayer.id) {
+        } else if (msg.type === 'map_query') {
+            if (msg.from !== Game.localPlayer.id && !this.isSingleplayer) {
+                const jitter = Math.random() * 800 + 200;
+                this.pendingSync = setTimeout(() => {
+                    this.sendAreaDiff(0, 0, CONSTANTS.MAP_WIDTH, CONSTANTS.MAP_HEIGHT, msg.from);
+                    this.publish('ctrl', { type: 'map_ack', for: msg.from });
+                }, jitter);
+            }
+        } else if (msg.type === 'fuel' && msg.to === Game.localPlayer.id) {
             Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
             UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
             Sound.playSuccess();
@@ -5848,112 +5881,102 @@ class NetworkManager {
             // Force UI to refresh to show new items
             if (typeof UI.updateInventory === 'function') UI.updateInventory();
             if (typeof UI.updateHUD === 'function') UI.updateHUD();
-        }
-    else if (msg.type === 'aoe_mine') {
-        // Don't process our own AOE (handled locally in tryMine)
-        if (msg.id === Game.localPlayer.id) return;
-        console.log('bruh')
+        } else if (msg.type === 'aoe_mine') {
+            // Don't process our own AOE (handled locally in tryMine)
+            if (msg.id === Game.localPlayer.id) return;
 
-        // Execute the AOE logic locally on this client
-        // We use a helper similar to your tryMine logic
-        const tx = msg.x;
-        const ty = msg.y;
-        const range = msg.r;
-        const tier = msg.t
+            // Execute the AOE logic locally on this client
+            // We use a helper similar to your tryMine logic
+            const tx = msg.x;
+            const ty = msg.y;
+            const range = msg.r;
+            const tier = msg.t
 
-        for (let dy = -range; dy <= range; dy++) {
-            for (let dx = -range; dx <= range; dx++) {
-                const curX = tx + dx;
-                const curY = ty + dy;
+            for (let dy = -range; dy <= range; dy++) {
+                for (let dx = -range; dx <= range; dx++) {
+                    const curX = tx + dx;
+                    const curY = ty + dy;
 
-                if (Game.map[curY] && Game.map[curY][curX] !== undefined) {
-                    const tile = Game.map[curY][curX];
-                    if (tile === TILE_TYPES.EMPTY || tile === TILE_TYPES.BEDROCK) continue;
+                    if (Game.map[curY] && Game.map[curY][curX] !== undefined) {
+                        const tile = Game.map[curY][curX];
+                        if (tile === TILE_TYPES.EMPTY || tile === TILE_TYPES.BEDROCK) continue;
 
-                    // TIER CHECK: Use the miner's tier sent in the packet
-                    const props = TILE_PROPS[tile];
-                    if (tier < props.tier) continue;
+                        // TIER CHECK: Use the miner's tier sent in the packet
+                        const props = TILE_PROPS[tile];
+                        if (tier < props.tier) continue;
 
-                    // Execute locally with shouldPublish = false to avoid infinite loops
-                    // This will trigger particles and sounds automatically
-                    // Game.executeSingleMine(curX, curY, false);
+                        // Execute locally with shouldPublish = false to avoid infinite loops
+                        // This will trigger particles and sounds automatically
+                        // Game.executeSingleMine(curX, curY, false);
+                    }
                 }
             }
-        }
 
-        if (Game.renderer) Game.renderer.markMapDirty();
-    }
-    else if (msg.type === 'map_ack') {
-        // Someone else is already syncing the requester. I can stay silent.
-        if (this.pendingSync) {
-            clearTimeout(this.pendingSync);
-            this.pendingSync = null;
-        }
-    }
-    else if (msg.type === 'join') {
-        if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
-        else {
-            if(!Game.remotePlayers[msg.id]) {
-                UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
-                Sound.playChat('join');
+            if (Game.renderer) Game.renderer.markMapDirty();
+        } else if (msg.type === 'map_ack') {
+            // Someone else is already syncing the requester. I can stay silent.
+            if (this.pendingSync) {
+                clearTimeout(this.pendingSync);
+                this.pendingSync = null;
             }
-            Game.remotePlayers[msg.id] = {
-                id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
-            };
-            UI.updatePlayerList();
-            // Removed updateAdminStatus
+        } else if (msg.type === 'join') {
+            if (Game.bannedIds.includes(msg.id) && Game.isAdmin) this.kickUser(msg.id);
+            else {
+                if(!Game.remotePlayers[msg.id]) {
+                    UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
+                    Sound.playChat('join');
+                }
+                Game.remotePlayers[msg.id] = {
+                    id: msg.id, username: msg.username, color: msg.color, x: 0, y: 0, targetX: 0, targetY: 0, joinedAt: msg.joinedAt, lastSeen: now()
+                };
+                UI.updatePlayerList();
+                // Removed updateAdminStatus
 
-            if(Game.isAdmin) {
-                // Also assert dominance immediately so they know I'm host
-                this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
+                if(Game.isAdmin) {
+                    // Also assert dominance immediately so they know I'm host
+                    this.publish('ctrl', { type: 'host_heartbeat', id: Game.localPlayer.id });
+                }
+                this.broadcastMove();
             }
-            this.broadcastMove();
-        }
-    }
-    // --- NEW: Admin Messages ---
-    else if (msg.type === 'host_heartbeat') {
-        Game.hostId = msg.id;
-        Game.lastHostHeartbeat = now();
-
-        // Glitch prevention: If I thought *I* was admin, but someone else is pulsing...
-        if (Game.isAdmin && msg.id !== Game.localPlayer.id) {
-            // Tie breaker: Who claimed it first? Or just yield.
-            // Simple yield:
-            console.warn("Host conflict detected. Yielding to " + msg.id);
-            Game.isAdmin = false;
-            UI.updateAdminPanel();
-        }
-    }
-    else if (msg.type === 'claim_host') {
-        Game.hostId = msg.id;
-        Game.lastHostHeartbeat = now();
-        if (msg.id !== Game.localPlayer.id) {
-            Game.isAdmin = false;
-            UI.updateAdminPanel();
-            UI.showToast("New Host Claimed: " + (Game.remotePlayers[msg.id]?.username || "Unknown"), "normal");
-        }
-    }
-    else if (msg.type === 'promote_host') {
-        if (msg.target === Game.localPlayer.id) {
-            Game.isAdmin = true;
-            Game.hostId = Game.localPlayer.id;
+        } else if (msg.type === 'host_heartbeat') {
+            Game.hostId = msg.id;
             Game.lastHostHeartbeat = now();
-            UI.showToast("You have been Promoted to Admin!", "success");
-            Sound.playSuccess();
-            UI.updateAdminPanel();
-            this.broadcastHostClaim();
-        } else {
-             // Handle case where someone else was promoted
-             Game.hostId = msg.target;
-             Game.lastHostHeartbeat = now();
-             Game.isAdmin = false;
-             UI.updateAdminPanel();
-        }
-    }
-    else if (msg.type === 'tile') {
+
+            // Glitch prevention: If I thought *I* was admin, but someone else is pulsing...
+            if (Game.isAdmin && msg.id !== Game.localPlayer.id) {
+                // Tie breaker: Who claimed it first? Or just yield.
+                // Simple yield:
+                console.warn("Host conflict detected. Yielding to " + msg.id);
+                Game.isAdmin = false;
+                UI.updateAdminPanel();
+            }
+        } else if (msg.type === 'claim_host') {
+            Game.hostId = msg.id;
+            Game.lastHostHeartbeat = now();
+            if (msg.id !== Game.localPlayer.id) {
+                Game.isAdmin = false;
+                UI.updateAdminPanel();
+                UI.showToast("New Host Claimed: " + (Game.remotePlayers[msg.id]?.username || "Unknown"), "normal");
+            }
+        } else if (msg.type === 'promote_host') {
+            if (msg.target === Game.localPlayer.id) {
+                Game.isAdmin = true;
+                Game.hostId = Game.localPlayer.id;
+                Game.lastHostHeartbeat = now();
+                UI.showToast("You have been Promoted to Admin!", "success");
+                Sound.playSuccess();
+                UI.updateAdminPanel();
+                this.broadcastHostClaim();
+            } else {
+                // Handle case where someone else was promoted
+                Game.hostId = msg.target;
+                Game.lastHostHeartbeat = now();
+                Game.isAdmin = false;
+                UI.updateAdminPanel();
+            }
+        } else if (msg.type === 'tile') {
              if (Game.map[msg.y]) { Game.map[msg.y][msg.x] = msg.val; Game.discovered[msg.y][msg.x] = 1; }
         }
-
         else if (msg.type === 'chat') { UI.addMessage(msg.name, msg.msg); Sound.playChat('msg'); }
         else if (msg.type === 'death') { UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#aaa"); Sound.playChat('death'); }
         else if (msg.type === 'kick') {
@@ -5978,6 +6001,9 @@ class NetworkManager {
             if (typeof msg.x === 'number' && typeof msg.y === 'number') {
                 this.sendAreaDiff(msg.x, msg.y, msg.w || 40, msg.h || 30, msg.id);
             }
+        } else if (msg.type === 'soundbite') {
+            // console.log("Playing soundbite:", msg.tag);
+            new Audio(`../shared/audio/${msg.tag}`).play();
         }
     }
 }
@@ -6359,7 +6385,7 @@ class UIManager {
 
     // --- SERVER LIST LOGIC ---
     async refreshServerList() {
-        if (puter.whoami && SaveSystem.cloudSyncEnabled) {
+        if (window.puter?.whoami && SaveSystem.cloudSyncEnabled) {
             SaveSystem.smartSyncAll(true, true);
         }
 
@@ -6806,6 +6832,7 @@ class SaveSystem {
         // Read from Unified Config
         this.autosaveEnabled = GameConfig.get('SaveSystem.autosave');
         this.cloudSyncEnabled = GameConfig.get('SaveSystem.cloudSync');
+        if (this.cloudSyncEnabled) Network.loadScript('../shared/js/puter-v2.min.js')
         this.updateCheckEnabled = GameConfig.get('SaveSystem.updateCheck');
 
         // Update UI states
@@ -7048,7 +7075,7 @@ class SaveSystem {
             // 2. CLOUD SYNC (If enabled)
             // We check the property or the DOM element directly
             if ($('cloudSync-auto') ? $('cloudSync-auto').checked : this.cloudSyncEnabled) {
-                if(puter.whoami){
+                if(window.puter?.whoami){
                   this.smartSyncAll();
                 } else {
                   UI.showToast('Log in with Puter to use cloud sync','normal');
