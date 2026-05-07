@@ -862,24 +862,24 @@
           
           <div class="commit-log">
             <small style="opacity: 0.6; font-family: var(--font-mono); display: block; margin: 10px 0;">
-              LATEST_LOG: Add trashExclude and AOEExclude to tile types
+              LATEST_LOG: Refactor sound effect handling to playSound method
             </small>
           </div>
         
           <div class="summary-content">
             <section>
   <ul>
-    <li>Procedural world generation with tile‑based mining, building, and upgrades.</li>
-    <li>Multiplayer support via MQTT, host election, chat, admin panel, and trading.</li>
-    <li>Responsive UI includes mobile controls, minimap, HUD gauges, and customizable texture packs.</li>
+    <li>Renders a procedurally‑generated mining world with day/night cycle, weather, and a station hub.</li>
+    <li>Implements player movement, drilling, building, inventory, upgrades, explosives, and a multiplayer sync layer.</li>
+    <li>Provides UI elements: mobile controls, chat, minimap, settings, shop, admin panel, and custom texture support.</li>
   </ul>
 
   <pre>
-    <code>Game.init()</code>
-    <code>Sound.updateEngine(speed, drilling)</code>
+    <code>const Game = new GameEngine();</code>
+    <code>Game.init();</code>
   </pre>
 
-  <p>This code creates a 2‑D mining game where players explore a randomly generated map, mine ores, and manage resources. It handles movement, drilling speed based on tier, heat, explosions, and a full UI with HUD, chat, and shop. Multiplayer is managed through MQTT with host fallback and admin tools, while custom textures and settings are persisted locally.</p>
+  <p>This file defines a full‑featured browser game called “Mega Miner NG”. It handles map generation, player actions, networking, sound, and a rich UI using CSS‑based bevel borders and responsive layout. Additional features include save‑system, cloud sync, custom textures, and an extensible modal system for prompts and forms.</p>
 </section>
           </div>
         </section>
