@@ -2776,19 +2776,35 @@ class SoundManager {
 
 
     playNextMusic() {
-      try{
-        if(this.musicSource) { this.musicSource.stop(); }
-        this.currentTrack = Math.floor(Math.random() * 100) % this.playlist.length;
-        const file = this.playlist[this.currentTrack];
-        const audio = new Audio(file);
-        const source = this.ctx.createMediaElementSource(audio);
-        source.connect(this.nodes.music);
-        audio.onended = () => this.playNextMusic();
-        audio.onerror = () => { console.log("Music load failed, skipping"); this.playNextMusic(); };
-        audio.play().catch(e=>console.log("Autoplay blocked"));
-      }catch(e){
-        console.error("Error playing music:", e);
-      }
+        try {
+            if (this.musicSource) {
+            this.musicSource.stop();
+            }
+
+            this.currentTrack = Math.floor(Math.random() * this.playlist.length);
+            const file = this.playlist[this.currentTrack];
+
+            const audio = new Audio(file);
+            // Note: Re-creating MediaElementSource on the same audio context
+            // frequently can also cause memory leaks/errors.
+            const source = this.ctx.createMediaElementSource(audio);
+            source.connect(this.nodes.music);
+
+            audio.onended = () => this.playNextMusic();
+
+            audio.onerror = () => {
+            console.warn(`Failed to load: ${file}. Retrying in 2 seconds...`);
+            // Add a delay to prevent the infinite loop from crashing the browser
+            setTimeout(() => this.playNextMusic(), 2000);
+            };
+
+            audio.play().catch(e => {
+            console.log("Autoplay blocked or playback interrupted");
+            });
+
+        } catch (e) {
+            console.error("Error playing music:", e);
+        }
     }
 
     loadSettings() {
@@ -3151,8 +3167,8 @@ class GameEngine {
 
         // 4. Standard Ores
         if (r > 0.96 && y > 100) return TILE_TYPES.GOLD;
-        if (r > 0.92 && y > 50) return TILE_TYPES.IRON;
-        if (r > 0.89) return TILE_TYPES.COAL;
+        if (r > 0.94 && y > 50) return TILE_TYPES.IRON;
+        if (r > 0.94) return TILE_TYPES.COAL;
 
         return type;
     }
