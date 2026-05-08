@@ -419,6 +419,8 @@
       
         <a class="nav-item" href="rusticrealms/index.html" data-name="rusticrealms">rusticrealms</a>
       
+        <a class="nav-item" href="tube/index.html" data-name="tube">tube</a>
+      
         <a class="nav-item" href="turtle/index.html" data-name="turtle">turtle</a>
       
         <a class="nav-item" href="voxelcrash/index.html" data-name="voxelcrash">voxelcrash</a>
@@ -1159,10 +1161,42 @@
           </div>
         </section>
       
-        <section class="hud-card" id="card-24" data-name="turtle">
+        <section class="hud-card" id="card-24" data-name="tube">
           <div class="hud-texture"></div>
           <div class="card-header">
             <span class="unit-tag">REF_NO // 1024</span>
+            <a class="launch-btn" href="tube/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">tube</h2>
+          
+          <div class="commit-log">
+            <small style="opacity: 0.6; font-family: var(--font-mono); display: block; margin: 10px 0;">
+              LATEST_LOG: Add 3D Groan Tube
+            </small>
+          </div>
+        
+          <div class="summary-content">
+            <section>
+  <ul>
+    <li>Three‑js scene with a rotating groan‑tube model.</li>
+    <li>Web Audio API synth generates a vowel‑shaped “eeee‑oooo‑ettt” sound.</li>
+    <li>Press <code>R</code> or click the tube to flip it with animated puck movement.</li>
+  </ul>
+
+  <pre>
+    <code>audioCtx = new AudioContext();</code>
+    <code>tubeGroup.rotation.y += 0.005;</code>
+  </pre>
+
+  <p>This page creates a simple 3‑D tube that spins automatically and can be flipped by keyboard or mouse interactions. The flip triggers a synthesized groan sound built from oscillators, filters, and a short click envelope. The UI includes a start button, overlay title, and controls hint for easy use.</p>
+</section>
+          </div>
+        </section>
+      
+        <section class="hud-card" id="card-25" data-name="turtle">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1025</span>
             <a class="launch-btn" href="turtle/index.html">Initialize</a>
           </div>
           <h2 class="app-title">turtle</h2>
@@ -1191,10 +1225,10 @@
           </div>
         </section>
       
-        <section class="hud-card" id="card-25" data-name="voxelcrash">
+        <section class="hud-card" id="card-26" data-name="voxelcrash">
           <div class="hud-texture"></div>
           <div class="card-header">
-            <span class="unit-tag">REF_NO // 1025</span>
+            <span class="unit-tag">REF_NO // 1026</span>
             <a class="launch-btn" href="voxelcrash/index.html">Initialize</a>
           </div>
           <h2 class="app-title">voxelcrash</h2>
@@ -1223,10 +1257,10 @@
           </div>
         </section>
       
-        <section class="hud-card" id="card-26" data-name="voxelracing">
+        <section class="hud-card" id="card-27" data-name="voxelracing">
           <div class="hud-texture"></div>
           <div class="card-header">
-            <span class="unit-tag">REF_NO // 1026</span>
+            <span class="unit-tag">REF_NO // 1027</span>
             <a class="launch-btn" href="voxelracing/index.html">Initialize</a>
           </div>
           <h2 class="app-title">voxelracing</h2>

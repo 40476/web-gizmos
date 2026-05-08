@@ -1,0 +1,14 @@
+<section>
+  <ul>
+    <li>Three‑js scene with a rotating groan‑tube model.</li>
+    <li>Web Audio API synth generates a vowel‑shaped “eeee‑oooo‑ettt” sound.</li>
+    <li>Press <code>R</code> or click the tube to flip it with animated puck movement.</li>
+  </ul>
+
+  <pre>
+    <code>audioCtx = new AudioContext();</code>
+    <code>tubeGroup.rotation.y += 0.005;</code>
+  </pre>
+
+  <p>This page creates a simple 3‑D tube that spins automatically and can be flipped by keyboard or mouse interactions. The flip triggers a synthesized groan sound built from oscillators, filters, and a short click envelope. The UI includes a start button, overlay title, and controls hint for easy use.</p>
+</section>
