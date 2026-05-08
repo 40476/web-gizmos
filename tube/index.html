@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Groan Tube (EEEEEEOOOOOEEETTT)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../shared/js/three.min.js"></script>
+    <script src="../shared/js/header.js"></script>
+
+    <style>
+        body {
+            background: radial-gradient(circle at center, #2c3e50 0%, #000000 100%);
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Comic Sans', "Comic Sans MS', cursive;
+            touch-action: none;
+        }
+      
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+      
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            pointer-events: none;
+            text-align: center;
+        }
+      
+        .controls-hint {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+        }
+      
+        .kbd-key {
+            background: #444;
+            border-radius: 4px;
+            padding: 2px 8px;
+            color: white;
+            font-weight: bold;
+            border-bottom: 2px solid #222;
+        }
+      
+    </style>
+</head>
+<body>
+
+    <div class="ui-overlay">
+        <h1 class="text-4xl font-black italic text-yellow-400 mb-2 drop-shadow-lg tracking-tighter">SYNTHETIC ZUBE 3D</h1>
+        <div id="setup-screen" class="mt-4 pointer-events-auto">
+            <button id="startBtn" class="bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold py-3 px-10 rounded-full shadow-2xl transition-all uppercase text-lg">
+                clic meh foar sownd
+            </button>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="controls-hint">
+        <p>Press <span class="kbd-key">R</span> to Flip &bull; Drag to Rotate View &bull; Click Tube to Play</p>
+    </div>
+
+    <script>
+        let scene, camera, renderer, tubeGroup, puck;
+        let audioCtx, isFlipped = false, isMoving = false;
+        const tubeLength = 4;
+        const tubeRadius = 0.5;
+
+        // --- Audio Engine ---
+        function playSyntheticGroan() {
+            if (!audioCtx) return;
+
+            const duration = 1.6;
+            const now = audioCtx.currentTime;
+            
+            // Core sound source: Buzzing Sawtooth
+            const osc = audioCtx.createOscillator();
+            const mainGain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            
+            // Frequency Profile: eeeee -> hhhh -> aaaa -> oooo -> eeee -> hhhh -> aaaa
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(140, now + 0.4);
+            osc.frequency.exponentialRampToValueAtTime(90, now + 1.0);
+            osc.frequency.exponentialRampToValueAtTime(70, now + duration);
+
+            // Formant Filter (mimics vowel sounds)
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.Q.value = 4;
+            
+            // The "eeeee-aaaa-oooo" movement
+            filter.frequency.setValueAtTime(1000, now); // eeee
+            filter.frequency.exponentialRampToValueAtTime(2500, now + 0.3); // hhhh
+            filter.frequency.exponentialRampToValueAtTime(800, now + 0.7);  // aaaa
+            filter.frequency.exponentialRampToValueAtTime(400, now + 1.0);  // oooo
+            filter.frequency.exponentialRampToValueAtTime(1200, now + 1.3); // eeee
+            filter.frequency.exponentialRampToValueAtTime(600, now + duration); // hhhhaaa
+
+            // Vibrato (the "reed" shake)
+            const vbr = audioCtx.createOscillator();
+            const vbrGain = audioCtx.createGain();
+            vbr.frequency.value = 35;
+            vbrGain.gain.value = 15;
+            vbr.connect(vbrGain);
+            vbrGain.connect(osc.frequency);
+
+            // Final "ETTT" clack sound
+            const clickOsc = audioCtx.createOscillator();
+            const clickGain = audioCtx.createGain();
+            clickOsc.type = 'square';
+            clickOsc.frequency.value = 150;
+            clickGain.gain.setValueAtTime(0, now);
+            clickGain.gain.setValueAtTime(0.2, now + duration); // The "ettt" at the end
+            clickGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.05);
+
+            mainGain.gain.setValueAtTime(0, now);
+            mainGain.gain.linearRampToValueAtTime(0.4, now + 0.1);
+            mainGain.gain.setValueAtTime(0.4, now + duration - 0.1);
+            mainGain.gain.linearRampToValueAtTime(0, now + duration);
+
+            osc.connect(filter);
+            filter.connect(mainGain);
+            mainGain.connect(audioCtx.destination);
+            
+            clickOsc.connect(clickGain);
+            clickGain.connect(audioCtx.destination);
+
+            osc.start();
+            vbr.start();
+            clickOsc.start();
+            
+            osc.stop(now + duration + 0.1);
+            vbr.stop(now + duration + 0.1);
+            clickOsc.stop(now + duration + 0.1);
+        }
+
+        // --- 3D Engine ---
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0xffffff, 1);
+            pointLight.position.set(5, 5, 5);
+            scene.add(pointLight);
+
+            tubeGroup = new THREE.Group();
+
+            const geometry = new THREE.CylinderGeometry(tubeRadius, tubeRadius, tubeLength, 32, 1, true);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0xffdb00, 
+                shininess: 120,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            tubeGroup.add(mesh);
+
+            const capGeo = new THREE.CylinderGeometry(tubeRadius + 0.05, tubeRadius + 0.05, 0.3, 32);
+            const capMat = new THREE.MeshPhongMaterial({ color: 0xff4444 });
+            
+            const topCap = new THREE.Mesh(capGeo, capMat);
+            topCap.position.y = tubeLength / 2;
+            tubeGroup.add(topCap);
+
+            const bottomCap = new THREE.Mesh(capGeo, capMat);
+            bottomCap.position.y = -tubeLength / 2;
+            tubeGroup.add(bottomCap);
+
+            const puckGeo = new THREE.CylinderGeometry(tubeRadius - 0.1, tubeRadius - 0.1, 0.7, 24);
+            const puckMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            puck = new THREE.Mesh(puckGeo, puckMat);
+            puck.position.y = -tubeLength / 2 + 0.5;
+            tubeGroup.add(puck);
+
+            scene.add(tubeGroup);
+            camera.position.z = 6;
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!isMoving) {
+                tubeGroup.rotation.y += 0.005;
+            }
+            renderer.render(scene, camera);
+        }
+
+        function triggerFlip() {
+            if (isMoving) return;
+            isMoving = true;
+            isFlipped = !isFlipped;
+
+            const targetRot = isFlipped ? Math.PI : 0;
+            const targetPuckY = isFlipped ? tubeLength/2 - 0.5 : -tubeLength/2 + 0.5;
+            
+            const startRot = tubeGroup.rotation.x;
+            const startPuckY = puck.position.y;
+            const startTime = performance.now();
+            const duration = 1500;
+
+            playSyntheticGroan();
+
+            function update(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                tubeGroup.rotation.x = startRot + (targetRot - startRot) * ease;
+                
+                if (progress > 0.05) {
+                    const puckProgress = Math.min((progress - 0.05) / 0.9, 1);
+                    const puckEase = Math.pow(puckProgress, 2);
+                    puck.position.y = startPuckY + (targetPuckY - startPuckY) * puckEase;
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    isMoving = false;
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            document.getElementById('setup-screen').style.display = 'none';
+            init3D();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r') triggerFlip();
+        });
+
+        window.addEventListener('resize', () => {
+            if (camera) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+
+        let isDragging = false;
+        let prevMouseX = 0;
+        document.addEventListener('mousedown', (e) => { isDragging = true; prevMouseX = e.clientX; });
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging && tubeGroup) {
+                const delta = e.clientX - prevMouseX;
+                tubeGroup.rotation.y += delta * 0.01;
+                prevMouseX = e.clientX;
+            }
+        });
+        document.addEventListener('mouseup', () => isDragging = false);
+
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'CANVAS' && !isMoving) {
+                triggerFlip();
+            }
+        });
+    </script>
+</body>
+</html>
