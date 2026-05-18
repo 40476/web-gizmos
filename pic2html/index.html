@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- https://www.svgrepo.com/svg/101767/art-painting?edit=true -->
-    <link rel="icon" type="image/png" href="favicon.png">
     <title>Image to HTML Text art</title>
     <style>
         body {
@@ -13,12 +11,19 @@
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
+            color: #333;
         }
         
         .container {
             display: grid;
             grid-template-columns: 300px 1fr;
             gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
         }
         
         .controls {
@@ -37,6 +42,8 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             min-height: 400px;
+            display: flex;
+            flex-direction: column;
         }
         
         .control-group {
@@ -50,18 +57,26 @@
             font-size: 14px;
         }
         
-        input[type="file"], select, input[type="text"], input[type="number"] {
+        input[type="file"], select, input[type="text"], input[type="number"], input[type="range"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
         }
+
+        input[type="range"] {
+            padding: 0;
+            height: 25px;
+            background: transparent;
+        }
         
         .checkbox-group {
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: normal;
+            cursor: pointer;
         }
         
         button {
@@ -74,6 +89,8 @@
             width: 100%;
             font-size: 16px;
             margin-top: 10px;
+            font-weight: bold;
+            transition: background-color 0.2s;
         }
         
         button:hover {
@@ -85,68 +102,72 @@
             cursor: not-allowed;
         }
         
-        .preview {
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            padding: 10px;
-            background: #f9f9f9;
-        }
-        
         .status {
             margin-top: 10px;
             font-size: 12px;
             color: #666;
+            line-height: 1.4;
         }
         
         .error {
             color: #dc3545;
             font-size: 14px;
+            margin-bottom: 10px;
         }
         
-        /* Hide the original output container initially */
-        #output-container {
-            display: none;
-        }
-        
-        /* Text image styles */
-        .text-image-container {
-            overflow: auto;
-            max-height: 60vh;
-            border: 1px solid #ddd;
-            background-color: var(--bg-color, black);
+        .canvas-container {
+            flex-1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eaeaea;
+            border-radius: 6px;
             padding: 10px;
+            overflow: auto;
+            min-height: 350px;
         }
-        
-        .text-image {
-            font-family: monospace;
-            letter-spacing: 0;
-            white-space: pre;
-            font-size: var(--font-size, 12px);
-            color: white;
-            margin: 0;
-            padding: 0;
+
+        #webgl-canvas {
+            max-width: 100%;
+            max-height: 70vh;
+            display: block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
-        
-        .ie-adjustment {
-            /* IE uses normal line-height, adjust character spacing instead */
-        }
-        
-        .firefox-adjustment {
-            /* Firefox uses normal line-height, adjust character spacing instead */
+
+        .placeholder-text {
+            color: #888;
+            font-style: italic;
+            text-align: center;
         }
         
         .controls h3, .output h3 {
             margin-top: 0;
             color: #333;
+            border-b: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .flex-row-inputs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .flex-row-inputs input[type="color"] {
+            width: 40px;
+            height: 34px;
+            padding: 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
         }
     </style>
-    <script src="../shared/js/header.js"></script>
 </head>
 <body>
-    <h1>pic2html - Image to HTML Text Converter</h1>
-    <p>Convert images into HTML text using configurable settings. This is a JavaScript remake of the original Pike program.</p>
+    <h1>pic2html - WebGL Image to HTML Text Converter</h1>
+    <p>Convert images into HTML text using configurable settings. Powered by WebGL for instant GPU preview rendering.</p>
     
     <div class="container">
+        <!-- Controls Sidebar -->
         <div class="controls">
             <h3>Settings</h3>
             
@@ -158,6 +179,7 @@
             <div class="control-group">
                 <label for="text-type">Text Type</label>
                 <select id="text-type">
+                    <option value="brightness">Brightness Map</option>
                     <option value="sequence">Sequence</option>
                     <option value="random" selected>Random</option>
                 </select>
@@ -165,7 +187,7 @@
             
             <div class="control-group">
                 <label for="width">Width (characters)</label>
-                <input type="number" id="width" value="130" min="1" max="500">
+                <input type="number" id="width" value="130" min="10" max="500">
             </div>
             
             <div class="control-group">
@@ -175,25 +197,20 @@
             
             <div class="control-group">
                 <label for="bg-color">Background Color</label>
-                <input type="text" id="bg-color" value="black">
+                <div class="flex-row-inputs">
+                    <input type="color" id="bg-picker" value="#000000">
+                    <input type="text" id="bg-color" value="black">
+                </div>
             </div>
             
             <div class="control-group">
-                <label for="font-size">Font Size</label>
-                <input type="number" id="font-size" value="15">
+                <label for="font-size">Font Size: <span id="font-size-val">12px</span></label>
+                <input type="range" id="font-size" min="6" max="32" value="12">
             </div>
             
-            <div class="control-group" hidden>
-                <label for="line-spacing">Line Spacing</label>
-                <input type="number" id="line-spacing" value="1.0" step="0.1" min="0.1" max="3.0">
-            </div>
-            
-            <div class="control-group" hidden>
-                <label for="browser">Browser</label>
-                <select id="browser">
-                    <option value="ie">Internet Explorer</option>
-                    <option value="firefox">Firefox</option>
-                </select>
+            <div class="control-group">
+                <label for="line-spacing">Line Spacing: <span id="line-spacing-val">0.8</span></label>
+                <input type="range" id="line-spacing" min="0.4" max="2.0" step="0.1" value="0.8">
             </div>
             
             <div class="control-group">
@@ -203,56 +220,60 @@
                 </label>
             </div>
             
-            <div class="control-group" hidden>
+            <div class="control-group">
                 <label class="checkbox-group">
-                    <input type="checkbox" id="contrast">
-                    Apply Contrast
+                    <input type="checkbox" id="contrast" checked>
+                    Apply Contrast (S-Curve)
                 </label>
             </div>
             
-            <button id="convert-btn">Convert Image</button>
+            <button id="convert-btn" disabled>Convert Image</button>
             
-            <div class="control-group">
-              <br>
+            <div class="control-group" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
                 <label>Export Options</label>
-                <button id="export-html-btn" disabled>Copy HTML</button>
-                <button id="export-svg-btn" disabled hidden>Export SVG</button>
-                <button id="export-png-btn" disabled>Export PNG</button>
+                <button id="export-html-btn" disabled style="background-color: #28a745;">Copy HTML</button>
+                <button id="export-png-btn" disabled style="background-color: #17a2b8;">Export PNG</button>
             </div>
             
-            <div class="status" id="status"></div>
+            <div class="status" id="status">Waiting for an image file.</div>
         </div>
         
+        <!-- Preview Output Viewport -->
         <div class="output">
             <h3>Output</h3>
             <div id="error-message" class="error"></div>
-            <div id="output-container">
-                <div class="text-image-container" id="text-image-container">
-                    <div class="text-image" id="text-image"></div>
-                </div>
-                <div class="status" id="render-time"></div>
+            
+            <div class="canvas-container" id="canvas-container">
+                <div id="placeholder" class="placeholder-text">Please upload an image to view the WebGL art output.</div>
+                <canvas id="webgl-canvas" style="display: none;"></canvas>
             </div>
+            
+            <div class="status" id="render-time"></div>
         </div>
     </div>
 
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- Hidden conversion canvas for generating precise HTML export colors on the CPU -->
+    <canvas id="conversion-canvas" style="display:none;"></canvas>
+
     <script>
-        // Contrast curve (sine) - same as original Pike program
+        // Pike Program Sine Contrast Curve (used in CPU export to perfectly match WebGL output)
         const contrastCurve = [
             0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,6,6,6,7,8,8,9,9,10,10,11,12,12,13,14,14,15,16,17,17,18,19,20,21,22,23,23,24,25,26,27,28,29,30,31,32,33,34,35,37,38,39,40,41,42,43,45,46,47,48,49,51,52,53,54,56,57,58,60,61,62,64,65,66,68,69,71,72,73,75,76,78,79,81,82,84,85,87,88,90,91,93,94,96,97,99,100,102,103,105,106,108,109,111,113,114,116,117,119,120,122,124,125,127,128,130,131,133,135,136,138,139,141,142,144,146,147,149,150,152,153,155,156,158,159,161,162,164,165,167,168,170,171,173,174,176,177,179,180,182,183,184,186,187,189,190,191,193,194,195,197,198,199,201,202,203,204,206,207,208,209,210,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229,230,231,232,232,233,234,235,236,237,238,238,239,240,241,241,242,243,243,244,245,245,246,246,247,247,248,249,249,249,250,250,251,251,252,252,252,253,253,253,253,254,254,254,254,254,255,255,255,255,255,255,255,255
         ];
 
-        // State variables
-        let textTypeCount = -1;
-        let textType = "sequence";
-        let HTMLCharacter = ["0", "1"];
-        let bgColor = "black";
-        let fontSize = -3;
-        let grayscale = 0;
-        let browser = "ie";
-        let contrast = 0;
-        let imageWidth = 130;
-        let lineSpacing = 1.0;
+        // State Variables
+        let sourceImage = null;
+        let originalFilename = "";
+        let gl = null;
+        let shaderProgram = null;
+        let texture = null;
+        let fontAtlasTexture = null;
+        let uImageSizeLoc = null;
+        let uGridSizeLoc = null;
+        let uCharSetLenLoc = null;
+        let uGrayscaleLoc = null;
+        let uContrastLoc = null;
+        let uMappingModeLoc = null;
 
         // DOM elements
         const imageInput = document.getElementById('image-input');
@@ -260,404 +281,480 @@
         const widthInput = document.getElementById('width');
         const charactersInput = document.getElementById('characters');
         const bgColorInput = document.getElementById('bg-color');
+        const bgPicker = document.getElementById('bg-picker');
         const fontSizeInput = document.getElementById('font-size');
-        const browserSelect = document.getElementById('browser');
+        const fontSizeVal = document.getElementById('font-size-val');
+        const lineSpacingInput = document.getElementById('line-spacing');
+        const lineSpacingVal = document.getElementById('line-spacing-val');
         const grayscaleCheckbox = document.getElementById('grayscale');
         const contrastCheckbox = document.getElementById('contrast');
-        const lineSpacingInput = document.getElementById('line-spacing');
         const convertBtn = document.getElementById('convert-btn');
-        const statusEl = document.getElementById('status');
-        const errorMessageEl = document.getElementById('error-message');
-        const outputContainer = document.getElementById('output-container');
-        const textImageContainer = document.getElementById('text-image-container');
-        const textImageEl = document.getElementById('text-image');
-        const renderTimeEl = document.getElementById('render-time');
         const exportHtmlBtn = document.getElementById('export-html-btn');
-        const exportSvgBtn = document.getElementById('export-svg-btn');
         const exportPngBtn = document.getElementById('export-png-btn');
+        const statusEl = document.getElementById('status');
+        const renderTimeEl = document.getElementById('render-time');
+        const errorMessageEl = document.getElementById('error-message');
+        const glCanvas = document.getElementById('webgl-canvas');
+        const placeholder = document.getElementById('placeholder');
 
-        // Event listeners
+        // Color coordination listeners
+        bgPicker.addEventListener('input', (e) => {
+            bgColorInput.value = e.target.value;
+            applyBackgroundColor(e.target.value);
+        });
+        bgColorInput.addEventListener('input', (e) => {
+            applyBackgroundColor(e.target.value);
+        });
+
+        function applyBackgroundColor(color) {
+            glCanvas.style.backgroundColor = color;
+            triggerLiveUpdate();
+        }
+
+        // Event listeners for automatic WebGL updates on parameter change
         imageInput.addEventListener('change', handleImageChange);
-        textTypeSelect.addEventListener('change', updateSettings);
-        widthInput.addEventListener('change', updateSettings);
-        charactersInput.addEventListener('change', updateSettings);
-        bgColorInput.addEventListener('change', updateSettings);
-        fontSizeInput.addEventListener('change', updateSettings);
-        browserSelect.addEventListener('change', updateSettings);
-        grayscaleCheckbox.addEventListener('change', updateSettings);
-        contrastCheckbox.addEventListener('change', updateSettings);
-        lineSpacingInput.addEventListener('change', updateSettings);
-        convertBtn.addEventListener('click', convertImage);
-        exportHtmlBtn.addEventListener('click', exportHtml);
-        exportSvgBtn.addEventListener('click', exportSvg);
-        exportPngBtn.addEventListener('click', exportPng);
+        textTypeSelect.addEventListener('change', triggerLiveUpdate);
+        widthInput.addEventListener('input', triggerLiveUpdate);
+        charactersInput.addEventListener('input', triggerLiveUpdate);
+        grayscaleCheckbox.addEventListener('change', triggerLiveUpdate);
+        contrastCheckbox.addEventListener('change', triggerLiveUpdate);
+        
+        fontSizeInput.addEventListener('input', (e) => {
+            fontSizeVal.textContent = e.target.value + 'px';
+            triggerLiveUpdate();
+        });
+        lineSpacingInput.addEventListener('input', (e) => {
+            lineSpacingVal.textContent = e.target.value;
+            triggerLiveUpdate();
+        });
+
+        convertBtn.addEventListener('click', triggerLiveUpdate);
 
         function handleImageChange(e) {
             if (e.target.files && e.target.files[0]) {
                 const file = e.target.files[0];
-                
-                statusEl.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+                originalFilename = file.name.split('.').slice(0, -1).join('.');
+                statusEl.textContent = `Selected image: ${file.name} (${formatFileSize(file.size)})`;
                 convertBtn.disabled = false;
+                exportHtmlBtn.disabled = false;
+                exportPngBtn.disabled = false;
                 errorMessageEl.textContent = '';
+                
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    sourceImage = new Image();
+                    sourceImage.onload = function() {
+                        placeholder.style.display = 'none';
+                        glCanvas.style.display = 'block';
+                        initWebGL();
+                        triggerLiveUpdate();
+                    };
+                    sourceImage.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
             }
-        }
-
-        function updateSettings() {
-            textType = textTypeSelect.value;
-            imageWidth = parseInt(widthInput.value) || 130;
-            HTMLCharacter = charactersInput.value.split('');
-            bgColor = bgColorInput.value;
-            fontSize = parseInt(fontSizeInput.value);
-            browser = browserSelect.value;
-            grayscale = grayscaleCheckbox.checked ? 1 : 0;
-            contrast = contrastCheckbox.checked ? 1 : 0;
-            
-            // Apply width limits
-            if (imageWidth < 1 || imageWidth > 500) {
-                imageWidth = 100;
-                widthInput.value = imageWidth;
-            }
-        }
-
-        function showError(message) {
-            errorMessageEl.textContent = message;
-            outputContainer.style.display = 'none';
         }
 
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const sizes = ['Bytes', 'KB', 'MB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        function convertImage() {
-            updateSettings();
-            
-            if (!imageInput.files || !imageInput.files[0]) {
-                showError("No image specified.");
-                return;
+        // WebGL context & shader pipeline setup
+        function initWebGL() {
+            if (!gl) {
+                gl = glCanvas.getContext('webgl2', { preserveDrawingBuffer: true });
+                if (!gl) {
+                    errorMessageEl.textContent = "WebGL2 is not supported on this browser or device.";
+                    return;
+                }
             }
 
-            const file = imageInput.files[0];
-            const reader = new FileReader();
+            // WebGL Vertex Shader
+            const vsSource = `#version 300 es
+                in vec2 aPosition;
+                in vec2 aTexCoord;
+                out vec2 vTexCoord;
+                void main() {
+                    gl_Position = vec4(aPosition, 0.0, 1.0);
+                    vTexCoord = aTexCoord;
+                }
+            `;
 
-            reader.onload = function(e) {
-                const startTime = performance.now();
-                const img = new Image();
-                
-                img.onload = function() {
-                    try {
+            // GPU Fragment Shader converting image pixels instantly to matching text positions
+            const fsSource = `#version 300 es
+                precision highp float;
+                precision highp int;
 
-                        // Create canvas and draw image
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        
-                        // Calculate aspect ratio adjustments
-                        let aspectRatio = 1.0;
-                        if (browser === 'ie') {
-                            aspectRatio = 0.65;
-                        } else {
-                            aspectRatio = 0.43;
-                        }
-                        
-                        // Calculate new dimensions
-                        const newWidth = imageWidth;
-                        const newHeight = Math.floor((img.height * newWidth) / img.width);
-                        
-                        canvas.width = newWidth;
-                        canvas.height = newHeight;
-                        
-                        // Draw and scale image
-                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                        
-                        // Apply grayscale if needed
-                        if (grayscale === 1 || grayscale === 2) {
-                            const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
-                            const data = imageData.data;
-                            
-                            for (let i = 0; i < data.length; i += 4) {
-                                const r = data[i];
-                                const g = data[i + 1];
-                                const b = data[i + 2];
-                                
-                                // Convert to grayscale
-                                const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-                                
-                                if (grayscale === 2) {
-                                    // Threshold
-                                    data[i] = data[i + 1] = data[i + 2] = gray >= 128 ? 255 : 0;
-                                } else {
-                                    // Full grayscale
-                                    data[i] = data[i + 1] = data[i + 2] = gray;
-                                }
-                            }
-                            
-                            ctx.putImageData(imageData, 0, 0);
-                        }
-                        
-                        // Apply contrast if needed
-                        if (contrast) {
-                            const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
-                            const data = imageData.data;
-                            
-                            for (let i = 0; i < data.length; i += 4) {
-                                data[i] = contrastCurve[data[i]];
-                                data[i + 1] = contrastCurve[data[i + 1]];
-                                data[i + 2] = contrastCurve[data[i + 2]];
-                            }
-                            
-                            ctx.putImageData(imageData, 0, 0);
-                        }
-                        
-                        // Generate text image
-                        const textImage = generateTextImage(ctx, newWidth, newHeight);
-                        
-                        // Display result
-                        textImageContainer.style.backgroundColor = bgColor;
-                        textImageContainer.className = `text-image-container ${browser}-adjustment`;
-                        textImageEl.style.fontSize = fontSize + 'px';
-                        textImageEl.style.lineHeight = lineSpacing + '';
-                        textImageEl.innerHTML = textImage;
-                        
-                        const endTime = performance.now();
-                        renderTimeEl.textContent = `Rendering time: ${((endTime - startTime) / 1000).toFixed(2)} seconds.`;
-                        
-                        outputContainer.style.display = 'block';
-                        errorMessageEl.textContent = '';
-                        
-                    } catch (error) {
-                        console.error('Error processing image:', error);
-                        showError("Failed to process image.");
+                in vec2 vTexCoord;
+                out vec4 fragColor;
+
+                uniform sampler2D uImage;
+                uniform sampler2D uFontAtlas;
+                uniform vec2 uImageSize;
+                uniform vec2 uGridSize; // cols, rows
+                uniform int uCharSetLen;
+                uniform bool uGrayscale;
+                uniform bool uContrast;
+                uniform int uMappingMode; // 0: Brightness, 1: Sequence, 2: Random
+
+                // Helper hash for randomized mode
+                float hash(vec2 p) {
+                    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+                }
+
+                void main() {
+                    vec2 cellIndex = floor(vTexCoord * uGridSize);
+                    vec2 cellUV = fract(vTexCoord * uGridSize);
+
+                    // Sample the middle of each character cell to get high accuracy contrast
+                    vec2 sourceUV = (cellIndex + vec2(0.5)) / uGridSize;
+                    sourceUV.y = 1.0 - sourceUV.y; // Flip Y for WebGL orientation
+
+                    vec4 pixel = texture(uImage, sourceUV);
+
+                    // High contrast S-Curve approximation on GPU via smoothstep
+                    if (uContrast) {
+                        pixel.r = smoothstep(0.0, 1.0, pixel.r);
+                        pixel.g = smoothstep(0.0, 1.0, pixel.g);
+                        pixel.b = smoothstep(0.0, 1.0, pixel.b);
                     }
-                };
-                
-                img.src = e.target.result;
-            };
-            
-            reader.readAsDataURL(file);
-        }
 
-        function generateTextImage(ctx, width, height) {
-            textTypeCount = -1; // Reset counter
-            
-            let result = '';
-            let oldColor = null;
-            
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    const pixelData = ctx.getImageData(x, y, 1, 1).data;
-                    const color = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
-                    
-                    if (color !== oldColor) {
-                        const character = nextCharacter();
-                        if (x === 0) {
-                            result += `<span style="color:${color}">${character}</span>`;
-                        } else {
-                            result += `</span><span style="color:${color}">${character}</span>`;
-                        }
-                        oldColor = color;
+                    float gray = 0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b;
+
+                    if (uGrayscale) {
+                        pixel = vec4(vec3(gray), pixel.a);
+                    }
+
+                    // Compute the index of the character to use
+                    int charIndex = 0;
+                    if (uMappingMode == 0) {
+                        // Brightness map
+                        charIndex = int(gray * float(uCharSetLen - 1));
+                    } else if (uMappingMode == 1) {
+                        // Sequence cycle
+                        int linearCell = int(cellIndex.y * uGridSize.x + cellIndex.x);
+                        charIndex = linearCell % uCharSetLen;
                     } else {
-                        result += nextCharacter();
+                        // Randomized
+                        float rVal = hash(cellIndex);
+                        charIndex = int(rVal * float(uCharSetLen));
                     }
-                }
-                
-                oldColor = null;
-                result += '<br>';
-            }
-            
-            return result;
-        }
 
-        function nextCharacter() {
-            if (HTMLCharacter.length === 1) {
-                return HTMLCharacter[0];
-            }
-            
-            if (textType === "random") {
-                return HTMLCharacter[Math.floor(Math.random() * HTMLCharacter.length)];
-            } else if (textType === "sequence") {
-                textTypeCount++;
-                if (textTypeCount >= HTMLCharacter.length) {
-                    textTypeCount = 0;
-                    return HTMLCharacter[0];
-                }
-                return HTMLCharacter[textTypeCount];
-            }
-            
-            return HTMLCharacter[0];
-        }
+                    charIndex = clamp(charIndex, 0, uCharSetLen - 1);
 
-        function exportHtml() {
-            if (!outputContainer.style.display || outputContainer.style.display === 'none') {
-                showError("Please convert an image first.");
+                    // Map the UV coordinate to the respective segment in our Font Atlas texture strip
+                    // Note: '1.0 - cellUV.y' flips the characters vertically to map HTML5 canvas coordinate space perfectly!
+                    float atlasSubWidth = 1.0 / float(uCharSetLen);
+                    vec2 atlasUV = vec2(
+                        (float(charIndex) + cellUV.x) * atlasSubWidth,
+                        1.0 - cellUV.y
+                    );
+
+                    vec4 fontPixel = texture(uFontAtlas, atlasUV);
+
+                    // Composite character mask with final luma pixel values
+                    fragColor = vec4(pixel.rgb, fontPixel.r * pixel.a);
+                }
+            `;
+
+            const vs = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vs, vsSource);
+            gl.compileShader(vs);
+            if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+                console.error("Vertex Shader Error:", gl.getShaderInfoLog(vs));
                 return;
             }
 
-            const htmlContent = textImageEl.innerHTML;
+            const fs = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fs, fsSource);
+            gl.compileShader(fs);
+            if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+                console.error("Fragment Shader Error:", gl.getShaderInfoLog(fs));
+                return;
+            }
+
+            shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vs);
+            gl.attachShader(shaderProgram, fs);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                console.error("Linker Error:", gl.getProgramInfoLog(shaderProgram));
+                return;
+            }
+
+            gl.useProgram(shaderProgram);
+
+            // Locate variables
+            uImageSizeLoc = gl.getUniformLocation(shaderProgram, "uImageSize");
+            uGridSizeLoc = gl.getUniformLocation(shaderProgram, "uGridSize");
+            uCharSetLenLoc = gl.getUniformLocation(shaderProgram, "uCharSetLen");
+            uGrayscaleLoc = gl.getUniformLocation(shaderProgram, "uGrayscale");
+            uContrastLoc = gl.getUniformLocation(shaderProgram, "uContrast");
+            uMappingModeLoc = gl.getUniformLocation(shaderProgram, "uMappingMode");
+
+            // Define Geometry (fullscreen quad)
+            const vertices = new Float32Array([
+                -1, -1,  0, 0,
+                 1, -1,  1, 0,
+                -1,  1,  0, 1,
+                -1,  1,  0, 1,
+                 1, -1,  1, 0,
+                 1,  1,  1, 1
+            ]);
+
+            const vbo = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const vao = gl.createVertexArray();
+            gl.bindVertexArray(vao);
+
+            const aPosition = gl.getAttribLocation(shaderProgram, "aPosition");
+            gl.enableVertexAttribArray(aPosition);
+            gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 16, 0);
+
+            const aTexCoord = gl.getAttribLocation(shaderProgram, "aTexCoord");
+            gl.enableVertexAttribArray(aTexCoord);
+            gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 16, 8);
+
+            // Define image texture slot
+            texture = gl.createTexture();
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        }
+
+        // Draw offscreen character strip to supply font masks onto the GPU
+        function generateFontAtlas(chars, fontSize) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const len = chars.length;
+
+            const charWidth = Math.ceil(fontSize * 0.6);
+            const charHeight = fontSize;
+
+            canvas.width = charWidth * len;
+            canvas.height = charHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${fontSize}px monospace`;
+            ctx.textBaseline = "top";
+
+            for (let i = 0; i < len; i++) {
+                ctx.fillText(chars[i], i * charWidth, 0);
+            }
+
+            return { canvas, charWidth, charHeight };
+        }
+
+        function triggerLiveUpdate() {
+            if (!sourceImage || !gl) return;
+
+            const startTime = performance.now();
+
+            const charSet = charactersInput.value || " ";
+            const columns = Math.max(10, Math.min(500, parseInt(widthInput.value) || 130));
+            const fSize = parseInt(fontSizeInput.value) || 12;
+            const lSpacing = parseFloat(lineSpacingInput.value) || 0.8;
+
+            const modeValue = textTypeSelect.value;
+            let mappingMode = 0;
+            if (modeValue === 'sequence') mappingMode = 1;
+            if (modeValue === 'random') mappingMode = 2;
+
+            const rows = Math.floor((sourceImage.height * columns) / sourceImage.width * lSpacing);
+
+            // Rebuild Atlas on GPU
+            const atlasData = generateFontAtlas(charSet, fSize);
+            
+            if (fontAtlasTexture) {
+                gl.deleteTexture(fontAtlasTexture);
+            }
+            fontAtlasTexture = gl.createTexture();
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, fontAtlasTexture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasData.canvas);
+
+            // Load primary source image
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceImage);
+
+            // Establish pixel canvas size matching grid column counts
+            glCanvas.width = columns * atlasData.charWidth;
+            glCanvas.height = rows * atlasData.charHeight;
+            gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+
+            gl.useProgram(shaderProgram);
+            
+            gl.uniform1i(gl.getUniformLocation(shaderProgram, "uImage"), 0);
+            gl.uniform1i(gl.getUniformLocation(shaderProgram, "uFontAtlas"), 1);
+
+            gl.uniform2f(uImageSizeLoc, sourceImage.width, sourceImage.height);
+            gl.uniform2f(uGridSizeLoc, columns, rows);
+            gl.uniform1i(uCharSetLenLoc, charSet.length);
+            gl.uniform1i(uGrayscaleLoc, grayscaleCheckbox.checked ? 1 : 0);
+            gl.uniform1i(uContrastLoc, contrastCheckbox.checked ? 1 : 0);
+            gl.uniform1i(uMappingModeLoc, mappingMode);
+
+            gl.clearColor(0.0, 0.0, 0.0, 0.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            const endTime = performance.now();
+            renderTimeEl.textContent = `GPU Rendering time: ${(endTime - startTime).toFixed(2)} ms`;
+        }
+
+        // Optimized export grouping consecutive colored characters into singular spans
+        function exportHtmlText() {
+            if (!sourceImage) return;
+
+            const columns = Math.max(10, Math.min(500, parseInt(widthInput.value) || 130));
+            const lSpacing = parseFloat(lineSpacingInput.value) || 0.8;
+            const rows = Math.floor((sourceImage.height * columns) / sourceImage.width * lSpacing);
+            const charSet = charactersInput.value || " ";
+            const fontSz = parseInt(fontSizeInput.value) || 12;
+            const bgVal = bgColorInput.value || "black";
+            const isGrayscale = grayscaleCheckbox.checked;
+            const isContrast = contrastCheckbox.checked;
+            const mode = textTypeSelect.value;
+
+            const convCanvas = document.getElementById('conversion-canvas');
+            const convCtx = convCanvas.getContext('2d');
+            convCanvas.width = columns;
+            convCanvas.height = rows;
+
+            convCtx.drawImage(sourceImage, 0, 0, columns, rows);
+            const imgData = convCtx.getImageData(0, 0, columns, rows);
+            const data = imgData.data;
+
+            let resultHtml = "";
+            let textCounter = -1;
+
+            let activeColor = "";
+            let colorSpanOpen = false;
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < columns; x++) {
+                    const idx = (y * columns + x) * 4;
+                    let r = data[idx];
+                    let g = data[idx + 1];
+                    let b = data[idx + 2];
+
+                    if (isContrast) {
+                        r = contrastCurve[r];
+                        g = contrastCurve[g];
+                        b = contrastCurve[b];
+                    }
+
+                    let gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                    if (isGrayscale) {
+                        r = g = b = gray;
+                    }
+
+                    let charIndex = 0;
+                    if (mode === 'brightness') {
+                        charIndex = Math.floor((gray / 255) * (charSet.length - 1));
+                    } else if (mode === 'sequence') {
+                        textCounter++;
+                        charIndex = textCounter % charSet.length;
+                    } else {
+                        charIndex = Math.floor(Math.random() * charSet.length);
+                    }
+                    charIndex = Math.max(0, Math.min(charSet.length - 1, charIndex));
+                    let char = charSet[charIndex];
+                    if (char === " ") char = "&nbsp;";
+
+                    const targetColor = `rgb(${r},${g},${b})`;
+
+                    if (targetColor !== activeColor) {
+                        if (colorSpanOpen) {
+                            resultHtml += `</span>`;
+                        }
+                        resultHtml += `<span style="color:${targetColor}">`;
+                        activeColor = targetColor;
+                        colorSpanOpen = true;
+                    }
+                    resultHtml += char;
+                }
+                
+                if (colorSpanOpen) {
+                    resultHtml += `</span>`;
+                    activeColor = "";
+                    colorSpanOpen = false;
+                }
+                resultHtml += "<br>";
+            }
+
             const fullHtml = `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Text Image</title>
+    <title>Text Art Output</title>
     <style>
-        body { background-color: ${bgColor}; margin: 0; padding: 20px; }
+        body { 
+            background-color: ${bgVal}; 
+            margin: 0; 
+            padding: 24px; 
+            display: flex;
+            justify-content: center;
+        }
         .text-image { 
             font-family: monospace; 
-            font-size: ${fontSize}px; 
-            line-height: ${lineSpacing};
-            color: white;
+            font-size: ${fontSz}px; 
+            line-height: ${lSpacing}; 
             white-space: pre;
+            letter-spacing: 0;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
-    <div class="text-image">${htmlContent}</div>
+    <div class="text-image">${resultHtml}</div>
 </body>
 </html>`;
 
-            // Copy to clipboard
-            navigator.clipboard.writeText(fullHtml).then(() => {
-                statusEl.textContent = "HTML copied to clipboard!";
-            }).catch(err => {
-                console.error('Failed to copy HTML:', err);
-                statusEl.textContent = "Failed to copy HTML to clipboard.";
-            });
-        }
-
-        function exportSvg() {
-            if (!outputContainer.style.display || outputContainer.style.display === 'none') {
-                showError("Please convert an image first.");
-                return;
+            // Standard compliant clipboard copy (safer implementation for frames)
+            const textarea = document.createElement("textarea");
+            textarea.value = fullHtml;
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                statusEl.textContent = "HTML Art output successfully copied to clipboard!";
+            } catch (err) {
+                statusEl.textContent = "Error copying HTML output.";
             }
-
-            const textContent = textImageEl.textContent || textImageEl.innerText;
-            const lines = textContent.split('\n');
-            
-            // Calculate SVG dimensions
-            const charWidth = 10;
-            const charHeight = 18;
-            const svgWidth = lines[0] ? lines[0].length * charWidth : 100;
-            const svgHeight = lines.length * charHeight;
-
-            let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" style="background-color:${bgColor}">
-    <style>
-        .char { font-family: monospace; font-size: ${fontSize}px; }
-    </style>`;
-
-            lines.forEach((line, y) => {
-                let currentColor = null;
-                let currentText = '';
-                let currentX = 0;
-
-                for (let x = 0; x < line.length; x++) {
-                    const char = line[x];
-                    if (char === ' ') {
-                        currentX += charWidth;
-                        continue;
-                    }
-
-                    // For simplicity in SVG, we'll use a default color
-                    // In a full implementation, we'd need to parse the span colors
-                    const color = 'white';
-                    
-                    if (currentColor !== color) {
-                        if (currentText) {
-                            svgContent += `\n    <text x="${currentX - currentText.length * charWidth}" y="${(y + 1) * charHeight}" fill="${currentColor}" class="char">${currentText}</text>`;
-                        }
-                        currentColor = color;
-                        currentText = char;
-                    } else {
-                        currentText += char;
-                    }
-                }
-                
-                if (currentText) {
-                    svgContent += `\n    <text x="${currentX - currentText.length * charWidth}" y="${(y + 1) * charHeight}" fill="${currentColor}" class="char">${currentText}</text>`;
-                }
-            });
-
-            svgContent += '\n</svg>';
-
-            // Create download link
-            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'text-image.svg';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            statusEl.textContent = "SVG exported successfully!";
+            document.body.removeChild(textarea);
         }
 
-        function exportPng() {
-            if (!outputContainer.style.display || outputContainer.style.display === 'none') {
-                showError("Please convert an image first.");
-                return;
-            }
-
-            // Create a temporary container for rendering
-            const tempContainer = document.createElement('div');
-            tempContainer.style.position = 'absolute';
-            tempContainer.style.left = '-9999px';
-            tempContainer.style.top = '-9999px';
-            tempContainer.style.backgroundColor = bgColor;
-            tempContainer.style.padding = '20px';
-            tempContainer.style.fontFamily = 'monospace';
-            tempContainer.style.fontSize = fontSize + 'px';
-            tempContainer.style.lineHeight = lineSpacing + '';
-            tempContainer.style.whiteSpace = 'pre';
-            tempContainer.style.color = 'white';
-            tempContainer.innerHTML = textImageEl.innerHTML;
-            
-            document.body.appendChild(tempContainer);
-
-            // Use html2canvas to convert to PNG
-            html2canvas(tempContainer, {
-                backgroundColor: bgColor,
-                scale: 2 // Higher resolution
-            }).then(canvas => {
-                // Create download link
-                canvas.toBlob(blob => {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'text-image.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    
-                    statusEl.textContent = "PNG exported successfully!";
-                });
-                
-                // Clean up
-                document.body.removeChild(tempContainer);
-            }).catch(err => {
-                console.error('Failed to export PNG:', err);
-                statusEl.textContent = "Failed to export PNG.";
-            });
+        // Direct high-quality PNG download from WebGL rendering buffer
+        function exportPngFromWebGL() {
+            if (!glCanvas) return;
+            const link = document.createElement('a');
+            link.download = `${originalFilename || 'webgl_art'}.png`;
+            link.href = glCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            statusEl.textContent = "PNG Image downloaded successfully!";
         }
-
-        // Initialize
-        updateSettings();
-        convertBtn.disabled = true;
-        
-        // Enable export buttons when output is visible
-        function updateExportButtons() {
-            const hasOutput = outputContainer.style.display === 'block';
-            exportHtmlBtn.disabled = !hasOutput;
-            exportSvgBtn.disabled = !hasOutput;
-            exportPngBtn.disabled = !hasOutput;
-        }
-        
-        // Watch for output container changes
-        const observer = new MutationObserver(updateExportButtons);
-        observer.observe(outputContainer, { attributes: true, attributeFilter: ['style'] });
     </script>
 </body>
 </html>
