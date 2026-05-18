@@ -349,11 +349,6 @@
                 
                 img.onload = function() {
                     try {
-                        // Check image dimensions
-                        if (img.width > 2000 || img.height > 2000) {
-                            showError("Image size too large.");
-                            return;
-                        }
 
                         // Create canvas and draw image
                         const canvas = document.createElement('canvas');
