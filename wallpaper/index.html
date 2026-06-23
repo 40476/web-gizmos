@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>wallpaper maker thing idk</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { display: flex; background-color: #121212; color: #e0e0e0; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar layout */
+        #controls {
+            width: 380px; background-color: #1e1e1e; padding: 20px;
+            display: flex; flex-direction: column; gap: 18px;
+            overflow-y: auto; border-right: 1px solid #2d2d2d;
+        }
+        h2 { font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 6px; margin-top: 10px; color: #00ffcc; }
+        h2:first-of-type { margin-top: 0; }
+        .control-group { display: flex; flex-direction: column; gap: 6px; }
+        .row { display: flex; gap: 10px; }
+        .row > .control-group { flex: 1; }
+        label { font-size: 0.8rem; color: #aaa; font-weight: 500; }
+        input[type="text"], input[type="number"], input[type="file"], select {
+            width: 100%; padding: 8px; background: #2a2a2a; border: 1px solid #3a3a3a; color: #fff; border-radius: 4px; font-size: 0.9rem;
+        }
+        input[type="range"] { width: 100%; accent-color: #00ffcc; }
+        .checkbox-label { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }
+        .checkbox-label input { width: 16px; height: 16px; }
+
+        /* Font search container drop */
+        .font-search-container { position: relative; }
+        #font-results {
+            position: absolute; top: 100%; left: 0; right: 0; background: #2a2a2a;
+            border: 1px solid #3a3a3a; max-height: 150px; overflow-y: auto; z-index: 10; display: none;
+        }
+        .font-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #333; font-size: 0.85rem; }
+        .font-item:hover { background: #3a3a3a; }
+        #loader { display: none; color: #00ffcc; font-size: 0.8rem; margin-top: 2px; }
+
+        /* Preview Canvas Workspace */
+        #preview-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: #0a0a0a; gap: 15px; }
+        #canvas-container { 
+            position: relative; 
+            max-width: 100%; 
+            max-height: 80vh; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7); 
+            border-radius: 4px; 
+            overflow: hidden; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas { 
+            display: block; 
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+            background: #000; 
+            cursor: pointer;
+        }
+        
+        .btn { background: #00ffcc; color: #121212; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #00cca3; }
+    </style>
+
+    <script src="../shared/js/header.js"></script>
+
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div id="controls">
+        <h2>Canvas Resolution</h2>
+        <div class="row">
+            <div class="control-group">
+                <label>Width (px)</label>
+                <input type="number" id="res-w" value="1080">
+            </div>
+            <div class="control-group">
+                <label>Height (px)</label>
+                <input type="number" id="res-h" value="1920">
+            </div>
+        </div>
+
+        <h2>Layout & Scaling</h2>
+        <div class="control-group">
+            <label>Global Content Scale</label>
+            <input type="range" id="global-scale" min="20" max="200" value="100">
+        </div>
+        <div class="control-group">
+            <label>Top Text Position (Vertical %)</label>
+            <input type="range" id="top-y" min="0" max="100" value="12">
+        </div>
+        <div class="control-group">
+            <label>Large Bottom Text Position (Vertical %)</label>
+            <input type="range" id="large-y" min="0" max="100" value="84">
+        </div>
+        <div class="control-group">
+            <label>Small Bottom Text Position (Vertical %)</label>
+            <input type="range" id="small-y" min="0" max="100" value="90">
+        </div>
+
+        <h2>Images</h2>
+        <div class="control-group">
+            <label>Focus Image (Transparent)</label>
+            <input type="file" id="fg-upload" accept="image/*">
+        </div>
+        <div class="control-group">
+            <label>Global Background Image</label>
+            <input type="file" id="bg-upload" accept="image/*">
+        </div>
+        <div class="control-group checkbox-label">
+            <input type="checkbox" id="frame-has-own-bg">
+            <label for="frame-has-own-bg">Give Frame its own Background Image</label>
+        </div>
+        <div class="control-group" id="frame-bg-group" style="display: none;">
+            <label>Internal Frame Background</label>
+            <input type="file" id="frame-bg-upload" accept="image/*">
+        </div>
+
+        <h2>Focus Image Cropping & Alignment</h2>
+        <div class="control-group">
+            <label>Scaling Mode</label>
+            <select id="fg-scale-mode">
+                <option value="auto" selected>Automatic (Fit presets)</option>
+                <option value="manual">Manual Dimensions</option>
+            </select>
+        </div>
+
+        <!-- Automatic Parameter Group -->
+        <div id="fg-auto-controls">
+            <div class="control-group">
+                <label>Fit Mode</label>
+                <select id="fg-fit-mode">
+                    <option value="fill">Fill / Cover (Maintain Aspect Ratio)</option>
+                    <option value="fit">Fit / Contain (Maintain Aspect Ratio)</option>
+                    <option value="stretch">Stretch (Bypass Aspect Ratio)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Focus Image Scale (Size multiplier)</label>
+                <input type="range" id="fg-scale" min="10" max="250" value="100">
+            </div>
+        </div>
+
+        <!-- Manual Parameter Group -->
+        <div id="fg-manual-controls" style="display: none;">
+            <div class="control-group checkbox-label">
+                <input type="checkbox" id="fg-keep-ratio" checked>
+                <label for="fg-keep-ratio">Maintain Aspect Ratio</label>
+            </div>
+            <div class="control-group">
+                <label id="fg-width-label">Manual Width: 500px</label>
+                <input type="range" id="fg-manual-width" min="10" max="2000" value="500">
+            </div>
+            <div class="control-group">
+                <label id="fg-height-label">Manual Height: 500px</label>
+                <input type="range" id="fg-manual-height" min="10" max="2000" value="500">
+            </div>
+        </div>
+
+        <!-- Positioning Parameter Group -->
+        <div class="row">
+            <div class="control-group">
+                <label>Align X (Horizontal)</label>
+                <select id="fg-align-x">
+                    <option value="center" selected>Center</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Align Y (Vertical)</label>
+                <select id="fg-align-y">
+                    <option value="center">Center</option>
+                    <option value="top">Top</option>
+                    <option value="bottom" selected>Bottom</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="control-group">
+                <label>Manual X Offset (px)</label>
+                <input type="range" id="fg-offset-x" min="-500" max="500" value="0">
+            </div>
+            <div class="control-group">
+                <label>Manual Y Offset (px)</label>
+                <input type="range" id="fg-offset-y" min="-500" max="500" value="0">
+            </div>
+        </div>
+
+        <h2>Frame Configuration</h2>
+        <div class="row">
+            <div class="control-group">
+                <label>Frame Sides (3=Tri, 4=Sq, etc.)</label>
+                <input type="number" id="frame-sides" min="3" max="12" value="6">
+            </div>
+            <div class="control-group">
+                <label>Frame Size/Scale</label>
+                <input type="range" id="frame-scale" min="10" max="90" value="50">
+            </div>
+        </div>
+        <div class="row">
+            <div class="control-group">
+                <label>Border Thickness</label>
+                <input type="range" id="frame-thickness" min="2" max="30" value="8">
+            </div>
+            <div class="control-group">
+                <label>Border Color</label>
+                <input type="text" id="frame-color" value="#ffffff">
+            </div>
+        </div>
+        <div class="control-group checkbox-label">
+            <input type="checkbox" id="frame-bypass-blur" checked>
+            <label for="frame-bypass-blur">Frame bypasses background blur</label>
+        </div>
+
+        <h2>Overlap & Pop-out Sides</h2>
+        <p style="font-size:0.75rem; color:#888;">Click directly on any side of the frame in the preview to toggle overlapping. All listed sides will go in front of the image; unchecked sides stay behind.</p>
+        <div class="control-group">
+            <label>In-Front Side Indices</label>
+            <input type="text" id="overlap-input" value="0,1">
+        </div>
+
+        <h2>Effects</h2>
+        <div class="control-group">
+            <label>Background Blur Intensity</label>
+            <input type="range" id="blur-slider" min="0" max="40" value="15">
+        </div>
+
+        <h2>Typography Loader</h2>
+        <div class="control-group">
+            <label>Search Google Fonts to Load</label>
+            <div class="font-search-container">
+                <input type="text" id="font-search" placeholder="Type to search and load...">
+                <div id="font-results"></div>
+            </div>
+            <div id="loader">Loading font...</div>
+        </div>
+        <div class="control-group">
+            <label>Or Upload Custom Font File</label>
+            <input type="file" id="font-upload" accept=".ttf,.otf,.woff,.woff2">
+        </div>
+
+        <h2>Text Layout & Font Chooser</h2>
+        <div class="control-group">
+            <label>Top Text</label>
+            <input type="text" id="input-top" value="CREATIVE">
+        </div>
+        <div class="control-group">
+            <label>Top Font Choice</label>
+            <select id="font-top-select">
+                <option value="sans-serif">Loading Fonts...</option>
+            </select>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 4px 0;">
+        <div class="control-group">
+            <label>Bottom Text (Large)</label>
+            <input type="text" id="input-large" value="WALLPAPER">
+        </div>
+        <div class="control-group">
+            <label>Large Bottom Font Choice</label>
+            <select id="font-large-select">
+                <option value="sans-serif">Loading Fonts...</option>
+            </select>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 4px 0;">
+        <div class="control-group">
+            <label>Bottom Text (Small)</label>
+            <input type="text" id="input-small" value="- EST 2026 -">
+        </div>
+        <div class="control-group">
+            <label>Small Bottom Font Choice</label>
+            <select id="font-small-select">
+                <option value="sans-serif">Loading Fonts...</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div id="preview-area">
+        <div id="canvas-container">
+            <canvas id="wallpaperCanvas"></canvas>
+        </div>
+        <button class="btn" id="download-btn">Export Wallpaper</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wallpaperCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // State Management
+        const state = {
+            width: 1080, height: 1920,
+            sides: 6, frameScale: 0.5, thickness: 8, color: '#ffffff', bypassBlur: true,
+            frontSides: [0, 1], // Sides where image goes IN FRONT of border
+            blur: 15, fgScale: 1.0,
+            hasOwnBg: false,
+            fontTop: 'sans-serif', fontLarge: 'sans-serif', fontSmall: 'sans-serif',
+            textTop: 'CREATIVE', textLarge: 'WALLPAPER', textSmall: '- EST 2026 -',
+            globalScale: 1.0, topY: 0.12, largeY: 0.84, smallY: 0.90,
+            // Scaling and Alignment State
+            fgScaleMode: 'auto',
+            fgFitMode: 'fill',
+            fgManualWidth: 500,
+            fgManualHeight: 500,
+            fgKeepRatio: true,
+            fgAlignX: 'center',
+            fgAlignY: 'bottom',
+            fgOffsetX: 0,
+            fgOffsetY: 0,
+            isDownloading: false // Toggle to hide badges on output exports
+        };
+
+        // Cache Assets & Fonts list
+        const imgs = { fg: null, bg: null, frameBg: null };
+        let repoFolders = [];
+        let loadedFontsCache = new Set(['sans-serif', 'serif', 'monospace']);
+
+        // Helper function to update canvas internal size and display aspect ratio cleanly
+        function updateCanvasDimensions() {
+            canvas.width = state.width;
+            canvas.height = state.height;
+            document.getElementById('canvas-container').style.aspectRatio = `${state.width} / ${state.height}`;
+            render();
+        }
+
+        // DOM Inputs Linked directly to state updates
+        function bind(id, stateProp, event = 'input', cb = null) {
+            const el = document.getElementById(id);
+            el.addEventListener(event, (e) => {
+                const val = el.type === 'checkbox' ? el.checked : el.value;
+                state[stateProp] = val;
+                if(cb) cb(val);
+                render();
+            });
+        }
+
+        bind('res-w', 'width', 'change', v => {
+            state.width = parseInt(v) || 1080;
+            updateCanvasDimensions();
+        });
+        bind('res-h', 'height', 'change', v => {
+            state.height = parseInt(v) || 1920;
+            updateCanvasDimensions();
+        });
+        bind('frame-sides', 'sides', 'input', v => {
+            state.sides = parseInt(v) || 3;
+            // Filter out out-of-bounds selection indices
+            state.frontSides = state.frontSides.filter(s => s < state.sides);
+            document.getElementById('overlap-input').value = formatSidesString(state.frontSides);
+        });
+        bind('frame-scale', 'frameScale', 'input', v => state.frameScale = v/100);
+        bind('frame-thickness', 'thickness');
+        bind('frame-color', 'color');
+        bind('frame-bypass-blur', 'bypassBlur');
+        bind('blur-slider', 'blur');
+        bind('fg-scale', 'fgScale', 'input', v => state.fgScale = v/100);
+        bind('input-top', 'textTop');
+        bind('input-large', 'textLarge');
+        bind('input-small', 'textSmall');
+        
+        // This fixed the checkbox visibility bug
+        bind('frame-has-own-bg', 'hasOwnBg', 'change', checked => {
+            document.getElementById('frame-bg-group').style.display = checked ? 'flex' : 'none';
+        });
+
+        // Global Scaling and Positioning Layout Binds
+        bind('global-scale', 'globalScale', 'input', v => state.globalScale = v/100);
+        bind('top-y', 'topY', 'input', v => state.topY = v/100);
+        bind('large-y', 'largeY', 'input', v => state.largeY = v/100);
+        bind('small-y', 'smallY', 'input', v => state.smallY = v/100);
+
+        // Crop & Alignment Layout Binds
+        bind('fg-scale-mode', 'fgScaleMode', 'change', v => {
+            document.getElementById('fg-auto-controls').style.display = v === 'auto' ? 'block' : 'none';
+            document.getElementById('fg-manual-controls').style.display = v === 'manual' ? 'block' : 'none';
+        });
+        bind('fg-fit-mode', 'fgFitMode', 'change');
+        bind('fg-keep-ratio', 'fgKeepRatio', 'change');
+        bind('fg-align-x', 'fgAlignX', 'change');
+        bind('fg-align-y', 'fgAlignY', 'change');
+        bind('fg-offset-x', 'fgOffsetX', 'input', v => state.fgOffsetX = parseFloat(v));
+        bind('fg-offset-y', 'fgOffsetY', 'input', v => state.fgOffsetY = parseFloat(v));
+
+        // Bind dropdown selectors
+        bind('font-top-select', 'fontTop', 'change', v => checkAndLoadDropdownFont(v));
+        bind('font-large-select', 'fontLarge', 'change', v => checkAndLoadDropdownFont(v));
+        bind('font-small-select', 'fontSmall', 'change', v => checkAndLoadDropdownFont(v));
+
+        // Manual Width & Height aspect ratio coupled sliders
+        const fgWidthSlider = document.getElementById('fg-manual-width');
+        const fgHeightSlider = document.getElementById('fg-manual-height');
+        const fgWidthLabel = document.getElementById('fg-width-label');
+        const fgHeightLabel = document.getElementById('fg-height-label');
+
+        function updateManualWidthLabel(v) {
+            fgWidthLabel.textContent = `Manual Width: ${v}px`;
+        }
+        function updateManualHeightLabel(v) {
+            fgHeightLabel.textContent = `Manual Height: ${v}px`;
+        }
+
+        fgWidthSlider.addEventListener('input', () => {
+            let w = parseInt(fgWidthSlider.value);
+            state.fgManualWidth = w;
+            updateManualWidthLabel(w);
+            if (state.fgKeepRatio && imgs.fg) {
+                const ratio = imgs.fg.width / imgs.fg.height;
+                let h = Math.round(w / ratio);
+                if (h > parseInt(fgHeightSlider.max)) {
+                    fgHeightSlider.max = h;
+                }
+                fgHeightSlider.value = h;
+                state.fgManualHeight = h;
+                updateManualHeightLabel(h);
+            }
+            render();
+        });
+
+        fgHeightSlider.addEventListener('input', () => {
+            let h = parseInt(fgHeightSlider.value);
+            state.fgManualHeight = h;
+            updateManualHeightLabel(h);
+            if (state.fgKeepRatio && imgs.fg) {
+                const ratio = imgs.fg.width / imgs.fg.height;
+                let w = Math.round(h * ratio);
+                if (w > parseInt(fgWidthSlider.max)) {
+                    fgWidthSlider.max = w;
+                }
+                fgWidthSlider.value = w;
+                state.fgManualWidth = w;
+                updateManualWidthLabel(w);
+            }
+            render();
+        });
+
+        // --- DYNAMIC CLICK LAYER OVERLAP UTILITIES ---
+
+        // Parsing logic e.g., "1,2,3" or "1-4" 
+        function parseSidesString(str, maxSides) {
+            const active = new Set();
+            const parts = str.split(',');
+            for (let part of parts) {
+                part = part.trim();
+                if (part.includes('-')) {
+                    const range = part.split('-');
+                    const start = parseInt(range[0]);
+                    const end = parseInt(range[1]);
+                    if (!isNaN(start) && !isNaN(end)) {
+                        const low = Math.min(start, end);
+                        const high = Math.max(start, end);
+                        for (let i = low; i <= high; i++) {
+                            if (i >= 0 && i < maxSides) active.add(i);
+                        }
+                    }
+                } else {
+                    const val = parseInt(part);
+                    if (!isNaN(val) && val >= 0 && val < maxSides) {
+                        active.add(val);
+                    }
+                }
+            }
+            return Array.from(active).sort((a,b) => a - b);
+        }
+
+        // Formats numerical lists back to structured clean strings (ranges or single values)
+        function formatSidesString(arr) {
+            if (arr.length === 0) return '';
+            const sorted = [...arr].sort((a,b) => a - b);
+            const parts = [];
+            let i = 0;
+            while (i < sorted.length) {
+                let start = sorted[i];
+                let end = start;
+                while (i + 1 < sorted.length && sorted[i + 1] === end + 1) {
+                    end = sorted[i + 1];
+                    i++;
+                }
+                if (start === end) {
+                    parts.push(start.toString());
+                } else {
+                    parts.push(`${start}-${end}`);
+                }
+                i++;
+            }
+            return parts.join(',');
+        }
+
+        // Bind interactive string input
+        const overlapInput = document.getElementById('overlap-input');
+        overlapInput.addEventListener('input', () => {
+            state.frontSides = parseSidesString(overlapInput.value, parseInt(state.sides));
+            render();
+        });
+
+        // Math checking: Distance from point to line segment
+        function getDistanceToSegment(px, py, x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+            
+            let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            
+            const projectionX = x1 + t * dx;
+            const projectionY = y1 + t * dy;
+            return Math.sqrt((px - projectionX) ** 2 + (py - projectionY) ** 2);
+        }
+
+        // Dynamic click detection bound on the canvas elements
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Scale screen offset parameters relative to internal canvas dimensions
+            const clickX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+            const clickY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+            
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) * state.frameScale * state.globalScale;
+            const pts = getPolygonPoints(cx, cy, maxRadius, parseInt(state.sides));
+            
+            let closestSideIndex = -1;
+            let minDistance = Infinity;
+            
+            // Loop and evaluate distance from clicked spot to all segment lines
+            for (let i = 0; i < pts.length; i++) {
+                const p1 = pts[i];
+                const p2 = pts[(i + 1) % pts.length];
+                const dist = getDistanceToSegment(clickX, clickY, p1.x, p1.y, p2.x, p2.y);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestSideIndex = i;
+                }
+            }
+            
+            // Check threshold so clicks far away are ignored
+            const clickThreshold = 180 * state.globalScale;
+            if (closestSideIndex !== -1 && minDistance < clickThreshold) {
+                toggleSideIndex(closestSideIndex);
+            }
+        });
+
+        function toggleSideIndex(index) {
+            const idx = state.frontSides.indexOf(index);
+            if (idx === -1) {
+                state.frontSides.push(index);
+            } else {
+                state.frontSides.splice(idx, 1);
+            }
+            state.frontSides.sort((a,b) => a - b);
+            
+            // Update input control value
+            overlapInput.value = formatSidesString(state.frontSides);
+            render();
+        }
+
+        // Dynamically populates dropdown choices purely based on API list
+        function populateFontDropdowns() {
+            const selectors = ['font-top-select', 'font-large-select', 'font-small-select'];
+            selectors.forEach(id => {
+                const el = document.getElementById(id);
+                const prevValue = el.value || (id === 'font-top-select' ? state.fontTop : id === 'font-large-select' ? state.fontLarge : state.fontSmall);
+                el.innerHTML = '';
+
+                // Fallbacks
+                const defaults = ['sans-serif', 'serif', 'monospace'];
+                defaults.forEach(font => {
+                    const opt = document.createElement('option');
+                    opt.value = font;
+                    opt.textContent = font;
+                    if (font === prevValue) opt.selected = true;
+                    el.appendChild(opt);
+                });
+
+                // Google Fonts folders loaded from repo API
+                repoFolders.forEach(font => {
+                    const opt = document.createElement('option');
+                    opt.value = font;
+                    opt.textContent = font.replace(/_/g, ' ');
+                    if (font === prevValue) opt.selected = true;
+                    el.appendChild(opt);
+                });
+            });
+        }
+
+        // Handle Image Loadings
+        function registerImageUpload(inputId, imgKey) {
+            document.getElementById(inputId).onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const img = new Image();
+                img.onload = () => { imgs[imgKey] = img; render(); };
+                img.src = URL.createObjectURL(file);
+            };
+        }
+        
+        // Custom logic for Focus Image upload to trigger manual sliders setup
+        document.getElementById('fg-upload').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const img = new Image();
+            img.onload = () => {
+                imgs.fg = img;
+                // Set native image size as defaults for the manual sliders
+                fgWidthSlider.max = img.width * 2;
+                fgHeightSlider.max = img.height * 2;
+                fgWidthSlider.value = img.width;
+                fgHeightSlider.value = img.height;
+                state.fgManualWidth = img.width;
+                state.fgManualHeight = img.height;
+                updateManualWidthLabel(img.width);
+                updateManualHeightLabel(img.height);
+                render();
+            };
+            img.src = URL.createObjectURL(file);
+        };
+
+        registerImageUpload('bg-upload', 'bg');
+        registerImageUpload('frame-bg-upload', 'frameBg');
+
+        // --- GOOGLE FONTS API DRIVEN LOGIC ---
+        const search = document.getElementById('font-search');
+        const results = document.getElementById('font-results');
+        const uiLoader = document.getElementById('loader');
+
+        // Fetching Google Fonts directory dynamically on app initialization
+        async function initGoogleFontsAPI() {
+            uiLoader.style.display = 'block';
+            uiLoader.innerText = "Connecting to Google Fonts API...";
+            try {
+                const cachedList = localStorage.getItem('google_fonts_ofl_folders');
+                if (cachedList) {
+                    repoFolders = JSON.parse(cachedList);
+                } else {
+                    const res = await fetch('https://api.github.com/repos/google/fonts/contents/ofl');
+                    repoFolders = (await res.json()).map(f => f.name);
+                    localStorage.setItem('google_fonts_ofl_folders', JSON.stringify(repoFolders));
+                }
+                populateFontDropdowns();
+                uiLoader.style.display = 'none';
+            } catch (err) {
+                console.error("Font API Fetch error:", err);
+                uiLoader.innerText = "Offline. Standard fonts active.";
+                setTimeout(() => uiLoader.style.display = 'none', 3000);
+            }
+        }
+
+        // Keep search utility as a fast-scroll/focus tool for dropdowns
+        search.oninput = () => {
+            const val = search.value.toLowerCase();
+            results.innerHTML = '';
+            if (!val) return results.style.display = 'none';
+
+            repoFolders.filter(f => f.includes(val)).slice(0, 10).forEach(f => {
+                const d = document.createElement('div');
+                d.className = 'font-item'; d.innerText = f.replace(/_/g, ' ');
+                d.onclick = async () => {
+                    search.value = f.replace(/_/g, ' ');
+                    results.style.display = 'none';
+                    await triggerGlobalFontLoad(f);
+                };
+                results.appendChild(d);
+            });
+            results.style.display = 'block';
+        };
+
+        // Triggers loading for quick search select
+        async function triggerGlobalFontLoad(fontFolder) {
+            await loadFontData(fontFolder);
+            state.fontTop = fontFolder;
+            state.fontLarge = fontFolder;
+            state.fontSmall = fontFolder;
+            populateFontDropdowns();
+            render();
+        }
+
+        // Direct load check when user modifies any drop-down
+        async function checkAndLoadDropdownFont(fontValue) {
+            if (fontValue === 'sans-serif' || fontValue === 'serif' || fontValue === 'monospace') return;
+            await loadFontData(fontValue);
+        }
+
+        // Main loader logic
+        async function loadFontData(fontFolder) {
+            if (loadedFontsCache.has(fontFolder)) return;
+
+            uiLoader.style.display = 'block';
+            uiLoader.innerText = `Downloading ${fontFolder.replace(/_/g, ' ')}...`;
+            const cacheKey = `font_${fontFolder}`;
+            let files = JSON.parse(localStorage.getItem(cacheKey));
+            
+            try {
+                if (!files) {
+                    const res = await fetch(`https://api.github.com/repos/google/fonts/contents/ofl/${fontFolder}`);
+                    files = await res.json();
+                    localStorage.setItem(cacheKey, JSON.stringify(files));
+                }
+                const ttfFile = files.find(f => f.name.includes('[wght].ttf')) || 
+                                files.find(f => f.name.includes('Regular.ttf')) || 
+                                files.find(f => f.name.endsWith('.ttf'));
+                
+                if (!ttfFile) {
+                    uiLoader.innerText = "No TTF found.";
+                    setTimeout(() => uiLoader.style.display = 'none', 1500);
+                    return;
+                }
+
+                const url = `https://raw.githubusercontent.com/google/fonts/main/ofl/${fontFolder}/${ttfFile.name}`;
+                const fontFace = new FontFace(fontFolder, `url(${url})`);
+                const loaded = await fontFace.load();
+                document.fonts.add(loaded);
+                loadedFontsCache.add(fontFolder);
+                uiLoader.style.display = 'none';
+                render();
+            } catch (err) {
+                console.error(err);
+                uiLoader.innerText = "Failed loading font.";
+                setTimeout(() => uiLoader.style.display = 'none', 1500);
+            }
+        }
+
+        // File Uploader Font parsing
+        document.getElementById('font-upload').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const fontName = 'Custom_' + Date.now();
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const fontFace = new FontFace(fontName, ev.target.result);
+                const loaded = await fontFace.load();
+                document.fonts.add(loaded);
+                
+                if (!repoFolders.includes(fontName)) {
+                    repoFolders.unshift(fontName); // Add custom uploaded font dynamically to dropdowns
+                }
+
+                state.fontTop = fontName;
+                state.fontLarge = fontName;
+                state.fontSmall = fontName;
+
+                populateFontDropdowns();
+                render();
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // --- CORE CANVAS RENDER ENGINE ---
+        function getPolygonPoints(cx, cy, radius, sides) {
+            const points = [];
+            const offset = (Math.PI / 2) - (Math.PI / sides);
+            for (let i = 0; i < sides; i++) {
+                const angle = offset + (i * 2 * Math.PI / sides);
+                points.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
+            }
+            return points;
+        }
+
+        function drawCoverImage(image, x, y, w, h) {
+            if (!image) return;
+            const imgRatio = image.width / image.height;
+            const canvasRatio = w / h;
+            let sx, sy, sw, sh;
+            if (imgRatio > canvasRatio) {
+                sh = image.height; sw = sh * canvasRatio;
+                sx = (image.width - sw) / 2; sy = 0;
+            } else {
+                sw = image.width; sh = sw / canvasRatio;
+                sx = 0; sy = (image.height - sh) / 2;
+            }
+            ctx.drawImage(image, sx, sy, sw, sh, x, y, w, h);
+        }
+
+        // Calculate size, crop, alignments, and offsets dynamically
+        function drawAlignedFocusImage(pts, cx, cy) {
+            if (!imgs.fg) return;
+
+            // Compute frame bounding box parameters
+            const minX = Math.min(...pts.map(p => p.x));
+            const maxX = Math.max(...pts.map(p => p.x));
+            const minY = Math.min(...pts.map(p => p.y));
+            const maxY = Math.max(...pts.map(p => p.y));
+            const FW = maxX - minX;
+            const FH = maxY - minY;
+
+            const imgW = imgs.fg.width;
+            const imgH = imgs.fg.height;
+            const imgRatio = imgW / imgH;
+            const frameRatio = FW / FH;
+
+            let dw, dh;
+
+            if (state.fgScaleMode === 'manual') {
+                // Manual size override with global layout multiplier factored in
+                dw = state.fgManualWidth * state.globalScale;
+                dh = state.fgManualHeight * state.globalScale;
+            } else {
+                // Calculate Fit Mode metrics
+                if (state.fgFitMode === 'stretch') {
+                    dw = FW * state.fgScale * state.globalScale;
+                    dh = FH * state.fgScale * state.globalScale;
+                } else if (state.fgFitMode === 'fit') {
+                    if (imgRatio > frameRatio) {
+                        dw = FW;
+                        dh = FW / imgRatio;
+                    } else {
+                        dh = FH;
+                        dw = FH * imgRatio;
+                    }
+                    dw *= state.fgScale * state.globalScale;
+                    dh *= state.fgScale * state.globalScale;
+                } else { // default to 'fill' / Cover style
+                    if (imgRatio > frameRatio) {
+                        dh = FH;
+                        dw = FH * imgRatio;
+                    } else {
+                        dw = FW;
+                        dh = FW / imgRatio;
+                    }
+                    dw *= state.fgScale * state.globalScale;
+                    dh *= state.fgScale * state.globalScale;
+                }
+            }
+
+            // Alignments
+            let rx, ry;
+
+            if (state.fgAlignX === 'left') {
+                rx = minX;
+            } else if (state.fgAlignX === 'right') {
+                rx = maxX - dw;
+            } else { // center
+                rx = minX + (FW - dw) / 2;
+            }
+
+            if (state.fgAlignY === 'top') {
+                ry = minY;
+            } else if (state.fgAlignY === 'bottom') {
+                ry = maxY - dh;
+            } else { // center
+                ry = minY + (FH - dh) / 2;
+            }
+
+            // Apply fine tuning adjustments scaled to the viewport dimensions
+            rx += state.fgOffsetX * state.globalScale;
+            ry += state.fgOffsetY * state.globalScale;
+
+            ctx.drawImage(imgs.fg, rx, ry, dw, dh);
+        }
+
+        // Clips rendering strictly to selected subsegments (extend to infinity for pop-out overlays)
+        function clipToSides(sidesList, pts, cx, cy, extend = false) {
+            ctx.beginPath();
+            sidesList.forEach(i => {
+                const p1 = pts[i];
+                const p2 = pts[(i + 1) % pts.length];
+                ctx.moveTo(cx, cy);
+                if (extend) {
+                    // Project the points outwards from center (100x distance) to encompass the exterior of the boundary
+                    const scale = 100;
+                    const p1x = cx + (p1.x - cx) * scale;
+                    const p1y = cy + (p1.y - cy) * scale;
+                    const p2x = cx + (p2.x - cx) * scale;
+                    const p2y = cy + (p2.y - cy) * scale;
+                    ctx.lineTo(p1x, p1y);
+                    ctx.lineTo(p2x, p2y);
+                } else {
+                    ctx.lineTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                }
+                ctx.closePath();
+            });
+            ctx.clip();
+        }
+
+        // Draw helper number tags on each side so users know which indices are selected
+        function drawInteractiveBadges(pts, cx, cy) {
+            if (state.isDownloading) return; // Never save indicators onto exported images
+            ctx.save();
+            ctx.font = `bold ${Math.max(12, 16 * state.globalScale)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            for (let i = 0; i < pts.length; i++) {
+                const p1 = pts[i];
+                const p2 = pts[(i + 1) % pts.length];
+                const mx = (p1.x + p2.x) / 2;
+                const my = (p1.y + p2.y) / 2;
+                
+                // Vector pointing outwards from the frame center
+                const dx = mx - cx;
+                const dy = my - cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const offset = 25 * state.globalScale; // Offset slightly outward from polygon frame lines
+                const bx = mx + (dx / dist) * offset;
+                const by = my + (dy / dist) * offset;
+                
+                const isFront = state.frontSides.includes(i);
+                
+                // Outer circle container
+                ctx.beginPath();
+                ctx.arc(bx, by, 14 * state.globalScale, 0, 2 * Math.PI);
+                ctx.fillStyle = isFront ? '#00ffcc' : '#3a3a3a';
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5 * state.globalScale;
+                ctx.stroke();
+                
+                // Side index value label
+                ctx.fillStyle = isFront ? '#121212' : '#ffffff';
+                ctx.fillText(i.toString(), bx, by);
+            }
+            ctx.restore();
+        }
+
+        function render() {
+            const W = state.width, H = state.height;
+            ctx.clearRect(0, 0, W, H);
+
+            const cx = W / 2, cy = H / 2;
+            const maxRadius = Math.min(W, H) * state.frameScale * state.globalScale;
+            const pts = getPolygonPoints(cx, cy, maxRadius, parseInt(state.sides));
+
+            // 1. Draw Global Background
+            ctx.save();
+            if (state.blur > 0) ctx.filter = `blur(${state.blur}px)`;
+            if (imgs.bg) drawCoverImage(imgs.bg, 0, 0, W, H);
+            else { ctx.fillStyle = '#222'; ctx.fillRect(0,0,W,H); }
+            ctx.restore();
+
+            // 2. Internal Frame Background (Optional Isolation Layer)
+            if (state.hasOwnBg && imgs.frameBg) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x, pts[0].y);
+                for(let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                ctx.closePath();
+                ctx.clip();
+                drawCoverImage(imgs.frameBg, 0, 0, W, H);
+                ctx.restore();
+            }
+
+            // 3. Draw portions of Focus Image that sit BEHIND the upcoming frame border segments
+            if (imgs.fg) {
+                ctx.save();
+                // Find all side indices where the image stays behind
+                const behindSides = [];
+                for (let i = 0; i < pts.length; i++) {
+                    if (!state.frontSides.includes(i)) {
+                        behindSides.push(i);
+                    }
+                }
+                clipToSides(behindSides, pts, cx, cy, false);
+                drawAlignedFocusImage(pts, cx, cy);
+                ctx.restore();
+            }
+
+            // 4. Draw Frame Geometry (Draws borders)
+            ctx.save();
+            if (state.bypassBlur) ctx.filter = 'none';
+            ctx.strokeStyle = state.color;
+            ctx.lineWidth = parseInt(state.thickness) * state.globalScale;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for(let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+
+            // 5. Draw portions of Focus Image that POP OUT (Over the top border)
+            if (imgs.fg && state.frontSides.length > 0) {
+                ctx.save();
+                // Use extended = true so drawing area isn't bound by inside polygon edges!
+                clipToSides(state.frontSides, pts, cx, cy, true);
+                drawAlignedFocusImage(pts, cx, cy);
+                ctx.restore();
+            }
+
+            // 6. Draw Typography Layers
+            ctx.save();
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.shadowBlur = 12 * state.globalScale;
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+
+            // Top Typography Layer
+            ctx.font = `bold ${(W * 0.06) * state.globalScale}px ${state.fontTop}`;
+            ctx.fillText(state.textTop, cx, H * state.topY);
+
+            // Large Bottom Typography Layer
+            ctx.font = `bold ${(W * 0.08) * state.globalScale}px ${state.fontLarge}`;
+            ctx.fillText(state.textLarge, cx, H * state.largeY);
+
+            // Small Bottom Typography Layer
+            ctx.font = `${(W * 0.04) * state.globalScale}px ${state.fontSmall}`;
+            ctx.fillText(state.textSmall, cx, H * state.smallY);
+            ctx.restore();
+
+            // 7. Render dynamic interactive alignment badges
+            drawInteractiveBadges(pts, cx, cy);
+        }
+
+        // Initialize Canvas scale context bounds and populate available system fonts
+        window.onload = () => {
+            updateCanvasDimensions();
+            initGoogleFontsAPI();
+        };
+
+        // Export/Download implementation (temporarily suspends badge drawing)
+        document.getElementById('download-btn').onclick = () => {
+            state.isDownloading = true;
+            render();
+            
+            const link = document.createElement('a');
+            link.download = 'wallpaper.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            state.isDownloading = false;
+            render();
+        };
+
+        // Close dropdown when clicking outside font selector
+        window.onclick = (e) => { if (!e.target.matches('#font-search')) results.style.display = 'none'; };
+    </script>
+</body>
+</html>
