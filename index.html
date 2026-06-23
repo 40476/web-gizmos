@@ -427,6 +427,8 @@
       
         <a class="nav-item" href="voxelracing/index.html" data-name="voxelracing">voxelracing</a>
       
+        <a class="nav-item" href="wallpaper/index.html" data-name="wallpaper">wallpaper</a>
+      
     </div>
   </nav>
 
@@ -1298,6 +1300,38 @@
   </pre>
 
   <p>Voxel Racer thingy is a browser-based 3D racing game built with Three.js, featuring procedural voxel terrain and arcade vehicle physics. It supports multiplayer connectivity via MQTT, with real-time remote player tracking, in-game chat, and shared audio playback. The game includes dynamic day/night cycles, multiple biomes, mobile touch controls, and persistent user settings stored in IndexedDB.</p>
+</section>
+          </div>
+        </section>
+      
+        <section class="hud-card" id="card-28" data-name="wallpaper">
+          <div class="hud-texture"></div>
+          <div class="card-header">
+            <span class="unit-tag">REF_NO // 1028</span>
+            <a class="launch-btn" href="wallpaper/index.html">Initialize</a>
+          </div>
+          <h2 class="app-title">wallpaper</h2>
+          
+          <div class="commit-log">
+            <small style="opacity: 0.6; font-family: var(--font-mono); display: block; margin: 10px 0;">
+              LATEST_LOG: add wallpaper maker
+            </small>
+          </div>
+        
+          <div class="summary-content">
+            <section>
+  <ul>
+    <li>Interactive UI for configuring canvas size, frame polygon, image layers, and typography.</li>
+    <li>Supports automatic or manual focus‑image scaling, alignment, and side‑overlap toggling.</li>
+    <li>Loads Google Fonts via API, caches them, and allows custom font uploads.</li>
+  </ul>
+
+  <pre>
+    <code>canvas.width = state.width;</code>
+    <code>ctx.drawImage(imgs.fg, rx, ry, dw, dh);</code>
+  </pre>
+
+  <p>This app lets users compose custom wallpapers with a polygonal frame, background blur, and stacked text layers. Images can be cropped, aligned, and set to appear in front of selected frame sides, while fonts are fetched dynamically from Google Fonts or uploaded locally. The final design can be exported as a PNG file.</p>
 </section>
           </div>
         </section>
