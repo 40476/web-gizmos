@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydraulic Press Simulator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #ffcc00;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #ccc;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #ffcc00;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-btn {
+            display: inline-block;
+            background: #444;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid #555;
+            transition: background 0.2s;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .file-upload-btn:hover {
+            background: #555;
+        }
+
+        .btn-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #press-btn { background: #e74c3c; color: white; }
+        #retract-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; }
+        #record-btn { background: #2ecc71; color: white; }
+        #record-btn.recording { background: #e67e22; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .simulation {
+            background: #111;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+        }
+
+        canvas {
+            background: #1e1e1e;
+            border-radius: 5px;
+            display: block;
+        }
+
+        .value-display {
+            float: right;
+            color: #ffcc00;
+        }
+
+        .share-panel {
+            margin-top: 15px;
+            border-top: 1px solid #444;
+            padding-top: 15px;
+        }
+        .share-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .share-btn {
+            padding: 8px;
+            font-size: 12px;
+            text-decoration: none;
+            color: white;
+            border-radius: 4px;
+            text-align: center;
+            flex: 1;
+        }
+        .x-share { background-color: #000000; }
+        .fb-share { background-color: #1877F2; }
+        .reddit-share { background-color: #FF4500; }
+    </style>
+    <script src="../shared/js/header.js"></script>
+</head>
+<body>
+
+    <h1>💥 Hydraulic Press Simulator 💥</h1>
+
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label>1. Upload Object Image</label>
+                <label for="image-input" class="file-upload-btn">Choose Image</label>
+                <input type="file" id="image-input" accept="image/*">
+            </div>
+
+            <div class="control-group">
+                <label>Stop Point (Max Crush Height): <span id="stop-val" class="value-display">20%</span></label>
+                <input type="range" id="stop-point" min="5" max="80" value="20">
+            </div>
+
+            <div class="control-group">
+                <label>Press Speed: <span id="speed-val" class="value-display">2 px/frame</span></label>
+                <input type="range" id="press-speed" min="1" max="10" value="2">
+            </div>
+
+            <div class="control-group">
+                <label>Volume: <span id="volume-val" class="value-display">70%</span></label>
+                <input type="range" id="volume" min="0" max="100" value="70">
+            </div>
+
+            <div class="btn-panel">
+                <button id="press-btn">CRUSH</button>
+                <button id="retract-btn">RETRACT</button>
+                <button id="reset-btn">RESET</button>
+            </div>
+
+            <div class="btn-panel" style="margin-top: 10px;">
+                <button id="record-btn">📸 START AUTO RECORD</button>
+            </div>
+
+            <div class="share-panel">
+                <label>Share This Simulator</label>
+                <div class="share-buttons">
+                    <a href="#" id="share-x" class="share-btn x-share" target="_blank">X / Twitter</a>
+                    <a href="#" id="share-fb" class="share-btn fb-share" target="_blank">Facebook</a>
+                    <a href="#" id="share-reddit" class="share-btn reddit-share" target="_blank">Reddit</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulation">
+            <canvas id="simCanvas" width="450" height="500"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const imageInput = document.getElementById('image-input');
+        const stopPointSlider = document.getElementById('stop-point');
+        const speedSlider = document.getElementById('press-speed');
+        const volumeSlider = document.getElementById('volume');
+        const pressBtn = document.getElementById('press-btn');
+        const retractBtn = document.getElementById('retract-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const recordBtn = document.getElementById('record-btn');
+
+        const stopValDisp = document.getElementById('stop-val');
+        const speedValDisp = document.getElementById('speed-val');
+        const volumeValDisp = document.getElementById('volume-val');
+
+        let audioCtx = null;
+        let mainGainNode = null;
+        let mediaStreamDestination = null;
+        
+        let motorWhine1 = null;
+        let motorWhine2 = null;
+        let hydraulicHiss = null;
+        let currentAudioState = 'idle';
+
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let autoRecordState = 'none'; // 'none', 'pressing', 'retracting'
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            mainGainNode = audioCtx.createGain();
+            mediaStreamDestination = audioCtx.createMediaStreamDestination();
+            mainGainNode.connect(audioCtx.destination);
+            mainGainNode.connect(mediaStreamDestination);
+            updateVolume();
+        }
+
+        function updateVolume() {
+            if (mainGainNode) {
+                mainGainNode.gain.setValueAtTime(volumeSlider.value / 100, audioCtx.currentTime);
+            }
+        }
+
+        const FREE_SPIN_PITCH = 780; 
+        const CRUSH_STRAIN_PITCH = 480;
+        const RETRACT_PITCH = 620;
+
+        function startHydraulicSound(mode) {
+            initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            stopHydraulicSound();
+            currentAudioState = mode;
+
+            const now = audioCtx.currentTime;
+
+            motorWhine1 = audioCtx.createOscillator();
+            motorWhine1.type = 'triangle';
+            
+            motorWhine2 = audioCtx.createOscillator();
+            motorWhine2.type = 'sawtooth';
+
+            const whineGain1 = audioCtx.createGain();
+            const whineGain2 = audioCtx.createGain();
+            
+            const bandFilter = audioCtx.createBiquadFilter();
+            bandFilter.type = 'bandpass';
+            bandFilter.Q.setValueAtTime(4, now);
+
+            if (mode === 'free_spin') {
+                motorWhine1.frequency.setValueAtTime(FREE_SPIN_PITCH, now);
+                motorWhine2.frequency.setValueAtTime(FREE_SPIN_PITCH / 2, now);
+                bandFilter.frequency.setValueAtTime(FREE_SPIN_PITCH, now);
+                whineGain1.gain.setValueAtTime(0.4, now);
+                whineGain2.gain.setValueAtTime(0.08, now);
+            } 
+            else if (mode === 'crushing') {
+                motorWhine1.frequency.setValueAtTime(CRUSH_STRAIN_PITCH, now);
+                motorWhine1.frequency.linearRampToValueAtTime(CRUSH_STRAIN_PITCH - 60, now + 3);
+
+                motorWhine2.frequency.setValueAtTime(CRUSH_STRAIN_PITCH / 2, now);
+                motorWhine2.frequency.linearRampToValueAtTime((CRUSH_STRAIN_PITCH - 60) / 2, now + 3);
+
+                bandFilter.frequency.setValueAtTime(CRUSH_STRAIN_PITCH, now);
+                whineGain1.gain.setValueAtTime(0.55, now);
+                whineGain2.gain.setValueAtTime(0.15, now);
+            } 
+            else if (mode === 'retracting' || mode === 'infinite_retract') {
+                motorWhine1.frequency.setValueAtTime(RETRACT_PITCH, now);
+                motorWhine2.frequency.setValueAtTime(RETRACT_PITCH / 2, now);
+                bandFilter.frequency.setValueAtTime(RETRACT_PITCH, now);
+                whineGain1.gain.setValueAtTime(0.35, now);
+                whineGain2.gain.setValueAtTime(0.05, now);
+            }
+
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noiseNode = audioCtx.createBufferSource();
+            noiseNode.buffer = buffer;
+            noiseNode.loop = true;
+
+            const noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.setValueAtTime(1500, now);
+
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(mode === 'crushing' ? 0.08 : 0.03, now);
+
+            motorWhine1.connect(bandFilter);
+            motorWhine2.connect(bandFilter);
+            bandFilter.connect(whineGain1);
+            whineGain1.connect(mainGainNode);
+
+            noiseNode.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(mainGainNode);
+
+            motorWhine1.start();
+            motorWhine2.start();
+            noiseNode.start();
+
+            hydraulicHiss = noiseNode;
+        }
+
+        function transitionToCrush() {
+            if (!audioCtx || currentAudioState === 'crushing') return;
+            currentAudioState = 'crushing';
+            const now = audioCtx.currentTime;
+            
+            motorWhine1.frequency.cancelScheduledValues(now);
+            motorWhine1.frequency.setTargetAtTime(CRUSH_STRAIN_PITCH, now, 0.1);
+            motorWhine1.frequency.linearRampToValueAtTime(CRUSH_STRAIN_PITCH - 60, now + 3);
+
+            motorWhine2.frequency.cancelScheduledValues(now);
+            motorWhine2.frequency.setTargetAtTime(CRUSH_STRAIN_PITCH / 2, now, 0.1);
+            motorWhine2.frequency.linearRampToValueAtTime((CRUSH_STRAIN_PITCH - 60) / 2, now + 3);
+        }
+
+        function stopHydraulicSound() {
+            if (motorWhine1) { try { motorWhine1.stop(); } catch(e){} motorWhine1 = null; }
+            if (motorWhine2) { try { motorWhine2.stop(); } catch(e){} motorWhine2 = null; }
+            if (hydraulicHiss) { try { hydraulicHiss.stop(); } catch(e){} hydraulicHiss = null; }
+            currentAudioState = 'idle';
+        }
+
+        function playMetalClang() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(150, now);
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(320, now);
+
+            gain.gain.setValueAtTime(0.6, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(mainGainNode);
+
+            osc1.start();
+            osc2.start();
+            osc1.stop(now + 0.4);
+            osc2.stop(now + 0.4);
+        }
+
+        // --- Fully Automated Recording Sequence Layout ---
+        recordBtn.addEventListener('click', () => {
+            if (isRecording) return; // Prevent multiple clicks during cycle
+            initAudio();
+            
+            // 1. Reset everything to clean initial parameters
+            resetSimulation();
+            recordedChunks = [];
+            
+            // 2. Build media pipeline streams
+            const videoStream = canvas.captureStream(30);
+            const audioTrack = mediaStreamDestination.stream.getAudioTracks()[0];
+            if (audioTrack) videoStream.addTrack(audioTrack);
+
+            let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options = { mimeType: 'video/webm;codecs=vp8,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm' };
+                }
+            }
+
+            mediaRecorder = new MediaRecorder(videoStream, options);
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'hydraulic_press_capture.webm';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            };
+
+            // 3. Fire up recording loops and kick off full macro cycle sequence
+            mediaRecorder.start();
+            isRecording = true;
+            autoRecordState = 'pressing';
+            state = 'pressing';
+            
+            if (pistonY < origY) {
+                startHydraulicSound('free_spin');
+            } else {
+                startHydraulicSound('crushing');
+            }
+
+            recordBtn.textContent = 'RECORDING CYCLE LIVE...';
+            recordBtn.classList.add('recording');
+        });
+
+        // --- Social Media Sharing Link Updates ---
+        function updateShareLinks() {
+            const currentUrl = encodeURIComponent(window.location.href);
+            const shareText = encodeURIComponent("Check out this interactive Hydraulic Compactor Simulator image crush application!");
+            document.getElementById('share-x').href = `https://x.com/intent/tweet?text=${shareText}&url=${currentUrl}`;
+            document.getElementById('share-fb').href = `https://www.facebook.com/sharer/sharer.php?u=${currentUrl}`;
+            document.getElementById('share-reddit').href = `https://www.reddit.com/submit?url=${currentUrl}&title=${shareText}`;
+        }
+        updateShareLinks();
+
+        // --- Simulation Core Properties ---
+        const BASE_Y = 440;
+        let pistonY = 50;
+        let state = 'idle'; 
+        
+        let targetImg = new Image();
+        let imageLoaded = false;
+
+        function createDefaultTarget() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 150;
+            tempCanvas.height = 150;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = '#e67e22';
+            tCtx.fillRect(0, 0, 150, 150);
+            tCtx.fillStyle = '#fff';
+            tCtx.font = 'bold 16px sans-serif';
+            tCtx.textAlign = 'center';
+            tCtx.fillText('CRUSH ME', 75, 80);
+            targetImg.src = tempCanvas.toDataURL();
+            targetImg.onload = () => { imageLoaded = true; resetSimulation(); };
+        }
+        createDefaultTarget();
+
+        let origW = 160;
+        let origH = 160;
+        let origX = (canvas.width / 2) - (origW / 2);
+        let origY = BASE_Y - origH;
+
+        let currentH = origH;
+        let currentW = origW;
+        let currentX = origX;
+        let currentY = origY;
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    targetImg = new Image();
+                    targetImg.onload = function() {
+                        imageLoaded = true;
+                        resetSimulation();
+                    };
+                    targetImg.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        stopPointSlider.addEventListener('input', () => { stopValDisp.textContent = stopPointSlider.value + '%'; });
+        speedSlider.addEventListener('input', () => { speedValDisp.textContent = speedSlider.value + ' px/frame'; });
+        volumeSlider.addEventListener('input', updateVolume);
+
+        pressBtn.addEventListener('click', () => {
+            autoRecordState = 'none'; // Break auto routing macros if button manual interrupt triggers
+            if (state !== 'pressing') {
+                state = 'pressing';
+                if (pistonY < origY) {
+                    startHydraulicSound('free_spin');
+                } else {
+                    startHydraulicSound('crushing');
+                }
+            }
+        });
+
+        retractBtn.addEventListener('click', () => {
+            autoRecordState = 'none';
+            if (pistonY <= 50) {
+                // If already all the way at the top, switch into a locked infinite playback sequence loop
+                state = 'infinite_retract';
+                startHydraulicSound('infinite_retract');
+            } else if (state !== 'retracting') {
+                state = 'retracting';
+                startHydraulicSound('retracting');
+            }
+        });
+
+        resetBtn.addEventListener('click', resetSimulation);
+
+        function resetSimulation() {
+            state = 'idle';
+            autoRecordState = 'none';
+            stopHydraulicSound();
+            pistonY = 50;
+            currentH = origH;
+            currentW = origW;
+            currentX = origX;
+            currentY = origY;
+            if (isRecording && mediaRecorder) {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordBtn.textContent = '📸 START AUTO RECORD';
+                recordBtn.classList.remove('recording');
+            }
+        }
+
+        function update() {
+            let speed = parseInt(speedSlider.value);
+            let limitPercentage = parseInt(stopPointSlider.value) / 100;
+            let absoluteStopY = BASE_Y - (origH * limitPercentage);
+
+            if (state === 'pressing') {
+                if (pistonY < absoluteStopY) {
+                    pistonY += speed;
+                    
+                    if (pistonY >= origY && currentAudioState === 'free_spin') {
+                        transitionToCrush();
+                    }
+
+                    if (pistonY >= absoluteStopY) {
+                        pistonY = absoluteStopY;
+                        playMetalClang();
+                        
+                        // Auto-record macro chain branch trigger check
+                        if (autoRecordState === 'pressing') {
+                            autoRecordState = 'retracting';
+                            state = 'retracting';
+                            startHydraulicSound('retracting');
+                        } else {
+                            state = 'idle';
+                            stopHydraulicSound();
+                        }
+                    }
+                }
+
+                if (pistonY >= origY) {
+                    currentY = pistonY;
+                    currentH = BASE_Y - pistonY;
+                    let compressionRatio = origH / currentH;
+                    currentW = origW * compressionRatio;
+                    if (currentW > canvas.width - 40) currentW = canvas.width - 40;
+                    currentX = (canvas.width / 2) - (currentW / 2);
+                }
+            } 
+            else if (state === 'retracting') {
+                if (pistonY > 50) {
+                    pistonY -= speed;
+                    if (pistonY <= 50) {
+                        pistonY = 50;
+                        
+                        // Auto-record macro sequence termination endpoint reached
+                        if (autoRecordState === 'retracting') {
+                            autoRecordState = 'none';
+                            state = 'idle';
+                            stopHydraulicSound();
+                            if (mediaRecorder && isRecording) {
+                                mediaRecorder.stop();
+                                isRecording = false;
+                                recordBtn.textContent = '📸 START AUTO RECORD';
+                                recordBtn.classList.remove('recording');
+                            }
+                        } else {
+                            state = 'idle';
+                            stopHydraulicSound();
+                        }
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(30, 20, 20, canvas.height - 40); 
+            ctx.fillRect(canvas.width - 50, 20, 20, canvas.height - 40); 
+            ctx.fillStyle = '#2b2b2b';
+            ctx.fillRect(20, 10, canvas.width - 40, 40); 
+
+            ctx.fillStyle = '#444';
+            ctx.fillRect(40, BASE_Y, canvas.width - 80, 40);
+            ctx.fillStyle = '#222';
+            ctx.fillRect(40, BASE_Y, canvas.width - 80, 5); 
+
+            if (imageLoaded) {
+                ctx.save();
+                ctx.drawImage(targetImg, currentX, currentY, currentW, currentH);
+                ctx.restore();
+            }
+
+            ctx.fillStyle = '#888';
+            ctx.fillRect((canvas.width / 2) - 25, 50, 50, pistonY - 50);
+            
+            ctx.fillStyle = '#555';
+            ctx.fillRect((canvas.width / 2) - 100, pistonY - 15, 200, 15);
+            ctx.fillStyle = '#ffcc00';
+            for(let i = -90; i < 100; i += 30) {
+                ctx.beginPath();
+                ctx.moveTo((canvas.width / 2) + i, pistonY - 15);
+                ctx.lineTo((canvas.width / 2) + i + 15, pistonY - 15);
+                ctx.lineTo((canvas.width / 2) + i, pistonY);
+                ctx.lineTo((canvas.width / 2) + i - 15, pistonY);
+                ctx.fill();
+            }
+
+            let limitPercentage = parseInt(stopPointSlider.value) / 100;
+            let stopLineY = BASE_Y - (origH * limitPercentage);
+            ctx.strokeStyle = 'rgba(231, 76, 60, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(50, stopLineY);
+            ctx.lineTo(canvas.width - 50, stopLineY);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
