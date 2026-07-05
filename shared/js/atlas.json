@@ -1,7 +1,22 @@
 [
   {
-    "name": "three.min.js",
-    "size": 603445,
+    "name": "atlas.json",
+    "size": 873,
+    "extension": "json"
+  },
+  {
+    "name": "ffmpeg.min.js",
+    "size": 22471,
+    "extension": "js"
+  },
+  {
+    "name": "simplex-noise.min.js",
+    "size": 4438,
+    "extension": "js"
+  },
+  {
+    "name": "ua.min.js",
+    "size": 533,
     "extension": "js"
   },
   {
@@ -15,13 +30,8 @@
     "extension": "js"
   },
   {
-    "name": "tone.min.js",
-    "size": 349169,
-    "extension": "js"
-  },
-  {
-    "name": "ua.min.js",
-    "size": 533,
+    "name": "header.js",
+    "size": 350,
     "extension": "js"
   },
   {
@@ -30,28 +40,23 @@
     "extension": "js"
   },
   {
-    "name": "simplex-noise.min.js",
-    "size": 4438,
-    "extension": "js"
-  },
-  {
     "name": "midiplayer.min.js",
     "size": 14924,
     "extension": "js"
   },
   {
-    "name": "atlas.json",
-    "size": 238,
-    "extension": "json"
-  },
-  {
-    "name": "header.js",
-    "size": 350,
+    "name": "tone.min.js",
+    "size": 349169,
     "extension": "js"
   },
   {
     "name": "forgotWhatThisIs.js",
     "size": 52994,
+    "extension": "js"
+  },
+  {
+    "name": "three.min.js",
+    "size": 603445,
     "extension": "js"
   }
 ]
