@@ -602,136 +602,249 @@ geometryPulse: {
         }
     }
 },
-  vaporwaveDrive : {
-      displayName: "Vaporwave Drive",
-      settings: [
-        { id: 'gridColor', type: 'color', label: 'Grid Color', default: '#a600ff' },
-        { id: 'sunColorTop', type: 'color', label: 'Sun Gradient Top', default: '#ffff00' },
-        { id: 'sunColorBottom', type: 'color', label: 'Sun Gradient Bottom', default: '#ff6600' },
-        { id: 'barColor', type: 'color', label: 'Bar Color', default: '#6400c8' },
-        { id: 'bgTop', type: 'color', label: 'BG Gradient Top', default: '#000000' },
-        { id: 'bgBottom', type: 'color', label: 'BG Gradient Bottom', default: '#00007a' }, // im a bottom >w<
-        { id: 'horizontalLines', type: 'range', label: 'Horizontal Bars', min: 0, max: 60, default: 2 },
-        { id: 'columns', type: 'range', label: 'Columns', min: 1, max: 30, default: 9 },
-        { id: 'lineSpeed', type: 'range', label: 'Horizontal Bar Speed', min: 0.1, max: 5, step: 0.1, default: 1.7 },
-        { id: 'realisticDepth', type: 'select', label: 'Realistic Depth', options: ['on', 'off'], default: 'on' },
-        { id: 'speedMultiplier', type: 'range', label: 'Realistic Depth Multiplier', min: 1, max: 6, step: 0.05, default: 3 },
-        { id: 'RoadWidth', type: 'range', label: 'Road Width', min: 0.01, max: 1, step: 0.01, default: 1 },
-        { id: 'sunStripes', type: 'range', label: 'Sun Stripes', min: 1, max: 50, default: 9 },
-        { id: 'sunStripeThickness', type: 'range', label: 'Sun Stripe Thickness', min: 1, max: 20, default: 8 },
+vaporwaveDrive: {
+  displayName: "Vaporwave Drive",
+  settings: [
+    { id: 'gridColor', type: 'color', label: 'Grid Color', default: '#a600ff' },
+    { id: 'sunColorTop', type: 'color', label: 'Sun Gradient Top', default: '#ffff00' },
+    { id: 'sunColorBottom', type: 'color', label: 'Sun Gradient Bottom', default: '#ff6600' },
+    { id: 'barColor', type: 'color', label: 'Bar Color', default: '#6400c8' },
+    { id: 'bgTop', type: 'color', label: 'BG Gradient Top', default: '#000000' },
+    { id: 'bgBottom', type: 'color', label: 'BG Gradient Bottom', default: '#00007a' },
+    { id: 'horizontalLines', type: 'range', label: 'Horizontal Bars', min: 1, max: 60, default: 2 },
+    { id: 'columns', type: 'range', label: 'Columns', min: 1, max: 30, default: 9 },
+    { id: 'lineSpeed', type: 'range', label: 'Speed', min: 0.1, max: 5, step: 0.1, default: 1.7 },
+    { id: 'realisticDepthMultiplier', type: 'range', label: 'FOV Perspective', min: 1, max: 6, step: 0.05, default: 3 },
+    { id: 'RoadWidth', type: 'range', label: 'Road Width', min: 0.01, max: 1, step: 0.01, default: 1 },
+    { id: 'sunStripes', type: 'range', label: 'Sun Stripes', min: 1, max: 50, default: 9 },
+    { id: 'sunStripeThickness', type: 'range', label: 'Sun Stripe Thickness', min: 1, max: 20, default: 8 },
+  ],
+  draw: (modules, store) => {
+    const maxSegments = 120; 
 
-
-      ],
-      draw: () => {
-        return () => {
-          const cfg = CONFIG.settings.vaporwaveDrive;
-          const w = canvas2D.width;
-          const h = canvas2D.height;
-          const roadHalfWidth = (w/2) * cfg.RoadWidth;
-          const gradient = ctx.createLinearGradient(0, 0, 0, h);
-          
-          gradient.addColorStop(0, cfg.bgTop); // top color
-          gradient.addColorStop(1, cfg.bgBottom); // bottom color
-          
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, w, h);
-
-          const horizonY = h/2;
-          const columns = cfg.columns;
-          // Bars inside road lanes
-
-          ctx.fillStyle = cfg.barColor;
-
-          for (let i = 0; i < columns; i++) {
-            const value = audioData[i % audioData.length];
-            const barHeight = (value / 255) * (h - horizonY) * CONFIG.master.sensitivity;
-
-            // Road lane trapezoid boundaries
-            const xBottomLeft  = w/2 - roadHalfWidth + (i/columns) * (roadHalfWidth * 2);
-            const xBottomRight = w/2 - roadHalfWidth + ((i+1)/columns) * (roadHalfWidth * 2);
-            const xTop = w/2; // all converge at horizon center
-
-            // Interpolate lane edges at bar top
-            const yTop = h - barHeight;
-            const t = (h - yTop) / (h - horizonY); // 0 at bottom, 1 at horizon
-            const xLeft = xBottomLeft + t * (xTop - xBottomLeft);
-            const xRight = xBottomRight + t * (xTop - xBottomRight);
-
-            // Draw bar polygon inside trapezoid
-            ctx.beginPath();
-            ctx.moveTo(xBottomLeft, h);
-            ctx.lineTo(xBottomRight, h);
-            ctx.lineTo(xRight, yTop);
-            ctx.lineTo(xLeft, yTop);
-            ctx.closePath();
-            ctx.fill();
-          }
-
-          // Draw grid lines first
-          ctx.strokeStyle = cfg.gridColor;
-          ctx.lineWidth = 2;
-          
-          // Vertical perspective lines
-          ctx.beginPath();
-          for (let i = 0; i <= columns; i++) {
-            const x = w/2 - roadHalfWidth + (i/columns) * (roadHalfWidth * 2);
-            ctx.moveTo(x, h);
-            ctx.lineTo(w/2, horizonY);
-          }
-          ctx.stroke();
-
-          // Horizontal lines
-          ctx.beginPath();
-          for (let i = 0; i < cfg.horizontalLines; i++) {
-            // what the heck
-            let norm = ((i + (Date.now()/1000) * cfg.lineSpeed) % cfg.horizontalLines) / cfg.horizontalLines;
-            let y = mapRange(norm, 0, 1, horizonY, h);
-
-            if (cfg.realisticDepth === 'on') {
-              // this is wack. so wack.
-              y = horizonY + (h - horizonY) *  Math.pow(norm, cfg.speedMultiplier);
-              // use this for dumping to a csv
-              // norm,horizonY,h,y
-              // console.log(`${norm}, ${horizonY}, ${h}, ${y}`);
-            }
-
-            // road edges at this y
-            const t = (y - horizonY) / (h - horizonY);
-            const xLeft  = (1 - t) * (w/2) + t * (w/2 - roadHalfWidth);
-            const xRight = (1 - t) * (w/2) + t * (w/2 + roadHalfWidth);
-            ctx.moveTo(xLeft, y);
-            ctx.lineTo(xRight, y);
-          }
-          ctx.stroke();
-          
-          const sunGradient = ctx.createLinearGradient(0, h/3 - h/6, 0, h/3 + h/6);
-          sunGradient.addColorStop(0, cfg.sunColorTop);
-          sunGradient.addColorStop(1, cfg.sunColorBottom);
-
-          // Draw the sun gradient first
-          ctx.fillStyle = sunGradient;
-          ctx.beginPath();
-          ctx.arc(w/2, h/3, h/6, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Now clip to the sun’s circle
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(w/2, h/3, h/6, 0, Math.PI * 2);
-          ctx.clip();
-
-          // Clear out stripes so background shows through
-          for (let i = 0; i < cfg.sunStripes; i++) {
-            const stripeHeight = cfg.sunStripeThickness; // or from config
-            const y = h/3 + h/6 - i * (stripeHeight * 2);
-            ctx.clearRect(w/2 - h/6, y, h/3, stripeHeight-(i));
-          }
-
-          ctx.restore();
-
-        };
+    if (!store.track) {
+      store.track = [];
+      for (let i = 0; i < maxSegments; i++) {
+        store.track.push({ curve: 0, intersection: false });
       }
-    },
+      store.playerZ = 0;
+      store.currentCurveState = 0;
+      store.targetCurveState = 0;
+      store.actionTimer = 0;
+    }
+
+    return () => {
+      const cfg = CONFIG.settings.vaporwaveDrive;
+      const w = canvas2D.width;
+      const h = canvas2D.height;
+      const horizonY = h / 2;
+      const roadW = (w * 0.45) * cfg.RoadWidth;
+      
+      const camHeight = 1100;
+      const fov = 120 + (cfg.realisticDepthMultiplier * 50); 
+      const segmentLength = 200; 
+
+      // --- Track Management ---
+      const speed = cfg.lineSpeed * 65;
+      store.playerZ += speed;
+
+      while (store.playerZ >= segmentLength) {
+        store.playerZ -= segmentLength;
+        store.track.shift();
+
+        store.actionTimer--;
+        if (store.actionTimer <= 0) {
+          const rand = Math.random();
+          if (rand < 0.25) {
+            store.targetCurveState = Math.random() < 0.5 ? -4.5 : 4.5;
+            store.actionTimer = Math.floor(Math.random() * 25 + 25);
+          } else if (rand < 0.50) {
+            store.targetCurveState = Math.random() < 0.5 ? -2.0 : 2.0;
+            store.actionTimer = Math.floor(Math.random() * 40 + 30);
+          } else {
+            store.targetCurveState = 0;
+            store.actionTimer = Math.floor(Math.random() * 50 + 40);
+          }
+        }
+
+        store.currentCurveState += (store.targetCurveState - store.currentCurveState) * 0.12;
+        const spawnIntersection = (store.targetCurveState === 0 && Math.random() < 0.07);
+
+        store.track.push({
+          curve: store.currentCurveState,
+          intersection: spawnIntersection
+        });
+      }
+
+      // --- Perspective Base Calculation ---
+      const percentIntoSegment = store.playerZ / segmentLength;
+      const currentSeg = store.track[0];
+      const nextSeg = store.track[1] || currentSeg;
+      const playerCurve = currentSeg.curve + (nextSeg.curve - currentSeg.curve) * percentIntoSegment;
+
+      // Draw Sky/Ground Base
+      const gradient = ctx.createLinearGradient(0, 0, 0, h);
+      gradient.addColorStop(0, cfg.bgTop);
+      gradient.addColorStop(1, cfg.bgBottom);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+
+      // --- Core 3D Track Projection Engine ---
+      let xOffsetAccumulator = 0;
+      const points = [];
+
+      for (let i = 0; i < maxSegments; i++) {
+        const seg = store.track[i];
+        if (!seg) break;
+
+        xOffsetAccumulator += seg.curve * 15;
+
+        const worldX = xOffsetAccumulator - (playerCurve * 15 * i);
+        const worldY = camHeight;
+        const worldZ = (i * segmentLength) - store.playerZ;
+
+        if (worldZ <= 0) continue;
+
+        const scale = fov / worldZ;
+        const screenX = Math.round((w / 2) + (worldX * scale));
+        const screenY = Math.round(horizonY + (worldY * scale));
+        const screenW = Math.round(roadW * scale);
+
+        points.push({
+          x: screenX,
+          y: screenY,
+          w: screenW,
+          scale: scale,
+          intersection: seg.intersection
+        });
+      }
+
+      if (points.length < 2) return;
+
+      // --- Draw Background Intersections Layer ---
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        if (p1.intersection) {
+          ctx.fillStyle = cfg.gridColor;
+          ctx.globalAlpha = 0.35;
+          ctx.beginPath();
+          ctx.moveTo(0, p1.y);
+          ctx.lineTo(w, p1.y);
+          ctx.lineTo(w, p2.y);
+          ctx.lineTo(0, p2.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 1.0;
+        }
+      }
+
+      // --- Establish Road Mask/Clipping Zone ---
+      ctx.save(); 
+      ctx.beginPath();
+      ctx.moveTo(points[0].x - points[0].w, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x - points[i].w, points[i].y);
+      }
+      ctx.lineTo(points[points.length - 1].x + points[points.length - 1].w, points[points.length - 1].y);
+      for (let i = points.length - 1; i >= 0; i--) {
+        ctx.lineTo(points[i].x + points[i].w, points[i].y);
+      }
+      ctx.closePath();
+      ctx.clip(); 
+
+      // --- 1. Draw Curved Audio Lanes with Fractional Smooth Tips ---
+      const columns = cfg.columns;
+      ctx.fillStyle = cfg.barColor;
+      const maxVisualLength = points.length - 2; 
+      
+      for (let c = 0; c < columns; c++) {
+        const audioVal = audioData[c % audioData.length];
+        const sensitivityFactor = (audioVal / 255) * CONFIG.master.sensitivity;
+        
+        // CRITICAL FIX: Math.min limits preciseIndex from stretching out of array range
+        const rawPreciseIndex = sensitivityFactor * maxVisualLength;
+        const preciseIndex = Math.min(Math.max(0, rawPreciseIndex), maxVisualLength);
+        
+        const baseIndex = Math.floor(preciseIndex);
+        const fraction = preciseIndex - baseIndex;
+
+        const pA = points[baseIndex];
+        const pB = points[baseIndex + 1] || pA;
+        
+        const tipX = pA.x + (pB.x - pA.x) * fraction;
+        const tipY = pA.y + (pB.y - pA.y) * fraction;
+        const tipW = pA.w + (pB.w - pA.w) * fraction;
+
+        ctx.beginPath();
+        for (let i = 0; i <= baseIndex; i++) {
+          const p = points[i];
+          ctx.lineTo(p.x - p.w + (c / columns) * (p.w * 2), p.y);
+        }
+        ctx.lineTo(tipX - tipW + (c / columns) * (tipW * 2), tipY);
+        ctx.lineTo(tipX - tipW + ((c + 1) / columns) * (tipW * 2), tipY);
+        for (let i = baseIndex; i >= 0; i--) {
+          const p = points[i];
+          ctx.lineTo(p.x - p.w + ((c + 1) / columns) * (p.w * 2), p.y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // --- 2. Draw Distance Lines (Dumb & Clean Method) ---
+      ctx.strokeStyle = cfg.gridColor;
+      const stride = Math.max(1, Math.floor(points.length / cfg.horizontalLines));
+
+      for (let i = 0; i < points.length; i += stride) {
+        const p = points[i];
+        ctx.lineWidth = Math.max(1, p.scale * 2.5);
+        ctx.beginPath();
+        ctx.moveTo(p.x - p.w, p.y);
+        ctx.lineTo(p.x + p.w, p.y);
+        ctx.stroke();
+      }
+
+      // --- 3. Draw Longitudinal Curved Grid Lines ---
+      ctx.lineWidth = 2;
+      for (let c = 0; c <= columns; c++) {
+        ctx.beginPath();
+        for (let i = 0; i < points.length; i++) {
+          const p = points[i];
+          const gridX = p.x - p.w + (c / columns) * (p.w * 2);
+          
+          if (i === 0) ctx.moveTo(gridX, p.y);
+          else ctx.lineTo(gridX, p.y);
+        }
+        ctx.stroke();
+      }
+
+      ctx.restore(); 
+
+      // --- Draw Parallax Sun ---
+      const sunXOffset = -playerCurve * 12; 
+      const sunGradient = ctx.createLinearGradient(w / 2 + sunXOffset, h / 3 - h / 6, w / 2 + sunXOffset, h / 3 + h / 6);
+      sunGradient.addColorStop(0, cfg.sunColorTop);
+      sunGradient.addColorStop(1, cfg.sunColorBottom);
+
+      ctx.fillStyle = sunGradient;
+      ctx.beginPath();
+      ctx.arc(w / 2 + sunXOffset, h / 3, h / 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(w / 2 + sunXOffset, h / 3, h / 6, 0, Math.PI * 2);
+      ctx.clip();
+
+      for (let i = 0; i < cfg.sunStripes; i++) {
+        const stripeHeight = cfg.sunStripeThickness;
+        const y = h / 3 + h / 6 - i * (stripeHeight * 2);
+        ctx.clearRect(w / 2 + sunXOffset - h / 6, y, h / 3, stripeHeight - i);
+      }
+      ctx.restore();
+    };
+  }
+},
     fire : {
       displayName: "I broke copilot and it made this smh",
       settings: [
