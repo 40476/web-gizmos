@@ -3559,6 +3559,11 @@ class GameEngine {
                 p.gridY = p.nextGridY;
                 p.nextGridX = undefined;
                 p.nextGridY = undefined;
+
+                // FIX: Broadcast arrival so remote players see the updated position
+                // and that isDrilling is now false. Without this, remote players
+                // would be stuck seeing us at the old position still drilling.
+                Network.broadcastMove();
             }
 
             // --- 6. INPUT DETECTION ---
@@ -6187,11 +6192,16 @@ class NetworkManager {
 
     broadcastMove() {
         const p = Game.localPlayer;
-        // FIX: Added joinedAt to move packets so late joiners see my timestamp
+        // FIX: Use nextGridX/Y as the target if we're mid-movement (p.nextGridX is set),
+        // otherwise use the current gridX/Y. This ensures remote players see us moving
+        // toward the correct destination immediately, rather than lagging behind.
+        const targetGridX = (p.nextGridX !== undefined) ? p.nextGridX : p.gridX;
+        const targetGridY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
         this.publish('pos', {
             type: 'move', id: p.id,
-            sx: p.x, sy: p.y, tx: p.gridX * CONSTANTS.TILE_SIZE, ty: p.gridY * CONSTANTS.TILE_SIZE,
-            gx: p.gridX, gy: p.gridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
+            sx: p.x, sy: p.y,
+            tx: targetGridX * CONSTANTS.TILE_SIZE, ty: targetGridY * CONSTANTS.TILE_SIZE,
+            gx: targetGridX, gy: targetGridY, r: p.rotation, col: Game.settings.color, drill: p.isDrilling,
             username: Game.settings.username,
             joinedAt: p.joinedAt,
             isAdmin: Game.isAdmin // FLAG ADMIN STATUS
