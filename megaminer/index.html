@@ -1855,6 +1855,9 @@
             <h4 style="color:#aaa; border-bottom:1px solid #444;">SELL MINERALS</h4>
             <div id="sell-list" class="sell-list"></div>
 
+            <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">CRAFTING</h4>
+            <div id="crafting-list" class="shop-grid" style="margin-bottom:20px;"></div>
+
             <h4 style="color:#aaa; border-bottom:1px solid #444; margin-top:20px;">UPGRADES & SUPPLIES</h4>
             <div class="shop-grid">
                 <!-- Upgrades -->
@@ -2139,8 +2142,14 @@ const TILE_TYPES = {
 
     // New Items
     TNT: 50, NUKE: 51, TELEPORTER: 52,
-    REPAIR_KIT: 60, FUEL_VOUCHER: 61
+    REPAIR_KIT: 60, FUEL_VOUCHER: 61,
 
+    // New: Falling blocks
+    GRAVEL: 23, SAND: 24,
+    // New: Crafted materials
+    IRON_INGOT: 25, GLASS: 26, ALLOY: 27, CRYSTAL: 28,
+    // New: Biome-specific (depths)
+    CRYSTAL_ORE: 29, FOSSIL: 30, OBSIDIAN: 31, GLOWSTONE: 32
 };
 
 const TILE_PROPS = {
@@ -2162,6 +2171,19 @@ const TILE_PROPS = {
     [TILE_TYPES.URANIUM]: { name: "Uranium", color: '#2ecc71', hardness: 4, value: 2000, hazard: "radiation", tier: 4, trashExclude: true , trashExclude: true, AOEExclude: true},
     [TILE_TYPES.GEODE]: { name: "Geode", color: '#9b59b6', hardness: 5, value: 0, isRandom: true, tier: 3 , trashExclude: true, AOEExclude: true},
     [TILE_TYPES.RICK]: { name: "Rickroll block", color: '#4a6cbb', hardness: 5, value: 0, isRandom: true, tier: 0 , trashExclude: true, AOEExclude: true},
+    // New: Falling blocks
+    [TILE_TYPES.GRAVEL]: { name: "Gravel", color: '#7f8c8d', hardness: 1.5, value: 0, tier: 0, falling: true },
+    [TILE_TYPES.SAND]: { name: "Sand", color: '#f1c40f', hardness: 1.2, value: 0, tier: 0, falling: true },
+    // New: Crafted materials
+    [TILE_TYPES.IRON_INGOT]: { name: "Iron Ingot", color: '#bdc3c7', hardness: 1, value: 150, tier: 0 },
+    [TILE_TYPES.GLASS]: { name: "Glass", color: '#3498db', hardness: 0.5, value: 200, tier: 0 },
+    [TILE_TYPES.ALLOY]: { name: "Alloy", color: '#9b59b6', hardness: 4, value: 500, tier: 2 },
+    [TILE_TYPES.CRYSTAL]: { name: "Crystal", color: '#2ecc71', hardness: 3, value: 1000, tier: 3 },
+    // New: Biome-specific ores
+    [TILE_TYPES.CRYSTAL_ORE]: { name: "Crystal Ore", color: '#9b59b6', hardness: 4, value: 800, tier: 3, trashExclude: true },
+    [TILE_TYPES.FOSSIL]: { name: "Fossil", color: '#8b4513', hardness: 3, value: 600, tier: 2, trashExclude: true },
+    [TILE_TYPES.OBSIDIAN]: { name: "Obsidian", color: '#2c3e50', hardness: 6, value: 400, tier: 3, trashExclude: true },
+    [TILE_TYPES.GLOWSTONE]: { name: "Glowstone", color: '#f39c12', hardness: 2, value: 700, tier: 3, trashExclude: true },
     // Purchasables
     [TILE_TYPES.TNT]: { name: "TNT", color: '#e74c3c', hardness: 1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
     [TILE_TYPES.NUKE]: { name: "Nuke", color: '#2c3e50', hardness: 1, value: 0, tier: 0, trashExclude: true, AOEExclude: true },
@@ -2926,7 +2948,9 @@ class GameEngine {
             selectedBlock: TILE_TYPES.CASING,
             stats: { blocksMined: {}, totalMined: 0, startTime: now() },
             joinedAt: now(),
-            teleporters: [] // Discovered teleporters list
+            teleporters: [], // Discovered teleporters list
+            blueprints: [], // Saved blueprints
+            achievements: {} // Unlocked achievements
         };
 
         this.map = [];
@@ -2936,6 +2960,7 @@ class GameEngine {
         this.zoom = 1.0;
         this.particles = [];
         this.explosives = []; // Track active TNT/Nuke timers
+        this.merchants = []; // Active merchant NPCs
         this.isAdmin = false;
         this.hostId = null;
         this.bannedIds = JSON.parse(localStorage.getItem('mm_banned') || '[]');
@@ -2946,6 +2971,7 @@ class GameEngine {
         this.stationGridX = CONSTANTS.MAP_WIDTH / 2;
         this.stationGridY = 4;
         this.lastHostHeartbeat = 0;
+        this.currentBiome = 'surface'; // Track current biome
 
         this.loadStoredSettings();
     }
@@ -3638,6 +3664,12 @@ class GameEngine {
             }
         });
 
+        // Falling Blocks Logic (Gravel/Sand)
+        this.updateFallingBlocks(dt);
+
+        // Depth Zones & Biomes
+        this.updateDepthZones();
+
         // Heat & Prompt
         // Use destGridY for depth check so heat updates as we drill down, not after
         let depthY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
@@ -4057,6 +4089,265 @@ class GameEngine {
         $('heat-overlay').style.opacity = 0;
         UI.updateDashboard();
 
+    }
+
+    // --- FALLING BLOCKS SYSTEM (Gravel/Sand) ---
+    updateFallingBlocks(dt) {
+        if (!this.running) return;
+        
+        const p = this.localPlayer;
+        const fallingTypes = [TILE_TYPES.GRAVEL, TILE_TYPES.SAND];
+        
+        // Only process if player is nearby (optimization)
+        const checkRadius = 15;
+        const startCol = Math.max(0, p.gridX - checkRadius);
+        const endCol = Math.min(CONSTANTS.MAP_WIDTH - 1, p.gridX + checkRadius);
+        const startRow = Math.max(0, p.gridY - checkRadius);
+        const endRow = Math.min(CONSTANTS.MAP_HEIGHT - 1, p.gridY + checkRadius);
+        
+        for (let y = startRow; y <= endRow; y++) {
+            for (let x = startCol; x <= endCol; x++) {
+                const tile = this.map[y]?.[x];
+                if (tile === undefined) continue;
+                
+                // Check if this is a falling block
+                if (!fallingTypes.includes(tile)) continue;
+                
+                // Check if there's a block below
+                if (y >= CONSTANTS.MAP_HEIGHT - 1) continue; // Bottom of map
+                
+                const below = this.map[y + 1][x];
+                
+                // If block below is empty, this block should fall
+                if (below === TILE_TYPES.EMPTY) {
+                    // Update map
+                    this.map[y][x] = TILE_TYPES.EMPTY;
+                    this.map[y + 1][x] = tile;
+                    this.discovered[y + 1][x] = 1;
+                    
+                    // Spawn particle effect
+                    this.spawnParticle(x * 32 + 16, (y + 1) * 32 + 16, TILE_PROPS[tile].color, 3);
+                    
+                    // Broadcast update
+                    if (this.isAdmin) {
+                        Network.sendTileUpdate(x, y, TILE_TYPES.EMPTY);
+                        Network.sendTileUpdate(x, y + 1, tile);
+                    }
+                }
+            }
+        }
+    }
+
+    // --- DEPTH ZONES & BIOMES ---
+    updateDepthZones() {
+        const p = this.localPlayer;
+        const depth = p.gridY;
+        
+        // Determine biome based on depth
+        let newBiome = 'surface';
+        if (depth < 50) newBiome = 'surface';
+        else if (depth < 150) newBiome = 'underground';
+        else if (depth < 300) newBiome = 'cavern';
+        else if (depth < 500) newBiome = 'deep_cavern';
+        else if (depth < 1000) newBiome = 'magma_chambers';
+        else newBiome = 'the_abyss';
+        
+        // Update biome if changed
+        if (this.currentBiome !== newBiome) {
+            this.currentBiome = newBiome;
+            // Show biome discovery message
+            if (depth > 50) {
+                UI.showToast(`Biome Discovered: ${newBiome.replace('_', ' ').toUpperCase()}`, 'info');
+            }
+            // Check achievements
+            Game.checkAchievements();
+        }
+        
+        // Biome-specific effects
+        if (newBiome === 'magma_chambers' || newBiome === 'the_abyss') {
+            // Increased heat in deeper biomes
+            p.temp += 0.01 * (depth > 1000 ? 2 : 1);
+        }
+    }
+
+    // --- ACHIEVEMENTS SYSTEM ---
+    checkAchievements() {
+        const p = this.localPlayer;
+        if (!p.achievements) p.achievements = {};
+        
+        const achievements = {
+            'first_blood': () => p.stats.totalMined >= 1,
+            'miner_100': () => p.stats.totalMined >= 100,
+            'depth_50': () => p.gridY >= 55,
+            'depth_100': () => p.gridY >= 105,
+            'depth_500': () => p.gridY >= 505,
+            'depth_1000': () => p.gridY >= 1005,
+            'rich': () => p.money >= 1000,
+            'entrepreneur': () => p.money >= 10000,
+            'drill_3': () => p.drillTier >= 3,
+            'max_drill': () => p.drillTier >= 4,
+            'craftsman': () => Object.values(p.inventory).some(v => v > 0 && 
+                [TILE_TYPES.IRON_INGOT, TILE_TYPES.GLASS, TILE_TYPES.ALLOY, TILE_TYPES.CRYSTAL].includes(v)),
+            'biome_hopper': () => ['surface', 'underground', 'cavern', 'deep_cavern', 'magma_chambers', 'the_abyss'].includes(Game.currentBiome)
+        };
+        
+        for (const [id, condition] of Object.entries(achievements)) {
+            if (!p.achievements[id] && condition()) {
+                p.achievements[id] = { unlockedAt: Date.now() };
+                UI.showToast(`Achievement Unlocked: ${id.replace('_', ' ').toUpperCase()}`, 'success');
+                Sound.playSound('levelUp');
+            }
+        }
+    }
+
+    // --- MERCHANT NPC SYSTEM ---
+    spawnMerchant() {
+        if (this.merchants.length >= 3) return; // Max 3 merchants
+        
+        // Find a valid spawn position near player
+        const spawnX = Math.floor(this.localPlayer.gridX + (Math.random() * 20 - 10));
+        const spawnY = Math.floor(this.localPlayer.gridY + 5);
+        
+        // Ensure spawn is on empty space with solid ground below
+        if (spawnY >= CONSTANTS.MAP_HEIGHT - 1) return;
+        if (this.map[spawnY][spawnX] !== TILE_TYPES.EMPTY) return;
+        if (spawnY + 1 >= CONSTANTS.MAP_HEIGHT || this.map[spawnY + 1][spawnX] === TILE_TYPES.EMPTY) return;
+        
+        const merchant = {
+            id: uuid(),
+            x: spawnX * CONSTANTS.TILE_SIZE,
+            y: spawnY * CONSTANTS.TILE_SIZE,
+            gridX: spawnX,
+            gridY: spawnY,
+            direction: Math.random() > 0.5 ? 1 : -1,
+            moveTimer: 0,
+            color: `hsl(${Math.random() * 360}, 70%, 50%)`
+        };
+        
+        this.merchants.push(merchant);
+        // Merchants are visual-only, don't modify the map
+        console.log("Merchant spawned at", spawnX, spawnY);
+    }
+
+    updateMerchants(dt) {
+        if (!this.running || this.merchants.length === 0) return;
+        
+        const p = this.localPlayer;
+        
+        // Despawn merchants that are too far
+        this.merchants = this.merchants.filter(m => {
+            const dist = Math.abs(m.gridX - p.gridX) + Math.abs(m.gridY - p.gridY);
+            return dist < 50; // Despawn if > 50 tiles away
+        });
+        
+        // Update merchant movement (simple patrol AI)
+        this.merchants.forEach(merchant => {
+            merchant.moveTimer -= dt;
+            
+            if (merchant.moveTimer <= 0) {
+                merchant.moveTimer = 100 + Math.random() * 200;
+                
+                // Try to move
+                const newX = merchant.gridX + merchant.direction;
+                
+                if (newX > 0 && newX < CONSTANTS.MAP_WIDTH &&
+                    this.map[merchant.gridY][newX] === TILE_TYPES.EMPTY &&
+                    this.map[merchant.gridY + 1] && this.map[merchant.gridY + 1][newX] !== TILE_TYPES.EMPTY) {
+                    // Move
+                    merchant.gridX = newX;
+                    merchant.x = newX * CONSTANTS.TILE_SIZE;
+                } else {
+                    // Turn around
+                    merchant.direction *= -1;
+                }
+            }
+        });
+    }
+
+    // --- BLUEPRINT SYSTEM ---
+    saveBlueprint(name) {
+        const p = this.localPlayer;
+        
+        // Simple selection: save a 10x10 area centered on player
+        const size = 10;
+        const x1 = Math.max(0, p.gridX - Math.floor(size/2));
+        const y1 = Math.max(0, p.gridY - Math.floor(size/2));
+        const x2 = Math.min(CONSTANTS.MAP_WIDTH - 1, x1 + size - 1);
+        const y2 = Math.min(CONSTANTS.MAP_HEIGHT - 1, y1 + size - 1);
+        
+        const width = x2 - x1 + 1;
+        const height = y2 - y1 + 1;
+        
+        // Capture tiles
+        const tiles = [];
+        for (let y = y1; y <= y2; y++) {
+            const row = [];
+            for (let x = x1; x <= x2; x++) {
+                row.push(this.map[y][x]);
+            }
+            tiles.push(row);
+        }
+        
+        const blueprint = {
+            name,
+            width,
+            height,
+            tiles,
+            createdAt: Date.now()
+        };
+        
+        p.blueprints = p.blueprints || [];
+        p.blueprints.push(blueprint);
+        
+        this.saveLocalProgress();
+        UI.showToast(`Blueprint "${name}" saved!`, 'success');
+        Sound.playSound('success');
+    }
+
+    loadBlueprint(index) {
+        const p = this.localPlayer;
+        if (!p.blueprints || !p.blueprints[index]) {
+            UI.showToast("Blueprint not found!", "error");
+            return;
+        }
+        
+        const bp = p.blueprints[index];
+        const startX = p.gridX;
+        const startY = p.gridY;
+        
+        // Check if area is clear (only for non-empty tiles)
+        for (let y = 0; y < bp.height; y++) {
+            for (let x = 0; x < bp.width; x++) {
+                const worldX = startX + x;
+                const worldY = startY + y;
+                if (worldX < 0 || worldX >= CONSTANTS.MAP_WIDTH || 
+                    worldY < 0 || worldY >= CONSTANTS.MAP_HEIGHT) {
+                    UI.showToast("Blueprint out of bounds!", "error");
+                    return;
+                }
+                const tile = bp.tiles[y][x];
+                if (tile !== TILE_TYPES.EMPTY && this.map[worldY][worldX] !== TILE_TYPES.EMPTY) {
+                    UI.showToast("Area not clear!", "error");
+                    return;
+                }
+            }
+        }
+        
+        // Place blueprint
+        for (let y = 0; y < bp.height; y++) {
+            for (let x = 0; x < bp.width; x++) {
+                const worldX = startX + x;
+                const worldY = startY + y;
+                const tile = bp.tiles[y][x];
+                if (tile !== TILE_TYPES.EMPTY) {
+                    this.map[worldY][worldX] = tile;
+                    Network.sendTileUpdate(worldX, worldY, tile);
+                }
+            }
+        }
+        
+        UI.showToast(`Blueprint "${bp.name}" placed!`, 'success');
+        Sound.playSound('build');
     }
 
     draw() {
@@ -5171,6 +5462,118 @@ class GameEngine {
 // --- HELPER FOR COLORS ---
 const Qt = { lighter: (hex, factor) => hex };
 
+// --- CRAFTING SYSTEM ---
+class CraftingSystem {
+    constructor() {
+        this.recipes = {
+            'iron_ingot': {
+                name: "Iron Ingot",
+                ingredients: { [TILE_TYPES.IRON]: 3 },
+                result: TILE_TYPES.IRON_INGOT,
+                count: 1,
+                description: "Smelt 3 Iron ore into 1 Ingot"
+            },
+            'glass': {
+                name: "Glass",
+                ingredients: { [TILE_TYPES.STONE]: 2 },
+                result: TILE_TYPES.GLASS,
+                count: 1,
+                description: "Melt 2 Stone into 1 Glass"
+            },
+            'alloy': {
+                name: "Alloy",
+                ingredients: { [TILE_TYPES.IRON_INGOT]: 2, [TILE_TYPES.GOLD]: 1 },
+                result: TILE_TYPES.ALLOY,
+                count: 1,
+                description: "Combine 2 Iron Ingots + 1 Gold"
+            },
+            'crystal': {
+                name: "Crystal",
+                ingredients: { [TILE_TYPES.EMERALD]: 2, [TILE_TYPES.DIAMOND]: 1 },
+                result: TILE_TYPES.CRYSTAL,
+                count: 1,
+                description: "Fuse 2 Emeralds + 1 Diamond"
+            },
+            'casing': {
+                name: "Structure",
+                ingredients: { [TILE_TYPES.STONE]: 5 },
+                result: TILE_TYPES.CASING,
+                count: 2,
+                description: "Craft 2 Casings from 5 Stone"
+            },
+            'repair_kit': {
+                name: "Repair Kit",
+                ingredients: { [TILE_TYPES.IRON_INGOT]: 2, [TILE_TYPES.GLASS]: 1 },
+                result: TILE_TYPES.REPAIR_KIT,
+                count: 1,
+                description: "Craft a Repair Kit"
+            }
+        };
+    }
+
+    static craft(recipeId, amount = 1) {
+        const recipe = CraftingSystem.recipes[recipeId.toLowerCase()];
+        if (!recipe) {
+            UI.showToast("Unknown recipe!", "error");
+            return;
+        }
+
+        const p = Game.localPlayer;
+        
+        // Check ingredients
+        for (const [itemId, required] of Object.entries(recipe.ingredients)) {
+            const have = p.inventory[itemId] || 0;
+            if (have < required * amount) {
+                UI.showToast(`Not enough ${TILE_PROPS[itemId].name}! Need ${required * amount}`, "error");
+                return;
+            }
+        }
+
+        // Consume ingredients
+        for (const [itemId, required] of Object.entries(recipe.ingredients)) {
+            p.inventory[itemId] -= required * amount;
+            p.cargo -= required * amount;
+            if (p.inventory[itemId] <= 0) delete p.inventory[itemId];
+        }
+
+        // Give result
+        p.inventory[recipe.result] = (p.inventory[recipe.result] || 0) + (recipe.count * amount);
+        p.cargo += recipe.count * amount;
+
+        UI.showToast(`Crafted ${amount}x ${recipe.name}`, "success");
+        Sound.playSound('success');
+        Game.saveLocalProgress();
+        UI.updateDashboard();
+    }
+
+    static renderCraftingUI() {
+        const container = $('crafting-list');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        for (const [key, recipe] of Object.entries(CraftingSystem.recipes)) {
+            const item = document.createElement('div');
+            item.className = 'shop-item';
+            
+            let ingredientsText = Object.entries(recipe.ingredients)
+                .map(([id, count]) => `${count}x ${TILE_PROPS[id]?.name || '?'}`)
+                .join(', ');
+            
+            item.innerHTML = `
+                <h4>${recipe.name}</h4>
+                <p>${recipe.description}</p>
+                <p style="font-size:var(--fs-tiny); color:#aaa;">${ingredientsText}</p>
+                <button class="btn" onclick="CraftingSystem.craft('${key}', 1)">Craft</button>
+            `;
+            
+            container.appendChild(item);
+        }
+    }
+}
+
+const CraftingSystem = new CraftingSystem();
+
 // --- SHOP SYSTEM ---
 class ShopSystem {
     constructor() {
@@ -5239,6 +5642,9 @@ class ShopSystem {
         const p = Game.localPlayer;
         $('shop-money').innerText = "$" + Math.floor(p.money);
         // $('shop-color-picker').value = Game.settings.color;
+
+        // Update crafting UI
+        CraftingSystem.renderCraftingUI();
 
         const sellContainer = $('sell-list');
         sellContainer.innerHTML = '';
@@ -5394,11 +5800,14 @@ class ShopSystem {
                 case 'drill':      p.drillTier++; break;
                 case 'hull':       p.maxHull += 20; p.hull = p.maxHull; break;
                 case 'fuel':       p.maxFuel += 20; p.fuel = p.maxFuel; break;
-                case 'cargo':      p.maxCargo += 10; break; // Fixed: using 10 to match your level formula
+                case 'cargo':      p.maxCargo += 10; break;
                 case 'cool':       p.heatResist++; break;
                 case 'xray':       p.xrayRange++; break;
                 case 'AOE': p.multiMine++; break;
             }
+
+            // Check achievements after upgrades
+            Game.checkAchievements();
 
             UI.showToast(`Upgraded ${item} for $${cost}!`, "success");
             Sound.playSound('success');
@@ -6291,6 +6700,33 @@ class InputManager {
                 }
             } else {
                 UI.showToast("Usage: /op [Username]", "normal");
+            }
+        }
+        else {
+            UI.showToast("Unknown command or not admin", "error");
+        }
+        else if (parts[0] === '/craft') {
+            if (parts[1] && parts[2]) {
+                const recipe = parts[1].toLowerCase();
+                const amount = parseInt(parts[2]) || 1;
+                CraftingSystem.craft(recipe, amount);
+            } else {
+                UI.showToast("Usage: /craft [recipe] [amount]", "normal");
+            }
+        }
+        else if (parts[0] === '/bp' || parts[0] === '/blueprint') {
+            if (parts[1] === 'save' && parts[2]) {
+                Game.saveBlueprint(parts.slice(2).join(' '));
+            } else if (parts[1] === 'list') {
+                const bps = Game.localPlayer.blueprints || [];
+                if (bps.length === 0) {
+                    UI.showToast("No blueprints saved.", "normal");
+                } else {
+                    UI.showToast(`Blueprints: ${bps.map((bp, i) => `${i}: ${bp.name}`).join(', ')}`, "info");
+                }
+            } else if (parts[1] === 'load' && parts[2]) {
+                const index = parseInt(parts[2]);
+                if (!isNaN(index)) Game.loadBlueprint(index);
             }
         }
         else {
@@ -7834,6 +8270,7 @@ const Input = new InputManager();
 const Network = new NetworkManager();
 const UI = new UIManager();
 const Admin = new AdminSystem();
+const CraftingSystem_instance = CraftingSystem; // Expose for HTML onclick
 const Shop = new ShopSystem();
 const Cloud = new CloudManager();
 
@@ -7842,6 +8279,7 @@ window.Game = Game;
 window.UI = UI;
 window.SaveSystem = SaveSystem;
 window.Admin = Admin;
+window.CraftingSystem = CraftingSystem_instance;
 window.Shop = Shop;
 window.Cloud = Cloud;
 window.Input = Input;
