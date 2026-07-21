@@ -1737,7 +1737,7 @@
 
         <!-- Chat -->
         <div id="chat-container" onclick="UI.openChat()">
-            <button id="chat-close-btn" onclick="event.stopPropagation(); UI.closeChat()" style="display:none; position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; clip-path: var(--clip-path-style); filter: var(--border-filter); border:none; background:#c0392b; color:white; font-weight:bold; cursor:pointer; z-index:100; var(--fs-tiny);">X</button>
+            <button id="chat-close-btn" onclick="event.stopPropagation(); UI.closeChat()" style="display:none; position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; clip-path: var(--clip-path-style); filter: var(--border-filter); border:none; background:#c0392b; color:white; font-weight:bold; cursor:pointer; z-index:100; font-size:var(--fs-tiny);">X</button>
             <div id="chat-messages"></div>
             <input type="text" id="chat-input" placeholder="Press CHAT key to type...">
         </div>
@@ -3756,6 +3756,29 @@ class GameEngine {
 
 
 
+        // Random Events (admin/host only, every ~30 seconds underground)
+        if (this.isAdmin && now() % 30000 < 50 && Math.random() < 0.005 * dt) {
+            this.triggerRandomEvent();
+        }
+        
+        // Auto-sell thresholds check
+        if (p.autoSellThresholds) {
+            for (const [typeStr, threshold] of Object.entries(p.autoSellThresholds)) {
+                const type = parseInt(typeStr);
+                const count = p.inventory[type] || 0;
+                if (count >= threshold && TILE_PROPS[type]?.value > 0) {
+                    const sellAmount = Math.floor(count / threshold) * threshold;
+                    const value = TILE_PROPS[type].value * sellAmount;
+                    p.inventory[type] -= sellAmount;
+                    p.cargo -= sellAmount;
+                    p.money += value;
+                    if (p.inventory[type] <= 0) delete p.inventory[type];
+                    UI.showToast(`Auto-sold ${sellAmount}x ${TILE_PROPS[type].name} for $${value}`, "success");
+                    Sound.playSound('collect');
+                }
+            }
+        }
+
         if (now() % 10000 < 20) this.saveLocalProgress();
         if (SaveSystem.autosaveEnabled && now() - this.lastAutosave > 60000 && Game.isAdmin && SaveSystem.currentSaveId) {
             SaveSystem.saveGame(SaveSystem.currentSaveId, null, true); this.lastAutosave = now();
@@ -4353,6 +4376,138 @@ class GameEngine {
         
         UI.showToast(`Blueprint "${bp.name}" placed!`, 'success');
         Sound.playSound('build');
+    }
+
+    // --- RANDOM EVENTS SYSTEM ---
+    triggerRandomEvent() {
+        if (!this.running || !this.isAdmin) return;
+        const p = this.localPlayer;
+        const depth = p.gridY;
+        
+        // Only trigger events when player is underground
+        if (depth < 10) return;
+        
+        const events = [
+            { id: 'cave_in', weight: 30, minDepth: 10 },
+            { id: 'gas_pocket', weight: 25, minDepth: 30 },
+            { id: 'treasure_vault', weight: 15, minDepth: 50 },
+            { id: 'fossil_bed', weight: 20, minDepth: 20 },
+            { id: 'crystal_geode', weight: 10, minDepth: 100 }
+        ];
+        
+        // Filter events by depth
+        const available = events.filter(e => depth >= e.minDepth);
+        if (available.length === 0) return;
+        
+        // Weighted random selection
+        const totalWeight = available.reduce((sum, e) => sum + e.weight, 0);
+        let roll = Math.random() * totalWeight;
+        let selected = available[0];
+        for (const event of available) {
+            roll -= event.weight;
+            if (roll <= 0) { selected = event; break; }
+        }
+        
+        // Execute the event
+        const eventX = p.gridX + Math.floor(Math.random() * 20 - 10);
+        const eventY = p.gridY + Math.floor(Math.random() * 10 + 3);
+        
+        switch (selected.id) {
+            case 'cave_in': {
+                // Collapse a small area above the player
+                const radius = 2 + Math.floor(Math.random() * 2);
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const cx = p.gridX + dx;
+                        const cy = p.gridY + dy - radius - 2;
+                        if (cx >= 0 && cx < CONSTANTS.MAP_WIDTH && cy > 5 && cy < CONSTANTS.MAP_HEIGHT - 1) {
+                            if (Math.sqrt(dx*dx + dy*dy) <= radius) {
+                                const tile = this.map[cy][cx];
+                                if (tile !== TILE_TYPES.EMPTY && tile !== TILE_TYPES.BEDROCK) {
+                                    this.map[cy][cx] = TILE_TYPES.EMPTY;
+                                    this.discovered[cy][cx] = 1;
+                                    this.spawnParticle(cx * 32 + 16, cy * 32 + 16, '#7f8c8d', 5);
+                                    Network.sendTileUpdate(cx, cy, TILE_TYPES.EMPTY);
+                                }
+                            }
+                        }
+                    }
+                }
+                UI.showToast("⚠️ CAVE-IN! Debris falling nearby!", "warn");
+                Sound.playSound('explosion');
+                break;
+            }
+            case 'gas_pocket': {
+                // Release a cloud of gas that damages hull briefly
+                p.hull = Math.max(0, p.hull - 5);
+                UI.showToast("💨 Toxic gas pocket! (-5 HP)", "warn");
+                Sound.playSound('hit');
+                // Visual effect
+                for (let i = 0; i < 20; i++) {
+                    this.spawnParticle(
+                        p.x + 16 + Math.random() * 32 - 16,
+                        p.y + 16 + Math.random() * 32 - 16,
+                        '#2ecc71', 3
+                    );
+                }
+                break;
+            }
+            case 'treasure_vault': {
+                // Spawn valuable ores nearby
+                const vaultOres = [TILE_TYPES.GOLD, TILE_TYPES.DIAMOND, TILE_TYPES.EMERALD, TILE_TYPES.RUBY];
+                const count = 3 + Math.floor(Math.random() * 5);
+                for (let i = 0; i < count; i++) {
+                    const vx = eventX + Math.floor(Math.random() * 5 - 2);
+                    const vy = eventY + Math.floor(Math.random() * 5 - 2);
+                    if (vx >= 0 && vx < CONSTANTS.MAP_WIDTH && vy > 5 && vy < CONSTANTS.MAP_HEIGHT - 1) {
+                        if (this.map[vy][vx] === TILE_TYPES.EMPTY || this.isStone(this.map[vy][vx])) {
+                            const ore = vaultOres[Math.floor(Math.random() * vaultOres.length)];
+                            this.map[vy][vx] = ore;
+                            this.discovered[vy][vx] = 1;
+                            Network.sendTileUpdate(vx, vy, ore);
+                        }
+                    }
+                }
+                UI.showToast("💰 Treasure Vault discovered nearby!", "success");
+                Sound.playSound('levelUp');
+                break;
+            }
+            case 'fossil_bed': {
+                // Spawn fossil blocks
+                const count = 5 + Math.floor(Math.random() * 8);
+                for (let i = 0; i < count; i++) {
+                    const fx = eventX + Math.floor(Math.random() * 6 - 3);
+                    const fy = eventY + Math.floor(Math.random() * 6 - 3);
+                    if (fx >= 0 && fx < CONSTANTS.MAP_WIDTH && fy > 5 && fy < CONSTANTS.MAP_HEIGHT - 1) {
+                        if (this.isStone(this.map[fy][fx])) {
+                            this.map[fy][fx] = TILE_TYPES.FOSSIL;
+                            this.discovered[fy][fx] = 1;
+                            Network.sendTileUpdate(fx, fy, TILE_TYPES.FOSSIL);
+                        }
+                    }
+                }
+                UI.showToast("🦴 Fossil Bed uncovered!", "success");
+                break;
+            }
+            case 'crystal_geode': {
+                // Spawn crystal ore cluster
+                const count = 3 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < count; i++) {
+                    const gx = eventX + Math.floor(Math.random() * 4 - 2);
+                    const gy = eventY + Math.floor(Math.random() * 4 - 2);
+                    if (gx >= 0 && gx < CONSTANTS.MAP_WIDTH && gy > 5 && gy < CONSTANTS.MAP_HEIGHT - 1) {
+                        if (this.isStone(this.map[gy][gx])) {
+                            this.map[gy][gx] = TILE_TYPES.CRYSTAL_ORE;
+                            this.discovered[gy][gx] = 1;
+                            Network.sendTileUpdate(gx, gy, TILE_TYPES.CRYSTAL_ORE);
+                        }
+                    }
+                }
+                UI.showToast("💎 Crystal Geode shattered open!", "success");
+                Sound.playSound('levelUp');
+                break;
+            }
+        }
     }
 
     draw() {
@@ -5469,52 +5624,50 @@ const Qt = { lighter: (hex, factor) => hex };
 
 // --- CRAFTING SYSTEM ---
 class CraftingSystem {
-    constructor() {
-        this.recipes = {
-            'iron_ingot': {
-                name: "Iron Ingot",
-                ingredients: { [TILE_TYPES.IRON]: 3 },
-                result: TILE_TYPES.IRON_INGOT,
-                count: 1,
-                description: "Smelt 3 Iron ore into 1 Ingot"
-            },
-            'glass': {
-                name: "Glass",
-                ingredients: { [TILE_TYPES.STONE]: 2 },
-                result: TILE_TYPES.GLASS,
-                count: 1,
-                description: "Melt 2 Stone into 1 Glass"
-            },
-            'alloy': {
-                name: "Alloy",
-                ingredients: { [TILE_TYPES.IRON_INGOT]: 2, [TILE_TYPES.GOLD]: 1 },
-                result: TILE_TYPES.ALLOY,
-                count: 1,
-                description: "Combine 2 Iron Ingots + 1 Gold"
-            },
-            'crystal': {
-                name: "Crystal",
-                ingredients: { [TILE_TYPES.EMERALD]: 2, [TILE_TYPES.DIAMOND]: 1 },
-                result: TILE_TYPES.CRYSTAL,
-                count: 1,
-                description: "Fuse 2 Emeralds + 1 Diamond"
-            },
-            'casing': {
-                name: "Structure",
-                ingredients: { [TILE_TYPES.STONE]: 5 },
-                result: TILE_TYPES.CASING,
-                count: 2,
-                description: "Craft 2 Casings from 5 Stone"
-            },
-            'repair_kit': {
-                name: "Repair Kit",
-                ingredients: { [TILE_TYPES.IRON_INGOT]: 2, [TILE_TYPES.GLASS]: 1 },
-                result: TILE_TYPES.REPAIR_KIT,
-                count: 1,
-                description: "Craft a Repair Kit"
-            }
-        };
-    }
+    static recipes = {
+        'iron_ingot': {
+            name: "Iron Ingot",
+            ingredients: { [TILE_TYPES.IRON]: 3 },
+            result: TILE_TYPES.IRON_INGOT,
+            count: 1,
+            description: "Smelt 3 Iron ore into 1 Ingot"
+        },
+        'glass': {
+            name: "Glass",
+            ingredients: { [TILE_TYPES.STONE]: 2 },
+            result: TILE_TYPES.GLASS,
+            count: 1,
+            description: "Melt 2 Stone into 1 Glass"
+        },
+        'alloy': {
+            name: "Alloy",
+            ingredients: { [TILE_TYPES.IRON_INGOT]: 2, [TILE_TYPES.GOLD]: 1 },
+            result: TILE_TYPES.ALLOY,
+            count: 1,
+            description: "Combine 2 Iron Ingots + 1 Gold"
+        },
+        'crystal': {
+            name: "Crystal",
+            ingredients: { [TILE_TYPES.EMERALD]: 2, [TILE_TYPES.DIAMOND]: 1 },
+            result: TILE_TYPES.CRYSTAL,
+            count: 1,
+            description: "Fuse 2 Emeralds + 1 Diamond"
+        },
+        'casing': {
+            name: "Structure",
+            ingredients: { [TILE_TYPES.STONE]: 5 },
+            result: TILE_TYPES.CASING,
+            count: 2,
+            description: "Craft 2 Casings from 5 Stone"
+        },
+        'repair_kit': {
+            name: "Repair Kit",
+            ingredients: { [TILE_TYPES.IRON_INGOT]: 2, [TILE_TYPES.GLASS]: 1 },
+            result: TILE_TYPES.REPAIR_KIT,
+            count: 1,
+            description: "Craft a Repair Kit"
+        }
+    };
 
     static craft(recipeId, amount = 1) {
         const recipe = CraftingSystem.recipes[recipeId.toLowerCase()];
@@ -5576,8 +5729,6 @@ class CraftingSystem {
         }
     }
 }
-
-const CraftingSystem = new CraftingSystem();
 
 // --- SHOP SYSTEM ---
 class ShopSystem {
@@ -6711,9 +6862,6 @@ class InputManager {
             } else {
                 UI.showToast("Usage: /op [Username]", "normal");
             }
-        }
-        else {
-            UI.showToast("Unknown command or not admin", "error");
         }
         else if (parts[0] === '/craft') {
             if (parts[1] && parts[2]) {
