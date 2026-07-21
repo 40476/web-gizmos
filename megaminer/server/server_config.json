@@ -1,0 +1,32 @@
+{
+    "server": {
+        "host": "0.0.0.0",
+        "port": 8765,
+        "max_players_per_room": 50,
+        "heartbeat_timeout": 15,
+        "autosave_interval": 60,
+        "log_level": "info"
+    },
+    "game": {
+        "map_width": 1000,
+        "map_height": 2000,
+        "tile_size": 32,
+        "speed_normal": 1.75,
+        "speed_drill": 0.75,
+        "fuel_consumption": 0.125,
+        "max_fuel": 100,
+        "max_hull": 100,
+        "max_cargo": 50
+    },
+    "accounts": {
+        "allow_registration": true,
+        "min_username_length": 3,
+        "max_username_length": 16,
+        "min_password_length": 4
+    },
+    "paths": {
+        "data_directory": "server_data",
+        "worlds_directory": "server_data/worlds",
+        "accounts_file": "server_data/accounts.json"
+    }
+}

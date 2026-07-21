@@ -1780,15 +1780,32 @@
                     <div class="form-group">
                         <label style="font-size:var(--fs-base);" class="no-flex">
                             <input type="checkbox" id="mobile-toggle" onchange="Game.toggleMobile(this.checked, $('mobile-reversed').checked)">&nbsp;&nbsp;Enable Mobile Controls
-                            <br><br>
-                            <input type="checkbox" id="toggle-isSingleplayer" onchange="Game.setGamemode(this.checked)">&nbsp;&nbsp;Singleplayer
                         </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:var(--fs-sm); color:#aaa; display:block; margin-bottom:8px;">MULTIPLAYER MODE</label>
+                        <div class="mode-selector" style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <button class="btn btn-mode" data-mode="singleplayer" onclick="Game.setGamemode('singleplayer')" style="flex:1; padding:6px 4px; font-size:var(--fs-xs); background:#555;">🔒 Solo</button>
+                            <button class="btn btn-mode" data-mode="serverless" onclick="Game.setGamemode('serverless')" style="flex:1; padding:6px 4px; font-size:var(--fs-xs); background:#2980b9;">🌐 Serverless</button>
+                            <button class="btn btn-mode" data-mode="hosted" onclick="Game.setGamemode('hosted')" style="flex:1; padding:6px 4px; font-size:var(--fs-xs); background:#8e44ad;">🖥️ Hosted</button>
+                        </div>
+                        <div id="hosted-server-config" style="display:none; margin-top:8px; padding:8px; background:rgba(142,68,173,0.1); border:1px solid #8e44ad; border-radius:4px;">
+                            <label style="font-size:var(--fs-xs); color:#aaa; display:block; margin-bottom:4px;">Server Address</label>
+                            <input type="text" id="hosted-server-url" value="ws://localhost:8765" placeholder="ws://host:port" style="width:100%; padding:6px; background:#222; border:1px solid #555; color:#fff; font-size:var(--fs-sm); margin-bottom:6px;">
+                            <div id="hosted-account-area" style="display:flex; gap:5px; flex-wrap:wrap;">
+                                <input type="text" id="hosted-username" placeholder="Username" style="flex:1; min-width:80px; padding:6px; background:#222; border:1px solid #555; color:#fff; font-size:var(--fs-sm);">
+                                <input type="password" id="hosted-password" placeholder="Password" style="flex:1; min-width:80px; padding:6px; background:#222; border:1px solid #555; color:#fff; font-size:var(--fs-sm);">
+                                <button class="btn btn-small" style="padding:4px 8px; background:#27ae60;" onclick="UI.hostedLogin()">Login</button>
+                                <button class="btn btn-small" style="padding:4px 8px; background:#2980b9;" onclick="UI.hostedRegister()">Register</button>
+                            </div>
+                            <div id="hosted-account-status" style="font-size:var(--fs-tiny); color:#aaa; margin-top:4px;"></div>
+                        </div>
                     </div>
                     <button class="btn" onclick="Game.init()" id="startBtn">LAUNCH MISSION</button>
                     <button class="btn" style="margin-top:10px; background:#444;" onclick="UI.openSettings()">SETTINGS</button>
                 </div>
 
-                <div class="server-panel">
+                <div class="server-panel" id="serverless-panel">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <label style="margin:0; font-size: var(--fs-sm); color:#aaa;">SERVER STATUS</label>
                         <button class="btn btn-small" style="width:auto; padding:2px 5px;" onclick="UI.refreshServerList()">&#8635;</button>
@@ -3132,7 +3149,28 @@ class GameEngine {
     }
 
     setGamemode(mode) {
-        $('toggle-isSingleplayer').checked = mode
+        // Update button styles
+        document.querySelectorAll('.btn-mode').forEach(btn => {
+            if (btn.dataset.mode === mode) {
+                btn.style.outline = '2px solid #fff';
+                btn.style.outlineOffset = '2px';
+            } else {
+                btn.style.outline = 'none';
+            }
+        });
+        // Show/hide hosted server config
+        const hostedConfig = $('hosted-server-config');
+        const serverlessPanel = $('serverless-panel');
+        if (mode === 'hosted') {
+            hostedConfig.style.display = 'block';
+            serverlessPanel.style.display = 'none';
+        } else if (mode === 'serverless') {
+            hostedConfig.style.display = 'none';
+            serverlessPanel.style.display = 'block';
+        } else {
+            hostedConfig.style.display = 'none';
+            serverlessPanel.style.display = 'none';
+        }
         GameConfig.set('PlayerSettings.gamemode', mode);
     }
 
@@ -6113,7 +6151,452 @@ class CloudManager {
     }
 }
 
-// --- NETWORK ---
+// --- HOSTED NETWORK (WebSocket) ---
+class HostedNetwork {
+    constructor() {
+        this.ws = null;
+        this.token = null;
+        this.connected = false;
+        this.lastHeartbeat = 0;
+        this.isSingleplayer = false;
+    }
+
+    connect(serverUrl, username, token, roomId, color, playerData) {
+        return new Promise((resolve, reject) => {
+            Game.logConnection(`Connecting to hosted server ${serverUrl}...`);
+            try {
+                this.ws = new WebSocket(serverUrl);
+            } catch (e) {
+                Game.logConnection("WebSocket error: " + e);
+                reject(e);
+                return;
+            }
+
+            this.ws.onopen = () => {
+                Game.logConnection("WebSocket connected. Joining room...");
+                // Send join message
+                this.send({
+                    type: "join",
+                    username: username,
+                    token: token,
+                    room: roomId,
+                    color: color,
+                    playerData: {
+                        inventory: Game.localPlayer.inventory,
+                        money: Game.localPlayer.money,
+                        stats: Game.localPlayer.stats,
+                        achievements: Game.localPlayer.achievements
+                    }
+                });
+            };
+
+            this.ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    this.handleMessage(msg);
+                } catch (e) {
+                    console.error("Failed to parse message:", e);
+                }
+            };
+
+            this.ws.onclose = () => {
+                this.connected = false;
+                $('disconnect-msg').style.display = 'block';
+                Game.logConnection("Connection closed.");
+            };
+
+            this.ws.onerror = (err) => {
+                Game.logConnection("WebSocket error. Is the server running?");
+                reject(err);
+            };
+
+            // Save reference for other parts of the code
+            this.isSingleplayer = false;
+        });
+    }
+
+    send(data) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(data));
+        }
+    }
+
+    handleMessage(msg) {
+        switch (msg.type) {
+            case "join_result":
+                if (msg.success) {
+                    Game.hostId = msg.playerId;
+                    Game.isAdmin = msg.isAdmin || false;
+                    if (Game.isAdmin) {
+                        UI.showToast("Room Created. You are the Admin.", "success");
+                        UI.updateAdminPanel();
+                    }
+                    // Add existing players
+                    if (msg.players) {
+                        msg.players.forEach(p => {
+                            if (p.id !== msg.playerId && !Game.remotePlayers[p.id]) {
+                                Game.remotePlayers[p.id] = {
+                                    id: p.id,
+                                    username: p.username,
+                                    color: p.color,
+                                    x: 0, y: 0,
+                                    targetX: 0, targetY: 0,
+                                    joinedAt: p.joinedAt,
+                                    lastSeen: now()
+                                };
+                            }
+                        });
+                    }
+                    this.connected = true;
+                    Game.finishConnection();
+                    Sound.playSound('success');
+                } else {
+                    UI.showToast("Join failed: " + msg.message, "error");
+                    Game.logConnection("Join failed: " + msg.message);
+                    location.reload();
+                }
+                break;
+
+            case "map_data":
+                // Apply map diffs
+                if (msg.diffs) {
+                    msg.diffs.forEach(([x, y, val]) => {
+                        if (Game.map[y] && Game.map[y][x] !== undefined) {
+                            Game.map[y][x] = val;
+                            Game.discovered[y][x] = 1;
+                        }
+                    });
+                }
+                if (!msg.more) {
+                    if (Game.running && Game.renderer) Game.renderer.markMapDirty();
+                }
+                // Also set the world time for day/night cycle
+                if (msg.worldTime) {
+                    Game._hostedWorldTime = msg.worldTime;
+                }
+                break;
+
+            case "move":
+                this.handleRemoteMove(msg);
+                break;
+
+            case "heartbeat":
+                this.handleRemoteMove(msg);
+                break;
+
+            case "join":
+                if (!Game.remotePlayers[msg.id]) {
+                    UI.addMessage("System", UI.formatMsg(msg.username, 'join'), "#aaa");
+                    Sound.playSound('join');
+                }
+                Game.remotePlayers[msg.id] = {
+                    id: msg.id,
+                    username: msg.username,
+                    color: msg.color,
+                    x: 0, y: 0,
+                    targetX: 0, targetY: 0,
+                    joinedAt: msg.joinedAt,
+                    lastSeen: now()
+                };
+                UI.updatePlayerList();
+                break;
+
+            case "leave":
+                if (Game.remotePlayers[msg.id]) {
+                    const msg2 = UI.formatMsg(Game.remotePlayers[msg.id].username, 'leave');
+                    UI.addMessage("System", msg2, "#aaa");
+                    Sound.playSound('leave');
+                    delete Game.remotePlayers[msg.id];
+                    UI.updatePlayerList();
+                }
+                break;
+
+            case "chat":
+                UI.addMessage(msg.name, msg.msg);
+                Sound.playSound('msg');
+                break;
+
+            case "death":
+                UI.addMessage("System", UI.formatMsg(msg.name, 'death'), "#aaa");
+                Sound.playSound('death');
+                break;
+
+            case "tile":
+                if (Game.map[msg.y]) {
+                    Game.map[msg.y][msg.x] = msg.val;
+                    Game.discovered[msg.y][msg.x] = 1;
+                }
+                break;
+
+            case "fuel":
+                if (msg.to === Game.localPlayer.id) {
+                    Game.localPlayer.fuel = Math.min(Game.localPlayer.maxFuel, Game.localPlayer.fuel + msg.amt);
+                    UI.showToast(`Received ${msg.amt} Fuel from ${msg.from}`, "success");
+                    Sound.playSound('success');
+                }
+                break;
+
+            case "trade":
+                if (msg.to === Game.localPlayer.id) {
+                    let resName = msg.res;
+                    if (msg.res === 'money') {
+                        Game.localPlayer.money += msg.amt;
+                    } else {
+                        const itemId = String(msg.res);
+                        Game.localPlayer.inventory[itemId] = (Game.localPlayer.inventory[itemId] || 0) + msg.amt;
+                        Game.localPlayer.cargo += msg.amt;
+                        if (TILE_PROPS[msg.res]) resName = TILE_PROPS[msg.res].name;
+                    }
+                    UI.showToast(`Received ${msg.amt} ${resName} from ${msg.from}`, "success");
+                    Sound.playSound('success');
+                }
+                break;
+
+            case "aoe_mine":
+                if (msg.id !== Game.localPlayer.id) {
+                    const tx = msg.x, ty = msg.y, range = msg.r, tier = msg.t;
+                    for (let dy = -range; dy <= range; dy++) {
+                        for (let dx = -range; dx <= range; dx++) {
+                            const cx = tx + dx, cy = ty + dy;
+                            if (Game.map[cy] && Game.map[cy][cx] !== undefined) {
+                                const tile = Game.map[cy][cx];
+                                if (tile === TILE_TYPES.EMPTY || tile === TILE_TYPES.BEDROCK) continue;
+                                const props = TILE_PROPS[tile];
+                                if (tier >= props.tier) {
+                                    Game.map[cy][cx] = TILE_TYPES.EMPTY;
+                                    Game.discovered[cy][cx] = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case "explode":
+                if (msg.id !== Game.localPlayer.id) {
+                    Game.explode(msg.x, msg.y, msg.r, msg.t);
+                }
+                break;
+
+            case "soundbite":
+                new Audio(`../shared/audio/${msg.tag}`).play();
+                break;
+
+            case "host_heartbeat":
+                Game.hostId = msg.id;
+                Game.lastHostHeartbeat = now();
+                break;
+
+            case "claim_host":
+                Game.hostId = msg.id;
+                Game.lastHostHeartbeat = now();
+                if (msg.id !== Game.localPlayer.id) {
+                    Game.isAdmin = false;
+                    UI.updateAdminPanel();
+                }
+                break;
+
+            case "promote_host":
+                if (msg.target === Game.localPlayer.id) {
+                    Game.isAdmin = true;
+                    Game.hostId = Game.localPlayer.id;
+                    Game.lastHostHeartbeat = now();
+                    UI.showToast("You have been Promoted to Admin!", "success");
+                    Sound.playSound('success');
+                    UI.updateAdminPanel();
+                } else {
+                    Game.hostId = msg.target;
+                    Game.lastHostHeartbeat = now();
+                    Game.isAdmin = false;
+                    UI.updateAdminPanel();
+                }
+                break;
+
+            case "kick":
+                if (msg.target === Game.localPlayer.id) {
+                    CustomModal.show('alert', "Kicked", UI.formatMsg('You', 'kick'));
+                    location.reload();
+                } else {
+                    if (Game.remotePlayers[msg.target]) {
+                        UI.addMessage("System", UI.formatMsg(Game.remotePlayers[msg.target].username, 'kick'), "#aaa");
+                        delete Game.remotePlayers[msg.target];
+                    }
+                }
+                break;
+
+            case "register_result":
+                $('hosted-account-status').innerText = msg.message;
+                if (msg.success) UI.showToast("Account created!", "success");
+                else UI.showToast(msg.message, "error");
+                break;
+
+            case "login_result":
+                $('hosted-account-status').innerText = msg.message;
+                if (msg.success && msg.token) {
+                    this.token = msg.token;
+                    localStorage.setItem('mm_hosted_token', msg.token);
+                    localStorage.setItem('mm_hosted_username', msg.username);
+                    UI.showToast("Logged in successfully!", "success");
+                    $('hosted-username').value = msg.username;
+                }
+                break;
+
+            case "pong":
+                break;
+
+            case "error":
+                UI.showToast("Server: " + msg.message, "error");
+                break;
+
+            case "server_shutdown":
+                UI.showToast("Server is shutting down...", "error");
+                break;
+        }
+    }
+
+    handleRemoteMove(msg) {
+        if (msg.id === Game.localPlayer.id) return;
+        if (!Game.remotePlayers[msg.id]) {
+            Game.remotePlayers[msg.id] = {
+                id: msg.id,
+                x: msg.sx || 0,
+                y: msg.sy || 0,
+                targetX: msg.tx,
+                targetY: msg.ty,
+                username: msg.username || "Unknown",
+                color: msg.col || '#fff',
+                lastSeen: now(),
+                joinedAt: msg.joinedAt
+            };
+        }
+        const rp = Game.remotePlayers[msg.id];
+        rp.lastSeen = now();
+        if (msg.username && rp.username === "Unknown") rp.username = msg.username;
+        rp.color = msg.col;
+        rp.rotation = msg.r;
+        rp.isDrilling = msg.drill;
+        rp.gridX = msg.gx;
+        rp.gridY = msg.gy;
+        rp.targetX = msg.tx;
+        rp.targetY = msg.ty;
+        if (Math.abs(rp.x - rp.targetX) > 100 || Math.abs(rp.y - rp.targetY) > 100) {
+            rp.x = rp.targetX;
+            rp.y = rp.targetY;
+        }
+    }
+
+    update() {
+        if (!this.connected || !this.ws) return;
+        const n = now();
+
+        // Heartbeat every 2 seconds
+        if (n - this.lastHeartbeat > 2000) {
+            this.send({
+                type: "heartbeat",
+                id: Game.localPlayer.id,
+                username: Game.settings.username,
+                joinedAt: Game.localPlayer.joinedAt
+            });
+            this.lastHeartbeat = n;
+        }
+
+        // Timeout stale players
+        Object.keys(Game.remotePlayers).forEach(id => {
+            if (n - Game.remotePlayers[id].lastSeen > 15000) {
+                const msg = UI.formatMsg(Game.remotePlayers[id].username, 'leave');
+                UI.addMessage("System", msg, "#aaa");
+                Sound.playSound('leave');
+                delete Game.remotePlayers[id];
+                UI.updatePlayerList();
+            }
+        });
+    }
+
+    broadcastMove() {
+        const p = Game.localPlayer;
+        const targetGridX = (p.nextGridX !== undefined) ? p.nextGridX : p.gridX;
+        const targetGridY = (p.nextGridY !== undefined) ? p.nextGridY : p.gridY;
+        this.send({
+            type: "move",
+            id: p.id,
+            sx: p.x, sy: p.y,
+            tx: targetGridX * CONSTANTS.TILE_SIZE,
+            ty: targetGridY * CONSTANTS.TILE_SIZE,
+            gx: targetGridX, gy: targetGridY,
+            r: p.rotation, col: Game.settings.color,
+            drill: p.isDrilling,
+            username: Game.settings.username,
+            joinedAt: p.joinedAt,
+            isAdmin: Game.isAdmin
+        });
+    }
+
+    broadcastDeath() {
+        this.send({ type: "death", id: Game.localPlayer.id, name: Game.settings.username });
+    }
+
+    sendFuel(targetId, amount) {
+        this.send({ type: "fuel_transfer", to: targetId, amt: amount });
+    }
+
+    sendTileUpdate(x, y, type) {
+        this.send({ type: "tile_update", x, y, val: type });
+    }
+
+    sendChat(msg) {
+        this.send({ type: "chat", id: Game.localPlayer.id, name: Game.settings.username, msg });
+        UI.addMessage(Game.settings.username, msg, Game.settings.color);
+    }
+
+    kickUser(id) {
+        this.send({ type: "admin_action", action: "kick", target: id });
+    }
+
+    transferAdmin(id) {
+        this.send({ type: "admin_action", action: "transfer_admin", target: id });
+    }
+
+    broadcastPromote(targetId) {
+        this.send({ type: "promote_host", target: targetId });
+        Game.isAdmin = false;
+        Game.hostId = targetId;
+        Game.lastHostHeartbeat = Date.now();
+        UI.showToast("Admin Transferred", "normal");
+        UI.updateAdminPanel();
+    }
+
+    broadcastHostClaim() {
+        this.send({ type: "claim_host", id: Game.localPlayer.id });
+    }
+
+    broadcastAOEMine(x, y, range, tier) {
+        this.send({ type: "aoe_mine", id: Game.localPlayer.id, x, y, r: range, t: tier });
+    }
+
+    broadcastExplosion(x, y, r, t) {
+        this.send({ type: "explode", id: Game.localPlayer.id, x, y, r, t });
+    }
+
+    requestMap() {
+        // Map is sent automatically on join via the hosted server
+        UI.showToast("Waiting for map data...", "normal");
+    }
+
+    sendAudioTag(tag) {
+        this.send({ type: "audio_tag", tag, id: Game.localPlayer.id });
+    }
+
+    sendBinarySync() {} // Not needed for hosted mode
+    requestViewportSync() {} // Not needed for hosted mode
+    sendAreaDiff() {} // Not needed for hosted mode
+    sendTrade(targetId, resource, amount) {
+        this.send({ type: "trade", to: targetId, res: resource, amt: amount });
+    }
+    sendBinarySync() {}
+    requestTrade() { return Network.requestTrade(); }
+}
+
+// --- NETWORK (MQTT - Serverless) ---
 class NetworkManager {
     constructor() {
         const netConf = GameConfig.get('Network');
@@ -6134,17 +6617,52 @@ class NetworkManager {
         });
     }
 
-    connect(isSingleplayer) {
-        this.isSingleplayer = isSingleplayer;
-        const playerConf = GameConfig.get('PlayerSettings');
-        const netConf = GameConfig.get('Network');
-
-        if (this.isSingleplayer) {
+    connect(gamemode) {
+        // gamemode: 'singleplayer', 'serverless', or 'hosted'
+        if (gamemode === 'singleplayer') {
+            this.isSingleplayer = true;
             Game.logConnection("Initializing Singleplayer...");
             Game.finishConnection();
             Sound.playSound('success');
             return;
         }
+
+        if (gamemode === 'hosted') {
+            this.isSingleplayer = false;
+            // Use HostedNetwork instead
+            Game.logConnection("Using Hosted Multiplayer mode...");
+
+            // Create hosted network instance if it doesn't exist
+            if (!window.HostedNet) {
+                window.HostedNet = new HostedNetwork();
+            }
+            const hosted = window.HostedNet;
+
+            const serverUrl = $('hosted-server-url').value.trim() || 'ws://localhost:8765';
+            const username = $('start-username').value.trim() || 'Miner';
+            const token = localStorage.getItem('mm_hosted_token') || '';
+            const roomId = $('start-room').value.trim() || 'public';
+            const color = $('start-color').value || '#3498db';
+
+            hosted.connect(serverUrl, username, token, roomId, color, {
+                inventory: Game.localPlayer.inventory,
+                money: Game.localPlayer.money,
+                stats: Game.localPlayer.stats,
+                achievements: Game.localPlayer.achievements
+            }).catch(err => {
+                Game.logConnection("Failed to connect to hosted server: " + err);
+                UI.showToast("Failed to connect to hosted server!", "error");
+            });
+
+            // Override the global Network calls to use HostedNetwork
+            this._redirectToHosted = true;
+            return;
+        }
+
+        // Serverless (MQTT) mode - original logic
+        this.isSingleplayer = false;
+        const playerConf = GameConfig.get('PlayerSettings');
+        const netConf = GameConfig.get('Network');
 
         Game.logConnection(`Connecting to broker ${playerConf.broker}...`);
 
@@ -7522,6 +8040,83 @@ class UIManager {
         });
     }
     updateAdminPanel() { this.updatePlayerList(); }
+
+    // --- HOSTED ACCOUNT METHODS ---
+    async hostedLogin() {
+        const username = $('hosted-username').value.trim();
+        const password = $('hosted-password').value;
+        if (!username || !password) {
+            $('hosted-account-status').innerText = 'Please enter username and password';
+            return;
+        }
+        $('hosted-account-status').innerText = 'Logging in...';
+        // Create a temporary WebSocket to the hosted server for login
+        const serverUrl = $('hosted-server-url').value.trim() || 'ws://localhost:8765';
+        try {
+            const ws = new WebSocket(serverUrl);
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: "login", username, password }));
+            };
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type === "login_result") {
+                    $('hosted-account-status').innerText = msg.message;
+                    if (msg.success && msg.token) {
+                        localStorage.setItem('mm_hosted_token', msg.token);
+                        localStorage.setItem('mm_hosted_username', msg.username);
+                        UI.showToast("Logged in!", "success");
+                        $('start-username').value = msg.username;
+                    }
+                }
+                ws.close();
+            };
+            ws.onerror = () => {
+                $('hosted-account-status').innerText = 'Cannot reach server';
+                UI.showToast("Cannot reach hosted server", "error");
+            };
+        } catch (e) {
+            $('hosted-account-status').innerText = 'Connection failed';
+        }
+    }
+
+    async hostedRegister() {
+        const username = $('hosted-username').value.trim();
+        const password = $('hosted-password').value;
+        if (!username || !password) {
+            $('hosted-account-status').innerText = 'Please enter username and password';
+            return;
+        }
+        if (password.length < 4) {
+            $('hosted-account-status').innerText = 'Password must be at least 4 characters';
+            return;
+        }
+        $('hosted-account-status').innerText = 'Registering...';
+        const serverUrl = $('hosted-server-url').value.trim() || 'ws://localhost:8765';
+        try {
+            const ws = new WebSocket(serverUrl);
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: "register", username, password }));
+            };
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type === "register_result") {
+                    $('hosted-account-status').innerText = msg.message;
+                    if (msg.success) {
+                        UI.showToast("Account created! You can now login.", "success");
+                    } else {
+                        UI.showToast(msg.message, "error");
+                    }
+                }
+                ws.close();
+            };
+            ws.onerror = () => {
+                $('hosted-account-status').innerText = 'Cannot reach server';
+                UI.showToast("Cannot reach hosted server", "error");
+            };
+        } catch (e) {
+            $('hosted-account-status').innerText = 'Connection failed';
+        }
+    }
 
     // --- NEW: Warp System Implementation ---
     openWarpMenu() {

@@ -27,7 +27,6 @@
 - [x] **Keybind Customization** - Full control rebinding with profiles
 
 **End-Game Content:**
-- [ ] **Secret Layers** - Hidden depths below bedrock with legendary materials
 - [ ] **Base Building** - Construct permanent underground bases with storage, refineries, and defenses
 - [ ] **Expedition Mode** - Time-limited deep dives with special objectives and exclusive rewards
 
