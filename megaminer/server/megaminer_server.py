@@ -4,9 +4,10 @@ Mega Miner NG - Persistent Hosted Multiplayer Server
 =====================================================
 A WebSocket-based dedicated server for Mega Miner NG that provides:
   - Account system (register/login with hashed passwords)
-  - Persistent world storage (autosave)
-  - Room/channel management
-  - Map state synchronization for late-joining players
+  - Persistent world storage (autosave) - stores only diffs from procedural
+  - Single world name (configured, not arbitrary rooms)
+  - Map state synchronization via procedural seed + diffs
+  - Built-in dummy client for admin functions (explosions, falling blocks, etc.)
   - Full admin/gamemaster controls
   - Chat, trade, explosion, and tile update relay
 """
@@ -21,6 +22,7 @@ import secrets
 import uuid
 import signal
 import argparse
+import math
 from datetime import datetime, timezone
 
 try:
@@ -36,11 +38,17 @@ except ImportError:
 DEFAULT_CONFIG = {
     "server": {
         "host": "0.0.0.0",
-        "port": 8765,
-        "max_players_per_room": 50,
+        "port": 4242,
+        "max_players": 50,
         "heartbeat_timeout": 15,
         "autosave_interval": 60,
-        "log_level": "info"
+        "log_level": "info",
+        "world_name": "default-world"  # Single world name for this server
+    },
+    "ssl": {
+        "enabled": False,
+        "certfile": "server.crt",
+        "keyfile": "server.key"
     },
     "game": {
         "map_width": 1000,
@@ -209,187 +217,208 @@ class AccountManager:
         return False
 
 
-class WorldManager:
-    """Handles persistent world data with autosaving."""
+# ============================================================================
+# PROCEDURAL TERRAIN (matches client algorithm)
+# ============================================================================
 
-    def __init__(self, worlds_directory):
+def procedural_tile(x, y, seed, mw, mh):
+    """Match the client's getProceduralTile algorithm exactly."""
+    if y < 5:
+        return 0  # EMPTY
+    if y == 5:
+        return 2  # GRASS
+    if y >= mh - 1:
+        return 99  # BEDROCK
+
+    # Determine base type
+    if y > 300:
+        base = 5  # DEEP_SLATE
+    elif y > 100:
+        base = 4  # HARD_STONE
+    elif y > 30:
+        base = 3  # STONE
+    else:
+        base = 1  # DIRT
+
+    # Seeded random - match client algorithm using sin-based hash
+    s = math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453
+    r = s - math.floor(s)
+
+    if r > 0.985:
+        s2 = math.sin(x * 12.9898 + (y + 10000) * 78.233 + seed) * 43758.5453
+        ore_roll = s2 - math.floor(s2)
+        if y > 400 and ore_roll < 0.2:
+            return 11  # RUBY
+        elif y > 250 and ore_roll < 0.6:
+            return 10  # EMERALD
+        elif y > 150:
+            return 9  # DIAMOND
+    if r > 0.9999:
+        return 67  # RICK
+    if r > 0.96 and y > 100:
+        return 8  # GOLD
+    if r > 0.94 and y > 50:
+        return 7  # IRON
+    if r > 0.94:
+        return 6  # COAL
+
+    return base
+
+
+class WorldManager:
+    """Handles persistent world data with autosaving.
+    
+    Only stores diffs (changes from procedural generation) to keep
+    save files small and map sync fast.
+    """
+
+    def __init__(self, worlds_directory, mw, mh):
         self.worlds_directory = worlds_directory
-        self.worlds = {}  # room_id -> { map, discovered, player_data, metadata }
+        self.mw = mw
+        self.mh = mh
+        self.worlds = {}  # world_name -> { diffs, player_data, metadata }
         self._ensure_directory()
 
     def _ensure_directory(self):
         os.makedirs(self.worlds_directory, exist_ok=True)
 
-    def _world_path(self, room_id):
-        safe_name = "".join(c if c.isalnum() or c in '_-' else '_' for c in room_id)
+    def _world_path(self, world_name):
+        safe_name = "".join(c if c.isalnum() or c in '_-' else '_' for c in world_name)
         return os.path.join(self.worlds_directory, f"world_{safe_name}.json")
 
-    def load_world(self, room_id):
+    def load_world(self, world_name):
         """Load a world from disk, or create a new one."""
-        if room_id in self.worlds:
-            return self.worlds[room_id]
+        if world_name in self.worlds:
+            print(f"[Load] World '{world_name}' already in memory")
+            return self.worlds[world_name]
 
-        path = self._world_path(room_id)
+        path = self._world_path(world_name)
+        print(f"[Load] Attempting to load world '{world_name}' from {path}")
+        print(f"[Load] File exists: {os.path.exists(path)}")
+        
         if os.path.exists(path):
             try:
                 with open(path, 'r') as f:
                     data = json.load(f)
-                self.worlds[room_id] = data
-                print(f"Loaded world '{room_id}' ({len(data.get('map', []))} rows)")
+                self.worlds[world_name] = data
+                diffs_count = len(data.get('diffs', []))
+                players_count = len(data.get('player_data', {}))
+                print(f"[Load] Successfully loaded world '{world_name}' ({diffs_count} diffs, {players_count} players)")
                 return data
             except Exception as e:
-                print(f"Error loading world '{room_id}': {e}")
+                print(f"[Load] Error loading world '{world_name}': {e}")
 
         # Create new world
         world = {
-            "room_id": room_id,
+            "world_name": world_name,
             "created_at": time.time(),
             "last_save": time.time(),
-            "map": [],
-            "discovered": [],
+            "diffs": [],  # List of [x, y, value] - only tiles changed from procedural
             "player_data": {},  # username -> { money, drillTier, maxHull, maxFuel, etc }
             "banned_ids": [],
-            "procedural_seed": abs(hash(room_id)) % (2**31)
+            "procedural_seed": abs(hash(world_name)) % (2**31)
         }
-        self.worlds[room_id] = world
-        self._generate_terrain(world)
+        self.worlds[world_name] = world
+        print(f"[Load] Created new world '{world_name}' (seed: {world['procedural_seed']})")
         return world
 
-    def _generate_terrain(self, world):
-        """Generate procedural terrain matching the client's algorithm."""
-        mw = DEFAULT_CONFIG['game']['map_width']
-        mh = DEFAULT_CONFIG['game']['map_height']
-        seed = world['procedural_seed']
+    def get_tile(self, world, x, y):
+        """Get tile value at (x,y), checking diffs first then procedural."""
+        # Check diffs first
+        for dx, dy, val in world.get('diffs', []):
+            if dx == x and dy == y:
+                return val
+        # Fall back to procedural
+        return procedural_tile(x, y, world['procedural_seed'], self.mw, self.mh)
 
-        world['map'] = []
-        world['discovered'] = []
-
-        for y in range(mh):
-            row = []
-            disc_row = []
-            for x in range(mw):
-                if y < 5:
-                    row.append(0)  # EMPTY
-                    disc_row.append(1)
-                elif y == 5:
-                    row.append(2)  # GRASS
-                    disc_row.append(1)
-                elif y == mh - 1:
-                    row.append(99)  # BEDROCK
-                    disc_row.append(0)
-                else:
-                    tile = self._procedural_tile(x, y, seed)
-                    row.append(tile)
-                    disc_row.append(0)
-            world['map'].append(row)
-            world['discovered'].append(disc_row)
-
-    def _procedural_tile(self, x, y, seed):
-        """Match the client's getProceduralTile algorithm."""
-        if y < 5:
-            return 0  # EMPTY
-        if y == 5:
-            return 2  # GRASS
-        if y >= DEFAULT_CONFIG['game']['map_height'] - 1:
-            return 99  # BEDROCK
-
-        # Determine base type
-        if y > 300:
-            base = 5  # DEEP_SLATE
-        elif y > 100:
-            base = 4  # HARD_STONE
-        elif y > 30:
-            base = 3  # STONE
+    def update_tile(self, world_name, x, y, value):
+        """Update a single tile. Stores as a diff from procedural."""
+        world = self.worlds.get(world_name)
+        if not world:
+            return False
+        if y < 0 or y >= self.mh or x < 0 or x >= self.mw:
+            return False
+        
+        # Check if this tile matches procedural (if so, remove from diffs)
+        base = procedural_tile(x, y, world['procedural_seed'], self.mw, self.mh)
+        if value == base:
+            # Remove from diffs if present
+            world['diffs'] = [d for d in world['diffs'] if not (d[0] == x and d[1] == y)]
         else:
-            base = 1  # DIRT
-
-        # Seeded random
-        r = abs((hash((x * 12.9898 + y * 78.233 + seed)) % 10000) / 10000.0)
-
-        if r > 0.985:
-            ore_roll = abs((hash((x * 12.9898 + (y + 10000) * 78.233 + seed)) % 10000) / 10000.0)
-            if y > 400 and ore_roll < 0.2:
-                return 11  # RUBY
-            elif y > 250 and ore_roll < 0.6:
-                return 10  # EMERALD
-            elif y > 150:
-                return 9  # DIAMOND
-        if r > 0.9999:
-            return 67  # RICK
-        if r > 0.96 and y > 100:
-            return 8  # GOLD
-        if r > 0.94 and y > 50:
-            return 7  # IRON
-        if r > 0.94:
-            return 6  # COAL
-
-        return base
-
-    def save_world(self, room_id):
-        """Save a world to disk."""
-        world = self.worlds.get(room_id)
-        if not world:
-            return
-        world['last_save'] = time.time()
-        path = self._world_path(room_id)
-        try:
-            self._ensure_directory()
-            with open(path, 'w') as f:
-                json.dump(world, f, indent=2)
-            return True
-        except Exception as e:
-            print(f"Error saving world '{room_id}': {e}")
-            return False
-
-    def update_tile(self, room_id, x, y, value):
-        """Update a single tile in the map."""
-        world = self.worlds.get(room_id)
-        if not world:
-            return False
-        if y < 0 or y >= len(world['map']):
-            return False
-        if x < 0 or x >= len(world['map'][y]):
-            return False
-        world['map'][y][x] = value
-        if y < len(world['discovered']) and x < len(world['discovered'][y]):
-            world['discovered'][y][x] = 1
+            # Add or update diff
+            for i, (dx, dy, _) in enumerate(world['diffs']):
+                if dx == x and dy == y:
+                    world['diffs'][i][2] = value
+                    break
+            else:
+                world['diffs'].append([x, y, value])
         return True
 
-    def apply_diff(self, room_id, diffs):
+    def apply_diff(self, world_name, diffs):
         """Apply a batch of tile updates. diffs is a list of [x, y, value]."""
-        world = self.worlds.get(room_id)
+        world = self.worlds.get(world_name)
         if not world:
             return []
         failed = []
         for x, y, val in diffs:
-            if 0 <= y < len(world['map']) and 0 <= x < len(world['map'][y]):
-                world['map'][y][x] = val
-                if y < len(world['discovered']) and x < len(world['discovered'][y]):
-                    world['discovered'][y][x] = 1
+            if 0 <= y < self.mh and 0 <= x < self.mw:
+                self.update_tile(world_name, x, y, val)
             else:
                 failed.append((x, y, val))
         return failed
 
-    def get_area_diff(self, room_id, bx, by, bw, bh):
-        """Get differences from base procedural for a region."""
-        world = self.worlds.get(room_id)
+    def get_area_diff(self, world_name, bx, by, bw, bh):
+        """Get diffs for a region that differ from procedural."""
+        world = self.worlds.get(world_name)
         if not world:
             return []
-        diffs = []
-        seed = world['procedural_seed']
-        for y in range(max(0, by), min(DEFAULT_CONFIG['game']['map_height'], by + bh)):
-            for x in range(max(0, bx), min(DEFAULT_CONFIG['game']['map_width'], bx + bw)):
-                if y < len(world['map']) and x < len(world['map'][y]):
-                    current = world['map'][y][x]
-                    base = self._procedural_tile(x, y, seed)
-                    if current != base:
-                        diffs.append([x, y, current])
-        return diffs
+        # Filter diffs to the requested area
+        result = []
+        for x, y, val in world.get('diffs', []):
+            if bx <= x < bx + bw and by <= y < by + bh:
+                result.append([x, y, val])
+        return result
+
+    def get_all_diffs(self, world_name):
+        """Get all diffs for full map sync."""
+        world = self.worlds.get(world_name)
+        if not world:
+            return []
+        return world.get('diffs', [])
+
+    def save_world(self, world_name, world_obj=None):
+        """Save a world to disk.
+        
+        Args:
+            world_name: Name of the world
+            world_obj: Optional world object to save (avoids lookup issues)
+        """
+        # Use provided world object or look it up
+        if world_obj is None:
+            world_obj = self.worlds.get(world_name)
+        
+        if not world_obj:
+            print(f"[Save] World '{world_name}' not found")
+            return False
+        
+        world_obj['last_save'] = time.time()
+        path = self._world_path(world_name)
+        try:
+            self._ensure_directory()
+            diffs_count = len(world_obj.get('diffs', []))
+            print(f"[Save] Saving world '{world_name}' to {path} ({diffs_count} diffs, {world_obj.get('player_data', {})} players)")
+            with open(path, 'w') as f:
+                json.dump(world_obj, f, indent=2)
+            print(f"[Save] Successfully saved world '{world_name}'")
+            return True
+        except Exception as e:
+            print(f"[Save] Error saving world '{world_name}': {e}")
+            return False
 
     def save_all(self):
         """Save all loaded worlds."""
-        for room_id in list(self.worlds.keys()):
-            self.save_world(room_id)
+        for world_name in list(self.worlds.keys()):
+            self.save_world(world_name)
 
 
 # ============================================================================
@@ -404,7 +433,7 @@ class Room:
         self.world = world_manager.load_world(room_id)
         self.world_manager = world_manager
         self.players = {}  # username -> PlayerState
-        self.admin = None  # username of admin
+        self.admin = None  # username of admin (first to join)
         self.last_activity = time.time()
         self.next_autosave = time.time() + DEFAULT_CONFIG['server']['autosave_interval']
 
@@ -479,6 +508,205 @@ class PlayerState:
 
 
 # ============================================================================
+# DUMMY CLIENT - Handles admin functions on the server
+# ============================================================================
+
+class DummyClient:
+    """A virtual client that runs on the server to handle admin functions.
+    
+    In the original design, the first player to join becomes "admin" and
+    handles game logic like explosions, falling blocks, random events, etc.
+    This dummy client takes over those responsibilities so the server is
+    fully self-sufficient.
+    """
+    
+    def __init__(self, server):
+        self.server = server
+        self.player_id = "__server__"
+        self.username = "__SERVER__"
+        self.joined_at = time.time()
+        self.last_heartbeat = time.time()
+        self.explosives = []  # Track active TNT/Nuke timers
+        self.last_random_event = 0
+        
+    async def update(self, room_id):
+        """Called periodically to handle server-side game logic."""
+        room = self.server.rooms.get(room_id)
+        if not room:
+            return
+            
+        now_time = time.time() * 1000  # ms
+        
+        # 1. Handle explosive timers
+        for i in range(len(self.explosives) - 1, -1, -1):
+            e = self.explosives[i]
+            if not e.get('sent'):
+                # Broadcast explosion to all players
+                await self.server.broadcast_to_room(room_id, {
+                    "type": "explode",
+                    "id": self.player_id,
+                    "x": e['x'],
+                    "y": e['y'],
+                    "r": e['range'],
+                    "t": e['timer']
+                })
+                e['sent'] = True
+                e['done_at'] = now_time + e['timer']
+            if now_time >= e.get('done_at', 0):
+                # Apply explosion to world
+                self._apply_explosion(room, e['x'], e['y'], e['range'])
+                self.explosives.pop(i)
+        
+        # 2. Handle falling blocks (Gravel/Sand) near players
+        await self._update_falling_blocks(room)
+        
+        # 3. Random events (every ~30 seconds)
+        if now_time - self.last_random_event > 30000:
+            self.last_random_event = now_time
+            # Only trigger if there are players underground
+            for username, player in room.players.items():
+                if player.grid_y > 10:
+                    await self._trigger_random_event(room)
+                    break
+    
+    def add_explosive(self, x, y, range_val, timer):
+        """Register an explosive placed by a player."""
+        self.explosives.append({
+            'x': x, 'y': y, 'range': range_val, 'timer': timer,
+            'sent': False, 'placed_at': time.time() * 1000
+        })
+    
+    def _apply_explosion(self, room, cx, cy, radius):
+        """Apply explosion effects to the world."""
+        mw = DEFAULT_CONFIG['game']['map_width']
+        mh = DEFAULT_CONFIG['game']['map_height']
+        wm = self.server.worlds
+        
+        for y in range(cy - radius, cy + radius + 1):
+            for x in range(cx - radius, cx + radius + 1):
+                if y > 4 and 0 <= x < mw and 0 <= y < mh:
+                    if math.sqrt((x - cx)**2 + (y - cy)**2) <= radius:
+                        tile = wm.get_tile(room.world, x, y)
+                        if tile != 99:  # Not bedrock
+                            wm.update_tile(room.room_id, x, y, 0)  # EMPTY
+    
+    async def _update_falling_blocks(self, room):
+        """Update falling blocks (Gravel/Sand) near all players."""
+        mw = DEFAULT_CONFIG['game']['map_width']
+        mh = DEFAULT_CONFIG['game']['map_height']
+        wm = self.server.worlds
+        falling_types = {23, 24}  # GRAVEL, SAND
+        
+        for username, player in room.players.items():
+            check_radius = 15
+            start_col = max(0, player.grid_x - check_radius)
+            end_col = min(mw - 1, player.grid_x + check_radius)
+            start_row = max(0, player.grid_y - check_radius)
+            end_row = min(mh - 1, player.grid_y + check_radius)
+            
+            for y in range(start_row, end_row + 1):
+                for x in range(start_col, end_col + 1):
+                    tile = wm.get_tile(room.world, x, y)
+                    if tile not in falling_types:
+                        continue
+                    if y >= mh - 1:
+                        continue
+                    below = wm.get_tile(room.world, x, y + 1)
+                    if below == 0:  # EMPTY
+                        wm.update_tile(room.room_id, x, y, 0)
+                        wm.update_tile(room.room_id, x, y + 1, tile)
+                        # Broadcast tile updates
+                        await self.server.broadcast_to_room(room.room_id, {
+                            "type": "tile", "x": x, "y": y, "val": 0
+                        })
+                        await self.server.broadcast_to_room(room.room_id, {
+                            "type": "tile", "x": x, "y": y + 1, "val": tile
+                        })
+    
+    async def _trigger_random_event(self, room):
+        """Trigger a random event near a random player."""
+        import random
+        if not room.players:
+            return
+        
+        # Pick a random player
+        usernames = list(room.players.keys())
+        target_name = random.choice(usernames)
+        target = room.players[target_name]
+        depth = target.grid_y
+        
+        if depth < 10:
+            return
+            
+        events = [
+            ('cave_in', 30, 10),
+            ('gas_pocket', 25, 30),
+            ('treasure_vault', 15, 50),
+            ('fossil_bed', 20, 20),
+            ('crystal_geode', 10, 100)
+        ]
+        
+        available = [e for e in events if depth >= e[2]]
+        if not available:
+            return
+            
+        total_weight = sum(e[1] for e in available)
+        roll = random.random() * total_weight
+        selected = available[0]
+        for event in available:
+            roll -= event[1]
+            if roll <= 0:
+                selected = event
+                break
+        
+        event_id = selected[0]
+        event_x = target.grid_x + random.randint(-10, 10)
+        event_y = target.grid_y + random.randint(3, 12)
+        
+        wm = self.server.worlds
+        mw = DEFAULT_CONFIG['game']['map_width']
+        mh = DEFAULT_CONFIG['game']['map_height']
+        
+        if event_id == 'cave_in':
+            radius = 2 + random.randint(0, 1)
+            for dy in range(-radius, radius + 1):
+                for dx in range(-radius, radius + 1):
+                    cx = target.grid_x + dx
+                    cy = target.grid_y + dy - radius - 2
+                    if 0 <= cx < mw and 5 < cy < mh - 1:
+                        if math.sqrt(dx*dx + dy*dy) <= radius:
+                            tile = wm.get_tile(room.world, cx, cy)
+                            if tile not in (0, 99):
+                                wm.update_tile(room.room_id, cx, cy, 0)
+                                await self.server.broadcast_to_room(room.room_id, {
+                                    "type": "tile", "x": cx, "y": cy, "val": 0
+                                })
+            await self.server.broadcast_to_room(room.room_id, {
+                "type": "chat", "id": self.player_id, "name": "System",
+                "msg": "⚠️ Cave-in! Debris falling nearby!"
+            })
+        
+        elif event_id == 'treasure_vault':
+            vault_ores = [8, 9, 10, 11]  # GOLD, DIAMOND, EMERALD, RUBY
+            count = 3 + random.randint(0, 4)
+            for _ in range(count):
+                vx = event_x + random.randint(-2, 2)
+                vy = event_y + random.randint(-2, 2)
+                if 0 <= vx < mw and 5 < vy < mh - 1:
+                    tile = wm.get_tile(room.world, vx, vy)
+                    if tile in (1, 3, 4, 5):  # Stone types
+                        ore = random.choice(vault_ores)
+                        wm.update_tile(room.room_id, vx, vy, ore)
+                        await self.server.broadcast_to_room(room.room_id, {
+                            "type": "tile", "x": vx, "y": vy, "val": ore
+                        })
+            await self.server.broadcast_to_room(room.room_id, {
+                "type": "chat", "id": self.player_id, "name": "System",
+                "msg": "💰 Treasure Vault discovered nearby!"
+            })
+
+
+# ============================================================================
 # SERVER CLASS
 # ============================================================================
 
@@ -488,23 +716,51 @@ class MegaMinerServer:
     def __init__(self, config_path="server_config.json"):
         self.config = load_config(config_path)
         self.accounts = AccountManager(self.config['paths']['accounts_file'])
-        self.worlds = WorldManager(self.config['paths']['worlds_directory'])
+        self.worlds = WorldManager(
+            self.config['paths']['worlds_directory'],
+            self.config['game']['map_width'],
+            self.config['game']['map_height']
+        )
         self.rooms = {}  # room_id -> Room
         self.player_rooms = {}  # username -> room_id
         self.shutdown_flag = False
+        self.dummy_client = DummyClient(self)
+        self.world_name = self.config['server'].get('world_name', 'default-world')
 
     async def start(self):
         """Start the WebSocket server."""
         host = self.config['server']['host']
         port = self.config['server']['port']
+        ssl_config = self.config.get('ssl', {})
+        ssl_enabled = ssl_config.get('enabled', False)
+        protocol = "wss" if ssl_enabled else "ws"
+        ssl_context = None
+
+        if ssl_enabled:
+            try:
+                import ssl as ssl_module
+                ssl_context = ssl_module.SSLContext(ssl_module.PROTOCOL_TLS_SERVER)
+                ssl_context.load_cert_chain(
+                    ssl_config.get('certfile', 'server.crt'),
+                    ssl_config.get('keyfile', 'server.key')
+                )
+                print(f"[SSL] Loaded certificate: {ssl_config['certfile']}")
+            except Exception as e:
+                print(f"[SSL] Failed to load SSL context: {e}")
+                print("[SSL] Falling back to unencrypted WebSocket.")
+                ssl_context = None
+                protocol = "ws"
 
         print(f"""
 ╔══════════════════════════════════════════════════════╗
 ║           Mega Miner NG - Dedicated Server           ║
 ╠══════════════════════════════════════════════════════╣
-║  Version: 1.0.0                                      ║
-║  WebSocket: ws://{host}:{port}                       ║
-║  Max Players/Room: {self.config['server']['max_players_per_room']}                      ║
+║  Version: 2.0.0 (Dummy Client)                       ║
+║  Port: {port}                                         ║
+║  Protocol: {protocol}://{host}:{port}                  ║
+║  SSL/TLS: {'Enabled' if ssl_context else 'Disabled'}                   ║
+║  World: {self.world_name}                                      ║
+║  Max Players: {self.config['server']['max_players']}                          ║
 ║  Autosave Interval: {self.config['server']['autosave_interval']}s                       ║
 ║  Data Directory: {self.config['paths']['data_directory']}/              ║
 ╚══════════════════════════════════════════════════════╝
@@ -522,17 +778,21 @@ class MegaMinerServer:
 
         # Start autosave loop
         asyncio.create_task(self._autosave_loop())
+        
+        # Start dummy client update loop
+        asyncio.create_task(self._dummy_client_loop())
 
         # Start the WebSocket server
         async with websockets.serve(
             self.handle_connection,
             host,
             port,
+            ssl=ssl_context,
             ping_interval=20,
             ping_timeout=10,
             max_size=10 * 1024 * 1024  # 10MB max message
         ):
-            print(f"Server listening on ws://{host}:{port}")
+            print(f"Server listening on {protocol}://{host}:{port}")
             await asyncio.Future()  # Run forever
 
     async def shutdown(self):
@@ -570,9 +830,16 @@ class MegaMinerServer:
             if saved > 0:
                 print(f"[Autosave] Saved {saved} world(s)")
 
+    async def _dummy_client_loop(self):
+        """Periodic update for dummy client game logic."""
+        while not self.shutdown_flag:
+            await asyncio.sleep(0.1)  # 100ms update rate
+            for room_id in list(self.rooms.keys()):
+                await self.dummy_client.update(room_id)
+
     async def send_to(self, websocket, data):
         """Send JSON data to a websocket."""
-        if websocket.open:
+        if getattr(websocket, 'open', getattr(websocket, 'state', None) == websockets.protocol.State.OPEN):
             try:
                 await websocket.send(json.dumps(data))
             except Exception:
@@ -588,18 +855,10 @@ class MegaMinerServer:
         for username, player in room.players.items():
             if username == exclude:
                 continue
-            if player.websocket.open:
+            if getattr(player.websocket, 'open', getattr(player.websocket, 'state', None) == websockets.protocol.State.OPEN):
                 tasks.append(self.send_to(player.websocket, data))
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
-
-    async def broadcast_players(self, room_id):
-        """Broadcast player list to all players in a room."""
-        room = self.rooms.get(room_id)
-        if not room:
-            return
-        # Send join packet for each existing player to new players
-        # (This is handled during the join flow)
 
     # ========================================================================
     # CONNECTION HANDLER
@@ -637,7 +896,7 @@ class MegaMinerServer:
                         pass
 
                 elif msg_type == "join":
-                    # Player joins a room
+                    # Player joins the server's world
                     result = await self.handle_join(websocket, message, remote)
                     if result:
                         player, room_id, username = result
@@ -703,10 +962,11 @@ class MegaMinerServer:
     # ========================================================================
 
     async def handle_join(self, websocket, message, remote):
-        """Handle a player joining a room."""
+        """Handle a player joining the server's world."""
         username = message.get("username", "").strip()
         token = message.get("token", "")
-        room_id = message.get("room", "public")
+        # Ignore client's room request - always use configured world name
+        room_id = self.world_name
         color = message.get("color", "#3498db")
         player_data = message.get("playerData", {})
 
@@ -748,7 +1008,7 @@ class MegaMinerServer:
                 del old_room.players[username]
                 print(f"[Reconnect] {username} reconnecting")
 
-        # Get or create room
+        # Get or create room (always uses world_name)
         if room_id not in self.rooms:
             self.rooms[room_id] = Room(room_id, self.worlds)
             print(f"[Room] Created room '{room_id}'")
@@ -756,20 +1016,20 @@ class MegaMinerServer:
         room = self.rooms[room_id]
 
         # Check max players
-        if len(room.players) >= self.config['server']['max_players_per_room']:
+        if len(room.players) >= self.config['server']['max_players']:
             await self.send_to(websocket, {
                 "type": "join_result",
                 "success": False,
-                "message": "Room is full"
+                "message": "Server is full"
             })
             return None
 
         # Check if username is taken in this room
-        if username in room.players and room.players[username].websocket.open:
+        if username in room.players and getattr(room.players[username].websocket, 'open', getattr(room.players[username].websocket, 'state', None) == websockets.protocol.State.OPEN):
             await self.send_to(websocket, {
                 "type": "join_result",
                 "success": False,
-                "message": "Username already taken in this room"
+                "message": "Username already taken"
             })
             return None
 
@@ -803,7 +1063,7 @@ class MegaMinerServer:
             player.stats = player_data.get("stats", player.stats)
             player.achievements = player_data.get("achievements", player.achievements)
 
-        # Determine admin
+        # Determine admin (first player to join)
         if room.admin is None:
             room.admin = username
             player.player_id = username  # Admin gets a stable ID
@@ -813,24 +1073,25 @@ class MegaMinerServer:
         self.player_rooms[username] = room_id
         room.last_activity = time.time()
 
-        print(f"[Join] {username} joined room '{room_id}' (Players: {room.player_count})")
+        print(f"[Join] {username} joined world '{room_id}' (Players: {room.player_count})")
 
         # Send join result
         world = room.world
         await self.send_to(websocket, {
             "type": "join_result",
             "success": True,
-            "message": f"Joined room '{room_id}'",
+            "message": f"Joined world '{room_id}'",
             "room": room_id,
             "username": username,
             "playerId": player.player_id,
             "isAdmin": username == room.admin,
             "players": [p.to_dict() for p in room.players.values()],
-            "bannedIds": world.get("banned_ids", [])
+            "bannedIds": world.get("banned_ids", []),
+            "proceduralSeed": world.get("procedural_seed", 0)
         })
 
-        # Send full map to joining player
-        await self.send_map(websocket, room_id)
+        # Send map diffs to joining player (client generates base terrain from seed)
+        await self.send_map_diffs(websocket, room_id)
 
         # Notify other players
         await self.broadcast_to_room(room_id, {
@@ -841,49 +1102,52 @@ class MegaMinerServer:
             "joinedAt": int(player.joined_at * 1000)
         }, exclude=username)
 
-        # Send host heartbeat if admin
-        if username == room.admin:
-            await self.send_to(websocket, {
-                "type": "host_heartbeat",
-                "id": username
-            })
-
         return player, room_id, username
 
-    async def send_map(self, websocket, room_id):
-        """Send the full world map as binary diffs."""
+    async def send_map_diffs(self, websocket, room_id):
+        """Send only the diffs (changes from procedural) to a joining client.
+        
+        The client generates the base terrain from the procedural seed, then
+        applies these diffs on top. This is MUCH faster than sending the full map.
+        """
         room = self.rooms.get(room_id)
         if not room:
             return
         world = room.world
-        seed = world['procedural_seed']
-        diffs = []
-
-        for y in range(len(world['map'])):
-            row = world['map'][y]
-            for x in range(len(row)):
-                base = self.worlds._procedural_tile(x, y, seed)
-                current = row[x]
-                if current != base:
-                    diffs.append([x, y, current])
-
-            # Send in chunks
-            if len(diffs) >= 5000:
-                await self.send_to(websocket, {
-                    "type": "map_data",
-                    "diffs": diffs,
-                    "more": True
-                })
-                diffs = []
-                await asyncio.sleep(0.01)  # Yield to event loop
-
-        # Send remaining
+        diffs = world.get('diffs', [])
+        
+        # Send diffs in chunks to avoid overwhelming the connection
+        chunk_size = 10000
+        total_diffs = len(diffs)
+        
+        if total_diffs == 0:
+            # No diffs - just send empty map_data to signal ready
+            await self.send_to(websocket, {
+                "type": "map_data",
+                "diffs": [],
+                "more": False,
+                "worldTime": int(time.time() * 1000)
+            })
+            return
+        
+        for i in range(0, total_diffs, chunk_size):
+            chunk = diffs[i:i + chunk_size]
+            await self.send_to(websocket, {
+                "type": "map_data",
+                "diffs": chunk,
+                "more": i + chunk_size < total_diffs
+            })
+            await asyncio.sleep(0.005)  # Small delay to prevent flooding
+        
+        # Send final chunk with worldTime
         await self.send_to(websocket, {
             "type": "map_data",
-            "diffs": diffs,
+            "diffs": [],
             "more": False,
             "worldTime": int(time.time() * 1000)
         })
+        
+        print(f"[Map] Sent {total_diffs} diffs to joining player")
 
     # ========================================================================
     # GAME MESSAGE HANDLING
@@ -898,13 +1162,6 @@ class MegaMinerServer:
 
         elif msg_type == "heartbeat":
             player.last_heartbeat = time.time()
-            # Also relay as host heartbeat if admin
-            room = self.rooms.get(room_id)
-            if room and player.username == room.admin:
-                await self.broadcast_to_room(room_id, {
-                    "type": "host_heartbeat",
-                    "id": player.username
-                })
 
         elif msg_type == "chat":
             await self.handle_chat(player, room_id, message)
@@ -951,6 +1208,8 @@ class MegaMinerServer:
             }, exclude=player.username)
 
         elif msg_type == "claim_host":
+            # In dummy client mode, admin is always the first player
+            # But we allow host transfer between players
             room = self.rooms.get(room_id)
             if room:
                 room.admin = player.username
@@ -961,6 +1220,24 @@ class MegaMinerServer:
 
         elif msg_type == "promote_host":
             await self.handle_promote_host(player, room_id, message)
+
+        elif msg_type == "place_explosive":
+            # Player placed TNT or Nuke - register with dummy client
+            x = message.get("x")
+            y = message.get("y")
+            range_val = message.get("range", 3)
+            timer = message.get("timer", 2000)
+            if x is not None and y is not None:
+                self.dummy_client.add_explosive(x, y, range_val, timer)
+                # Broadcast the explosion placement to other players
+                await self.broadcast_to_room(room_id, {
+                    "type": "explode",
+                    "id": player.player_id,
+                    "x": x,
+                    "y": y,
+                    "r": range_val,
+                    "t": timer
+                }, exclude=player.username)
 
         else:
             # Unknown message types - just log
@@ -1017,7 +1294,11 @@ class MegaMinerServer:
         y = message.get("y")
         val = message.get("val")
         if x is not None and y is not None and val is not None:
+            print(f"[Tile] {player.username} updated tile at ({x},{y}) = {val}")
             self.worlds.update_tile(room_id, x, y, val)
+            world = self.rooms.get(room_id).world if self.rooms.get(room_id) else None
+            if world:
+                print(f"[Tile] World now has {len(world.get('diffs', []))} diffs")
             await self.broadcast_to_room(room_id, {
                 "type": "tile",
                 "x": x,
@@ -1037,15 +1318,21 @@ class MegaMinerServer:
         }, exclude=player.username)
 
     async def handle_explode(self, player, room_id, message):
-        """Handle explosion events."""
-        await self.broadcast_to_room(room_id, {
-            "type": "explode",
-            "id": player.player_id,
-            "x": message.get("x"),
-            "y": message.get("y"),
-            "r": message.get("r", 3),
-            "t": message.get("t", 2000)
-        }, exclude=player.username)
+        """Handle explosion events - register with dummy client."""
+        x = message.get("x")
+        y = message.get("y")
+        r = message.get("r", 3)
+        t = message.get("t", 2000)
+        if x is not None and y is not None:
+            self.dummy_client.add_explosive(x, y, r, t)
+            await self.broadcast_to_room(room_id, {
+                "type": "explode",
+                "id": player.player_id,
+                "x": x,
+                "y": y,
+                "r": r,
+                "t": t
+            }, exclude=player.username)
 
     async def handle_fuel_transfer(self, player, room_id, message):
         """Handle fuel transfers between players."""
@@ -1082,19 +1369,13 @@ class MegaMinerServer:
         room = self.rooms.get(room_id)
         if not room:
             return
-        # Only admin responds to map queries
-        if player.username != room.admin:
-            return
 
         requester_name = message.get("from")
         if requester_name and requester_name in room.players:
             requester = room.players[requester_name]
-            # Send area diff for full map
-            diffs = self.worlds.get_area_diff(room_id, 0, 0,
-                                              DEFAULT_CONFIG['game']['map_width'],
-                                              DEFAULT_CONFIG['game']['map_height'])
-            # Send in chunks
-            chunk_size = 5000
+            # Send all diffs
+            diffs = self.worlds.get_all_diffs(room_id)
+            chunk_size = 10000
             for i in range(0, len(diffs), chunk_size):
                 chunk = diffs[i:i + chunk_size]
                 await self.send_to(requester.websocket, {
@@ -1108,8 +1389,6 @@ class MegaMinerServer:
         """Handle viewport sync requests."""
         room = self.rooms.get(room_id)
         if not room:
-            return
-        if player.username != room.admin:
             return
 
         requester_name = message.get("id")
@@ -1213,11 +1492,35 @@ class MegaMinerServer:
             self.player_rooms.pop(username, None)
             return
 
+        # Save player data before removing
+        if username in room.players:
+            player = room.players[username]
+            # Save persistent player data
+            if username not in room.world.setdefault("player_data", {}):
+                room.world["player_data"][username] = {}
+            room.world["player_data"][username].update({
+                "money": player.money,
+                "drillTier": player.drill_tier,
+                "maxHull": player.max_hull,
+                "maxFuel": player.max_fuel,
+                "maxCargo": player.max_cargo,
+                "heatResist": player.heat_resist,
+                "xrayRange": player.xray_range,
+                "multiMine": player.multi_mine,
+                "vehColor": player.color,
+                "teleporters": player.teleporters,
+                "blueprints": player.blueprints,
+                "achievements": player.achievements
+            })
+            # Save world to disk - use the room's world object directly
+            self.worlds.save_world(room_id, room.world)
+            print(f"[Save] Saved progress for {username}")
+
         # Remove player from room
         if username in room.players:
             del room.players[username]
             self.player_rooms.pop(username, None)
-            print(f"[Disconnect] {username} left room '{room_id}' (Players: {room.player_count})")
+            print(f"[Disconnect] {username} left world '{room_id}' (Players: {room.player_count})")
 
             # Broadcast leave
             await self.broadcast_to_room(room_id, {
@@ -1244,9 +1547,9 @@ class MegaMinerServer:
             # Clean up empty rooms
             if room.player_count == 0:
                 print(f"[Room] Room '{room_id}' is now empty, saving...")
-                self.worlds.save_world(room_id)
+                # Save world one more time before cleanup - pass world object directly
+                self.worlds.save_world(room_id, room.world)
                 # Keep room for a while in case someone rejoins
-                # Cleanup after 5 minutes
                 asyncio.create_task(self._cleanup_empty_room(room_id))
 
     async def _cleanup_empty_room(self, room_id):
@@ -1270,6 +1573,8 @@ def main():
                         help="Port to listen on (overrides config)")
     parser.add_argument("--host", default=None,
                         help="Host to listen on (overrides config)")
+    parser.add_argument("-w", "--world", default=None,
+                        help="World name (overrides config)")
     args = parser.parse_args()
 
     server = MegaMinerServer(args.config)
@@ -1279,6 +1584,9 @@ def main():
         server.config['server']['host'] = args.host
     if args.port:
         server.config['server']['port'] = args.port
+    if args.world:
+        server.config['server']['world_name'] = args.world
+        server.world_name = args.world
 
     try:
         asyncio.run(server.start())

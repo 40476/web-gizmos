@@ -1762,14 +1762,14 @@
             </div>
             <div class="start-container">
                 <div class="start-panel">
-                    <div class="form-group">
+                    <div class="form-group" id="username-form-group">
                         <label>Username</label>
                         <div style="display:flex; gap:5px;">
                             <input type="text" id="start-username" placeholder="Enter Username" maxlength="12" style="flex:1;">
                             <button class="btn" style="width:auto; padding: 0 10px; font-size: var(--fs-base);" onclick="Game.randomizeUsername()" title="Randomize Username">🎲</button>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="room-form-group">
                         <label>Room ID</label>
                         <input type="text" id="start-room" value="public-mine-1">
                     </div>
@@ -1791,14 +1791,13 @@
                         </div>
                         <div id="hosted-server-config" style="display:none; margin-top:8px; padding:8px; background:rgba(142,68,173,0.1); border:1px solid #8e44ad; border-radius:4px;">
                             <label style="font-size:var(--fs-xs); color:#aaa; display:block; margin-bottom:4px;">Server Address</label>
-                            <input type="text" id="hosted-server-url" value="ws://localhost:8765" placeholder="ws://host:port" style="width:100%; padding:6px; background:#222; border:1px solid #555; color:#fff; font-size:var(--fs-sm); margin-bottom:6px;">
+                            <input type="text" id="hosted-server-url" value="ws://localhost:4242" placeholder="ws://host:port" style="width:100%; padding:6px; background:#222; border:1px solid #555; color:#fff; font-size:var(--fs-sm); margin-bottom:6px;">
                             <div id="hosted-account-area" style="display:flex; gap:5px; flex-wrap:wrap;">
                                 <input type="text" id="hosted-username" placeholder="Username" style="flex:1; min-width:80px; padding:6px; background:#222; border:1px solid #555; color:#fff; font-size:var(--fs-sm);">
                                 <input type="password" id="hosted-password" placeholder="Password" style="flex:1; min-width:80px; padding:6px; background:#222; border:1px solid #555; color:#fff; font-size:var(--fs-sm);">
-                                <button class="btn btn-small" style="padding:4px 8px; background:#27ae60;" onclick="UI.hostedLogin()">Login</button>
-                                <button class="btn btn-small" style="padding:4px 8px; background:#2980b9;" onclick="UI.hostedRegister()">Register</button>
                             </div>
                             <div id="hosted-account-status" style="font-size:var(--fs-tiny); color:#aaa; margin-top:4px;"></div>
+                            <div style="font-size:var(--fs-tiny); color:#777; margin-top:4px; line-height:1.3;">LAUNCH MISSION will auto-login or register your account.</div>
                         </div>
                     </div>
                     <button class="btn" onclick="Game.init()" id="startBtn">LAUNCH MISSION</button>
@@ -2048,9 +2047,9 @@
             <div class="form-group">
                 <label>Save Management</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px;">
-                    <button class="btn" style="flex:1; background:var(--success);" onclick="SaveSystem.createNewSave()">+ NEW SAVE</button>
-                    <button class="btn" style="flex:1;" onclick="SaveSystem.saveCurrent()">SAVE CURRENT</button>
-                    <button class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">IMPORT SAVE</button>
+                    <button id="save-new-btn" class="btn" style="flex:1; background:var(--success);" onclick="SaveSystem.createNewSave()">+ NEW SAVE</button>
+                    <button id="save-current-btn" class="btn" style="flex:1;" onclick="SaveSystem.saveCurrent()">SAVE CURRENT</button>
+                    <button id="save-import-btn" class="btn" style="flex: 1; background:#444;" onclick="$('import-file').click()">IMPORT SAVE</button>
                     <input type="file" id="import-file" style="margin-top:5px; display:none;" onchange="SaveSystem.importSave(this)">
                 </div>
                 <div id="save-list-wrapper" class="save-list-wrapper">
@@ -2062,10 +2061,10 @@
             <div class="form-group">
                 <label>Cloud Sync</label>
                 <div style="display:flex; gap:5px; margin-bottom:5px; flex-wrap: wrap;">
-                    <button class="btn" style="flex:1; background:#2980b9;" onclick="SaveSystem.smartSyncAll(false, true)">
+                    <button id="save-sync-btn" class="btn" style="flex:1; background:#2980b9;" onclick="SaveSystem.smartSyncAll(false, true)">
                         Sync All
                     </button>
-                    <button class="btn" style="flex:1; background:#444;" onclick="SaveSystem.loadLinkCode()">
+                    <button id="save-link-btn" class="btn" style="flex:1; background:#444;" onclick="SaveSystem.loadLinkCode()">
                         Link Device
                     </button>
                 </div>
@@ -3039,6 +3038,7 @@ class GameEngine {
     // --- Persistent Stats (Wallet, Upgrades) ---
     saveLocalProgress() {
         if (!this.running) return;
+        if (Network.useHosted) return; // Hosted mode does not persist client state locally
         const data = {
             money: this.localPlayer.money,
             drillTier: this.localPlayer.drillTier,
@@ -3161,15 +3161,24 @@ class GameEngine {
         // Show/hide hosted server config
         const hostedConfig = $('hosted-server-config');
         const serverlessPanel = $('serverless-panel');
+        const usernameGroup = $('username-form-group');
+        const roomGroup = $('room-form-group');
         if (mode === 'hosted') {
             hostedConfig.style.display = 'block';
             serverlessPanel.style.display = 'none';
+            // Hide username and room fields in hosted mode - server handles these
+            if (usernameGroup) usernameGroup.style.display = 'none';
+            if (roomGroup) roomGroup.style.display = 'none';
         } else if (mode === 'serverless') {
             hostedConfig.style.display = 'none';
             serverlessPanel.style.display = 'block';
+            if (usernameGroup) usernameGroup.style.display = 'block';
+            if (roomGroup) roomGroup.style.display = 'block';
         } else {
             hostedConfig.style.display = 'none';
             serverlessPanel.style.display = 'none';
+            if (usernameGroup) usernameGroup.style.display = 'block';
+            if (roomGroup) roomGroup.style.display = 'block';
         }
         GameConfig.set('PlayerSettings.gamemode', mode);
     }
@@ -3308,7 +3317,6 @@ class GameEngine {
         this.isAdmin = false;
 
         // 2. STICKY TIMESTAMP LOGIC
-        // We still use a specific key for room seniority
         const timeKey = `mm_joinedAt_${this.settings.room}`;
         const savedTime = GameConfig.get('Timestamps.'+timeKey);
 
@@ -3329,7 +3337,6 @@ class GameEngine {
         // 4. UI Transition
         $('start-screen').style.display = 'none';
         $('connection-screen').style.display = 'flex';
-
 
         // 5. Cloud Sync Logic
         if (window.puter?.whoami && SaveSystem.cloudSyncEnabled) {
@@ -3357,40 +3364,157 @@ class GameEngine {
         this.logConnection(`Minimap: ${this.minimapCanvas.width}x${this.minimapCanvas.height}`);
 
         // 7. Map & Seed Generation
-        this.roomSeed = Math.abs(this.hashSeed(this.settings.room));
-        this.logConnection(`Seed: ${this.roomSeed}`);
-
-        this.generateMap();
+        if (this.settings.gamemode === 'hosted') {
+            // Hosted mode: Don't generate map yet, wait for server seed
+            this.logConnection(`Waiting for server map data...`);
+            this.roomSeed = null; // Will be set by server
+        } else {
+            // Singleplayer/Serverless: Use local seed
+            this.roomSeed = Math.abs(this.hashSeed(this.settings.room));
+            this.logConnection(`Seed: ${this.roomSeed}`);
+            this.generateMap();
+        }
 
         // 8. Final Systems Start
-        // Sound now reads from this.settings.volumes (which we populated from Config)
         Sound.loadSettings();
         this.logConnection(`Sound settings loaded`);
 
-        // Load stats before connecting
-        this.loadLocalProgress();
-        this.logConnection(`Local stats loaded`);
+        // Load stats before connecting, unless we are in hosted mode
+        if (!Network.useHosted) {
+            this.loadLocalProgress();
+            this.logConnection(`Local stats loaded`);
+        } else {
+            this.logConnection(`Hosted mode: skipping local stats load`);
+        }
 
         const mobile = ARGUMENTS.has('forceMobile') || this.settings.mobileMode || false;
         const controlsReversed = this.settings.controlsReversed || false
         this.toggleMobile(mobile, controlsReversed);
         this.logConnection(`Mobile mode set to: ` + mobile);
 
+        // 9. Handle hosted mode login/register before connecting
+        if (this.settings.gamemode === 'hosted') {
+            const hostedUsername = $('hosted-username').value.trim();
+            const hostedPassword = $('hosted-password').value;
+            const storedToken = localStorage.getItem('mm_hosted_token');
+            
+            // If we have a stored token, use it directly
+            if (storedToken) {
+                this.logConnection("Using stored session token...");
+                // Token will be passed to HostedNetwork.connect()
+            } else if (hostedUsername && hostedPassword) {
+                // Auto-login or register via temporary connection
+                this.logConnection(`Authenticating with hosted server...`);
+                const serverUrl = $('hosted-server-url').value.trim() || 'ws://localhost:4242';
+                try {
+                    const authResult = await this.hostedAuthenticate(serverUrl, hostedUsername, hostedPassword);
+                    if (!authResult.success) {
+                        this.logConnection(`Auth failed: ${authResult.message}`);
+                        UI.showToast(`Auth failed: ${authResult.message}`, "error");
+                        // Fall through - server will reject join if not authenticated
+                    } else {
+                        this.logConnection(`Authenticated as ${authResult.username}`);
+                        localStorage.setItem('mm_hosted_token', authResult.token);
+                        localStorage.setItem('mm_hosted_username', authResult.username);
+                        $('start-username').value = authResult.username;
+                    }
+                } catch (e) {
+                    this.logConnection(`Auth connection failed: ${e}`);
+                }
+            } else {
+                this.logConnection("No credentials provided. Joining as guest...");
+            }
+        }
+
         Network.connect(this.settings.gamemode);
         $('chat-input').disabled = Network.isSingleplayer;
         $("chat-input").placeholder = Network.isSingleplayer ? "Chat disabled in singleplayer" : `Press ${Game.settings.mobileMode ? "CHAT" : GameConfig.get('PlayerSettings.keys').chat.toUpperCase() } to type`;
-
-        function openInGameMenu() {
-            // Your custom logic here
-            UI.showToast("Print blocked - Game Menu Opened", "info");
-        }
-
 
         UI.refreshKeybindLabels();
         UI.checkForUpdates();
 
         // Start a new session tracking if none exists
         if (!SaveSystem.currentSaveId) SaveSystem.currentSaveId = Date.now();
+    }
+
+    async hostedAuthenticate(serverUrl, username, password) {
+        return new Promise((resolve) => {
+            try {
+                const ws = new WebSocket(serverUrl);
+                let resolved = false;
+                const timeout = setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        ws.close();
+                        resolve({ success: false, message: "Connection timeout" });
+                    }
+                }, 5000);
+
+                ws.onopen = () => {
+                    // Try login first
+                    ws.send(JSON.stringify({ type: "login", username, password }));
+                };
+                ws.onmessage = (event) => {
+                    if (resolved) return;
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === "login_result") {
+                        resolved = true;
+                        clearTimeout(timeout);
+                        ws.close();
+                        if (msg.success) {
+                            resolve({ success: true, token: msg.token, username: msg.username, message: msg.message });
+                        } else {
+                            // Login failed, try register
+                            const regWs = new WebSocket(serverUrl);
+                            regWs.onopen = () => {
+                                regWs.send(JSON.stringify({ type: "register", username, password }));
+                            };
+                            regWs.onmessage = (regEvent) => {
+                                const regMsg = JSON.parse(regEvent.data);
+                                if (regMsg.type === "register_result") {
+                                    regWs.close();
+                                    if (regMsg.success) {
+                                        // Now login after register
+                                        const loginWs = new WebSocket(serverUrl);
+                                        loginWs.onopen = () => {
+                                            loginWs.send(JSON.stringify({ type: "login", username, password }));
+                                        };
+                                        loginWs.onmessage = (loginEvent) => {
+                                            const loginMsg = JSON.parse(loginEvent.data);
+                                            if (loginMsg.type === "login_result") {
+                                                loginWs.close();
+                                                if (loginMsg.success) {
+                                                    resolve({ success: true, token: loginMsg.token, username: loginMsg.username, message: "Registered and logged in!" });
+                                                } else {
+                                                    resolve({ success: false, message: loginMsg.message });
+                                                }
+                                            }
+                                        };
+                                        loginWs.onerror = () => {
+                                            resolve({ success: false, message: "Registration succeeded but login failed" });
+                                        };
+                                    } else {
+                                        resolve({ success: false, message: regMsg.message });
+                                    }
+                                }
+                            };
+                            regWs.onerror = () => {
+                                resolve({ success: false, message: "Cannot reach server for registration" });
+                            };
+                        }
+                    }
+                };
+                ws.onerror = () => {
+                    if (!resolved) {
+                        resolved = true;
+                        clearTimeout(timeout);
+                        resolve({ success: false, message: "Cannot reach server" });
+                    }
+                };
+            } catch (e) {
+                resolve({ success: false, message: "Connection failed" });
+            }
+        });
     }
 
     logConnection(msg) {
@@ -3438,19 +3562,38 @@ class GameEngine {
                 UI.updateAdminPanel();
             }
 
-            // ONLY load save if we are the host (Admin)
-            if (this.isAdmin) {
-                const lastId = GameConfig.get('Stats.mm_last_save_id');
-                if (lastId) {
-                    console.log("Host detected, loading save:", lastId);
-                    await SaveSystem.loadGame(parseInt(lastId), true);
-                    UI.showToast("Auto-loaded previous save.", "success");
+            // Handle map generation and save loading based on mode
+            if (this.settings.gamemode === 'hosted') {
+                // Hosted mode: Map and world state are authoritative from the server.
+                if (this.isAdmin) {
+                    UI.addMessage("System", "Hosted mode disables local save loading. Server state is authoritative.", "#aaa");
+                } else {
+                    // Map was already generated in join_result handler when seed was received.
+                    // Diffs are being applied as they arrive. Just show a status message.
+                    if (this.roomSeed !== null && this.roomSeed !== undefined) {
+                        UI.addMessage("System", "Connected. Map diffs are syncing from server...", "#aaa");
+                    } else {
+                        // Fallback: Initialize empty arrays so draw() doesn't crash
+                        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+                            if (!this.map[y]) this.map[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
+                            if (!this.discovered[y]) this.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
+                        }
+                        UI.addMessage("System", "Waiting for map sync from server...", "#aaa");
+                    }
                 }
             } else {
-                // If we are NOT admin (Client), ensure we rely on the procedural map + sync
-                // We do NOT load any local saves to prevent overwriting the host's world
-                Network.requestMap(null); // Request from host (broadcast if id is null or not found, see handler)
-                UI.addMessage("System", "Waiting for Map Sync...", "#aaa");
+                // Serverless/Singleplayer: Normal save loading
+                if (this.isAdmin) {
+                    const lastId = GameConfig.get('Stats.mm_last_save_id');
+                    if (lastId) {
+                        console.log("Host detected, loading save:", lastId);
+                        await SaveSystem.loadGame(parseInt(lastId), true);
+                        UI.showToast("Auto-loaded previous save.", "success");
+                    }
+                } else {
+                    Network.requestMap(null);
+                    UI.addMessage("System", "Waiting for Map Sync...", "#aaa");
+                }
             }
 
             this.loop();
@@ -3629,9 +3772,10 @@ class GameEngine {
                 let nx = p.gridX + ix;
                 let ny = p.gridY + iy;
 
-                // Bounds Check
-                if (nx >= 0 && nx < CONSTANTS.MAP_WIDTH && ny >= 4 && ny < CONSTANTS.MAP_HEIGHT) {
-                    let tile = (ny < 0) ? TILE_TYPES.EMPTY : this.map[ny][nx];
+                // Bounds Check - also verify map row exists
+                if (nx >= 0 && nx < CONSTANTS.MAP_WIDTH && ny >= 4 && ny < CONSTANTS.MAP_HEIGHT && this.map[ny]) {
+                    let tile = this.map[ny][nx];
+                    if (tile === undefined) tile = TILE_TYPES.EMPTY;
 
                     // Teleporter Discovery
                     if (tile === TILE_TYPES.TELEPORTER) {
@@ -4746,16 +4890,17 @@ class GameEngine {
             const dy = y - pcy;
             const dySq = dy * dy;
             const row = this.map[y]; // Cache row lookup
+            if (!row) continue; // Skip rows that haven't been initialized yet
 
             for (let x = iStartCol; x <= iEndCol; x++) {
                 const dx = x - pcx;
                 const distSq = dx * dx + dySq;
 
                 if (distSq <= visionRadSq) {
-                    this.discovered[y][x] = 1; // Update model
+                    if (this.discovered[y]) this.discovered[y][x] = 1; // Update model
                     // Store tile render data: [x, y, tileType]
                     visibleTiles.push(x, y, row[x]);
-                } else if (this.discovered[y][x]) {
+                } else if (this.discovered[y] && this.discovered[y][x]) {
                     discoveredTiles.push(x, y, row[x]);
                 }
             }
@@ -5340,7 +5485,7 @@ class GameEngine {
                 let my = pY + dy;
                 // Boundary checks
                 if (mx >= 0 && mx < CONSTANTS.MAP_WIDTH && my >= 0 && my < CONSTANTS.MAP_HEIGHT) {
-                    if (this.discovered[my][mx]) {
+                    if (this.discovered[my] && this.discovered[my][mx]) {
                         let tile = this.map[my][mx];
                         ctx.fillStyle = tile === TILE_TYPES.EMPTY ? '#111' : TILE_PROPS[tile].color;
                         // Use 3x3 pixel rects
@@ -6191,11 +6336,33 @@ class HostedNetwork {
             };
 
             this.ws.onmessage = (event) => {
-                try {
-                    const msg = JSON.parse(event.data);
-                    this.handleMessage(msg);
-                } catch (e) {
-                    console.error("Failed to parse message:", e);
+                // FIX: Handle both JSON and binary data (Chromium may send ArrayBuffer)
+                if (typeof event.data === 'string') {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        this.handleMessage(msg);
+                    } catch (e) {
+                        console.error("Failed to parse message:", e);
+                    }
+                } else if (event.data instanceof Blob) {
+                    event.data.arrayBuffer().then(buffer => {
+                        try {
+                            const text = new TextDecoder().decode(buffer);
+                            const msg = JSON.parse(text);
+                            this.handleMessage(msg);
+                        } catch (e) {
+                            console.error("Failed to parse binary Blob message:", e);
+                        }
+                    }).catch((e) => {
+                        console.error("Failed to read Blob message:", e);
+                    });
+                } else if (event.data instanceof ArrayBuffer || ArrayBuffer.isView(event.data)) {
+                    // Binary data - convert to Uint8Array for processing
+                    const buffer = event.data instanceof ArrayBuffer 
+                        ? new Uint8Array(event.data) 
+                        : new Uint8Array(event.data.buffer, event.data.byteOffset, event.data.byteLength);
+                    // For now, log binary data (server sends JSON map_data, not binary)
+                    console.log("Received binary data from server, length:", buffer.length);
                 }
             };
 
@@ -6247,27 +6414,67 @@ class HostedNetwork {
                             }
                         });
                     }
+                    // Use the server's authoritative procedural seed for any future map queries.
+                    // Generate the base terrain immediately so diffs can be applied on top.
+                    if (msg.proceduralSeed !== undefined && msg.proceduralSeed !== null) {
+                        Game.roomSeed = msg.proceduralSeed;
+                        Game.logConnection(`Server seed: ${Game.roomSeed}`);
+                        // Generate base terrain immediately so map_data diffs can be applied
+                        Game.generateMap();
+                        Game.logConnection("Base terrain generated from server seed");
+                    }
                     this.connected = true;
                     Game.finishConnection();
                     Sound.playSound('success');
                 } else {
                     UI.showToast("Join failed: " + msg.message, "error");
                     Game.logConnection("Join failed: " + msg.message);
-                    location.reload();
                 }
                 break;
 
             case "map_data":
-                // Apply map diffs
-                if (msg.diffs) {
+                console.log(`[Network] Received map_data: ${msg.diffs?.length || 0} diffs, more=${msg.more}, worldTime=${msg.worldTime}`);
+                // Ensure the client has a valid map buffer before applying map data.
+                if (!Game.map || Game.map.length === 0) {
+                    console.log("[Network] Initializing empty map arrays");
+                    Game.map = new Array(CONSTANTS.MAP_HEIGHT);
+                    Game.discovered = new Array(CONSTANTS.MAP_HEIGHT);
+                }
+                if (msg.fullMap && Array.isArray(msg.rows) && Array.isArray(msg.discovered)) {
+                    const startY = Number(msg.startY) || 0;
+                    for (let i = 0; i < msg.rows.length; i++) {
+                        const y = startY + i;
+                        if (y < 0 || y >= CONSTANTS.MAP_HEIGHT) continue;
+                        Game.map[y] = new Uint8Array(msg.rows[i]);
+                        Game.discovered[y] = new Uint8Array(msg.discovered[i]);
+                    }
+                }
+                if (msg.diffs && Array.isArray(msg.diffs)) {
+                    console.log(`[Network] Applying ${msg.diffs.length} diffs to map`);
+                    let applied = 0;
                     msg.diffs.forEach(([x, y, val]) => {
-                        if (Game.map[y] && Game.map[y][x] !== undefined) {
-                            Game.map[y][x] = val;
-                            Game.discovered[y][x] = 1;
-                        }
+                        if (y < 0 || y >= CONSTANTS.MAP_HEIGHT || x < 0 || x >= CONSTANTS.MAP_WIDTH) return;
+                        if (!Game.map[y]) Game.map[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
+                        if (!Game.discovered[y]) Game.discovered[y] = new Uint8Array(CONSTANTS.MAP_WIDTH);
+                        Game.map[y][x] = val;
+                        Game.discovered[y][x] = 1;
+                        applied++;
                     });
+                    console.log(`[Network] Applied ${applied} diffs successfully`);
                 }
                 if (!msg.more) {
+                    console.log("[Network] Map sync complete - all diffs received");
+                    // Verify map state
+                    let totalDiffs = 0;
+                    for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+                        if (Game.map[y]) {
+                            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
+                                const base = Game.getProceduralTile(x, y);
+                                if (Game.map[y][x] !== base) totalDiffs++;
+                            }
+                        }
+                    }
+                    console.log(`[Network] Map verification: ${totalDiffs} tiles differ from procedural base`);
                     if (Game.running && Game.renderer) Game.renderer.markMapDirty();
                 }
                 // Also set the world time for day/night cycle
@@ -6540,7 +6747,14 @@ class HostedNetwork {
     }
 
     sendTileUpdate(x, y, type) {
+        console.log(`[Network] Sending tile update: ${x},${y} = ${type}`);
         this.send({ type: "tile_update", x, y, val: type });
+    }
+
+    requestMap() {
+        console.log("[Network] Requesting map sync from server...");
+        UI.showToast("Syncing map from server...", "normal");
+        this.send({ type: "map_query", from: Game.localPlayer.id });
     }
 
     sendChat(msg) {
@@ -6604,9 +6818,10 @@ class NetworkManager {
         this.baseTopic = netConf.baseTopic;
         this.lastHeartbeat = 0;
         this.isSingleplayer = false;
+        this.useHosted = false; // When true, all calls delegate to this.hostedNet
+        this.hostedNet = null;  // HostedNetwork instance when in hosted mode
         this.connectionWatchdog = 0;
     }
-
 
     loadScript(url) {
         return new Promise((resolve) => {
@@ -6621,6 +6836,8 @@ class NetworkManager {
         // gamemode: 'singleplayer', 'serverless', or 'hosted'
         if (gamemode === 'singleplayer') {
             this.isSingleplayer = true;
+            this.useHosted = false;
+            this.hostedNet = null;
             Game.logConnection("Initializing Singleplayer...");
             Game.finishConnection();
             Sound.playSound('success');
@@ -6629,22 +6846,21 @@ class NetworkManager {
 
         if (gamemode === 'hosted') {
             this.isSingleplayer = false;
-            // Use HostedNetwork instead
+            this.useHosted = true;
             Game.logConnection("Using Hosted Multiplayer mode...");
 
-            // Create hosted network instance if it doesn't exist
-            if (!window.HostedNet) {
-                window.HostedNet = new HostedNetwork();
-            }
-            const hosted = window.HostedNet;
+            // Create hosted network instance
+            this.hostedNet = new HostedNetwork();
+            window.HostedNet = this.hostedNet;
 
-            const serverUrl = $('hosted-server-url').value.trim() || 'ws://localhost:8765';
-            const username = $('start-username').value.trim() || 'Miner';
+            const serverUrl = $('hosted-server-url').value.trim() || 'ws://localhost:4242';
+            const storedUsername = localStorage.getItem('mm_hosted_username');
+            const username = storedUsername || $('start-username').value.trim() || 'Miner';
             const token = localStorage.getItem('mm_hosted_token') || '';
             const roomId = $('start-room').value.trim() || 'public';
             const color = $('start-color').value || '#3498db';
 
-            hosted.connect(serverUrl, username, token, roomId, color, {
+            this.hostedNet.connect(serverUrl, username, token, roomId, color, {
                 inventory: Game.localPlayer.inventory,
                 money: Game.localPlayer.money,
                 stats: Game.localPlayer.stats,
@@ -6654,13 +6870,13 @@ class NetworkManager {
                 UI.showToast("Failed to connect to hosted server!", "error");
             });
 
-            // Override the global Network calls to use HostedNetwork
-            this._redirectToHosted = true;
             return;
         }
 
         // Serverless (MQTT) mode - original logic
         this.isSingleplayer = false;
+        this.useHosted = false;
+        this.hostedNet = null;
         const playerConf = GameConfig.get('PlayerSettings');
         const netConf = GameConfig.get('Network');
 
@@ -8019,6 +8235,10 @@ class UIManager {
     }
 
     updatePlayerList() {
+        if (Network.useHosted) {
+            $('admin-panel').hidden = true;
+            return;
+        }
         if (!Game.isAdmin) {
             $('admin-panel').hidden = true;
             return;
@@ -8322,16 +8542,28 @@ class SaveSystem {
     }
 
     static toggleAutosave(val) {
+        if (Network.useHosted || Game.settings.gamemode === 'hosted') {
+            UI.showToast("Autosave is disabled in hosted mode.", "normal");
+            return;
+        }
         this.autosaveEnabled = val;
         GameConfig.set('SaveSystem.autosave', val);
     }
 
     static toggleCloudSync(val) {
+        if (Network.useHosted || Game.settings.gamemode === 'hosted') {
+            UI.showToast("Cloud save sync is disabled in hosted mode.", "normal");
+            return;
+        }
         this.cloudSyncEnabled = val;
         GameConfig.set('SaveSystem.cloudSync', val);
     }
 
     static async smartSyncAll(isSilent, noStartBtn) {
+        if (Network.useHosted || Game.settings.gamemode === 'hosted') {
+            if (!isSilent) UI.showToast("Cloud save sync is disabled in hosted mode.", "error");
+            return;
+        }
         if (!isSilent) UI.showToast("Starting Smart Sync...", "info");
         if (noStartBtn) $('startBtn').disabled = true;
         await this.initDB();
@@ -8408,6 +8640,10 @@ class SaveSystem {
     }
 
     static async saveGame(id, name = null, isAuto = false) {
+        if (Network.useHosted) {
+            if (!isAuto) UI.showToast("Local saves are disabled in hosted mode.", "error");
+            return;
+        }
         if (Network.client && Network.client.connected && !Game.isAdmin) return;
 
         try {
@@ -8499,6 +8735,10 @@ class SaveSystem {
     }
 
     static async loadLinkCode() {
+        if (Network.useHosted || Game.settings.gamemode === 'hosted') {
+            UI.showToast("Cloud linking is disabled in hosted mode.", "error");
+            return;
+        }
         try {
             // In Puter, 'Linking' is just signing in.
             // Once they sign in, their 'Guest' saves are migrated to their account.
@@ -8584,6 +8824,10 @@ class SaveSystem {
     // --- CORE SAVE LOGIC ---
 
     static async createNewSave() {
+        if (Network.useHosted || Game.settings.gamemode === 'hosted') {
+            UI.showToast("New saves are disabled in hosted mode.", "error");
+            return;
+        }
         // PROTECTION: Only Admin can create/save games
         if (Network.client && Network.client.connected && !Game.isAdmin) {
             UI.showToast("Only Admin can create saves.", "error");
@@ -8602,6 +8846,10 @@ class SaveSystem {
     }
 
     static async saveCurrent() {
+        if (Network.useHosted || Game.settings.gamemode === 'hosted') {
+            UI.showToast("Saving is disabled in hosted mode.", "error");
+            return;
+        }
         // PROTECTION: Only Admin can save
         if (Network.client && Network.client.connected && !Game.isAdmin) {
             UI.showToast("Only Admin can save.", "error");
@@ -8625,6 +8873,10 @@ class SaveSystem {
     }
 
     static async loadGame(id, silent = false) {
+        if (Network.useHosted || Game.settings.gamemode === 'hosted') {
+            if(!silent) UI.showToast("Local save loading is disabled in hosted mode.", "error");
+            return;
+        }
         // PROTECTION: Only Admin can load saves
         if (Network.client && Network.client.connected && !Game.isAdmin) {
             if(!silent) UI.showToast("Only Admin (Host) can load saves.", "error");
@@ -8689,6 +8941,10 @@ class SaveSystem {
     static async renderSaveList() {
         await this.initDB();
         const container = $('save-list-wrapper');
+        if (Network.useHosted) {
+            container.innerHTML = '<div style="padding:10px; color:#aaa;">Hosted mode: local save management is disabled. Server state is authoritative.</div>';
+            return;
+        }
         container.innerHTML = 'Loading saves...';
 
         // Get all meta
@@ -8744,6 +9000,11 @@ class SaveSystem {
     }
 
     static importSave(input) {
+        if (Network.useHosted) {
+             UI.showToast("Importing saves is disabled in hosted mode.", "error");
+             input.value = '';
+             return;
+        }
         // PROTECTION: Only Admin can import saves
         if (Network.client && Network.client.connected && !Game.isAdmin) {
              UI.showToast("Only Admin (Host) can import saves.", "error");
