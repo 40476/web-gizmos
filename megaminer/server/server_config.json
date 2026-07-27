@@ -25,10 +25,14 @@
         "max_cargo": 50
     },
     "accounts": {
-        "allow_registration": true,
+        "allow_registration": false,
+        "allow_guests": false,
         "min_username_length": 3,
         "max_username_length": 16,
-        "min_password_length": 4
+        "min_password_length": 4,
+        "users": {
+            "default": "default"
+        }
     },
     "paths": {
         "data_directory": "server_data",

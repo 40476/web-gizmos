@@ -3398,12 +3398,12 @@ class GameEngine {
             const hostedPassword = $('hosted-password').value;
             const storedToken = localStorage.getItem('mm_hosted_token');
             
-            // If we have a stored token, use it directly
+            // Use stored token if available (tokens persist on server across restarts now)
             if (storedToken) {
                 this.logConnection("Using stored session token...");
                 // Token will be passed to HostedNetwork.connect()
             } else if (hostedUsername && hostedPassword) {
-                // Auto-login or register via temporary connection
+                // No stored token - authenticate with credentials
                 this.logConnection(`Authenticating with hosted server...`);
                 const serverUrl = $('hosted-server-url').value.trim() || 'ws://localhost:4242';
                 try {
@@ -3411,7 +3411,6 @@ class GameEngine {
                     if (!authResult.success) {
                         this.logConnection(`Auth failed: ${authResult.message}`);
                         UI.showToast(`Auth failed: ${authResult.message}`, "error");
-                        // Fall through - server will reject join if not authenticated
                     } else {
                         this.logConnection(`Authenticated as ${authResult.username}`);
                         localStorage.setItem('mm_hosted_token', authResult.token);
@@ -7528,7 +7527,10 @@ class InputManager {
             }
 
             // Prevent scroll for game keys
-            if (Object.values(keyBinds).includes(e.key) && e.key !== keyBinds.chat && document.activeElement.type !== 'text') {
+            if (Object.values(keyBinds).includes(e.key) &&
+                e.key !== keyBinds.chat &&
+                document.activeElement.type !== 'text' &&
+                document.activeElement.type !== 'password') {
                 e.preventDefault();
             }
         });

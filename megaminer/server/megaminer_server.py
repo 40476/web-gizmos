@@ -10,6 +10,7 @@ A WebSocket-based dedicated server for Mega Miner NG that provides:
   - Built-in dummy client for admin functions (explosions, falling blocks, etc.)
   - Full admin/gamemaster controls
   - Chat, trade, explosion, and tile update relay
+  - Manual user definitions in config (disables registration if desired)
 """
 
 import asyncio
@@ -63,9 +64,14 @@ DEFAULT_CONFIG = {
     },
     "accounts": {
         "allow_registration": True,
+        "allow_guests": True,
         "min_username_length": 3,
         "max_username_length": 16,
-        "min_password_length": 4
+        "min_password_length": 4,
+        "users": {
+            # Example - pre-defined users that bypass registration:
+            # "admin": "secure_password"
+        }
     },
     "paths": {
         "data_directory": "server_data",
@@ -108,12 +114,16 @@ def load_config(config_path="server_config.json"):
 class AccountManager:
     """Handles user accounts with hashed passwords."""
 
-    def __init__(self, accounts_path):
+    def __init__(self, accounts_path, config):
         self.accounts_path = accounts_path
+        self.config = config
         self.accounts = {}  # username -> { password_hash, salt, created_at, last_login, banned }
         self.sessions = {}  # token -> username
+        self.sessions_path = accounts_path.replace('.json', '_sessions.json')
         self._ensure_directory()
         self._load()
+        self._load_sessions()
+        self._load_manual_users()
 
     def _ensure_directory(self):
         directory = os.path.dirname(self.accounts_path)
@@ -137,6 +147,60 @@ class AccountManager:
         except Exception as e:
             print(f"Error saving accounts: {e}")
 
+    def _load_sessions(self):
+        """Load persisted sessions from disk so tokens survive server restarts."""
+        if os.path.exists(self.sessions_path):
+            try:
+                with open(self.sessions_path, 'r') as f:
+                    self.sessions = json.load(f)
+                print(f"Loaded {len(self.sessions)} sessions from {self.sessions_path}")
+            except Exception as e:
+                print(f"Warning: Could not load sessions: {e}")
+                self.sessions = {}
+
+    def _save_sessions(self):
+        """Persist sessions to disk."""
+        try:
+            self._ensure_directory()
+            with open(self.sessions_path, 'w') as f:
+                json.dump(self.sessions, f, indent=2)
+        except Exception as e:
+            print(f"Error saving sessions: {e}")
+
+    def _load_manual_users(self):
+        """Load manually-defined users from config."""
+        manual_users = self.config.get('accounts', {}).get('users', {})
+        if not manual_users:
+            return
+
+        added = 0
+        for username, password in manual_users.items():
+            username = username.strip()
+            if username in self.accounts:
+                # Update existing account's password
+                pw_hash, salt = self._hash_password(password)
+                self.accounts[username]["password_hash"] = pw_hash
+                self.accounts[username]["salt"] = salt
+                self.accounts[username]["is_manual"] = True
+                print(f"[Accounts] Updated password for manual user '{username}'")
+            else:
+                # Create new account
+                pw_hash, salt = self._hash_password(password)
+                self.accounts[username] = {
+                    "password_hash": pw_hash,
+                    "salt": salt,
+                    "created_at": time.time(),
+                    "last_login": None,
+                    "banned": False,
+                    "is_manual": True
+                }
+                print(f"[Accounts] Created manual user '{username}'")
+            added += 1
+
+        if added > 0:
+            self._save()
+            print(f"[Accounts] Processed {added} manual user(s) from config")
+
     def _hash_password(self, password, salt=None):
         if salt is None:
             salt = secrets.token_hex(16)
@@ -147,12 +211,16 @@ class AccountManager:
     def register(self, username, password):
         """Register a new account. Returns (success, message)."""
         username = username.strip()
-        if len(username) < DEFAULT_CONFIG['accounts']['min_username_length']:
-            return False, f"Username must be at least {DEFAULT_CONFIG['accounts']['min_username_length']} characters"
-        if len(username) > DEFAULT_CONFIG['accounts']['max_username_length']:
-            return False, f"Username must be at most {DEFAULT_CONFIG['accounts']['max_username_length']} characters"
-        if len(password) < DEFAULT_CONFIG['accounts']['min_password_length']:
-            return False, f"Password must be at least {DEFAULT_CONFIG['accounts']['min_password_length']} characters"
+        min_username = self.config['accounts']['min_username_length']
+        max_username = self.config['accounts']['max_username_length']
+        min_password = self.config['accounts']['min_password_length']
+
+        if len(username) < min_username:
+            return False, f"Username must be at least {min_username} characters"
+        if len(username) > max_username:
+            return False, f"Username must be at most {max_username} characters"
+        if len(password) < min_password:
+            return False, f"Password must be at least {min_password} characters"
         if username.lower() in [a.lower() for a in self.accounts]:
             return False, "Username already taken"
         if not username.isalnum() and '_' not in username:
@@ -186,6 +254,7 @@ class AccountManager:
         self.sessions[token] = username
         account["last_login"] = time.time()
         self._save()
+        self._save_sessions()
         return True, "Login successful", token
 
     def validate_session(self, token):
@@ -215,6 +284,10 @@ class AccountManager:
             self._save()
             return True
         return False
+
+    def get_account_count(self):
+        """Return the number of registered accounts."""
+        return len(self.accounts)
 
 
 # ============================================================================
@@ -406,7 +479,8 @@ class WorldManager:
         try:
             self._ensure_directory()
             diffs_count = len(world_obj.get('diffs', []))
-            print(f"[Save] Saving world '{world_name}' to {path} ({diffs_count} diffs, {world_obj.get('player_data', {})} players)")
+            players_count = len(world_obj.get('player_data', {}))
+            print(f"[Save] Saving world '{world_name}' to {path} ({diffs_count} diffs, {players_count} players)")
             with open(path, 'w') as f:
                 json.dump(world_obj, f, indent=2)
             print(f"[Save] Successfully saved world '{world_name}'")
@@ -428,14 +502,15 @@ class WorldManager:
 class Room:
     """A game room containing connected players and world state."""
 
-    def __init__(self, room_id, world_manager):
+    def __init__(self, room_id, world_manager, config):
         self.room_id = room_id
         self.world = world_manager.load_world(room_id)
         self.world_manager = world_manager
+        self.config = config
         self.players = {}  # username -> PlayerState
         self.admin = None  # username of admin (first to join)
         self.last_activity = time.time()
-        self.next_autosave = time.time() + DEFAULT_CONFIG['server']['autosave_interval']
+        self.next_autosave = time.time() + config['server']['autosave_interval']
 
     @property
     def player_count(self):
@@ -581,6 +656,7 @@ class DummyClient:
         mw = DEFAULT_CONFIG['game']['map_width']
         mh = DEFAULT_CONFIG['game']['map_height']
         wm = self.server.worlds
+        need_save = False
         
         for y in range(cy - radius, cy + radius + 1):
             for x in range(cx - radius, cx + radius + 1):
@@ -589,6 +665,11 @@ class DummyClient:
                         tile = wm.get_tile(room.world, x, y)
                         if tile != 99:  # Not bedrock
                             wm.update_tile(room.room_id, x, y, 0)  # EMPTY
+                            need_save = True
+        
+        # Save world after explosion changes
+        if need_save:
+            wm.save_world(room.room_id, room.world)
     
     async def _update_falling_blocks(self, room):
         """Update falling blocks (Gravel/Sand) near all players."""
@@ -596,6 +677,7 @@ class DummyClient:
         mh = DEFAULT_CONFIG['game']['map_height']
         wm = self.server.worlds
         falling_types = {23, 24}  # GRAVEL, SAND
+        need_save = False
         
         for username, player in room.players.items():
             check_radius = 15
@@ -615,6 +697,7 @@ class DummyClient:
                     if below == 0:  # EMPTY
                         wm.update_tile(room.room_id, x, y, 0)
                         wm.update_tile(room.room_id, x, y + 1, tile)
+                        need_save = True
                         # Broadcast tile updates
                         await self.server.broadcast_to_room(room.room_id, {
                             "type": "tile", "x": x, "y": y, "val": 0
@@ -622,6 +705,10 @@ class DummyClient:
                         await self.server.broadcast_to_room(room.room_id, {
                             "type": "tile", "x": x, "y": y + 1, "val": tile
                         })
+        
+        # Save world after falling block changes
+        if need_save:
+            wm.save_world(room.room_id, room.world)
     
     async def _trigger_random_event(self, room):
         """Trigger a random event near a random player."""
@@ -666,6 +753,7 @@ class DummyClient:
         wm = self.server.worlds
         mw = DEFAULT_CONFIG['game']['map_width']
         mh = DEFAULT_CONFIG['game']['map_height']
+        need_save = False
         
         if event_id == 'cave_in':
             radius = 2 + random.randint(0, 1)
@@ -678,6 +766,7 @@ class DummyClient:
                             tile = wm.get_tile(room.world, cx, cy)
                             if tile not in (0, 99):
                                 wm.update_tile(room.room_id, cx, cy, 0)
+                                need_save = True
                                 await self.server.broadcast_to_room(room.room_id, {
                                     "type": "tile", "x": cx, "y": cy, "val": 0
                                 })
@@ -697,6 +786,7 @@ class DummyClient:
                     if tile in (1, 3, 4, 5):  # Stone types
                         ore = random.choice(vault_ores)
                         wm.update_tile(room.room_id, vx, vy, ore)
+                        need_save = True
                         await self.server.broadcast_to_room(room.room_id, {
                             "type": "tile", "x": vx, "y": vy, "val": ore
                         })
@@ -704,6 +794,9 @@ class DummyClient:
                 "type": "chat", "id": self.player_id, "name": "System",
                 "msg": "💰 Treasure Vault discovered nearby!"
             })
+        
+        if need_save:
+            wm.save_world(room.room_id, room.world)
 
 
 # ============================================================================
@@ -715,7 +808,7 @@ class MegaMinerServer:
 
     def __init__(self, config_path="server_config.json"):
         self.config = load_config(config_path)
-        self.accounts = AccountManager(self.config['paths']['accounts_file'])
+        self.accounts = AccountManager(self.config['paths']['accounts_file'], self.config)
         self.worlds = WorldManager(
             self.config['paths']['worlds_directory'],
             self.config['game']['map_width'],
@@ -751,6 +844,10 @@ class MegaMinerServer:
                 ssl_context = None
                 protocol = "ws"
 
+        allow_guests = self.config['accounts'].get('allow_guests', True)
+        allow_reg = self.config['accounts'].get('allow_registration', True)
+        manual_users = list(self.config['accounts'].get('users', {}).keys())
+
         print(f"""
 ╔══════════════════════════════════════════════════════╗
 ║           Mega Miner NG - Dedicated Server           ║
@@ -762,6 +859,9 @@ class MegaMinerServer:
 ║  World: {self.world_name}                                      ║
 ║  Max Players: {self.config['server']['max_players']}                          ║
 ║  Autosave Interval: {self.config['server']['autosave_interval']}s                       ║
+║  Allow Registration: {'Yes' if allow_reg else 'No'}                   ║
+║  Allow Guests: {'Yes' if allow_guests else 'No'}                        ║
+║  Manual Users: {len(manual_users)} ({', '.join(manual_users) if manual_users else 'None'})║
 ║  Data Directory: {self.config['paths']['data_directory']}/              ║
 ╚══════════════════════════════════════════════════════╝
         """)
@@ -805,6 +905,10 @@ class MegaMinerServer:
         # Save all worlds
         print("Saving worlds...")
         self.worlds.save_all()
+
+        # Save sessions
+        print("Saving sessions...")
+        self.accounts._save_sessions()
 
         # Notify all players
         for room in self.rooms.values():
@@ -970,6 +1074,9 @@ class MegaMinerServer:
         color = message.get("color", "#3498db")
         player_data = message.get("playerData", {})
 
+        allow_guests = self.config['accounts'].get('allow_guests', True)
+        allow_reg = self.config['accounts'].get('allow_registration', True)
+
         # Validate session token
         if token:
             validated_user = self.accounts.validate_session(token)
@@ -981,6 +1088,15 @@ class MegaMinerServer:
                 })
                 return None
         else:
+            # No token provided - check if guests are allowed
+            if not allow_guests:
+                await self.send_to(websocket, {
+                    "type": "join_result",
+                    "success": False,
+                    "message": "Guest connections are not allowed. Please login or register."
+                })
+                return None
+
             # Guest mode: check if username is available, prepend 'Guest_'
             if not username:
                 username = f"Guest_{secrets.token_hex(3)[:6]}"
@@ -1010,7 +1126,7 @@ class MegaMinerServer:
 
         # Get or create room (always uses world_name)
         if room_id not in self.rooms:
-            self.rooms[room_id] = Room(room_id, self.worlds)
+            self.rooms[room_id] = Room(room_id, self.worlds, self.config)
             print(f"[Room] Created room '{room_id}'")
 
         room = self.rooms[room_id]
@@ -1298,7 +1414,11 @@ class MegaMinerServer:
             self.worlds.update_tile(room_id, x, y, val)
             world = self.rooms.get(room_id).world if self.rooms.get(room_id) else None
             if world:
-                print(f"[Tile] World now has {len(world.get('diffs', []))} diffs")
+                diffs_count = len(world.get('diffs', []))
+                print(f"[Tile] World now has {diffs_count} diffs")
+                # Save world immediately on tile update to prevent data loss
+                self.worlds.save_world(room_id, world)
+                print(f"[Tile] World saved to disk ({diffs_count} diffs)")
             await self.broadcast_to_room(room_id, {
                 "type": "tile",
                 "x": x,
@@ -1308,6 +1428,8 @@ class MegaMinerServer:
 
     async def handle_aoe_mine(self, player, room_id, message):
         """Handle AOE mining updates."""
+        # AOE mining also changes tiles - save the world
+        room = self.rooms.get(room_id)
         await self.broadcast_to_room(room_id, {
             "type": "aoe_mine",
             "id": player.player_id,
@@ -1436,7 +1558,9 @@ class MegaMinerServer:
                 target = room.players[target_username]
                 world = room.world
                 if target.player_id not in world.get("banned_ids", []):
-                    world.setdefault("banned_ids", []).append(target.player_id)
+                    if "banned_ids" not in world:
+                        world["banned_ids"] = []
+                    world["banned_ids"].append(target.player_id)
                 await self.send_to(target.websocket, {
                     "type": "kick",
                     "target": target.player_id
